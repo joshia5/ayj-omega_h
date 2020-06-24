@@ -69,6 +69,7 @@ void read_internal(pMesh m, Mesh* mesh) {
   VIter vertices = M_vertexIter(m);
   pVertex vtx;
   LO v = 0;
+  int count_matched = 0;
   while ((vtx = (pVertex) VIter_next(vertices))) {
     double xyz[3];
     V_coord(vtx,xyz);
@@ -78,6 +79,15 @@ void read_internal(pMesh m, Mesh* mesh) {
       host_coords[v * max_dim + j] = xyz[j];
     }
     ++v;
+
+    //for periodic
+    pPList matches = EN_getMatchingEnts(vtx,0,0);
+    //changing third arg making no diff??
+    if(PList_size(matches) > 1) {
+      printf("vtx matches size=%d, count=%d\n", PList_size(matches), count_matched);
+      ++count_matched;
+    }
+    //
   }
   VIter_delete(vertices);
 
@@ -89,6 +99,7 @@ void read_internal(pMesh m, Mesh* mesh) {
   EIter edges = M_edgeIter(m);
   pEdge edge;
   int count_edge = 0;
+  count_matched = 0;
   while ((edge = (pEdge) EIter_next(edges))) {
     double xyz[3];
     count_edge += 1;
@@ -96,6 +107,15 @@ void read_internal(pMesh m, Mesh* mesh) {
       vtx = E_vertex(edge,j);
       edge_vertices[0].push_back(EN_id(vtx));
       V_coord(vtx,xyz);
+
+    //for periodic
+    pPList matches = EN_getMatchingEnts(edge,0,0);
+    //changing third arg making no diff??
+    if(PList_size(matches) > 1) {
+      printf("edge matches size=%d, count=%d\n", PList_size(matches), count_matched);
+      ++count_matched;
+    }
+    //
     }
   }
   EIter_delete(edges);
@@ -114,6 +134,7 @@ void read_internal(pMesh m, Mesh* mesh) {
   pFace face;
   int count_tri = 0;
   int count_quad = 0;
+  count_matched = 0;
   while (face = (pFace) FIter_next(faces)) {
     if (F_numEdges(face) == 3) {
       count_tri += 1;
@@ -124,6 +145,15 @@ void read_internal(pMesh m, Mesh* mesh) {
     else {
       Omega_h_fail ("Face is neither tri nor quad \n");
     }
+
+    //for periodic
+    pPList matches = EN_getMatchingEnts(face,0,0);
+    //changing third arg making no diff??
+    if(PList_size(matches) > 1) {
+      printf("face matches size=%d, count=%d\n", PList_size(matches), count_matched);
+      ++count_matched;
+    }
+    //
   }
   FIter_delete(faces);
 
@@ -187,6 +217,7 @@ void read_internal(pMesh m, Mesh* mesh) {
   LO count_wedge = 0;
   LO count_pyramid = 0;
   pRegion rgn;
+  count_matched = 0;
   while (rgn = (pRegion) RIter_next(regions)) {
     if (R_topoType(rgn) == Rtet) {
       count_tet += 1;
@@ -203,6 +234,15 @@ void read_internal(pMesh m, Mesh* mesh) {
     else {
       Omega_h_fail("Region is not tet, hex, wedge, or pyramid \n");
     }
+
+    //for periodic
+    pPList matches = EN_getMatchingEnts(rgn,0,0);
+    //changing third arg making no diff??
+    if(PList_size(matches) > 1) {
+      printf("rgn matches size=%d, count=%d\n", PList_size(matches), count_matched);
+      ++count_matched;
+    }
+    //
   }
   RIter_delete(regions);
   printf("tet=%d, hex=%d, wedge=%d, pyramid=%d\n",
