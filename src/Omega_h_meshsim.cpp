@@ -1,22 +1,20 @@
 #include "Omega_h_file.hpp"
+
 #include "Omega_h_build.hpp"
 #include "Omega_h_class.hpp"
+#include "Omega_h_element.hpp"
 #include "Omega_h_map.hpp"
 #include "Omega_h_vector.hpp"
-#include "Omega_h_mesh.hpp"
-
-#include "Omega_h_for.hpp"
-#include "Omega_h_adj.hpp"
 
 #include "SimPartitionedMesh.h"
 #include "SimModel.h"
 #include "SimUtil.h"
 
-#include "SimDiscrete.h"
-
 namespace Omega_h {
 
 namespace meshsim {
+
+namespace {
 
 int classId(pEntity e) {
   pGEntity g = EN_whatIn(e);
@@ -24,51 +22,45 @@ int classId(pEntity e) {
   return GEN_tag(g);
 }
 
-void call_print(LOs a) {
-  printf("\n");
-  auto a_w = Write<LO> (a.size());
-  auto r2w = OMEGA_H_LAMBDA(LO i) {
-    a_w[i] = a[i];
-  };
-  parallel_for(a.size(), r2w);
-  auto a_host = HostWrite<LO>(a_w);
-  for (int i=0; i<a_host.size(); ++i) {
-    printf(" %d,", a_host[i]);
-  };
-  printf("\n");
-  printf("\n");
-  return;
-}
-
-void read_internal(pMesh m, Mesh* mesh) {
-
+void read_internal(pParMesh sm, Mesh* mesh) {
   (void)mesh;
-
-  const int numVtx = M_numVertices(m);
-  const int numEdges = M_numEdges(m);
-  const int numFaces = M_numFaces(m);
-  const int numRegions = M_numRegions(m);
-
-  std::vector<int> elem_vertices[4];
-  std::vector<int> face_vertices[2];
-  std::vector<int> edge_vertices[1];
-  /* TODO:transfer classification info */
-
+  pMesh m = PM_mesh(sm, 0);
   Int max_dim;
-  if (numRegions) {
+  if (M_numRegions(m)) {
     max_dim = 3;
-  } else if (numFaces) {
+  } else if (M_numFaces(m)) {
     max_dim = 2;
-  } else if (numEdges) {
+  } else if (M_numEdges(m)) {
     max_dim = 1;
   } else {
     Omega_h_fail("There were no Elements of dimension higher than zero!\n");
   }
-
+  //get the types of elements
+  Omega_h_Family family = OMEGA_H_SIMPLEX;
+  RIter regions = M_regionIter(m);
+  pRegion rgn;
+  LO i = 0;
+  while ((rgn = (pRegion) RIter_next(regions))) {
+    if(R_topoType(rgn) != Rtet)
+      Omega_h_fail("Non-simplex element found!\n");
+    ++i;
+  }
+  RIter_delete(regions);
+  std::vector<int> ent_nodes[4];
+  std::vector<int> ent_class_ids[4];
+  std::vector<int> ent_matches[3];
+  std::vector<int> ent_match_classId[3];
+  //write vertex coords into node_coords and
+  //  write vertex ids into ent_nodes
+  const int numVtx = M_numVertices(m);
+  ent_nodes[0].reserve(numVtx);
+  ent_class_ids[0].reserve(numVtx);
+  ent_matches[0].reserve(numVtx);
+  ent_match_classId[0].reserve(numVtx);
   HostWrite<Real> host_coords(numVtx*max_dim);
   VIter vertices = M_vertexIter(m);
   pVertex vtx;
-  LO v = 0;
+  i = 0;
   int count_matched = 0;
   while ((vtx = (pVertex) VIter_next(vertices))) {
     double xyz[3];
@@ -76,304 +68,171 @@ void read_internal(pMesh m, Mesh* mesh) {
     if( max_dim < 3 && xyz[2] != 0 )
       Omega_h_fail("The z coordinate must be zero for a 2d mesh!\n");
     for(int j=0; j<max_dim; j++) {
-      host_coords[v * max_dim + j] = xyz[j];
+      host_coords[i * max_dim + j] = xyz[j];
     }
-    ++v;
+    ent_nodes[0].push_back(EN_id(vtx));
+    ent_class_ids[0].push_back(classId(vtx));
+    ++i;
 
-    //for periodic
-    pPList matches = EN_getMatchingEnts(vtx,0,0);
-    //changing third arg making no diff??
-    if(PList_size(matches) > 1) {
-      printf("vtx matches size=%d, count=%d\n", PList_size(matches), count_matched);
-      ++count_matched;
+    pPList matches = EN_getMatchingEnts(vtx, 0, 0);
+    //why the third argument? it's value makes no diff
+    void *iterM = 0;
+    pVertex match;
+    count_matched = 0;
+    while((match = (pVertex)PList_next(matches, &iterM))) {
+      if (EN_id(match) != EN_id(vtx)) {
+        ent_matches[0].push_back(EN_id(match));
+        ent_match_classId[0].push_back(classId(match));
+        ++count_matched;
+        if (count_matched > 1) Omega_h_fail("Error:matches per entity > 1\n");
+      }
+      else {
+        ent_matches[0].push_back(-1);
+        ent_match_classId[0].push_back(-1);
+      }
     }
-    //
+    PList_delete(matches);
   }
   VIter_delete(vertices);
-
-  mesh->set_dim(max_dim);
-  mesh->set_verts_type(numVtx);
-  mesh->add_coords_mix(host_coords.write());
-
-  edge_vertices[0].reserve(numEdges*2);
+  //get the ids of vertices bounding each edge
+  const int numEdges = M_numEdges(m);
+  ent_nodes[1].reserve(numEdges*2);
+  ent_class_ids[1].reserve(numEdges);
   EIter edges = M_edgeIter(m);
   pEdge edge;
-  int count_edge = 0;
-  count_matched = 0;
   while ((edge = (pEdge) EIter_next(edges))) {
-    double xyz[3];
-    count_edge += 1;
-    for(int j=0; j<2; ++j) {
+    for(int j=1; j>=0; --j) {
       vtx = E_vertex(edge,j);
-      edge_vertices[0].push_back(EN_id(vtx));
-      V_coord(vtx,xyz);
+      ent_nodes[1].push_back(EN_id(vtx));
+    }
+    ent_class_ids[1].push_back(classId(edge));
 
-    //for periodic
-    pPList matches = EN_getMatchingEnts(edge,0,0);
-    //changing third arg making no diff??
-    if(PList_size(matches) > 1) {
-      printf("edge matches size=%d, count=%d\n", PList_size(matches), count_matched);
-      ++count_matched;
+    pPList matches = EN_getMatchingEnts(edge, 0, 0);
+    void *iterM = 0;
+    pEdge match;
+    count_matched = 0;
+    while((match = (pEdge)PList_next(matches, &iterM))) {
+      if (EN_id(match) != EN_id(edge)) {
+        ent_matches[1].push_back(EN_id(match));
+        ent_match_classId[1].push_back(classId(match));
+        ++count_matched;
+        if (count_matched > 1) Omega_h_fail("Error:matches per entity > 1\n");
+      }
+      else {
+        ent_matches[1].push_back(-1);
+        ent_match_classId[1].push_back(-1);
+      }
     }
-    //
-    }
+    PList_delete(matches);
   }
   EIter_delete(edges);
-  
-  HostWrite<LO> host_e2v(numEdges*2);
-  for (Int i = 0; i < numEdges; ++i) {
-    for (Int j = 0; j < 2; ++j) {
-      host_e2v[i*2 + j] =
-          edge_vertices[0][static_cast<std::size_t>(i*2 + j)];
-    }
-  }
-  auto ev2v = Read<LO>(host_e2v.write());
-  mesh->set_ents(Topo_type::edge, Topo_type::vertex, Adj(ev2v));
-
+  //get the ids of vertices bounding each face
+  const int numFaces = M_numFaces(m);
+  ent_nodes[2].reserve(numFaces*3);
+  ent_class_ids[2].reserve(numFaces);
   FIter faces = M_faceIter(m);
   pFace face;
-  int count_tri = 0;
-  int count_quad = 0;
-  count_matched = 0;
-  while (face = (pFace) FIter_next(faces)) {
-    if (F_numEdges(face) == 3) {
-      count_tri += 1;
-    }
-    else if (F_numEdges(face) == 4) {
-      count_quad += 1;
-    }
-    else {
-      Omega_h_fail ("Face is neither tri nor quad \n");
-    }
+  while ((face = (pFace) FIter_next(faces))) {
+    pPList verts = F_vertices(face,1);
+    assert(PList_size(verts) == 3);
+    void *iter = 0; // must initialize to 0
+    while((vtx = (pVertex)PList_next(verts, &iter)))
+      ent_nodes[2].push_back(EN_id(vtx));
+    PList_delete(verts);
+    ent_class_ids[2].push_back(classId(face));
 
-    //for periodic
-    pPList matches = EN_getMatchingEnts(face,0,0);
-    //changing third arg making no diff??
-    if(PList_size(matches) > 1) {
-      printf("face matches size=%d, count=%d\n", PList_size(matches), count_matched);
-      ++count_matched;
+    pPList matches = EN_getMatchingEnts(face, 0, 0);
+    void *iterM = 0;
+    pFace match;
+    count_matched = 0;
+    while((match = (pFace)PList_next(matches, &iterM))) {
+      if (EN_id(match) != EN_id(face)) {
+        ent_matches[2].push_back(EN_id(match));
+        ent_match_classId[2].push_back(classId(match));
+        ++count_matched;
+        if (count_matched > 1) Omega_h_fail("Error:matches per entity > 1\n");
+      }
+      else {
+        ent_matches[2].push_back(-1);
+        ent_match_classId[2].push_back(-1);
+      }
     }
-    //
+    PList_delete(matches);
   }
   FIter_delete(faces);
-
-  face_vertices[0].reserve(count_tri*3);
-  face_vertices[1].reserve(count_quad*4);
-
-  faces = M_faceIter(m);
-  while (face = (pFace) FIter_next(faces)) {
-    if (F_numEdges(face) == 3) {
-      pVertex tri_vertex;
-      pPList tri_vertices = F_vertices(face,1);
-      assert (PList_size(tri_vertices) == 3);
-      void *iter = 0;
-      while (tri_vertex = (pVertex) PList_next(tri_vertices, &iter)) {
-        face_vertices[0].push_back(EN_id(tri_vertex));
-      }
-      PList_delete(tri_vertices);
-    }
-    else if (F_numEdges(face) == 4) {
-      pVertex quad_vertex;
-      pPList quad_vertices = F_vertices(face,1);
-      assert (PList_size(quad_vertices) == 4);
-      void *iter = 0;
-      while (quad_vertex = (pVertex) PList_next(quad_vertices, &iter)) {
-        face_vertices[1].push_back(EN_id(quad_vertex));
-      }
-      PList_delete(quad_vertices);
-    }
-    else {
-      Omega_h_fail ("Face is neither tri nor quad \n");
-    }
-  }
-  FIter_delete(faces);
-  auto edge2vert = mesh->get_adj(Topo_type::edge, Topo_type::vertex);
-  auto vert2edge = mesh->ask_up(Topo_type::vertex, Topo_type::edge);
-  HostWrite<LO> host_tri2verts(count_tri*3);
-  for (Int i = 0; i < count_tri; ++i) {
-    for (Int j = 0; j < 3; ++j) {
-      host_tri2verts[i*3 + j] =
-          face_vertices[0][static_cast<std::size_t>(i*3 + j)];
-    }
-  }
-  auto tri2verts = Read<LO>(host_tri2verts.write());
-  auto down = reflect_down(tri2verts, edge2vert.ab2b, vert2edge, Topo_type::triangle, Topo_type::edge);
-  mesh->set_ents(Topo_type::triangle, Topo_type::edge, down);
-
-  HostWrite<LO> host_quad2verts(count_quad*4);
-  for (Int i = 0; i < count_quad; ++i) {
-    for (Int j = 0; j < 4; ++j) {
-      host_quad2verts[i*4 + j] =
-          face_vertices[1][static_cast<std::size_t>(i*4 + j)];
-    }
-  }
-  auto quad2verts = Read<LO>(host_quad2verts.write());
-  down = reflect_down(quad2verts, edge2vert.ab2b, vert2edge, Topo_type::quadrilateral, Topo_type::edge);
-  mesh->set_ents(Topo_type::quadrilateral, Topo_type::edge, down);
-
-  RIter regions = M_regionIter(m);
-  LO count_tet = 0;
-  LO count_hex = 0;
-  LO count_wedge = 0;
-  LO count_pyramid = 0;
-  pRegion rgn;
-  count_matched = 0;
-  while (rgn = (pRegion) RIter_next(regions)) {
-    if (R_topoType(rgn) == Rtet) {
-      count_tet += 1;
-    }
-    else if (R_topoType(rgn) == Rhex) {
-      count_hex += 1;
-    }
-    else if (R_topoType(rgn) == Rwedge) {
-      count_wedge += 1;
-    }
-    else if (R_topoType(rgn) == Rpyramid) {
-      count_pyramid += 1;
-    }
-    else {
-      Omega_h_fail("Region is not tet, hex, wedge, or pyramid \n");
-    }
-
-    //for periodic
-    pPList matches = EN_getMatchingEnts(rgn,0,0);
-    //changing third arg making no diff??
-    if(PList_size(matches) > 1) {
-      printf("rgn matches size=%d, count=%d\n", PList_size(matches), count_matched);
-      ++count_matched;
-    }
-    //
-  }
-  RIter_delete(regions);
-  printf("tet=%d, hex=%d, wedge=%d, pyramid=%d\n",
-         count_tet, count_hex, count_wedge, count_pyramid);
-
-  elem_vertices[0].reserve(count_tet*4);
-  elem_vertices[1].reserve(count_hex*8);
-  elem_vertices[2].reserve(count_wedge*6);
-  elem_vertices[3].reserve(count_pyramid*5);
-
+  //get the ids of vertices bounding each region
+  const int numRegions = M_numRegions(m);
+  ent_nodes[3].reserve(numRegions*4);
+  ent_class_ids[3].reserve(numRegions);
   regions = M_regionIter(m);
   while ((rgn = (pRegion) RIter_next(regions))) {
-    if (R_topoType(rgn) == Rtet) {
-      pVertex vert;
-      pPList verts = R_vertices(rgn,1);
-      assert (PList_size(verts) == 4);
-      void *iter = 0;
-      while (vert = (pVertex) PList_next(verts, &iter)) {
-        elem_vertices[0].push_back(EN_id(vert));
-      }
-      PList_delete(verts);
-    }
-    else if (R_topoType(rgn) == Rhex) {
-      pVertex vert;
-      pPList verts = R_vertices(rgn,1);
-      assert (PList_size(verts) == 8);
-      void *iter = 0;
-      while (vert = (pVertex) PList_next(verts, &iter)) {
-        elem_vertices[1].push_back(EN_id(vert));
-      }
-      PList_delete(verts);
-    }
-    else if (R_topoType(rgn) == Rwedge) {
-      pVertex vert;
-      pPList verts = R_vertices(rgn,1);
-      assert (PList_size(verts) == 6);
-      void *iter = 0;
-      while (vert = (pVertex) PList_next(verts, &iter)) {
-        elem_vertices[2].push_back(EN_id(vert));
-      }
-      PList_delete(verts);
-    }
-    else if (R_topoType(rgn) == Rpyramid) {
-      pVertex vert;
-      pPList verts = R_vertices(rgn,1);
-      assert (PList_size(verts) == 5);
-      void *iter = 0;
-      while (vert = (pVertex) PList_next(verts, &iter)) {
-        elem_vertices[3].push_back(EN_id(vert));
-      }
-      PList_delete(verts);
-    }
-    else {
-      Omega_h_fail ("Region is not tet, hex, wedge, or pyramid \n");
-    }
+    pPList verts = R_vertices(rgn,1);
+    assert(PList_size(verts) == 4);
+    void *iter = 0; // must initialize to 0
+    while((vtx = (pVertex)PList_next(verts, &iter)))
+      ent_nodes[3].push_back(EN_id(vtx));
+    PList_delete(verts);
+    ent_class_ids[3].push_back(classId(rgn));
   }
   RIter_delete(regions);
-
-  auto tri2vert = mesh->ask_down(Topo_type::triangle, Topo_type::vertex);
-  auto vert2tri = mesh->ask_up(Topo_type::vertex, Topo_type::triangle);
-  auto quad2vert = mesh->ask_down(Topo_type::quadrilateral, Topo_type::vertex);
-  auto vert2quad = mesh->ask_up(Topo_type::vertex, Topo_type::quadrilateral);
-
-  HostWrite<LO> host_tet2verts(count_tet*4);
-  for (Int i = 0; i < count_tet; ++i) {
-    for (Int j = 0; j < 4; ++j) {
-      host_tet2verts[i*4 + j] =
-          elem_vertices[0][static_cast<std::size_t>(i*4 + j)];
+  //flatten the ent_nodes and ent_class_ids arrays
+  for (Int ent_dim = max_dim; ent_dim >= 0; --ent_dim) {
+    Int neev = element_degree(family, ent_dim, VERT);
+    LO ndim_ents = static_cast<LO>(ent_nodes[ent_dim].size()) / neev;
+    HostWrite<LO> host_ev2v(ndim_ents * neev);
+    HostWrite<LO> host_class_id(ndim_ents);
+    for (i = 0; i < ndim_ents; ++i) {
+      for (Int j = 0; j < neev; ++j) {
+        host_ev2v[i * neev + j] =
+            ent_nodes[ent_dim][static_cast<std::size_t>(i * neev + j)];
+      }
+      host_class_id[i] = ent_class_ids[ent_dim][static_cast<std::size_t>(i)];
     }
-  }
-  auto tet2verts = Read<LO>(host_tet2verts.write());
-  down = reflect_down(tet2verts, tri2vert.ab2b, vert2tri, Topo_type::tetrahedron, Topo_type::triangle);
-  mesh->set_ents(Topo_type::tetrahedron, Topo_type::triangle, down);
-
-  HostWrite<LO> host_hex2verts(count_hex*8);
-  for (Int i = 0; i < count_hex; ++i) {
-    for (Int j = 0; j < 8; ++j) {
-      host_hex2verts[i*8 + j] =
-          elem_vertices[1][static_cast<std::size_t>(i*8 + j)];
+    auto eqv2v = Read<LO>(host_ev2v.write());
+    if (ent_dim == max_dim) {
+      build_from_elems_and_coords(
+          mesh, family, max_dim, eqv2v, host_coords.write());
     }
+    classify_equal_order(mesh, ent_dim, eqv2v, host_class_id.write());
   }
-  auto hex2verts = Read<LO>(host_hex2verts.write());
-  down = reflect_down(hex2verts, quad2vert.ab2b, vert2quad, Topo_type::hexahedron, Topo_type::quadrilateral);
-  mesh->set_ents(Topo_type::hexahedron, Topo_type::quadrilateral, down);
+  finalize_classification(mesh);
 
-  HostWrite<LO> host_wedge2verts(count_wedge*6);
-  for (Int i = 0; i < count_wedge; ++i) {
-    for (Int j = 0; j < 6; ++j) {
-      host_wedge2verts[i*6 + j] =
-          elem_vertices[2][static_cast<std::size_t>(i*6 + j)];
+  //add matches info to mesh
+  for (Int ent_dim = 0; ent_dim < 3; ++ent_dim) {
+    Int neev = element_degree(family, ent_dim, VERT);
+    LO ndim_ents = static_cast<LO>(ent_nodes[ent_dim].size())/neev;
+    HostWrite<LO> host_matches(ndim_ents);
+    HostWrite<LO> host_match_classId(ndim_ents);
+    for (i = 0; i < ndim_ents; ++i) {
+      host_matches[i] = ent_matches[ent_dim][static_cast<std::size_t>(i)];
+      host_match_classId[i] = ent_match_classId[ent_dim][static_cast<std::size_t>(i)];
+      //how to store when multiple matches in parallel?
     }
+    auto matches = Read<LO>(host_matches.write());
+    auto match_classId = Read<LO>(host_match_classId.write());
+    mesh->add_tag(ent_dim, "matches", 1, matches);
+    mesh->add_tag(ent_dim, "match_classId", 1, match_classId);
   }
-  auto wedge2verts = Read<LO>(host_wedge2verts.write());
-  down = reflect_down(wedge2verts, quad2vert.ab2b, vert2quad, Topo_type::wedge, Topo_type::quadrilateral);
-  mesh->set_ents(Topo_type::wedge, Topo_type::quadrilateral, down);
-
-  down = reflect_down(wedge2verts, tri2vert.ab2b, vert2tri, Topo_type::wedge, Topo_type::triangle);
-  mesh->set_ents(Topo_type::wedge, Topo_type::triangle, down);
-
-  HostWrite<LO> host_pyramid2verts(count_pyramid*5);
-  for (Int i = 0; i < count_pyramid; ++i) {
-    for (Int j = 0; j < 5; ++j) {
-      host_pyramid2verts[i*5 + j] =
-          elem_vertices[3][static_cast<std::size_t>(i*5 + j)];
-    }
-  }
-  auto pyramid2verts = Read<LO>(host_pyramid2verts.write());
-  down = reflect_down(pyramid2verts, tri2vert.ab2b, vert2tri, Topo_type::pyramid, Topo_type::triangle);
-  mesh->set_ents(Topo_type::pyramid, Topo_type::triangle, down);
-
-  down = reflect_down(pyramid2verts, quad2vert.ab2b, vert2quad, Topo_type::pyramid, Topo_type::quadrilateral);
-  mesh->set_ents(Topo_type::pyramid, Topo_type::quadrilateral, down);
-
+  //
 }
+
+}  // end anonymous namespace
 
 Mesh read(filesystem::path const& mesh_fname, filesystem::path const& mdl_fname,
     CommPtr comm) {
   SimPartitionedMesh_start(NULL,NULL);
   SimModel_start();
   Sim_readLicenseFile(NULL);
-  SimDiscrete_start(0);
   pNativeModel nm = NULL;
   pProgress p = NULL;
   pGModel g = GM_load(mdl_fname.c_str(), nm, p);
-  pMesh m = M_load(mesh_fname.c_str(), g, p);
+  pParMesh sm = PM_load(mesh_fname.c_str(), g, p);
   auto mesh = Mesh(comm->library());
-  meshsim::read_internal(m, &mesh);
-  M_release(m);
+  meshsim::read_internal(sm, &mesh);
+  M_release(sm);
   GM_release(g);
-  SimDiscrete_stop(0);
   SimModel_stop();
+  SimPartitionedMesh_stop();
   return mesh;
 }
 
