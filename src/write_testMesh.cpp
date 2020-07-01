@@ -274,16 +274,70 @@ void allType_gen(CommPtr comm) {
   }
 }
 
+void quad_gen(CommPtr comm) {
+  auto mesh = Mesh(comm->library());
+  try {
+    int numVerts = 4;
+    double coords[4*3] =  {
+                           0.000, 0.000, 0.000,
+                           1.000, 0.000, 0.000,
+                           1.000, 1.000, 0.000,
+                           0.000, 1.000, 0.000
+                          };
+    int numElems = 1;
+    int elementType[1] = {6};
+    int elementData[4] = {0,1,2,3};
+    pVertex vReturn[4];
+    pEntity eReturn[1];
+    const char *mesh_path = "/users/joshia5/simmodeler/Example_quad.sms";
+    const char *model_path = "/users/joshia5/simmodeler/Example_quad.smd";
+    finalize_write(numVerts, coords, numElems, elementType, elementData,
+                   vReturn, eReturn, mesh_path, model_path);
+  } catch (pSimError err) {
+    cerr<<"SimModSuite error caught:"<<endl;
+    cerr<<"  Error code: "<<SimError_code(err)<<endl;
+    cerr<<"  Error string: "<<SimError_toString(err)<<endl;
+    SimError_delete(err);
+  } catch (...) {
+    cerr<<"Unhandled exception caught"<<endl;
+  }
+}
+
+void quadEdges_gen(CommPtr comm) {
+  auto mesh = Mesh(comm->library());
+  try {
+    int numVerts = 4;
+    double coords[4*3] =  {
+                           0.000, 0.000, 0.000,
+                           1.000, 0.000, 0.000,
+                           1.000, 1.000, 0.000,
+                           0.000, 1.000, 0.000
+                          };
+    int numElems = 5;
+    int elementType[5] = {0,0,0,0,6};
+    int elementData[12] = {0,1,1,2,2,3,3,0,0,1,2,3};
+    pVertex vReturn[4];
+    pEntity eReturn[5];
+    const char *mesh_path = "/users/joshia5/simmodeler/Example_quadEdges.sms";
+    const char *model_path = "/users/joshia5/simmodeler/Example_quadEdges.smd";
+    finalize_write(numVerts, coords, numElems, elementType, elementData,
+                   vReturn, eReturn, mesh_path, model_path);
+  } catch (pSimError err) {
+    cerr<<"SimModSuite error caught:"<<endl;
+    cerr<<"  Error code: "<<SimError_code(err)<<endl;
+    cerr<<"  Error string: "<<SimError_toString(err)<<endl;
+    SimError_delete(err);
+  } catch (...) {
+    cerr<<"Unhandled exception caught"<<endl;
+  }
+}
+
 int main(int argc, char *argv[]) {
   auto lib = Library(&argc, &argv);
   auto comm = lib.world();
 
-  hex_gen(comm);
-  wedge_gen(comm);
-  pyramid_gen(comm);
-  tetOnWedge_gen(comm);
-  pymOnHex_gen(comm);
-  allType_gen(comm);
+  quad_gen(comm);
+  quadEdges_gen(comm);
 
   return 0;
 }

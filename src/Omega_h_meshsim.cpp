@@ -35,6 +35,7 @@ void read_internal(pParMesh sm, Mesh* mesh) {
   } else {
     Omega_h_fail("There were no Elements of dimension higher than zero!\n");
   }
+
   //get the types of elements
   Omega_h_Family family = OMEGA_H_SIMPLEX;
   RIter regions = M_regionIter(m);
@@ -61,6 +62,7 @@ void read_internal(pParMesh sm, Mesh* mesh) {
   VIter vertices = M_vertexIter(m);
   pVertex vtx;
   i = 0;
+  int count_matches = 0;
   int count_matched = 0;
   while ((vtx = (pVertex) VIter_next(vertices))) {
     double xyz[3];
@@ -75,25 +77,34 @@ void read_internal(pParMesh sm, Mesh* mesh) {
     ++i;
 
     pPList matches = EN_getMatchingEnts(vtx, 0, 0);
-    //why the third argument? it's value makes no diff
     void *iterM = 0;
     pVertex match;
-    count_matched = 0;
+    count_matches = 0;
     while((match = (pVertex)PList_next(matches, &iterM))) {
-      if (EN_id(match) != EN_id(vtx)) {
+      if ((PList_size(matches)>1) && (EN_id(match) != EN_id(vtx))) {
+      //if (EN_id(match) != EN_id(vtx)) {
+        printf("vtx %d is a match to original vtx %d\n", EN_id(match), EN_id(vtx));
         ent_matches[0].push_back(EN_id(match));
         ent_match_classId[0].push_back(classId(match));
+        ++count_matches;
         ++count_matched;
-        if (count_matched > 1) Omega_h_fail("Error:matches per entity > 1\n");
+        if (count_matches > 1) Omega_h_fail("Error:matches per entity > 1\n");
       }
-      else {
+      else if (PList_size(matches)==1) {
+      //else if ((Plist_size(matches)==1) && (EN_id(match) == EN_id(vtx))) {
+        printf("vtx %d has no match\n", EN_id(vtx));
         ent_matches[0].push_back(-1);
         ent_match_classId[0].push_back(-1);
+        //this '-1' has been put in for tag visualization.might not need if
+        //we use CSR
       }
     }
     PList_delete(matches);
+    //incase of count_matches>1 will need to comeup with different data
+    //structure to store matches of variable size. One idea is to use CSR
   }
   VIter_delete(vertices);
+  printf("matched verts=%d \n", count_matched);
   //get the ids of vertices bounding each edge
   const int numEdges = M_numEdges(m);
   ent_nodes[1].reserve(numEdges*2);
@@ -110,15 +121,17 @@ void read_internal(pParMesh sm, Mesh* mesh) {
     pPList matches = EN_getMatchingEnts(edge, 0, 0);
     void *iterM = 0;
     pEdge match;
-    count_matched = 0;
+    count_matches = 0;
     while((match = (pEdge)PList_next(matches, &iterM))) {
-      if (EN_id(match) != EN_id(edge)) {
+      if ((PList_size(matches)>1) && (EN_id(match) != EN_id(edge))) {
+      //if (EN_id(match) != EN_id(edge)) {
         ent_matches[1].push_back(EN_id(match));
         ent_match_classId[1].push_back(classId(match));
-        ++count_matched;
-        if (count_matched > 1) Omega_h_fail("Error:matches per entity > 1\n");
+        ++count_matches;
+        if (count_matches > 1) Omega_h_fail("Error:matches per entity > 1\n");
       }
-      else {
+      else if (PList_size(matches)==1) {
+      //else {
         ent_matches[1].push_back(-1);
         ent_match_classId[1].push_back(-1);
       }
@@ -144,15 +157,17 @@ void read_internal(pParMesh sm, Mesh* mesh) {
     pPList matches = EN_getMatchingEnts(face, 0, 0);
     void *iterM = 0;
     pFace match;
-    count_matched = 0;
+    count_matches = 0;
     while((match = (pFace)PList_next(matches, &iterM))) {
-      if (EN_id(match) != EN_id(face)) {
+      if ((PList_size(matches)>1) && (EN_id(match) != EN_id(face))) {
+      //if (EN_id(match) != EN_id(face)) {
         ent_matches[2].push_back(EN_id(match));
         ent_match_classId[2].push_back(classId(match));
-        ++count_matched;
-        if (count_matched > 1) Omega_h_fail("Error:matches per entity > 1\n");
+        ++count_matches;
+        if (count_matches > 1) Omega_h_fail("Error:matches per entity > 1\n");
       }
-      else {
+      else if (PList_size(matches)==1) {
+      //else {
         ent_matches[2].push_back(-1);
         ent_match_classId[2].push_back(-1);
       }
@@ -206,7 +221,7 @@ void read_internal(pParMesh sm, Mesh* mesh) {
     for (i = 0; i < ndim_ents; ++i) {
       host_matches[i] = ent_matches[ent_dim][static_cast<std::size_t>(i)];
       host_match_classId[i] = ent_match_classId[ent_dim][static_cast<std::size_t>(i)];
-      //how to store when multiple matches in parallel?
+      //how to store when multiple matches on different parts in parallel?
     }
     auto matches = Read<LO>(host_matches.write());
     auto match_classId = Read<LO>(host_match_classId.write());
@@ -225,8 +240,11 @@ Mesh read(filesystem::path const& mesh_fname, filesystem::path const& mdl_fname,
   Sim_readLicenseFile(NULL);
   pNativeModel nm = NULL;
   pProgress p = NULL;
+    printf("ok0\n");
   pGModel g = GM_load(mdl_fname.c_str(), nm, p);
+    printf("ok1\n");
   pParMesh sm = PM_load(mesh_fname.c_str(), g, p);
+    printf("ok2\n");
   auto mesh = Mesh(comm->library());
   meshsim::read_internal(sm, &mesh);
   M_release(sm);
