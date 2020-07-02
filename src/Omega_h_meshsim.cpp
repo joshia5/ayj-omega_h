@@ -6,6 +6,8 @@
 #include "Omega_h_map.hpp"
 #include "Omega_h_vector.hpp"
 
+#include "Omega_h_for.hpp"
+
 #include "SimPartitionedMesh.h"
 #include "SimModel.h"
 #include "SimUtil.h"
@@ -15,6 +17,22 @@ namespace Omega_h {
 namespace meshsim {
 
 namespace {
+
+void call_print(LOs a) {
+  printf("\n");
+  auto a_w = Write<LO> (a.size());
+  auto r2w = OMEGA_H_LAMBDA(LO i) {
+    a_w[i] = a[i];
+  };
+  parallel_for(a.size(), r2w);
+  auto a_host = HostWrite<LO>(a_w);
+  for (int i=0; i<a_host.size(); ++i) {
+    printf(" %d,", a_host[i]);
+  };
+  printf("\n");
+  printf("\n");
+  return;
+}
 
 int classId(pEntity e) {
   pGEntity g = EN_whatIn(e);
@@ -82,7 +100,6 @@ void read_internal(pParMesh sm, Mesh* mesh) {
     count_matches = 0;
     while((match = (pVertex)PList_next(matches, &iterM))) {
       if ((PList_size(matches)>1) && (EN_id(match) != EN_id(vtx))) {
-      //if (EN_id(match) != EN_id(vtx)) {
         printf("vtx %d is a match to original vtx %d\n", EN_id(match), EN_id(vtx));
         ent_matches[0].push_back(EN_id(match));
         ent_match_classId[0].push_back(classId(match));
@@ -91,8 +108,6 @@ void read_internal(pParMesh sm, Mesh* mesh) {
         if (count_matches > 1) Omega_h_fail("Error:matches per entity > 1\n");
       }
       else if (PList_size(matches)==1) {
-      //else if ((Plist_size(matches)==1) && (EN_id(match) == EN_id(vtx))) {
-        printf("vtx %d has no match\n", EN_id(vtx));
         ent_matches[0].push_back(-1);
         ent_match_classId[0].push_back(-1);
         //this '-1' has been put in for tag visualization.might not need if
@@ -111,6 +126,7 @@ void read_internal(pParMesh sm, Mesh* mesh) {
   ent_class_ids[1].reserve(numEdges);
   EIter edges = M_edgeIter(m);
   pEdge edge;
+  count_matched = 0;
   while ((edge = (pEdge) EIter_next(edges))) {
     for(int j=1; j>=0; --j) {
       vtx = E_vertex(edge,j);
@@ -124,14 +140,21 @@ void read_internal(pParMesh sm, Mesh* mesh) {
     count_matches = 0;
     while((match = (pEdge)PList_next(matches, &iterM))) {
       if ((PList_size(matches)>1) && (EN_id(match) != EN_id(edge))) {
-      //if (EN_id(match) != EN_id(edge)) {
+        printf("\noriginal edge %d with verts\n", EN_id(edge));
+        for(int j=1; j>=0; --j) {
+          printf(" %d ", EN_id(E_vertex(edge,j)));
+        }
+        printf("\nis matched to edge %d with verts\n", EN_id(match));
+        for(int j=1; j>=0; --j) {
+          printf(" %d ", EN_id(E_vertex(match,j)));
+        }
         ent_matches[1].push_back(EN_id(match));
         ent_match_classId[1].push_back(classId(match));
         ++count_matches;
+        ++count_matched;
         if (count_matches > 1) Omega_h_fail("Error:matches per entity > 1\n");
       }
       else if (PList_size(matches)==1) {
-      //else {
         ent_matches[1].push_back(-1);
         ent_match_classId[1].push_back(-1);
       }
@@ -139,12 +162,14 @@ void read_internal(pParMesh sm, Mesh* mesh) {
     PList_delete(matches);
   }
   EIter_delete(edges);
+  printf("\nmatched edges=%d \n", count_matched);
   //get the ids of vertices bounding each face
   const int numFaces = M_numFaces(m);
   ent_nodes[2].reserve(numFaces*3);
   ent_class_ids[2].reserve(numFaces);
   FIter faces = M_faceIter(m);
   pFace face;
+  count_matched = 0;
   while ((face = (pFace) FIter_next(faces))) {
     pPList verts = F_vertices(face,1);
     assert(PList_size(verts) == 3);
@@ -160,14 +185,30 @@ void read_internal(pParMesh sm, Mesh* mesh) {
     count_matches = 0;
     while((match = (pFace)PList_next(matches, &iterM))) {
       if ((PList_size(matches)>1) && (EN_id(match) != EN_id(face))) {
-      //if (EN_id(match) != EN_id(face)) {
+
+        printf("original face %d with verts\n", EN_id(face));
+        pPList vertsP1 = F_vertices(face, 1);
+        void *iterP1 = 0; // must initialize to 0
+        while((vtx = (pVertex)PList_next(vertsP1, &iterP1)))
+        printf(" %d ", EN_id(vtx));
+        PList_delete(vertsP1);
+        printf("\nis matched to face %d with verts\n", EN_id(match));
+        pPList vertsP2 = F_vertices(match, 1);
+        void *iterP2 = 0; // must initialize to 0
+        while((vtx = (pVertex)PList_next(vertsP2, &iterP2)))
+        printf(" %d ", EN_id(vtx));
+        PList_delete(verts);
+        printf("\n");
+        //note: if face (a,b,c) matched with (d,e,f) not necessarily
+        //mean that a<->d,... Verts may be matched in any order
+
         ent_matches[2].push_back(EN_id(match));
         ent_match_classId[2].push_back(classId(match));
         ++count_matches;
+        ++count_matched;
         if (count_matches > 1) Omega_h_fail("Error:matches per entity > 1\n");
       }
       else if (PList_size(matches)==1) {
-      //else {
         ent_matches[2].push_back(-1);
         ent_match_classId[2].push_back(-1);
       }
@@ -175,12 +216,24 @@ void read_internal(pParMesh sm, Mesh* mesh) {
     PList_delete(matches);
   }
   FIter_delete(faces);
+  printf("matched faces=%d \n", count_matched);
   //get the ids of vertices bounding each region
   const int numRegions = M_numRegions(m);
   ent_nodes[3].reserve(numRegions*4);
   ent_class_ids[3].reserve(numRegions);
   regions = M_regionIter(m);
   while ((rgn = (pRegion) RIter_next(regions))) {
+
+    pPList matches = EN_getMatchingEnts(rgn, 0, 0);
+    void *iterM = 0;
+    pFace match;
+    count_matches = 0;
+    while((match = (pFace)PList_next(matches, &iterM))) {
+      if ((PList_size(matches)>1) && (EN_id(match) != EN_id(rgn)))
+        Omega_h_fail("region matches found\n");
+    }
+    PList_delete(matches);
+
     pPList verts = R_vertices(rgn,1);
     assert(PList_size(verts) == 4);
     void *iter = 0; // must initialize to 0
@@ -228,7 +281,13 @@ void read_internal(pParMesh sm, Mesh* mesh) {
     mesh->add_tag(ent_dim, "matches", 1, matches);
     mesh->add_tag(ent_dim, "match_classId", 1, match_classId);
   }
-  //
+  //test o/p
+  auto vert_matches = mesh->get_array<LO>(0, "matches");
+  auto edge_matches = mesh->get_array<LO>(1, "matches");
+  auto face_matches = mesh->get_array<LO>(2, "matches");
+  call_print(vert_matches);
+  call_print(edge_matches);
+  call_print(face_matches);
 }
 
 }  // end anonymous namespace
@@ -240,11 +299,8 @@ Mesh read(filesystem::path const& mesh_fname, filesystem::path const& mdl_fname,
   Sim_readLicenseFile(NULL);
   pNativeModel nm = NULL;
   pProgress p = NULL;
-    printf("ok0\n");
   pGModel g = GM_load(mdl_fname.c_str(), nm, p);
-    printf("ok1\n");
   pParMesh sm = PM_load(mesh_fname.c_str(), g, p);
-    printf("ok2\n");
   auto mesh = Mesh(comm->library());
   meshsim::read_internal(sm, &mesh);
   M_release(sm);
