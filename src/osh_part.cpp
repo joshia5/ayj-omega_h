@@ -4,6 +4,32 @@
 #include <Omega_h_library.hpp>
 #include <Omega_h_timer.hpp>
 
+#include <Omega_h_for.hpp>
+
+using namespace Omega_h;
+
+void print_owners(Remotes owners, int rank) {
+  printf("\n");
+  auto ranks = owners.ranks;
+  auto idxs = owners.idxs;
+  auto ranks_w = Write<LO> (ranks.size());
+  auto idxs_w = Write<LO> (idxs.size());
+  auto r2w = OMEGA_H_LAMBDA(LO i) {
+    ranks_w[i] = ranks[i];
+    idxs_w[i] = idxs[i];
+  };
+  parallel_for(idxs.size(), r2w);
+  auto ranks_host = HostWrite<LO>(ranks_w);
+  auto idxs_host = HostWrite<LO>(idxs_w);
+  printf("On rank %d\n", rank);
+  for (int i=0; i<idxs_host.size(); ++i) {
+    printf("owner of %d, is on rank %d, with LId %d\n", i, ranks_host[i], idxs_host[i]);
+  };  
+  printf("\n");
+  printf("\n");
+  return;
+}
+
 int main(int argc, char** argv) {
   auto lib = Omega_h::Library(&argc, &argv);
   auto world = lib.world();
@@ -52,6 +78,31 @@ int main(int argc, char** argv) {
           "partitioning to a smaller part count not yet implemented\n");
     }
   }
+
+  if (!world->rank()) {
+    auto owners = mesh.ask_owners(0);
+    printf("originalowners are:\n");
+
+    auto idxs = owners.idxs;
+    auto idxs_w = Write<LO> (idxs.size());
+    auto r2w = OMEGA_H_LAMBDA(LO i) {
+      if ((i==2)||(i==3)||(i==6)) {
+        idxs_w[2] = 1;
+        idxs_w[3] = 0;
+        idxs_w[6] = 4;
+      }
+      else {
+        idxs_w[i] = idxs[i];
+      }
+    }; 
+    parallel_for(idxs.size(), r2w, "r2w");
+
+    mesh.set_owners(0, Remotes(owners.ranks, read(idxs_w)));
+    auto new_owners = mesh.ask_owners(0);
+    printf("matched owners are:\n");
+  }
+  world->barrier();
+
   if (is_in || is_out) mesh.set_comm(comm_out);
   if (is_out) {
     if (nparts_out != nparts_in) mesh.balance();
@@ -64,4 +115,9 @@ int main(int argc, char** argv) {
     std::cout << "repartitioning took " << (t1 - t0) << " seconds\n";
     std::cout << "imbalance is " << imb << "\n";
   }
+
+  auto owners = mesh.ask_owners(0);
+  print_owners(owners, world->rank());
+  world->barrier();
+
 }
