@@ -97,13 +97,17 @@ int main(int argc, char** argv) {
     }; 
     parallel_for(idxs.size(), r2w, "r2w");
 
-    mesh.set_owners(0, Remotes(owners.ranks, read(idxs_w)));
+    //mesh.set_owners(0, Remotes(owners.ranks, read(idxs_w)));
     auto new_owners = mesh.ask_owners(0);
     printf("matched owners are:\n");
   }
   world->barrier();
 
   if (is_in || is_out) mesh.set_comm(comm_out);
+
+  int waiting=1;
+  while(waiting);
+
   if (is_out) {
     if (nparts_out != nparts_in) mesh.balance();
     Omega_h::binary::write(path_out, &mesh);

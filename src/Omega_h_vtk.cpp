@@ -585,7 +585,9 @@ static void write_locals(
 static void write_owners(
     std::ostream& stream, Mesh* mesh, Int ent_dim, bool compress) {
   if (mesh->comm()->size() == 1) return;
-  write_array(stream, "owner", 1, mesh->ask_owners(ent_dim).ranks, compress);
+  write_array(stream, "owners", 1, mesh->ask_owners(ent_dim).ranks, compress);
+  //write_array(stream, "owner_ranks", 1, mesh->ask_owners(ent_dim).ranks, compress);
+  //write_array(stream, "owner_ids", 1, mesh->ask_owners(ent_dim).idxs, compress);
 }
 
 static void write_vtk_ghost_types(
