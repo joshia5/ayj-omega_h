@@ -42,7 +42,6 @@ int classId(pEntity e) {
 
 int classType(pEntity e) {
   pGEntity g = EN_whatIn(e);
-  //gType t = EN_whatInType(e);
   assert(g);
   return GEN_type(g);
 }
@@ -61,7 +60,6 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     Omega_h_fail("There were no Elements of dimension higher than zero!\n");
   }
 
-  //get the types of elements
   Omega_h_Family family = OMEGA_H_SIMPLEX;
   RIter regions = M_regionIter(m);
   pRegion rgn;
@@ -76,24 +74,12 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
   std::vector<int> ent_class_ids[4];
   std::vector<int> ent_matches[3];
   std::vector<int> ent_match_classId[3];
-  //write vertex coords into node_coords and
-  //  write vertex ids into ent_nodes
   const int numVtx = M_numVertices(m);
   ent_nodes[0].reserve(numVtx);
   ent_class_ids[0].reserve(numVtx);
   ent_matches[0].reserve(numVtx);
   ent_match_classId[0].reserve(numVtx);
   HostWrite<Real> host_coords(numVtx*max_dim);
-
-  //to get model matches
-  auto g_numVtx = GM_numVertices(g);
-  auto g_numEdge = GM_numEdges(g);
-  auto g_numFace = GM_numFaces(g);
-  auto g_numRgn = GM_numRegions(g);
-  std::vector<int> model_matches[3];
-  model_matches[0].reserve(g_numVtx);
-  model_matches[2].reserve(g_numFace);
-  //
 
   VIter vertices = M_vertexIter(m);
   pVertex vtx;
@@ -119,9 +105,6 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     count_matches = 0;
     while(match = (pVertex)PList_next(matches, &iterM)) {
       if ((PList_size(matches)>1) && (EN_id(match) != EN_id(vtx))) {
-/*
-        printf("vtx %d classified on %d of type %d is a match to vtx %d classified on %d of type %d\n", EN_id(match), classId(match), classType(match), EN_id(vtx), classId(vtx), classType(vtx));
-*/
         ent_matches[0].push_back(EN_id(match));
         ent_match_classId[0].push_back(classId(match));
         ++count_matches;
@@ -131,19 +114,23 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
       else if (PList_size(matches)==1) {
         ent_matches[0].push_back(-1);
         ent_match_classId[0].push_back(-1);
-        //this '-1' has been put in for tag visualization.might not need if
-        //we use CSR
       }
     }
     PList_delete(matches);
-    //incase of count_matches>1 will need to comeup with different data
-    //structure to store matches of variable size. One idea is to use CSR
   }
   VIter_delete(vertices);
-  //printf("matched verts=%d \n", count_matched);
+
+  //to get model matches
+  auto g_numVtx = GM_numVertices(g);
+  auto g_numEdge = GM_numEdges(g);
+  auto g_numFace = GM_numFaces(g);
+  auto g_numRgn = GM_numRegions(g);
+  std::vector<int> model_matches[3];
+  std::vector<int> model_ents[3];
 
   //for matched model verts
   model_matches[0].reserve(g_numVtx);
+  model_ents[0].reserve(g_numVtx);
   GVIter g_verts = GM_vertexIter(g);
   pGVertex g_vert;
   while (g_vert = (pGVertex) GVIter_next(g_verts)) {
@@ -163,14 +150,16 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
       PList_delete(matches);
     }
     VIter_delete(verts);
-    printf("%d\n", match_gEnt);
     model_matches[0].push_back(match_gEnt);
+    model_ents[0].push_back(GEN_tag(g_vert));
+    printf("id=%d, match=%d\n", GEN_tag(g_vert), match_gEnt);
   }
   GVIter_delete(g_verts);
 
   printf("now for edges\n");  
   //for matched model edges
   model_matches[1].reserve(g_numEdge);
+  model_ents[1].reserve(g_numEdge);
   GEIter g_edges = GM_edgeIter(g);
   pGEdge g_edge;
   while (g_edge = (pGEdge) GEIter_next(g_edges)) {
@@ -190,14 +179,16 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
       PList_delete(matches);
     }
     EIter_delete(edges);
-    printf("%d\n", match_gEnt);
     model_matches[1].push_back(match_gEnt);
+    model_ents[1].push_back(GEN_tag(g_edge));
+    printf("id=%d, match=%d\n", GEN_tag(g_edge), match_gEnt);
   }
   GEIter_delete(g_edges);
 
   printf("now for faces\n");  
   //for matched model faces
   model_matches[2].reserve(g_numFace);
+  model_ents[2].reserve(g_numFace);
   GFIter g_faces = GM_faceIter(g);
   pGFace g_face;
   while (g_face = (pGFace) GFIter_next(g_faces)) {
@@ -217,13 +208,13 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
       PList_delete(matches);
     }
     FIter_delete(faces);
-    printf("%d\n", match_gEnt);
     model_matches[2].push_back(match_gEnt);
+    model_ents[2].push_back(GEN_tag(g_face));
+    printf("id=%d, match=%d\n", GEN_tag(g_face), match_gEnt);
   }
   GFIter_delete(g_faces);
   //
 
-  //get the ids of vertices bounding each edge
   const int numEdges = M_numEdges(m);
   ent_nodes[1].reserve(numEdges*2);
   ent_class_ids[1].reserve(numEdges);
@@ -243,10 +234,6 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     count_matches = 0;
     while (match = (pEdge)PList_next(matches, &iterM)) {
       if ((PList_size(matches)>1) && (EN_id(match) != EN_id(edge))) {
-/*
-        printf("\noriginal edge %d classified on %d of type %d\n", EN_id(edge), classId(edge), classType(edge));
-        printf("    is matched to edge %d classified on %d of type %d\n ", EN_id(match), classId(match), classType(match));
-*/
         ent_matches[1].push_back(EN_id(match));
         ent_match_classId[1].push_back(classId(match));
         ++count_matches;
@@ -261,8 +248,6 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     PList_delete(matches);
   }
   EIter_delete(edges);
-  //printf("\nmatched edges=%d \n", count_matched);
-  //get the ids of vertices bounding each face
   const int numFaces = M_numFaces(m);
   ent_nodes[2].reserve(numFaces*3);
   ent_class_ids[2].reserve(numFaces);
@@ -285,21 +270,19 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     while(match = (pFace)PList_next(matches, &iterM)) {
       if ((PList_size(matches)>1) && (EN_id(match) != EN_id(face))) {
 
-        printf("original face %d with verts\n", EN_id(face));
+        //printf("original face %d with verts\n", EN_id(face));
         pPList vertsP1 = F_vertices(face, 1);
         void *iterP1 = 0; // must initialize to 0
         while(vtx = (pVertex)PList_next(vertsP1, &iterP1))
-          printf(" %d ", EN_id(vtx));
+          //printf(" %d ", EN_id(vtx));
         PList_delete(vertsP1);
-        printf("\n    is matched to face %d with verts ", EN_id(match));
+        //printf("\n    is matched to face %d with verts ", EN_id(match));
         pPList vertsP2 = F_vertices(match, 1);
         void *iterP2 = 0; // must initialize to 0
         while(vtx = (pVertex)PList_next(vertsP2, &iterP2))
-          printf(" %d ", EN_id(vtx));
+          //printf(" %d ", EN_id(vtx));
         PList_delete(verts);
-        printf("\n");
-        //note: if face (a,b,c) matched with (d,e,f) not necessarily
-        //mean that a<->d,... Verts may be matched in any order
+        //printf("\n");
 
         ent_matches[2].push_back(EN_id(match));
         ent_match_classId[2].push_back(classId(match));
@@ -315,8 +298,6 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     PList_delete(matches);
   }
   FIter_delete(faces);
-  //printf("matched faces=%d \n", count_matched);
-  //get the ids of vertices bounding each region
   const int numRegions = M_numRegions(m);
   ent_nodes[3].reserve(numRegions*4);
   ent_class_ids[3].reserve(numRegions);
@@ -342,7 +323,6 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     ent_class_ids[3].push_back(classId(rgn));
   }
   RIter_delete(regions);
-  //flatten the ent_nodes and ent_class_ids arrays
   for (Int ent_dim = max_dim; ent_dim >= 0; --ent_dim) {
     Int neev = element_degree(family, ent_dim, VERT);
     LO ndim_ents = static_cast<LO>(ent_nodes[ent_dim].size()) / neev;
@@ -380,13 +360,9 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     mesh->add_tag(ent_dim, "matches", 1, matches);
     mesh->add_tag(ent_dim, "match_classId", 1, match_classId);
   }
-  //test o/p
   auto vert_matches = mesh->get_array<LO>(0, "matches");
   auto edge_matches = mesh->get_array<LO>(1, "matches");
   auto face_matches = mesh->get_array<LO>(2, "matches");
-  //call_print(vert_matches);
-  //call_print(edge_matches);
-  //call_print(face_matches);
 }
 
 }  // end anonymous namespace
