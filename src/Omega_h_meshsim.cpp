@@ -12,6 +12,8 @@
 #include "SimModel.h"
 #include "SimUtil.h"
 
+#include <fstream>
+
 namespace Omega_h {
 
 namespace meshsim {
@@ -128,6 +130,11 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
   std::vector<int> model_matches[3];
   std::vector<int> model_ents[3];
 
+  char filename[200];
+  sprintf(filename, "model_matches.csv");
+  std::ofstream in_str(filename);
+  in_str << "id" << ",match" << ",dim\n";
+
   //for matched model verts
   model_matches[0].reserve(g_numVtx);
   model_ents[0].reserve(g_numVtx);
@@ -152,11 +159,10 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     VIter_delete(verts);
     model_matches[0].push_back(match_gEnt);
     model_ents[0].push_back(GEN_tag(g_vert));
-    printf("id=%d, match=%d\n", GEN_tag(g_vert), match_gEnt);
+    in_str << GEN_tag(g_vert) << "," << match_gEnt << "," << GEN_type(g_vert) << "\n";
   }
   GVIter_delete(g_verts);
 
-  printf("now for edges\n");  
   //for matched model edges
   model_matches[1].reserve(g_numEdge);
   model_ents[1].reserve(g_numEdge);
@@ -181,11 +187,10 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     EIter_delete(edges);
     model_matches[1].push_back(match_gEnt);
     model_ents[1].push_back(GEN_tag(g_edge));
-    printf("id=%d, match=%d\n", GEN_tag(g_edge), match_gEnt);
+    in_str << GEN_tag(g_edge) << "," << match_gEnt << "," << GEN_type(g_edge) << "\n";
   }
   GEIter_delete(g_edges);
 
-  printf("now for faces\n");  
   //for matched model faces
   model_matches[2].reserve(g_numFace);
   model_ents[2].reserve(g_numFace);
@@ -210,7 +215,7 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     FIter_delete(faces);
     model_matches[2].push_back(match_gEnt);
     model_ents[2].push_back(GEN_tag(g_face));
-    printf("id=%d, match=%d\n", GEN_tag(g_face), match_gEnt);
+    in_str << GEN_tag(g_face) << "," << match_gEnt << "," << GEN_type(g_face) << "\n";
   }
   GFIter_delete(g_faces);
   //
