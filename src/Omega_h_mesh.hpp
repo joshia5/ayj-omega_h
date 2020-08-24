@@ -170,8 +170,15 @@ class Mesh {
   ParentPtr parents_[DIMS];
   ChildrenPtr children_[DIMS][DIMS];
   Library* library_;
+  //for model
+  LOs model_ents_[DIMS];
+  LOs model_matches_[DIMS-1];
 
  public:
+  void set_model_ents(Int ent_dim, LOs Ids); 
+  void set_model_matches(Int ent_dim, LOs matches); 
+  LOs ask_model_ents(Int ent_dim); 
+  LOs ask_model_matches(Int ent_dim); 
   void add_coords(Reals array);
   Reals coords() const;
   void set_coords(Reals const& array);

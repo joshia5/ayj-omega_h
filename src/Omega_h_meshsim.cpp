@@ -127,6 +127,7 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
   auto g_numEdge = GM_numEdges(g);
   auto g_numFace = GM_numFaces(g);
   auto g_numRgn = GM_numRegions(g);
+  int const g_numEnt[4] = {g_numVtx, g_numEdge, g_numFace, g_numRgn};
   std::vector<int> model_matches[3];
   std::vector<int> model_ents[3];
 
@@ -218,7 +219,6 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     in_str << GEN_tag(g_face) << "," << match_gEnt << "," << GEN_type(g_face) << "\n";
   }
   GFIter_delete(g_faces);
-  //
 
   const int numEdges = M_numEdges(m);
   ent_nodes[1].reserve(numEdges*2);
@@ -368,6 +368,26 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
   auto vert_matches = mesh->get_array<LO>(0, "matches");
   auto edge_matches = mesh->get_array<LO>(1, "matches");
   auto face_matches = mesh->get_array<LO>(2, "matches");
+
+  //add model matches info to mesh
+  for (Int ent_dim=0; ent_dim<max_dim; ++ent_dim) {
+    HostWrite<LO> host_model_ids(g_numEnt[ent_dim]);
+    HostWrite<LO> host_model_matches(g_numEnt[ent_dim]);
+    for (i = 0; i < g_numEnt[ent_dim]; ++i) {
+      host_model_ids[i] = model_ents[ent_dim][static_cast<std::size_t>(i)];
+      host_model_matches[i] = model_matches[ent_dim][static_cast<std::size_t>(i)];
+    }
+    auto model_ids = Read<LO>(host_model_ids.write());
+    auto model_match = Read<LO>(host_model_matches.write());
+    mesh->set_model_ents(ent_dim, model_ids);
+    mesh->set_model_matches(ent_dim, model_match);
+    auto return_model_ents = mesh->ask_model_ents(ent_dim);
+    auto return_model_matches = mesh->ask_model_matches(ent_dim);
+    printf("ent_dim=%d\n", ent_dim);
+    call_print(return_model_ents);
+    call_print(return_model_matches);
+  }
+  //
 }
 
 }  // end anonymous namespace

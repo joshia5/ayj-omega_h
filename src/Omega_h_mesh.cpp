@@ -111,6 +111,30 @@ void Mesh::set_ents(Int ent_dim, Adj down) {
   add_adj(ent_dim, ent_dim - 1, down);
 }
 
+void Mesh::set_model_ents(Int ent_dim, LOs Ids) {
+  OMEGA_H_TIME_FUNCTION;
+  check_dim(ent_dim);
+  model_ents_[ent_dim] = Ids;
+}
+
+void Mesh::set_model_matches(Int ent_dim, LOs matches) {
+  OMEGA_H_TIME_FUNCTION;
+  check_dim(ent_dim+1);
+  model_matches_[ent_dim] = matches;
+}
+
+LOs Mesh::ask_model_ents(Int ent_dim) {
+  OMEGA_H_TIME_FUNCTION;
+  check_dim(ent_dim);
+  return model_ents_[ent_dim];
+}
+
+LOs Mesh::ask_model_matches(Int ent_dim) {
+  OMEGA_H_TIME_FUNCTION;
+  check_dim(ent_dim);
+  return model_matches_[ent_dim];
+}
+
 void Mesh::set_ents(Topo_type high_type, Topo_type low_type, Adj h2l) {
   OMEGA_H_TIME_FUNCTION;
   check_type(high_type);
