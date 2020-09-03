@@ -20,6 +20,28 @@ namespace meshsim {
 
 namespace {
 
+void print_owners(Remotes owners, int rank) {
+  printf("\n");
+  auto ranks = owners.ranks;
+  auto idxs = owners.idxs;
+  auto ranks_w = Write<LO> (ranks.size());
+  auto idxs_w = Write<LO> (idxs.size());
+  auto r2w = OMEGA_H_LAMBDA(LO i) {
+    ranks_w[i] = ranks[i];
+    idxs_w[i] = idxs[i];
+  };  
+  parallel_for(idxs.size(), r2w);
+  auto ranks_host = HostWrite<LO>(ranks_w);
+  auto idxs_host = HostWrite<LO>(idxs_w);
+  printf("On rank %d\n", rank);
+  for (int i=0; i<idxs_host.size(); ++i) {
+    printf("owner of %d, is on rank %d, with LId %d\n", i, ranks_host[i], idxs_host[i]);
+  };  
+  printf("\n");
+  printf("\n");
+  return;
+}
+
 void call_print(LOs a) {
   printf("\n");
   auto a_w = Write<LO> (a.size());
@@ -76,10 +98,12 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
   std::vector<int> ent_class_ids[4];
   std::vector<int> ent_matches[3];
   std::vector<int> ent_match_classId[3];
+  std::vector<int> ent_owners[3];
   const int numVtx = M_numVertices(m);
   ent_nodes[0].reserve(numVtx);
   ent_class_ids[0].reserve(numVtx);
   ent_matches[0].reserve(numVtx);
+  ent_owners[0].reserve(numVtx);
   ent_match_classId[0].reserve(numVtx);
   HostWrite<Real> host_coords(numVtx*max_dim);
 
@@ -112,10 +136,18 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
         ++count_matches;
         ++count_matched;
         if (count_matches > 1) Omega_h_fail("Error:matches per entity > 1\n");
+        if (EN_id(match) < EN_id(vtx)) {
+          ent_owners[0].push_back(EN_id(match));
+          //ent with lower global id become owners
+        }
+        else {
+          ent_owners[0].push_back(EN_id(vtx));
+        }
       }
       else if (PList_size(matches)==1) {
         ent_matches[0].push_back(-1);
         ent_match_classId[0].push_back(-1);
+        ent_owners[0].push_back(EN_id(vtx));
       }
     }
     PList_delete(matches);
@@ -223,6 +255,7 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
   const int numEdges = M_numEdges(m);
   ent_nodes[1].reserve(numEdges*2);
   ent_class_ids[1].reserve(numEdges);
+  ent_owners[1].reserve(numEdges);
   EIter edges = M_edgeIter(m);
   pEdge edge;
   count_matched = 0;
@@ -244,10 +277,17 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
         ++count_matches;
         ++count_matched;
         if (count_matches > 1) Omega_h_fail("Error:matches per entity > 1\n");
+        if (EN_id(match) < EN_id(edge)) {
+          ent_owners[1].push_back(EN_id(match));
+        }
+        else {
+          ent_owners[1].push_back(EN_id(edge));
+        }
       }
       else if (PList_size(matches)==1) {
         ent_matches[1].push_back(-1);
         ent_match_classId[1].push_back(-1);
+        ent_owners[1].push_back(EN_id(edge));
       }
     }
     PList_delete(matches);
@@ -256,6 +296,7 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
   const int numFaces = M_numFaces(m);
   ent_nodes[2].reserve(numFaces*3);
   ent_class_ids[2].reserve(numFaces);
+  ent_owners[2].reserve(numFaces);
   FIter faces = M_faceIter(m);
   pFace face;
   count_matched = 0;
@@ -294,10 +335,17 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
         ++count_matches;
         ++count_matched;
         if (count_matches > 1) Omega_h_fail("Error:matches per entity > 1\n");
+        if (EN_id(match) < EN_id(face)) {
+          ent_owners[2].push_back(EN_id(match));
+        }
+        else {
+          ent_owners[2].push_back(EN_id(face));
+        }
       }
       else if (PList_size(matches)==1) {
         ent_matches[2].push_back(-1);
         ent_match_classId[2].push_back(-1);
+        ent_owners[2].push_back(EN_id(face));
       }
     }
     PList_delete(matches);
@@ -349,25 +397,33 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
   }
   finalize_classification(mesh);
 
-  //add matches info to mesh
+  //add matches and owners info to mesh
   for (Int ent_dim = 0; ent_dim < 3; ++ent_dim) {
     Int neev = element_degree(family, ent_dim, VERT);
     LO ndim_ents = static_cast<LO>(ent_nodes[ent_dim].size())/neev;
     HostWrite<LO> host_matches(ndim_ents);
     HostWrite<LO> host_match_classId(ndim_ents);
+    HostWrite<LO> host_owners(ndim_ents);
     for (i = 0; i < ndim_ents; ++i) {
       host_matches[i] = ent_matches[ent_dim][static_cast<std::size_t>(i)];
       host_match_classId[i] = ent_match_classId[ent_dim][static_cast<std::size_t>(i)];
       //how to store when multiple matches on different parts in parallel?
+      host_owners[i] = ent_owners[ent_dim][static_cast<std::size_t>(i)];
     }
     auto matches = Read<LO>(host_matches.write());
     auto match_classId = Read<LO>(host_match_classId.write());
+    auto owners = Read<LO>(host_owners.write());
+    auto ranks = LOs(ndim_ents, 0);//serial mesh
     mesh->add_tag(ent_dim, "matches", 1, matches);
     mesh->add_tag(ent_dim, "match_classId", 1, match_classId);
+    mesh->set_owners(ent_dim, Remotes(ranks, owners));
   }
-  auto vert_matches = mesh->get_array<LO>(0, "matches");
-  auto edge_matches = mesh->get_array<LO>(1, "matches");
-  auto face_matches = mesh->get_array<LO>(2, "matches");
+  //auto vert_matches = mesh->get_array<LO>(0, "matches");
+  //auto edge_matches = mesh->get_array<LO>(1, "matches");
+  //auto face_matches = mesh->get_array<LO>(2, "matches");
+  print_owners(mesh->ask_owners(0), 0);
+  print_owners(mesh->ask_owners(1), 0);
+  print_owners(mesh->ask_owners(2), 0);
 
   //add model matches info to mesh
   for (Int ent_dim=0; ent_dim<max_dim; ++ent_dim) {
@@ -383,9 +439,9 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     mesh->set_model_matches(ent_dim, model_match);
     auto return_model_ents = mesh->ask_model_ents(ent_dim);
     auto return_model_matches = mesh->ask_model_matches(ent_dim);
-    printf("ent_dim=%d\n", ent_dim);
-    call_print(return_model_ents);
-    call_print(return_model_matches);
+    //printf("ent_dim=%d\n", ent_dim);
+    //call_print(return_model_ents);
+    //call_print(return_model_matches);
   }
   //
 }
