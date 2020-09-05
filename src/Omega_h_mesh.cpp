@@ -823,6 +823,7 @@ Read<I8> Mesh::owned(Int ent_dim) {
 
 Dist Mesh::ask_dist(Int ent_dim) {
   if (!dists_[ent_dim]) {
+    printf("in askDist dist n.a.\n");
     auto owners = ask_owners(ent_dim);
     OMEGA_H_CHECK(owners.ranks.exists());
     OMEGA_H_CHECK(owners.idxs.exists());
@@ -911,6 +912,7 @@ void Mesh::balance(bool predictive) {
   }
   abs_tol *= 2.0;  // fudge factor ?
   auto owners = ask_owners(dim());
+  printf("ok ask owners\n");
   recursively_bisect(comm(), abs_tol, &ecoords, &masses, &owners, &hints);
   rib_hints_ = std::make_shared<inertia::Rib>(hints);
   auto unsorted_new2owners = Dist(comm_, owners, nelems());

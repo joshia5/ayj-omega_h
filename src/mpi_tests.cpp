@@ -24,11 +24,13 @@ static void test_one_rank(CommPtr comm) {
     Dist dist;
     dist.set_parent_comm(comm);
     dist.set_dest_ranks(Read<I32>({0, 0, 0, 0}));
-    dist.set_dest_idxs(LOs({3, 2, 1, 0}), 4);
+    dist.set_dest_idxs(LOs({2, 3, 1, 0}), 4);
+    //dist.set_dest_idxs(LOs({3, 2, 1, 0}), 4);
     Read<GO> a({0, 1, 2, 3});
     {
       auto b = dist.exch(a, 1);
-      OMEGA_H_CHECK(b == Read<GO>({3, 2, 1, 0}));
+      OMEGA_H_CHECK(b == Read<GO>({3, 2, 0, 1}));
+      //OMEGA_H_CHECK(b == Read<GO>({3, 2, 1, 0}));
     }
   }
   {
@@ -333,7 +335,7 @@ static void test_construct(Library* lib, CommPtr comm) {
     OMEGA_H_CHECK(owners.idxs == Read<LO>({0, 2, 2}));
   }
 }
-
+/*
 static void test_read_vtu(Library* lib, CommPtr comm) {
   auto mesh0 = build_box(comm, OMEGA_H_SIMPLEX, 1., 1., 0., 1, 1, 0);
   std::stringstream stream;
@@ -345,7 +347,7 @@ static void test_read_vtu(Library* lib, CommPtr comm) {
   OMEGA_H_CHECK(
       OMEGA_H_SAME == compare_meshes(&mesh0, &mesh1, opts, true, false));
 }
-
+*/
 static void test_binary_io(Library* lib, CommPtr comm) {
   auto mesh0 = build_box(comm, OMEGA_H_SIMPLEX, 1., 1., 0., 4, 4, 0);
   mesh0.set_parting(OMEGA_H_ELEM_BASED);
@@ -372,7 +374,7 @@ static void test_two_ranks(Library* lib, CommPtr comm) {
   test_two_ranks_exch_sum(comm);
   test_resolve_derived(comm);
   test_construct(lib, comm);
-  test_read_vtu(lib, comm);
+  //test_read_vtu(lib, comm);
   test_binary_io(lib, comm);
 }
 

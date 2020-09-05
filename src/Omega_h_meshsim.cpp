@@ -442,6 +442,7 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     //printf("ent_dim=%d\n", ent_dim);
     //call_print(return_model_ents);
     //call_print(return_model_matches);
+    mesh->balance();
   }
   //
 }

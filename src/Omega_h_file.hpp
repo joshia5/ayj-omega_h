@@ -189,6 +189,9 @@ void read(std::istream& stream, std::string& val, bool needs_swapping);
 void write(std::ostream& stream, Mesh* mesh);
 void read(std::istream& stream, Mesh* mesh, I32 version);
 
+void write_model(filesystem::path const& path, Mesh* mesh);
+void read_model(filesystem::path const& path, Mesh* mesh);
+
 #define INST_DECL(T)                                                           \
   extern template void swap_bytes(T&);                                         \
   extern template Read<T> swap_bytes(Read<T> array, bool needs_swapping);      \
