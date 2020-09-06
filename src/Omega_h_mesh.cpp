@@ -18,6 +18,8 @@
 #include "Omega_h_shape.hpp"
 #include "Omega_h_timer.hpp"
 
+#include "Omega_h_file.hpp"
+
 namespace Omega_h {
 
 Mesh::Mesh() {
@@ -912,7 +914,6 @@ void Mesh::balance(bool predictive) {
   }
   abs_tol *= 2.0;  // fudge factor ?
   auto owners = ask_owners(dim());
-  printf("ok ask owners\n");
   recursively_bisect(comm(), abs_tol, &ecoords, &masses, &owners, &hints);
   rib_hints_ = std::make_shared<inertia::Rib>(hints);
   auto unsorted_new2owners = Dist(comm_, owners, nelems());
@@ -921,6 +922,9 @@ void Mesh::balance(bool predictive) {
   owners2new.set_dest_globals(owner_globals);
   auto sorted_new2owners = owners2new.invert();
   migrate_mesh(this, sorted_new2owners, OMEGA_H_ELEM_BASED, false);
+  printf("post migration\n");
+  auto new_owners = this-> ask_owners(0);
+  Omega_h::meshsim::print_owners(new_owners, comm_->rank());
 }
 
 Graph Mesh::ask_graph(Int from, Int to) {

@@ -443,7 +443,7 @@ void read_model(filesystem::path const& path, Mesh* mesh) {
   filepath /= std::to_string(mesh->comm()->rank());
   filepath += ".osh";
   std::ifstream stream(filepath.c_str(), std::ios::binary);
-  puts(filepath.c_str());
+  //puts(filepath.c_str());
   OMEGA_H_CHECK(stream.is_open());
 /*
   unsigned char magic_in[2];
@@ -459,7 +459,7 @@ void read_model(filesystem::path const& path, Mesh* mesh) {
 #endif
 
   for (Int d = 0; d < mesh->dim(); ++d) {
-    printf("ok %d\n", d);
+    //printf("ok %d\n", d);
     LOs model_ents;
     LOs model_matches;
     read_array(stream, model_ents, is_compressed, needs_swapping);

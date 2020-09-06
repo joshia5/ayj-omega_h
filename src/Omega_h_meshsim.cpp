@@ -18,7 +18,7 @@ namespace Omega_h {
 
 namespace meshsim {
 
-namespace {
+//namespace {
 
 void print_owners(Remotes owners, int rank) {
   printf("\n");
@@ -442,12 +442,12 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     //printf("ent_dim=%d\n", ent_dim);
     //call_print(return_model_ents);
     //call_print(return_model_matches);
-    mesh->balance();
+    //mesh->balance();
   }
   //
 }
 
-}  // end anonymous namespace
+//}  // end anonymous namespace
 
 Mesh read(filesystem::path const& mesh_fname, filesystem::path const& mdl_fname,
     CommPtr comm) {

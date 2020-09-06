@@ -34,6 +34,7 @@ namespace meshsim {
 Mesh read(filesystem::path const& mesh, filesystem::path const& model,
     CommPtr comm);
 void call_print(LOs a);
+void print_owners(Remotes owners, int rank);
 }  // namespace meshsim
 #endif
 
