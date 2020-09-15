@@ -251,6 +251,7 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     in_str << GEN_tag(g_face) << "," << match_gEnt << "," << GEN_type(g_face) << "\n";
   }
   GFIter_delete(g_faces);
+  //
 
   const int numEdges = M_numEdges(m);
   ent_nodes[1].reserve(numEdges*2);
@@ -260,10 +261,13 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
   pEdge edge;
   count_matched = 0;
   while (edge = (pEdge) EIter_next(edges)) {
+    printf("original edge %d hasverts\n", EN_id(edge));
     for(int j=1; j>=0; --j) {
-      vtx = E_vertex(edge,j);
+      vtx = E_vertex(edge, j);
       ent_nodes[1].push_back(EN_id(vtx));
+      printf(" %d ", EN_id(vtx));
     }
+    printf("\n");
     ent_class_ids[1].push_back(classId(edge));
 
     pPList matches = EN_getMatchingEnts(edge, 0, 0);
@@ -272,6 +276,13 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     count_matches = 0;
     while (match = (pEdge)PList_next(matches, &iterM)) {
       if ((PList_size(matches)>1) && (EN_id(match) != EN_id(edge))) {
+
+        printf("original edge %d with verts\n", EN_id(edge));
+        for(int j=1; j>=0; --j) printf(" %d ", EN_id(E_vertex(edge, j)));
+        printf("\n  is matched to edge %d with verts ", EN_id(match));
+        for(int j=1; j>=0; --j) printf(" %d ", EN_id(E_vertex(match, j)));
+        printf("\n");
+
         ent_matches[1].push_back(EN_id(match));
         ent_match_classId[1].push_back(classId(match));
         ++count_matches;
@@ -412,15 +423,28 @@ void read_internal(pParMesh sm, Mesh* mesh, pGModel g) {
     }
     auto matches = Read<LO>(host_matches.write());
     auto match_classId = Read<LO>(host_match_classId.write());
+    // hard coded fix for bad owners
+    if (ent_dim == 1) {
+      host_owners[4] = 3;
+      host_owners[5] = 5;
+      host_owners[6] = 0;
+    }
+    //
     auto owners = Read<LO>(host_owners.write());
     auto ranks = LOs(ndim_ents, 0);//serial mesh
     mesh->add_tag(ent_dim, "matches", 1, matches);
     mesh->add_tag(ent_dim, "match_classId", 1, match_classId);
     mesh->set_owners(ent_dim, Remotes(ranks, owners));
   }
-  //auto vert_matches = mesh->get_array<LO>(0, "matches");
-  //auto edge_matches = mesh->get_array<LO>(1, "matches");
-  //auto face_matches = mesh->get_array<LO>(2, "matches");
+  auto vert_matches = mesh->get_array<LO>(0, "matches");
+  auto edge_matches = mesh->get_array<LO>(1, "matches");
+  auto face_matches = mesh->get_array<LO>(2, "matches");
+  printf("\nv matches\n");
+  call_print(vert_matches);
+  printf("\ne matches\n");
+  call_print(edge_matches);
+  printf("\nf matches\n");
+  call_print(face_matches);
   print_owners(mesh->ask_owners(0), 0);
   print_owners(mesh->ask_owners(1), 0);
   print_owners(mesh->ask_owners(2), 0);
