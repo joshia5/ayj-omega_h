@@ -220,6 +220,8 @@ class Mesh {
   void set_order(Int order);
   inline I8 is_curved() const { return curved_; }
   inline Int get_order() const { return order_; }
+  Int get_num_internal_ctrlPts(Int edim);
+  void add_tags_for_ctrlPts();
 
  public:
   typedef std::shared_ptr<TagBase> TagPtr;
@@ -343,8 +345,6 @@ class Mesh {
   Read<T> sync_array_matched(Int ent_dim, Read<T> a, Int width);
 
   Adj derive_revClass(Int edim);
-
-  Int get_num_ctrlPts(Int edim);
 
  public:
   ClassSets class_sets;

@@ -81,6 +81,40 @@ void Mesh::set_curved(I8 is_curved) { curved_ = is_curved; }
 
 void Mesh::set_order(Int order) { order_ = order; }
 
+Int Mesh::get_num_internal_ctrlPts(Int edim) {
+  check_dim2(edim);
+  OMEGA_H_CHECK(is_curved());
+  Int order = get_order();
+  OMEGA_H_CHECK(order > 0);
+
+  switch (edim) {
+    case 0: {
+      return 1;
+    }
+    case 1: {
+      return order-1;
+    }
+    case 2: {
+      return (1/2)*(order-1)*(order-2);
+    }
+    case 3: {
+      return (1/6)*(order-1)*(order-2)*(order-3);
+    }
+  }
+
+  return -1;
+}
+
+void Mesh::add_tags_for_ctrlPts() {
+  Int dim = dim_;
+  for (I8 d = 0; d <= dim; ++d) {
+    Int n_pts = get_num_internal_ctrlPts(d);
+    add_tag<Real>(d, "bezier_ctrlPts", n_pts*dim);
+  }
+
+  return;
+}
+
 void Mesh::set_dim(Int dim_in) {
   OMEGA_H_CHECK(dim_ == -1);
   OMEGA_H_CHECK(dim_in >= 1);
