@@ -41,6 +41,8 @@ class Mesh {
   void set_comm(CommPtr const& comm);
   void set_family(Omega_h_Family family);
   void set_matched(I8 is_matched);
+  void set_curved(I8 is_curved);
+  void set_order(Int order);
   void set_dim(Int dim_in);
   void set_verts(LO nverts_in);
   void set_verts_type(LO nverts_in);
@@ -56,6 +58,8 @@ class Mesh {
   }
   inline Omega_h_Family family() const { return family_; }
   inline I8 is_matched() const { return matched_; }
+  inline I8 is_curved() const { return curved_; }
+  inline Int get_order() const { return order_; }
   LO nents(Int ent_dim) const;
   LO nents(Topo_type ent_type) const;
   Int ent_dim(Topo_type ent_type) const;
@@ -244,6 +248,8 @@ class Mesh {
   void react_to_set_tag(Topo_type ent_type, std::string const& name);
   Omega_h_Family family_;
   I8 matched_ = -1;
+  I8 curved_ = -1;
+  Int order_ = -1;
   Int dim_;
   CommPtr comm_;
   Int parting_;

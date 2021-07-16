@@ -30,7 +30,6 @@ Mesh::Mesh() {
   parting_ = -1;
   nghost_layers_ = -1;
   library_ = nullptr;
-  matched_ = -1;
 }
 
 Mesh::Mesh(Library* library_in) : Mesh() { set_library(library_in); }
@@ -77,6 +76,10 @@ void Mesh::set_comm(CommPtr const& new_comm) {
 void Mesh::set_family(Omega_h_Family family_in) { family_ = family_in; }
 
 void Mesh::set_matched(I8 is_matched) { matched_ = is_matched; }
+
+void Mesh::set_curved(I8 is_curved) { curved_ = is_curved; }
+
+void Mesh::set_order(Int order) { order_ = order; }
 
 void Mesh::set_dim(Int dim_in) {
   OMEGA_H_CHECK(dim_ == -1);
