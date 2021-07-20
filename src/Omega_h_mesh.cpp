@@ -109,7 +109,8 @@ void Mesh::add_tags_for_ctrlPts() {
   Int dim = dim_;
   for (I8 d = 0; d <= dim; ++d) {
     Int n_pts = get_num_internal_ctrlPts(d);
-    add_tag<Real>(d, "bezier_ctrlPts", n_pts*dim);
+    add_tag<Real>(d, "bezier_pts", n_pts*dim);
+    add_tag<I8>(d, "n_bezier_pts", 1, Bytes(nents(d), n_pts, "numBezierPts"));
   }
 
   return;
