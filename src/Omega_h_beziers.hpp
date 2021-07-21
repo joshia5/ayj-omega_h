@@ -50,8 +50,8 @@ OMEGA_H_DEVICE Real Bijkl(const int ijkl[], const double xi[]) {
 }
 
 OMEGA_H_DEVICE static void bezierCurve(I8 P, Reals xi, Write<Real> values);
-//OMEGA_H_DEVICE static void bezierTriangle(I8 P, Reals xi, Write<Real> values);
-//OMEGA_H_DEVICE static void bezierTet(I8 P, Reals xi, Write<Real> values);
+OMEGA_H_DEVICE static void bezierTriangle(I8 P, Reals xi, Write<Real> values);
+OMEGA_H_DEVICE static void bezierTet(I8 P, Reals xi, Write<Real> values);
 
 // workaround CUDA compiler bug
 #ifdef OMEGA_H_USE_CUDA
