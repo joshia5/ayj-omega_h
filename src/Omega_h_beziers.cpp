@@ -1,5 +1,6 @@
 #include "Omega_h_mesh.hpp"
 #include "Omega_h_beziers.hpp"
+#include "Omega_h_element.hpp"
 
 namespace Omega_h {
 
@@ -232,8 +233,7 @@ static unsigned const* const* const b3_4[5] =
 unsigned const* const* const* const b3[5] =
 {b3_0,b3_1,b3_2,b3_3,b3_4};
 
-OMEGA_H_DEVICE LO computeTriNodeIndex(int P, int i, int j)
-{
+OMEGA_H_DEVICE LO computeTriNodeIndex(int P, int i, int j) {
   int k = P-i-j;
   if(i == P) return 0;
   if(j == P) return 1;
@@ -244,8 +244,7 @@ OMEGA_H_DEVICE LO computeTriNodeIndex(int P, int i, int j)
   return k*(P-1)-k*(k-1)/2+j+2*P;
 }
 
-OMEGA_H_DEVICE LO computeTetNodeIndex(int P, int i, int j, int k)
-{
+OMEGA_H_DEVICE LO computeTetNodeIndex(int P, int i, int j, int k) {
   int l = P-i-j-k;
   if(i == P) return 0;
   if(j == P) return 1;
@@ -264,8 +263,7 @@ OMEGA_H_DEVICE LO computeTetNodeIndex(int P, int i, int j, int k)
   return i-P-((i-P+1)*(i-P+2)*(i-P+3))/6+l*(P-1-i)-l*(l-1)/2+k+2*P*P+2;
 }
 
-OMEGA_H_DEVICE LO getTriNodeIndex(int P, int i, int j)
-{
+OMEGA_H_DEVICE LO getTriNodeIndex(int P, int i, int j) {
   // use a table if its small, otherwise dynamically generate it on the fly
   if(P <= 10)
     return b2[P][i][j];
@@ -273,8 +271,7 @@ OMEGA_H_DEVICE LO getTriNodeIndex(int P, int i, int j)
     return computeTriNodeIndex(P,i,j);
 }
 
-OMEGA_H_DEVICE LO getTetNodeIndex(int P, int i, int j, int k)
-{
+OMEGA_H_DEVICE LO getTetNodeIndex(int P, int i, int j, int k) {
   if(P <= 4)
     return b3[P][i][j][k];
   else
@@ -290,7 +287,6 @@ OMEGA_H_DEVICE static void bezierCurve(I8 P, Reals xi, Write<Real> values) {
   values[1] = intpow(t, P);
 }
 
-/*
 OMEGA_H_DEVICE static void bezierTriangle(I8 P, Reals xi, Write<Real> values) {
   double xii[3] = {1.0 - xi[0] - xi[1], xi[0], xi[1]};
   for (int i = 0; i < P+1; ++i) {
@@ -309,12 +305,11 @@ OMEGA_H_DEVICE static void bezierTet(I8 P, Reals xi, Write<Real> values) {
 
   int nE = P - 1;
 
-  int const (*tev)[2] = apf::tet_edge_verts;
-
   for (int a = 0; a < 6; ++a) {
     for (int b = 0; b < nE; ++b) { // edge nodes
       values[4+a*nE+b] = binomial(P, b+1)
-        *Bij(P-b-1, b+1, xii[tev[a][0]], xii[tev[a][1]]);
+        *Bij(P-b-1, b+1, xii[simplex_down_template(3, 1, a, 0)],
+             xii[simplex_down_template(3, 1, a, 1)]);
     }
   }
 
@@ -358,7 +353,7 @@ OMEGA_H_DEVICE static void bezierTet(I8 P, Reals xi, Write<Real> values) {
   }
 
 }
-*/
+
 /*
 void bezierCurveGrads(I8 P, Reals xi, Write<Real> grads) {
   double t = 0.5*(xi[0] + 1.);
