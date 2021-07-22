@@ -494,22 +494,24 @@ if(BUILD_TESTING)
   test_func(reverse_class_test 1 ./reverse_class_test 
     ${CMAKE_SOURCE_DIR}/meshes/plate_6elem.osh
     ${CMAKE_SOURCE_DIR}/meshes/unitbox_cutTriCube_1k.osh)
+  osh_add_exe(curve_test)
+  test_func(curve_test 1 ./curve_test 
+    ${CMAKE_SOURCE_DIR}/meshes/Example_tri.osh
+    ${CMAKE_SOURCE_DIR}/meshes/Example_tri.vtk)
+  set(TEST_EXES ${TEST_EXES} curve_test)
   osh_add_exe(rc_field_test)
-  set(TEST_EXES ${TEST_EXES} rc_field_test)
   test_func(rc_field_test 1 ./rc_field_test
     ${CMAKE_SOURCE_DIR}/meshes/plate_6elem.osh
     ${CMAKE_SOURCE_DIR}/meshes/box_3d.osh
     ${CMAKE_SOURCE_DIR}/meshes/box3d_adapt.osh
-    ${CMAKE_SOURCE_DIR}/meshes/plate_6elem.vtu
+    ${CMAKE_SOURCE_DIR}/meshes/plate_6elem.vtk
     ${CMAKE_SOURCE_DIR}/meshes/plate_6elem_bField.osh)
   if(Omega_h_USE_MPI)
     osh_add_exe(reverse_class_testp)
-    set(TEST_EXES ${TEST_EXES} reverse_class_testp)
     test_func(reverse_class_testp 2 ./reverse_class_testp 
       ${CMAKE_SOURCE_DIR}/meshes/box_3d_2p.osh
       ${CMAKE_SOURCE_DIR}/meshes/unitbox_cutTriCube_1k_2p.osh)
     osh_add_exe(rc_field_testp)
-    set(TEST_EXES ${TEST_EXES} rc_field_testp)
     test_func(rc_field_testp 2 ./rc_field_testp
       ${CMAKE_SOURCE_DIR}/meshes/box_3d_2p.osh
       ${CMAKE_SOURCE_DIR}/meshes/box_3d_2p.vtk
