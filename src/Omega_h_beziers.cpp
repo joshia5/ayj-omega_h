@@ -281,14 +281,14 @@ OMEGA_H_DEVICE LO getTetNodeIndex(int P, int i, int j, int k) {
 OMEGA_H_DEVICE static void bezierCurve(I8 P, Reals xi, Write<Real> values) {
   double t = 0.5 * (xi[0] + 1.0);
   for (I8 i = 1; i < P; ++i) {
-    values[i+1] = binomial(P,i) * Bij(P-i, i, 1.-t, t);
+    values[i+1] = binomial(P,i) * Bij(P-i, i, 1.0-t, t);
   }
   values[0] = intpow(1-t, P);
   values[1] = intpow(t, P);
 }
 
 OMEGA_H_DEVICE static void bezierTriangle(I8 P, Reals xi, Write<Real> values) {
-  double xii[3] = {1.0 - xi[0] - xi[1], xi[0], xi[1]};
+  double xii[3] = {1.0-xi[0]-xi[1], xi[0], xi[1]};
   for (int i = 0; i < P+1; ++i) {
     for (int j = 0; j < P+1-i; ++j) {
       values[getTriNodeIndex(P, i, j)] =
@@ -298,7 +298,7 @@ OMEGA_H_DEVICE static void bezierTriangle(I8 P, Reals xi, Write<Real> values) {
 }
 
 OMEGA_H_DEVICE static void bezierTet(I8 P, Reals xi, Write<Real> values) {
-  double xii[4] = {1.0 - xi[0] - xi[1] - xi[2], xi[0], xi[1], xi[2]};
+  double xii[4] = {1.0-xi[0]-xi[1]-xi[2], xi[0], xi[1], xi[2]};
   for (I8 i = 0; i < 4; ++i) {
     values[i] = intpow(xii[i], P);
   }
@@ -353,18 +353,6 @@ OMEGA_H_DEVICE static void bezierTet(I8 P, Reals xi, Write<Real> values) {
   }
 
 }
-
-/*
-void bezierCurveGrads(I8 P, Reals xi, Write<Real> grads) {
-  double t = 0.5*(xi[0] + 1.);
-  for(int i = 1; i < P; ++i) {
-    grads[i+1] = apf::Vector3(binomial(P, i)*(i-P*t)
-                 *Bij(P-1-i, i-1, 1.-t, t)/2., 0, 0);
-  }
-  grads[0] = apf::Vector3(-P*intpow(1-t, P-1)/2.,0,0);
-  grads[1] = apf::Vector3(P*intpow(t, P-1)/2.,0,0);
-}
-*/
 
 #define OMEGA_H_INST(T)
 OMEGA_H_INST(I8)
