@@ -79,6 +79,18 @@ OMEGA_H_DEVICE Real Bij(const int i, const int j, const double u,
   return intpow(u,i) * intpow(v,j);
 }
 
+OMEGA_H_DEVICE Real Bij(const int ij[], const double xi[]) {
+  return Bij(ij[0], ij[1], xi[0], xi[1]);
+}
+
+OMEGA_H_DEVICE Real Bijk(const int ijk[], const double xi[]) {
+  return Bijk(ijk[0], ijk[1], ijk[2], xi[0], xi[1], xi[2]);
+}
+
+OMEGA_H_DEVICE Real Bijkl(const int ijkl[], const double xi[]) {
+  return Bijkl(ijkl[0], ijkl[1], ijkl[2], ijkl[3], xi[0], xi[1], xi[2], xi[3]);
+}
+
 static unsigned const b2_0_0[1] = {2};
 static unsigned const* const b2_0[1] = {b2_0_0};
 static unsigned const b2_1_0[2] = {2,1};
