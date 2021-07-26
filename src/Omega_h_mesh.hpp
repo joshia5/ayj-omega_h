@@ -217,9 +217,9 @@ class Mesh {
   bool has_allMeshTags();
 
   void set_curved(I8 is_curved);
-  void set_order(Int order);
+  void set_max_order(Int max_order);
   inline I8 is_curved() const { return curved_; }
-  inline Int get_order() const { return order_; }
+  inline Int get_max_order() const { return max_order_; }
   Int get_num_internal_ctrlPts(Int edim);
   void add_tags_for_ctrlPts();
 
@@ -278,7 +278,7 @@ class Mesh {
   AdjPtr revClass_[DIMS];
 
   I8 curved_ = -1;
-  Int order_ = -1;
+  Int max_order_ = -1;
 
  public:
   void add_coords(Reals array);

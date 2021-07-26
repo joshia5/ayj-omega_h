@@ -79,26 +79,26 @@ void Mesh::set_matched(I8 is_matched) { matched_ = is_matched; }
 
 void Mesh::set_curved(I8 is_curved) { curved_ = is_curved; }
 
-void Mesh::set_order(Int order) { order_ = order; }
+void Mesh::set_max_order(Int max_order) { max_order_ = max_order; }
 
 Int Mesh::get_num_internal_ctrlPts(Int edim) {
   check_dim2(edim);
   OMEGA_H_CHECK(is_curved());
-  Int order = get_order();
-  OMEGA_H_CHECK(order > 0);
+  Int max_order = get_max_order();
+  OMEGA_H_CHECK(max_order > 0);
 
   switch (edim) {
     case 0: {
       return 1;
     }
     case 1: {
-      return order-1;
+      return max_order-1;
     }
     case 2: {
-      return (1/2)*(order-1)*(order-2);
+      return (1/2)*(max_order-1)*(max_order-2);
     }
     case 3: {
-      return (1/6)*(order-1)*(order-2)*(order-3);
+      return (1/6)*(max_order-1)*(max_order-2)*(max_order-3);
     }
   }
 
