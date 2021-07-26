@@ -5,7 +5,7 @@
 
 namespace Omega_h {
 
-OMEGA_H_DEVICE Real intpow(const Real b, const LO e) {
+Real intpow(const Real b, const LO e) {
   switch (e) {
   case 0: return 1.0;
   case 1: return b;
