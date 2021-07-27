@@ -1,10 +1,13 @@
 #include <iostream>
+#include <fstream>
+#include <math.h>
 
 #include<Omega_h_mesh.hpp>
 #include<Omega_h_file.hpp>
 #include<Omega_h_beziers.hpp>
 #include<Omega_h_matrix.hpp>
 #include<Omega_h_defines.hpp>
+#include "Omega_h_for.hpp"
 
 using namespace Omega_h;
 
@@ -58,12 +61,46 @@ void test_2d(Library *lib, const std::string &mesh_file, const char* vtu_file) {
   auto M1 = invert(M1_inv);
   Matrix<2,2> M2 ({B0(xi_1), B3(xi_1), B0(xi_2), B3(xi_2)});
 
-  Matrix<2,1> p0({0, 1});
+  Matrix<2,1> p0({0, 1});//ask coords
   Matrix<2,1> p1({1, 0});
   auto Cx = M1*fx - M1*M2*p0;
   auto Cy = M1*fy - M1*M2*p1;
 
-  //  
+  auto u = Read<Real>(1000, 0.0, 0.001, "samplePts");
+  auto u_h = HostRead<Real>(u);
+  auto u_ex = Read<Real>(1000, 0.0 + PI/4, PI/1000, "exactPts");
+  auto u_ex_h = HostRead<Real>(u_ex);
+  std::ofstream edge1_file;
+  edge1_file.open("edge1.csv");
+
+  edge1_file << "x, y\n";
+  for (LO i = 0; i < u.size(); ++i) {
+    auto x_bezier = 0*B0(u[i]) + Cx(0,0)*B1(u[i]) + Cx(1,0)*B2(u[i]) + 1*B3(u[i]);
+    auto y_bezier = 1*B0(u[i]) + Cy(0,0)*B1(u[i]) + Cy(1,0)*B2(u[i]) + 0*B3(u[i]);
+    edge1_file << x_bezier << ", " << y_bezier << "\n";
+  }
+  edge1_file << "\n";
+  edge1_file << "\n";
+  edge1_file << "C1x, C1y\n";
+  edge1_file << Cx(0,0) << ", " << Cy(0,0) << "\n";
+  edge1_file << "C2x, C2y\n";
+  edge1_file << Cx(1,0) << ", " << Cy(1,0) << "\n";
+  edge1_file << "x1, y1\n";
+  edge1_file << x1 << ", " << y1 << "\n";
+  edge1_file << "x2, y2\n";
+  edge1_file << x2 << ", " << y2 << "\n";
+  edge1_file << "\n";
+  edge1_file << "\n";
+  edge1_file << "exact circle:\n";
+  edge1_file << "x, y\n";
+  for (LO i = 0; i < u_ex.size(); ++i) {
+    auto x_circle = centerx - R*cos(u_ex[i]);
+    auto y_circle = centery + R*sin(u_ex[i]);
+    edge1_file << x_circle << ", " << y_circle << "\n";
+  }
+
+  edge1_file.close();
+  //
   return;
 }
 
