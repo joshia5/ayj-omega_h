@@ -220,8 +220,9 @@ class Mesh {
   void set_max_order(Int max_order);
   inline I8 is_curved() const { return curved_; }
   inline Int get_max_order() const { return max_order_; }
-  Int get_num_internal_ctrlPts(Int edim);
+  Int n_internal_ctrlPts(Int edim);
   void add_tags_for_ctrlPts();
+  void set_tag_for_ctrlPts(Int ent_dim, Reals ctrlPts);
 
  public:
   typedef std::shared_ptr<TagBase> TagPtr;

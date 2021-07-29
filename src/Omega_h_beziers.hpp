@@ -5,19 +5,7 @@
 
 namespace Omega_h {
 
-Real intpow(const Real b, const LO e) {
-  switch (e) {
-  case 0: return 1.0;
-  case 1: return b;
-  case 2: return b*b;
-  case 3: return b*b*b;
-  case 4: return b*b*b*b;
-  case 5: return b*b*b*b*b;
-  case 6: return b*b*b*b*b*b;
-  default:
-    return intpow(b, e-6) * intpow(b, 6);
-  }
-}
+Real intpow(const Real b, const LO e);
 
 OMEGA_H_DEVICE LO binomial(int n, int i);
 
@@ -46,6 +34,11 @@ OMEGA_H_DEVICE Real Bijkl(const int ijkl[], const double xi[]);
 OMEGA_H_DEVICE static void bezierCurve(I8 P, Reals xi, Write<Real> values);
 OMEGA_H_DEVICE static void bezierTriangle(I8 P, Reals xi, Write<Real> values);
 OMEGA_H_DEVICE static void bezierTet(I8 P, Reals xi, Write<Real> values);
+
+Real B0(Real u);
+Real B1(Real u);
+Real B2(Real u);
+Real B3(Real u);
 
 // workaround CUDA compiler bug
 #ifdef OMEGA_H_USE_CUDA

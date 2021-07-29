@@ -81,7 +81,7 @@ void Mesh::set_curved(I8 is_curved) { curved_ = is_curved; }
 
 void Mesh::set_max_order(Int max_order) { max_order_ = max_order; }
 
-Int Mesh::get_num_internal_ctrlPts(Int edim) {
+Int Mesh::n_internal_ctrlPts(Int edim) {
   check_dim2(edim);
   OMEGA_H_CHECK(is_curved());
   Int max_order = get_max_order();
@@ -108,10 +108,17 @@ Int Mesh::get_num_internal_ctrlPts(Int edim) {
 void Mesh::add_tags_for_ctrlPts() {
   Int dim = dim_;
   for (I8 d = 0; d <= dim; ++d) {
-    Int n_pts = get_num_internal_ctrlPts(d);
+    Int n_pts = n_internal_ctrlPts(d);
     add_tag<Real>(d, "bezier_pts", n_pts*dim);
     add_tag<I8>(d, "n_bezier_pts", 1, Bytes(nents(d), n_pts, "numBezierPts"));
   }
+
+  return;
+}
+
+void Mesh::set_tag_for_ctrlPts(Int ent_dim, Reals ctrlPts) {
+
+  set_tag(ent_dim, "bezier_pts", ctrlPts);
 
   return;
 }

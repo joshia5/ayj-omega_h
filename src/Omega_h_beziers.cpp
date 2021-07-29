@@ -4,6 +4,20 @@
 
 namespace Omega_h {
 
+Real intpow(const Real b, const LO e) {
+  switch (e) {
+  case 0: return 1.0;
+  case 1: return b;
+  case 2: return b*b;
+  case 3: return b*b*b;
+  case 4: return b*b*b*b;
+  case 5: return b*b*b*b*b;
+  case 6: return b*b*b*b*b*b;
+  default:
+    return intpow(b, e-6) * intpow(b, 6);
+  }
+}
+
 OMEGA_H_DEVICE LO binomial(LO n, LO i) {
 
   i = std::min(n-i,i);
@@ -363,7 +377,23 @@ OMEGA_H_DEVICE static void bezierTet(I8 P, Reals xi, Write<Real> values) {
       }
     }
   }
+  return;
+}
 
+Real B0(Real u) {
+  return intpow(1-u, 3);
+}
+
+Real B1(Real u) {
+  return 3*u*intpow(1-u, 2);
+}
+
+Real B2(Real u) {
+  return 3*(1-u)*intpow(u, 2);
+}
+
+Real B3(Real u) {
+  return intpow(u, 3);
 }
 
 #define OMEGA_H_INST(T)
