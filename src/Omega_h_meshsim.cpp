@@ -195,8 +195,12 @@ void read_internal(pMesh m, Mesh* mesh) {
   EIter edges = M_edgeIter(m);
   pEdge edge;
   int count_edge = 0;
+  int edge_numPts = 0;
   while ((edge = (pEdge) EIter_next(edges))) {
-    printf("num pts %d\n", E_numPoints(edge));
+    edge_numPts = E_numPoints(edge);
+    if (edge_numPts > 0) {
+      assert(edge_numPts == 1);
+    }
     double xyz[3];
     count_edge += 1;
     for(int j=0; j<2; ++j) {
@@ -208,6 +212,11 @@ void read_internal(pMesh m, Mesh* mesh) {
     ent_class_dim[1].push_back(classType(edge));
   }
   EIter_delete(edges);
+  if (edge_numPts > 0) {
+    assert(edge_numPts == 1);//quadratic mesh from simmetrix
+    mesh->set_curved(1);
+    mesh->set_max_order(edge_numPts + 1);
+  }
   
   HostWrite<LO> host_class_ids_edge(numEdges);
   HostWrite<I8> host_class_dim_edge(numEdges);
