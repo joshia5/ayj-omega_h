@@ -130,6 +130,8 @@ void read_internal(pMesh m, Mesh* mesh) {
   ent_class_ids[3].reserve(numRegions);
   ent_class_dim[3].reserve(numRegions);
 
+  std::vector<int> edge_points[1];
+
   Int max_dim;
   if (numRegions) {
     max_dim = 3;
@@ -148,7 +150,7 @@ void read_internal(pMesh m, Mesh* mesh) {
   while ((vtx = (pVertex) VIter_next(vertices))) {
     double xyz[3];
     V_coord(vtx,xyz);
-    if( max_dim < 3 && xyz[2] != 0 )
+    if(max_dim < 3 && xyz[2] != 0)
       Omega_h_fail("The z coordinate must be zero for a 2d mesh!\n");
     for(int j=0; j<max_dim; j++) {
       host_coords[v * max_dim + j] = xyz[j];
@@ -175,7 +177,7 @@ void read_internal(pMesh m, Mesh* mesh) {
       mesh->set_family(OMEGA_H_HYPERCUBE);
     }
     mesh->set_verts(numVtx);
-    mesh->add_coords(host_coords.write());
+    mesh->add_coords(Reals(host_coords.write()));
     mesh->add_tag<ClassId>(0, "class_id", 1,
                            Read<ClassId>(host_class_ids_vtx.write()));
     mesh->add_tag<I8>(0, "class_dim", 1,
@@ -184,7 +186,7 @@ void read_internal(pMesh m, Mesh* mesh) {
   else {
     mesh->set_family(OMEGA_H_MIXED);
     mesh->set_verts_type(numVtx);
-    mesh->add_coords_mix(host_coords.write());
+    mesh->add_coords_mix(Reals(host_coords.write()));
     mesh->add_tag<ClassId>(Topo_type::vertex, "class_id", 1,
                            Read<ClassId>(host_class_ids_vtx.write()));
     mesh->add_tag<I8>(Topo_type::vertex, "class_dim", 1,
@@ -192,31 +194,36 @@ void read_internal(pMesh m, Mesh* mesh) {
   }
 
   edge_vertices[0].reserve(numEdges*2);
+  edge_points[0].reserve(numEdges);
   EIter edges = M_edgeIter(m);
   pEdge edge;
   int count_edge = 0;
+
   int edge_numPts = 0;
+  HostWrite<Real> edgePt_coords(numEdges*max_dim);
+
   while ((edge = (pEdge) EIter_next(edges))) {
+
     edge_numPts = E_numPoints(edge);
     if (edge_numPts > 0) {
       assert(edge_numPts == 1);
+      pPoint point = E_point(edge, 0);
+      double p_coord[3];
+      P_coord(point, p_coord);
+      for(int j=0; j<max_dim; j++) {
+        edgePt_coords[count_edge * max_dim + j] = p_coord[j];
+      }
     }
-    double xyz[3];
+
     count_edge += 1;
     for(int j=0; j<2; ++j) {
       vtx = E_vertex(edge,j);
       edge_vertices[0].push_back(EN_id(vtx));
-      V_coord(vtx,xyz);
     }
     ent_class_ids[1].push_back(classId(edge));
     ent_class_dim[1].push_back(classType(edge));
   }
   EIter_delete(edges);
-  if (edge_numPts > 0) {
-    assert(edge_numPts == 1);//quadratic mesh from simmetrix
-    mesh->set_curved(1);
-    mesh->set_max_order(edge_numPts + 1);
-  }
   
   HostWrite<LO> host_class_ids_edge(numEdges);
   HostWrite<I8> host_class_dim_edge(numEdges);
@@ -615,6 +622,16 @@ void read_internal(pMesh m, Mesh* mesh) {
           Read<ClassId>(host_class_ids_pyramid.write()));
       mesh->add_tag<I8>(Topo_type::pyramid, "class_dim", 1,
           Read<I8>(host_class_dim_pyramid.write()));
+    }
+  }
+
+  if (is_simplex || is_hypercube) {
+    if (edge_numPts > 0) {
+      assert(edge_numPts == 1);
+      mesh->set_curved(1);
+      mesh->set_max_order(edge_numPts + 1);
+      mesh->add_tags_for_ctrlPts();
+      mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords.write())); 
     }
   }
 
