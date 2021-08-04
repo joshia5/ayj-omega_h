@@ -196,6 +196,7 @@ void read_internal(pMesh m, Mesh* mesh) {
   pEdge edge;
   int count_edge = 0;
   while ((edge = (pEdge) EIter_next(edges))) {
+    printf("num pts %d\n", E_numPoints(edge));
     double xyz[3];
     count_edge += 1;
     for(int j=0; j<2; ++j) {
