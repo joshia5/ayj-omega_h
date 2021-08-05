@@ -18,7 +18,7 @@ Real intpow(const Real b, const LO e) {
   }
 }
 
-OMEGA_H_DEVICE LO binomial(LO n, LO i) {
+LO binomial(LO n, LO i) {
 
   i = std::min(n-i,i);
 
@@ -304,6 +304,7 @@ OMEGA_H_DEVICE LO getTetNodeIndex(int P, int i, int j, int k) {
     return computeTetNodeIndex(P,i,j,k);
 }
 
+/*
 OMEGA_H_DEVICE static void bezierCurve(I8 P, Reals xi, Write<Real> values) {
   double t = 0.5 * (xi[0] + 1.0);
   for (I8 i = 1; i < P; ++i) {
@@ -379,7 +380,7 @@ OMEGA_H_DEVICE static void bezierTet(I8 P, Reals xi, Write<Real> values) {
   }
   return;
 }
-
+*/
 Real B0(Real u) {
   return intpow(1-u, 3);
 }
