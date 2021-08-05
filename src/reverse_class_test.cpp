@@ -6,6 +6,7 @@
 #include "Omega_h_mesh.hpp"
 #include "Omega_h_element.hpp"
 #include "Omega_h_array_ops.hpp"
+#include "Omega_h_timer.hpp"
 using namespace Omega_h;
 
 void test_2d(Library *lib, const std::string &mesh_file) {
@@ -109,5 +110,13 @@ int main(int argc, char** argv) {
   test_2d(&lib, path_2d);
   test_3d(&lib, path_3d);
 
+  printf("ok1\n");
+  Now t0 = now();
+  auto mesh = Mesh(&lib);
+  binary::read ("/lore/joshia5/Meshes/rc_bfields/deltawing/500kMetric/deltaWing_500kMetric.osh",
+      lib.world(), &mesh);
+  auto face_rc = mesh.ask_revClass(2);
+  Now t1 = now();
+  printf("ok2 reg %d face %d time %f\n", mesh.nents(3), mesh.nfaces(), t1-t0);
   return 0;
 }
