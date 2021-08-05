@@ -10,7 +10,7 @@
 
 using namespace Omega_h;
 
-void test_2d(Library *lib, const std::string &mesh_file, const char* vtu_file) {
+void test_2d(Library *lib, const std::string &mesh_file, const char* vtk_file) {
   auto mesh = Mesh(lib);
   binary::read (mesh_file, lib->world(), &mesh);
   mesh.set_curved(1);
@@ -65,10 +65,10 @@ void test_2d(Library *lib, const std::string &mesh_file, const char* vtu_file) {
 
     edge_file << "x, y\n";
     for (LO i = 0; i < u.size(); ++i) {
-      auto x_bezier = p0(0,0)*B0(u[i]) + Cx(0,0)*B1(u[i]) + Cx(1,0)*B2(u[i]) +
-                      p1(0,0)*B3(u[i]);
-      auto y_bezier = p0(1,0)*B0(u[i]) + Cy(0,0)*B1(u[i]) + Cy(1,0)*B2(u[i]) +
-                      p1(1,0)*B3(u[i]);
+      auto x_bezier = p0(0,0)*B0(u_h[i]) + Cx(0,0)*B1(u_h[i]) + Cx(1,0)*B2(u_h[i]) +
+                      p1(0,0)*B3(u_h[i]);
+      auto y_bezier = p0(1,0)*B0(u_h[i]) + Cy(0,0)*B1(u_h[i]) + Cy(1,0)*B2(u_h[i]) +
+                      p1(1,0)*B3(u_h[i]);
       edge_file << x_bezier << ", " << y_bezier << "\n";
     }
     edge_file << "\n";
@@ -86,8 +86,8 @@ void test_2d(Library *lib, const std::string &mesh_file, const char* vtu_file) {
     edge_file << "exact circle:\n";
     edge_file << "x, y\n";
     for (LO i = 0; i < u_ex.size(); ++i) {
-      auto x_circle = centerx - R*cos(u_ex[i]);
-      auto y_circle = centery + R*sin(u_ex[i]);
+      auto x_circle = centerx - R*cos(u_ex_h[i]);
+      auto y_circle = centery + R*sin(u_ex_h[i]);
       edge_file << x_circle << ", " << y_circle << "\n";
     }
   }
@@ -127,10 +127,10 @@ void test_2d(Library *lib, const std::string &mesh_file, const char* vtu_file) {
     edge_file << "for edge 2\n";
     edge_file << "x, y\n";
     for (LO i = 0; i < u.size(); ++i) {
-      auto x_bezier = p0(0,0)*B0(u[i]) + Cx(0,0)*B1(u[i]) + Cx(1,0)*B2(u[i]) +
-                      p1(0,0)*B3(u[i]);
-      auto y_bezier = p0(1,0)*B0(u[i]) + Cy(0,0)*B1(u[i]) + Cy(1,0)*B2(u[i]) +
-                      p1(1,0)*B3(u[i]);
+      auto x_bezier = p0(0,0)*B0(u_h[i]) + Cx(0,0)*B1(u_h[i]) + Cx(1,0)*B2(u_h[i]) +
+                      p1(0,0)*B3(u_h[i]);
+      auto y_bezier = p0(1,0)*B0(u_h[i]) + Cy(0,0)*B1(u_h[i]) + Cy(1,0)*B2(u_h[i]) +
+                      p1(1,0)*B3(u_h[i]);
       edge_file << x_bezier << ", " << y_bezier << "\n";
     }
     edge_file << "\n";
@@ -178,10 +178,10 @@ void test_2d(Library *lib, const std::string &mesh_file, const char* vtu_file) {
     edge_file << "for edge 3\n";
     edge_file << "x, y\n";
     for (LO i = 0; i < u.size(); ++i) {
-      auto x_bezier = p0(0,0)*B0(u[i]) + Cx(0,0)*B1(u[i]) + Cx(1,0)*B2(u[i]) +
-                      p1(0,0)*B3(u[i]);
-      auto y_bezier = p0(1,0)*B0(u[i]) + Cy(0,0)*B1(u[i]) + Cy(1,0)*B2(u[i]) +
-                      p1(1,0)*B3(u[i]);
+      auto x_bezier = p0(0,0)*B0(u_h[i]) + Cx(0,0)*B1(u_h[i]) + Cx(1,0)*B2(u_h[i]) +
+                      p1(0,0)*B3(u_h[i]);
+      auto y_bezier = p0(1,0)*B0(u_h[i]) + Cy(0,0)*B1(u_h[i]) + Cy(1,0)*B2(u_h[i]) +
+                      p1(1,0)*B3(u_h[i]);
       edge_file << x_bezier << ", " << y_bezier << "\n";
     }
     edge_file << "\n";
@@ -201,6 +201,7 @@ void test_2d(Library *lib, const std::string &mesh_file, const char* vtu_file) {
 
   mesh.set_tag_for_ctrlPts(1, Reals(edge_ctrlPts.write()));
 
+  vtk::write_parallel(vtk_file, &mesh, mesh.dim());
   return;
 }
 

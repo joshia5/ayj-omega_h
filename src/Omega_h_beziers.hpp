@@ -7,7 +7,7 @@ namespace Omega_h {
 
 Real intpow(const Real b, const LO e);
 
-OMEGA_H_DEVICE LO binomial(int n, int i);
+LO binomial(int n, int i);
 
 OMEGA_H_DEVICE LO trinomial(int n, int i, int j);
 
@@ -31,10 +31,11 @@ OMEGA_H_DEVICE Real Bij(const int ij[], const double xi[]);
 OMEGA_H_DEVICE Real Bijk(const int ijk[], const double xi[]);
 OMEGA_H_DEVICE Real Bijkl(const int ijkl[], const double xi[]);
 
+/*
 OMEGA_H_DEVICE static void bezierCurve(I8 P, Reals xi, Write<Real> values);
 OMEGA_H_DEVICE static void bezierTriangle(I8 P, Reals xi, Write<Real> values);
 OMEGA_H_DEVICE static void bezierTet(I8 P, Reals xi, Write<Real> values);
-
+*/
 Real B0(Real u);
 Real B1(Real u);
 Real B2(Real u);
