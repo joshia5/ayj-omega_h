@@ -35,9 +35,11 @@ Real B3(Real u) {
   return intpow(u, 3);
 }
 
-void elevate_order(I8 new_order, Mesh* mesh) {
+void elevate_curve_order_2to3(Mesh* mesh) {
 
+  I8 new_order = 3;
   auto old_ctrl_pts = mesh->get_ctrlPts(1);
+  auto old_n_ctrl_pts = mesh->n_internal_ctrlPts(1);
   auto coords = mesh->coords();
   auto nedge = mesh->nedges();
   auto dim = mesh->dim();
@@ -52,13 +54,138 @@ void elevate_order(I8 new_order, Mesh* mesh) {
     auto v0 = ev2v[i*2];
     auto v1 = ev2v[i*2 + 1];
     for (LO d = 0; d < dim; ++d) {
-      c1[d] = 1/3 * coords[v0*dim + d] + 2/3 * old_ctrl_pts[i*dim + d];
-      c2[d] = 2/3 * old_ctrl_pts[i*dim + d] + 1/3 * coords[v1*dim + d];
+      c1[d] = (1.0/3.0)*coords[v0*dim + d] +
+              (2.0/3.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + d];
+      c2[d] = (2.0/3.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + d] +
+              (1.0/3.0)*coords[v1*dim + d];
       new_pts[i*n_new_pts*dim + d] = c1[d];
       new_pts[i*n_new_pts*dim + dim + d] = c2[d];
     }
   };
-  parallel_for(nedge, std::move(calc_pts));
+  parallel_for(nedge, calc_pts);
+
+  mesh->set_tag_for_ctrlPts(1, Reals(new_pts));
+  return;
+}
+
+void elevate_curve_order_3to4(Mesh* mesh) {
+
+  I8 new_order = 4;
+  auto old_ctrl_pts = mesh->get_ctrlPts(1);
+  auto old_n_ctrl_pts = mesh->n_internal_ctrlPts(1);
+  auto coords = mesh->coords();
+  auto nedge = mesh->nedges();
+  auto dim = mesh->dim();
+  auto ev2v = mesh->get_adj(1, 0).ab2b;
+
+  mesh->set_max_order(new_order);
+  auto n_new_pts = mesh->n_internal_ctrlPts(1);
+  Write<Real> new_pts(nedge*n_new_pts*dim, 0.0);
+  Write<Real> c1(dim, 0.0);
+  Write<Real> c2(dim, 0.0);
+  Write<Real> c3(dim, 0.0);
+  auto calc_pts = OMEGA_H_LAMBDA (LO i) {
+    auto v0 = ev2v[i*2];
+    auto v1 = ev2v[i*2 + 1];
+    for (LO d = 0; d < dim; ++d) {
+      c1[d] = (1.0/4.0)*coords[v0*dim + d] +
+              (3.0/4.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + d];
+      c2[d] = (2.0/4.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + d] +
+              (2.0/4.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + 1*dim + d];
+      c3[d] = (3.0/4.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + 1*dim + d] +
+              (1.0/4.0)*coords[v1*dim + d];
+      new_pts[i*n_new_pts*dim + d] = c1[d];
+      new_pts[i*n_new_pts*dim + 1*dim + d] = c2[d];
+      new_pts[i*n_new_pts*dim + 2*dim + d] = c3[d];
+    }
+  };
+  parallel_for(nedge, calc_pts);
+
+  mesh->set_tag_for_ctrlPts(1, Reals(new_pts));
+  return;
+}
+
+void elevate_curve_order_4to5(Mesh* mesh) {
+
+  I8 new_order = 5;
+  auto old_ctrl_pts = mesh->get_ctrlPts(1);
+  auto old_n_ctrl_pts = mesh->n_internal_ctrlPts(1);
+  auto coords = mesh->coords();
+  auto nedge = mesh->nedges();
+  auto dim = mesh->dim();
+  auto ev2v = mesh->get_adj(1, 0).ab2b;
+
+  mesh->set_max_order(new_order);
+  auto n_new_pts = mesh->n_internal_ctrlPts(1);
+  Write<Real> new_pts(nedge*n_new_pts*dim, 0.0);
+  Write<Real> c1(dim, 0.0);
+  Write<Real> c2(dim, 0.0);
+  Write<Real> c3(dim, 0.0);
+  Write<Real> c4(dim, 0.0);
+  auto calc_pts = OMEGA_H_LAMBDA (LO i) {
+    auto v0 = ev2v[i*2];
+    auto v1 = ev2v[i*2 + 1];
+    for (LO d = 0; d < dim; ++d) {
+      c1[d] = (1.0/5.0)*coords[v0*dim + d] +
+              (4.0/5.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + d];
+      c2[d] = (2.0/5.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + d] +
+              (3.0/5.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + 1*dim + d];
+      c3[d] = (3.0/5.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + 1*dim + d] +
+              (2.0/5.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + 2*dim + d];
+      c4[d] = (4.0/5.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + 2*dim + d] +
+              (1.0/5.0)*coords[v1*dim + d];
+      new_pts[i*n_new_pts*dim + d] = c1[d];
+      new_pts[i*n_new_pts*dim + 1*dim + d] = c2[d];
+      new_pts[i*n_new_pts*dim + 2*dim + d] = c3[d];
+      new_pts[i*n_new_pts*dim + 3*dim + d] = c4[d];
+    }
+  };
+  parallel_for(nedge, calc_pts);
+
+  mesh->set_tag_for_ctrlPts(1, Reals(new_pts));
+  return;
+}
+
+void elevate_curve_order_5to6(Mesh* mesh) {
+
+  I8 new_order = 6;
+  auto old_ctrl_pts = mesh->get_ctrlPts(1);
+  auto old_n_ctrl_pts = mesh->n_internal_ctrlPts(1);
+  auto coords = mesh->coords();
+  auto nedge = mesh->nedges();
+  auto dim = mesh->dim();
+  auto ev2v = mesh->get_adj(1, 0).ab2b;
+
+  mesh->set_max_order(new_order);
+  auto n_new_pts = mesh->n_internal_ctrlPts(1);
+  Write<Real> new_pts(nedge*n_new_pts*dim, 0.0);
+  Write<Real> c1(dim, 0.0);
+  Write<Real> c2(dim, 0.0);
+  Write<Real> c3(dim, 0.0);
+  Write<Real> c4(dim, 0.0);
+  Write<Real> c5(dim, 0.0);
+  auto calc_pts = OMEGA_H_LAMBDA (LO i) {
+    auto v0 = ev2v[i*2];
+    auto v1 = ev2v[i*2 + 1];
+    for (LO d = 0; d < dim; ++d) {
+      c1[d] = (1.0/6.0)*coords[v0*dim + d] +
+              (5.0/6.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + d];
+      c2[d] = (1.0/3.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + d] +
+              (2.0/3.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + 1*dim + d];
+      c3[d] = (1.0/2.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + 1*dim + d] +
+              (1.0/2.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + 2*dim + d];
+      c4[d] = (2.0/3.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + 2*dim + d] +
+              (1.0/3.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + 3*dim + d];
+      c5[d] = (5.0/6.0)*old_ctrl_pts[i*old_n_ctrl_pts*dim + 3*dim + d] +
+              (1.0/6.0)*coords[v1*dim + d];
+      new_pts[i*n_new_pts*dim + d] = c1[d];
+      new_pts[i*n_new_pts*dim + 1*dim + d] = c2[d];
+      new_pts[i*n_new_pts*dim + 2*dim + d] = c3[d];
+      new_pts[i*n_new_pts*dim + 3*dim + d] = c4[d];
+      new_pts[i*n_new_pts*dim + 4*dim + d] = c5[d];
+    }
+  };
+  parallel_for(nedge, calc_pts);
 
   mesh->set_tag_for_ctrlPts(1, Reals(new_pts));
   return;

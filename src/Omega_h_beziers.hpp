@@ -12,7 +12,10 @@ Real B1(Real u);
 Real B2(Real u);
 Real B3(Real u);
 
-void elevate_order(I8 new_order, Mesh* mesh);
+void elevate_curve_order_2to3(Mesh* mesh);
+void elevate_curve_order_3to4(Mesh* mesh);
+void elevate_curve_order_4to5(Mesh* mesh);
+void elevate_curve_order_5to6(Mesh* mesh);
 
 LO binomial(int n, int i);
 
