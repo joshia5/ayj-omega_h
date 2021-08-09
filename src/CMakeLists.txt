@@ -497,7 +497,10 @@ if(BUILD_TESTING)
   osh_add_exe(curve_test)
   test_func(curve_test 1 ./curve_test 
     ${CMAKE_SOURCE_DIR}/meshes/Example_tri.osh
-    ${CMAKE_SOURCE_DIR}/meshes/Example_tri.vtk)
+    ${CMAKE_SOURCE_DIR}/meshes/Example_tri.vtk
+    /users/joshia5/Models/curved/box_circleCut_geomsim.smd
+    /users/joshia5/Meshes/curved/box_cutCircle-30reg.sms
+    /users/joshia5/Meshes/curved/box_cutCircle-30reg.vtk)
   set(TEST_EXES ${TEST_EXES} curve_test)
   osh_add_exe(rc_field_test)
   test_func(rc_field_test 1 ./rc_field_test

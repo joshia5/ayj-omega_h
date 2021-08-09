@@ -10,7 +10,8 @@
 
 using namespace Omega_h;
 
-void test_2d(Library *lib, const std::string &mesh_file, const char* vtk_file) {
+void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
+                                  const char* vtk_file) {
   auto mesh = Mesh(lib);
   binary::read (mesh_file, lib->world(), &mesh);
   mesh.set_curved(1);
@@ -65,10 +66,10 @@ void test_2d(Library *lib, const std::string &mesh_file, const char* vtk_file) {
 
     edge_file << "x, y\n";
     for (LO i = 0; i < u.size(); ++i) {
-      auto x_bezier = p0(0,0)*B0(u_h[i]) + Cx(0,0)*B1(u_h[i]) + Cx(1,0)*B2(u_h[i]) +
-                      p1(0,0)*B3(u_h[i]);
-      auto y_bezier = p0(1,0)*B0(u_h[i]) + Cy(0,0)*B1(u_h[i]) + Cy(1,0)*B2(u_h[i]) +
-                      p1(1,0)*B3(u_h[i]);
+      auto x_bezier = p0(0,0)*B0(u_h[i]) + Cx(0,0)*B1(u_h[i]) + 
+                      Cx(1,0)*B2(u_h[i]) + p1(0,0)*B3(u_h[i]);
+      auto y_bezier = p0(1,0)*B0(u_h[i]) + Cy(0,0)*B1(u_h[i]) +
+                      Cy(1,0)*B2(u_h[i]) + p1(1,0)*B3(u_h[i]);
       edge_file << x_bezier << ", " << y_bezier << "\n";
     }
     edge_file << "\n";
@@ -127,10 +128,10 @@ void test_2d(Library *lib, const std::string &mesh_file, const char* vtk_file) {
     edge_file << "for edge 2\n";
     edge_file << "x, y\n";
     for (LO i = 0; i < u.size(); ++i) {
-      auto x_bezier = p0(0,0)*B0(u_h[i]) + Cx(0,0)*B1(u_h[i]) + Cx(1,0)*B2(u_h[i]) +
-                      p1(0,0)*B3(u_h[i]);
-      auto y_bezier = p0(1,0)*B0(u_h[i]) + Cy(0,0)*B1(u_h[i]) + Cy(1,0)*B2(u_h[i]) +
-                      p1(1,0)*B3(u_h[i]);
+      auto x_bezier = p0(0,0)*B0(u_h[i]) + Cx(0,0)*B1(u_h[i]) +
+                      Cx(1,0)*B2(u_h[i]) + p1(0,0)*B3(u_h[i]);
+      auto y_bezier = p0(1,0)*B0(u_h[i]) + Cy(0,0)*B1(u_h[i]) +
+                      Cy(1,0)*B2(u_h[i]) + p1(1,0)*B3(u_h[i]);
       edge_file << x_bezier << ", " << y_bezier << "\n";
     }
     edge_file << "\n";
@@ -178,10 +179,10 @@ void test_2d(Library *lib, const std::string &mesh_file, const char* vtk_file) {
     edge_file << "for edge 3\n";
     edge_file << "x, y\n";
     for (LO i = 0; i < u.size(); ++i) {
-      auto x_bezier = p0(0,0)*B0(u_h[i]) + Cx(0,0)*B1(u_h[i]) + Cx(1,0)*B2(u_h[i]) +
-                      p1(0,0)*B3(u_h[i]);
-      auto y_bezier = p0(1,0)*B0(u_h[i]) + Cy(0,0)*B1(u_h[i]) + Cy(1,0)*B2(u_h[i]) +
-                      p1(1,0)*B3(u_h[i]);
+      auto x_bezier = p0(0,0)*B0(u_h[i]) + Cx(0,0)*B1(u_h[i]) +
+                      Cx(1,0)*B2(u_h[i]) + p1(0,0)*B3(u_h[i]);
+      auto y_bezier = p0(1,0)*B0(u_h[i]) + Cy(0,0)*B1(u_h[i]) +
+                      Cy(1,0)*B2(u_h[i]) + p1(1,0)*B3(u_h[i]);
       edge_file << x_bezier << ", " << y_bezier << "\n";
     }
     edge_file << "\n";
@@ -205,19 +206,43 @@ void test_2d(Library *lib, const std::string &mesh_file, const char* vtk_file) {
   return;
 }
 
+void test_sim_linearToCubic(Library *lib, const std::string &model_file,
+                            const std::string &mesh_file,
+                            const char* vtk_file) {
+  auto comm = lib->world();
+  auto mesh = Omega_h::meshsim::read(mesh_file, model_file, comm);
+  elevate_order(3, &mesh);
+  vtk::write_parallel(vtk_file, &mesh, mesh.dim());
+  vtk::FullWriter writer;
+  writer = Omega_h::vtk::FullWriter(
+    "/users/joshia5/Meshes/curved/box_circleCut-30reg_full.vtk", &mesh);
+  writer.write();
+
+  return;
+}
+
 int main(int argc, char** argv) {
 
   auto lib = Library (&argc, &argv);
 
-  if (argc != 3) {
-    Omega_h_fail("a.out <2d_in_osh> <2d_out_vtk>\n");
+  if (argc != 6) {
+    Omega_h_fail(
+      "a.out <2d_in_osh> <2d_out_vtk> <3d_in_model-geomsim> <3d_in_mesh> <3d_out_vtk>\n");
   };
   char const* path_2d = nullptr;
   char const* path_2d_vtk = nullptr;
   path_2d = argv[1];
   path_2d_vtk = argv[2];
 
-  test_2d(&lib, path_2d, path_2d_vtk);
+  char const* path_3d_g = nullptr;
+  char const* path_3d_m = nullptr;
+  char const* path_3d_vtk = nullptr;
+  path_3d_g = argv[3];
+  path_3d_m = argv[4];
+  path_3d_vtk = argv[5];
+
+  test_linearTri_toCubicCircle(&lib, path_2d, path_2d_vtk);
+  test_sim_linearToCubic(&lib, path_3d_g, path_3d_m, path_3d_vtk);
 
   return 0;
 }
