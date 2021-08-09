@@ -82,9 +82,11 @@ void Mesh::set_curved(I8 is_curved) { curved_ = is_curved; }
 void Mesh::set_max_order(Int max_order) { 
   
   max_order_ = max_order;
-  Int n_pts = n_internal_ctrlPts(d);
-  if ((n_pts > 0) && has_tag(d, "n_bezier_pts")) {
-    set_tag(d, "n_bezier_pts", Bytes(nents(d), n_pts, "numBezierPts"));
+  for (I8 d = 1; d <= dim_; ++d) {
+    Int n_pts = n_internal_ctrlPts(d);
+    if ((n_pts > 0) && has_tag(d, "n_bezier_pts")) {
+      set_tag(d, "n_bezier_pts", Bytes(nents(d), n_pts, "numBezierPts"));
+    }
   }
   return;
 }
