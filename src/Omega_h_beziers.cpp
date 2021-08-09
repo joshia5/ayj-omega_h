@@ -1,6 +1,7 @@
 #include "Omega_h_mesh.hpp"
 #include "Omega_h_beziers.hpp"
 #include "Omega_h_element.hpp"
+#include "Omega_h_for.hpp"
 
 namespace Omega_h {
 
@@ -16,6 +17,51 @@ Real intpow(const Real b, const LO e) {
   default:
     return intpow(b, e-6) * intpow(b, 6);
   }
+}
+
+Real B0(Real u) {
+  return intpow(1-u, 3);
+}
+
+Real B1(Real u) {
+  return 3*u*intpow(1-u, 2);
+}
+
+Real B2(Real u) {
+  return 3*(1-u)*intpow(u, 2);
+}
+
+Real B3(Real u) {
+  return intpow(u, 3);
+}
+
+void elevate_order(I8 new_order, Mesh* mesh) {
+
+  auto old_ctrl_pts = mesh->get_ctrlPts(1);
+  auto coords = mesh->coords();
+  auto nedge = mesh->nedges();
+  auto dim = mesh->dim();
+  auto ev2v = mesh->get_adj(1, 0).ab2b;
+
+  mesh->set_max_order(new_order);
+  auto n_new_pts = mesh->n_internal_ctrlPts(1);
+  Write<Real> new_pts(nedge*n_new_pts*dim, 0.0);
+  Write<Real> c1(dim, 0.0);
+  Write<Real> c2(dim, 0.0);
+  auto calc_pts = OMEGA_H_LAMBDA (LO i) {
+    auto v0 = ev2v[i*2];
+    auto v1 = ev2v[i*2 + 1];
+    for (LO d = 0; d < dim; ++d) {
+      c1[d] = 1/3 * coords[v0*dim + d] + 2/3 * old_ctrl_pts[i*dim + d];
+      c2[d] = 2/3 * old_ctrl_pts[i*dim + d] + 1/3 * coords[v1*dim + d];
+      new_pts[i*n_new_pts*dim + d] = c1[d];
+      new_pts[i*n_new_pts*dim + dim + d] = c2[d];
+    }
+  };
+  parallel_for(nedge, std::move(calc_pts));
+
+  mesh->set_tag_for_ctrlPts(1, Reals(new_pts));
+  return;
 }
 
 LO binomial(LO n, LO i) {
@@ -381,21 +427,6 @@ OMEGA_H_DEVICE static void bezierTet(I8 P, Reals xi, Write<Real> values) {
   return;
 }
 */
-Real B0(Real u) {
-  return intpow(1-u, 3);
-}
-
-Real B1(Real u) {
-  return 3*u*intpow(1-u, 2);
-}
-
-Real B2(Real u) {
-  return 3*(1-u)*intpow(u, 2);
-}
-
-Real B3(Real u) {
-  return intpow(u, 3);
-}
 
 #define OMEGA_H_INST(T)
 OMEGA_H_INST(I8)
@@ -403,4 +434,5 @@ OMEGA_H_INST(I32)
 OMEGA_H_INST(I64)
 OMEGA_H_INST(Real)
 #undef OMEGA_H_INST
+
 } // namespace Omega_h

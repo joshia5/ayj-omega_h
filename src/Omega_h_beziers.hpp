@@ -7,6 +7,13 @@ namespace Omega_h {
 
 Real intpow(const Real b, const LO e);
 
+Real B0(Real u);
+Real B1(Real u);
+Real B2(Real u);
+Real B3(Real u);
+
+void elevate_order(I8 new_order, Mesh* mesh);
+
 LO binomial(int n, int i);
 
 OMEGA_H_DEVICE LO trinomial(int n, int i, int j);
@@ -36,10 +43,6 @@ OMEGA_H_DEVICE static void bezierCurve(I8 P, Reals xi, Write<Real> values);
 OMEGA_H_DEVICE static void bezierTriangle(I8 P, Reals xi, Write<Real> values);
 OMEGA_H_DEVICE static void bezierTet(I8 P, Reals xi, Write<Real> values);
 */
-Real B0(Real u);
-Real B1(Real u);
-Real B2(Real u);
-Real B3(Real u);
 
 // workaround CUDA compiler bug
 #ifdef OMEGA_H_USE_CUDA
