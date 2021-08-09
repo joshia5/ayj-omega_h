@@ -211,7 +211,10 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
                             const char* vtk_file) {
   auto comm = lib->world();
   auto mesh = Omega_h::meshsim::read(mesh_file, model_file, comm);
-  elevate_order(3, &mesh);
+  elevate_curve_order_2to3(&mesh);
+  elevate_curve_order_3to4(&mesh);
+  elevate_curve_order_4to5(&mesh);
+  elevate_curve_order_5to6(&mesh);
   vtk::write_parallel(vtk_file, &mesh, mesh.dim());
   vtk::FullWriter writer;
   writer = Omega_h::vtk::FullWriter(
