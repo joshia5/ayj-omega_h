@@ -491,7 +491,7 @@ if(BUILD_TESTING)
   osh_add_exe(refine_scale)
   osh_add_exe(amr_mpi_test)
   osh_add_exe(reverse_class_test)
-  test_func(reverse_class_test 1 ./reverse_class_test 
+  test_func(reverse_class_test 1 ./reverse_class_test
     ${CMAKE_SOURCE_DIR}/meshes/plate_6elem.osh
     ${CMAKE_SOURCE_DIR}/meshes/unitbox_cutTriCube_1k.osh)
   osh_add_exe(curve_test)

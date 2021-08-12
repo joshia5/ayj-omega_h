@@ -21,7 +21,11 @@ void calc_quad_ctrlPts_from_interpPts(Mesh *mesh);
 Real B0_quad(Real u);
 Real B1_quad(Real u);
 Real B2_quad(Real u);
-
+/*
+OMEGA_H_DEVICE Real B0_quad(Real u);
+OMEGA_H_DEVICE Real B1_quad(Real u);
+OMEGA_H_DEVICE Real B2_quad(Real u);
+*/
 LO binomial(int n, int i);
 
 OMEGA_H_DEVICE LO trinomial(int n, int i, int j);
