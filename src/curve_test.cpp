@@ -196,7 +196,6 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
     edge_file << "x2, y2\n";
     edge_file << x2 << ", " << y2 << "\n";
   }
-  edge_file << "\n";
 
   edge_file.close();
 
@@ -211,6 +210,43 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
                             const char* vtk_file) {
   auto comm = lib->world();
   auto mesh = Omega_h::meshsim::read(mesh_file, model_file, comm);
+  calc_quad_ctrlPts_from_interpPts(&mesh);
+  auto nedge = mesh.nedges();
+  auto ev2v_h = HostRead<LO>(mesh.get_adj(1, 0).ab2b);
+  auto ctrlPts_h = HostRead<Real>(mesh.get_ctrlPts(1));
+  auto dim = 3;
+  auto coords_h = HostRead<Real>(mesh.coords());
+  //binary::write("/users/joshia5/Meshes/curved/box_circleCut-30reg_quad.osh",
+    //            &mesh);
+ 
+  std::ofstream edge_file;
+  edge_file.open("box_circleCut-30reg_quad_edges.csv");
+  edge_file << "x, y, z\n";
+  auto u = Read<Real>(50, 0.0, 0.02, "samplePts");
+  auto u_h = HostRead<Real>(u);
+  for (LO i = 0; i < nedge; ++i) {
+    auto v0 = ev2v_h[i*2];
+    auto v1 = ev2v_h[i*2 + 1];
+
+    Real cx0 = coords_h[v0*dim + 0];
+    Real cy0 = coords_h[v0*dim + 1];
+    Real cz0 = coords_h[v0*dim + 2];
+    Real cx1 = ctrlPts_h[i*dim + 0];
+    Real cy1 = ctrlPts_h[i*dim + 1];
+    Real cz1 = ctrlPts_h[i*dim + 2];
+    Real cx2 = coords_h[v1*dim + 0];
+    Real cy2 = coords_h[v1*dim + 1];
+    Real cz2 = coords_h[v1*dim + 2];
+
+    for (LO i = 0; i < u_h.size(); ++i) {
+      auto x_bezier = cx0*B0_quad(u_h[i]) + cx1*B1_quad(u_h[i]) + cx2*B2_quad(u_h[i]);
+      auto y_bezier = cy0*B0_quad(u_h[i]) + cy1*B1_quad(u_h[i]) + cy2*B2_quad(u_h[i]);
+      auto z_bezier = cz0*B0_quad(u_h[i]) + cz1*B1_quad(u_h[i]) + cz2*B2_quad(u_h[i]);
+      edge_file << x_bezier << ", " << y_bezier << ", " << z_bezier << "\n";
+    }
+  }
+  edge_file.close();
+
   elevate_curve_order_2to3(&mesh);
   elevate_curve_order_3to4(&mesh);
   elevate_curve_order_4to5(&mesh);
