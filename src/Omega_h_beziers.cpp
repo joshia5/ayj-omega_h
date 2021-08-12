@@ -35,6 +35,54 @@ Real B3(Real u) {
   return intpow(u, 3);
 }
 
+Real B0_quad(Real u) {
+  return intpow(1-u, 2);
+}
+
+Real B1_quad(Real u) {
+  return 2*u*(1-u);
+}
+
+Real B2_quad(Real u) {
+  return intpow(u, 2);
+}
+
+void calc_quad_ctrlPts_from_interpPts(Mesh *mesh) {
+  auto coords = mesh->coords();
+  auto interpPts = mesh->get_ctrlPts(1);
+  auto ev2v = mesh->get_adj(1, 0).ab2b;
+  auto dim = mesh->dim();
+  auto nedge = mesh->nedges();
+  Real xi_1 = 0.5;
+  Write<Real> new_pts(nedge*dim, 0.0);
+
+  auto f = OMEGA_H_LAMBDA (LO i) {
+    auto v0 = ev2v[i*2];
+    auto v1 = ev2v[i*2 + 1];
+
+    Real cx0 = coords[v0*dim + 0];
+    Real cy0 = coords[v0*dim + 1];
+    Real cz0 = coords[v0*dim + 2];
+    Real x1 = interpPts[i*dim + 0];
+    Real y1 = interpPts[i*dim + 1];
+    Real z1 = interpPts[i*dim + 2];
+    Real cx2 = coords[v1*dim + 0];
+    Real cy2 = coords[v1*dim + 1];
+    Real cz2 = coords[v1*dim + 2];
+
+    auto cx1 = (x1 - B0_quad(xi_1)*cx0 - B2_quad(xi_1)*cx2)/B1_quad(xi_1);;
+    auto cy1 = (y1 - B0_quad(xi_1)*cy0 - B2_quad(xi_1)*cy2)/B1_quad(xi_1);;
+    auto cz1 = (z1 - B0_quad(xi_1)*cz0 - B2_quad(xi_1)*cz2)/B1_quad(xi_1);;
+    new_pts[i*dim + 0] = cx1;
+    new_pts[i*dim + 1] = cy1;
+    new_pts[i*dim + 2] = cz1;
+  };
+  parallel_for(nedge, std::move(f));
+
+  mesh->set_tag_for_ctrlPts(1, Reals(new_pts));
+  return;
+}
+
 void elevate_curve_order_2to3(Mesh* mesh) {
 
   I8 new_order = 3;
