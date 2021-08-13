@@ -222,8 +222,18 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
   std::ofstream edge_file;
   edge_file.open("box_circleCut-30reg_quad_edges.csv");
   edge_file << "x, y, z\n";
-  auto u = Read<Real>(50, 0.0, 0.02, "samplePts");
+  LO n_sample_pts = 50;
+  auto u = Read<Real>(n_sample_pts, 0.0, 0.02, "samplePts");
   auto u_h = HostRead<Real>(u);
+
+  HostWrite<Real> host_coords(n_sample_pts*nedge*dim);
+  LO wireframe_nedge = n_sample_pts*nedge - 1;
+  HostWrite<LO> host_ev2v(wireframe_nedge*2);
+  std::vector<int> edge_vertices[1];
+  edge_vertices[0].reserve(wireframe_nedge*2);
+  LO count_wireframe_vtx = 0;
+  LO count_sample_edge = 0;
+
   for (LO i = 0; i < nedge; ++i) {
     auto v0 = ev2v_h[i*2];
     auto v1 = ev2v_h[i*2 + 1];
@@ -243,9 +253,39 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
       auto y_bezier = cy0*B0_quad(u_h[i]) + cy1*B1_quad(u_h[i]) + cy2*B2_quad(u_h[i]);
       auto z_bezier = cz0*B0_quad(u_h[i]) + cz1*B1_quad(u_h[i]) + cz2*B2_quad(u_h[i]);
       edge_file << x_bezier << ", " << y_bezier << ", " << z_bezier << "\n";
+
+      host_coords[count_wireframe_vtx*dim + 0] = x_bezier;
+      host_coords[count_wireframe_vtx*dim + 1] = y_bezier;
+      host_coords[count_wireframe_vtx*dim + 2] = z_bezier;
+
+      edge_vertices[0].push_back(count_wireframe_vtx);
+      if ((i > 0) && (i < (u_h.size() - 1))) {
+        edge_vertices[0].push_back(count_wireframe_vtx);
+      }
+
+      ++count_wireframe_vtx;
     }
   }
+
+  for (int i = 0; i < wireframe_nedge*2; ++i) {
+    host_ev2v[i] = edge_vertices[0][static_cast<std::size_t>(i)];
+  }
+  //parallel_for
   edge_file.close();
+
+  auto wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  wireframe_mesh.set_parting(OMEGA_H_ELEM_BASED);
+  wireframe_mesh.set_dim(1);
+  wireframe_mesh.set_family(OMEGA_H_SIMPLEX);
+  wireframe_mesh.set_verts(n_sample_pts*nedge);
+
+  //figure out how to get the coords array, vert indices and ev2v
+  wireframe_mesh.add_coords(Reals(host_coords.write()));
+  wireframe_mesh.set_ents(1, Adj(LOs(host_ev2v.write())));
+
+  vtk::write_vtu_wireframe(
+    "/users/joshia5/Meshes/curved/box_circleCut-30reg_wireframe.vtk", &mesh);
 
   elevate_curve_order_2to3(&mesh);
   elevate_curve_order_3to4(&mesh);
