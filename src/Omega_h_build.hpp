@@ -38,6 +38,9 @@ void assemble_slices(CommPtr comm, Omega_h_Family family, Int dim,
     GO vert_offset, Reals vert_coords, Dist* p_slice_elems2elems, LOs* conn_out,
     Dist* p_slice_verts2verts);
 
+void build_quadratic_wireframe(Mesh* mesh, LO n_sample_pts,
+                               Mesh* wireframe_mesh);
+
 }  // end namespace Omega_h
 
 #endif
