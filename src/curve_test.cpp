@@ -219,20 +219,24 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
   //binary::write("/users/joshia5/Meshes/curved/box_circleCut-30reg_quad.osh",
     //            &mesh);
  
-  std::ofstream edge_file;
-  edge_file.open("box_circleCut-30reg_quad_edges.csv");
-  edge_file << "x, y, z\n";
-  LO n_sample_pts = 50;
-  auto u = Read<Real>(n_sample_pts, 0.0, 0.02, "samplePts");
+  LO n_sample_pts = 10;
+  Real xi_start = 0.0;
+  Real xi_end = 1.0;
+  Real delta_xi = (xi_end - xi_start)/(n_sample_pts - 1);
+  auto u = Read<Real>(n_sample_pts, xi_start, delta_xi, "samplePts");
   auto u_h = HostRead<Real>(u);
 
   HostWrite<Real> host_coords(n_sample_pts*nedge*dim);
-  LO wireframe_nedge = n_sample_pts*nedge - 1;
+  LO wireframe_nedge = (n_sample_pts - 1)*nedge;
   HostWrite<LO> host_ev2v(wireframe_nedge*2);
   std::vector<int> edge_vertices[1];
   edge_vertices[0].reserve(wireframe_nedge*2);
   LO count_wireframe_vtx = 0;
   LO count_sample_edge = 0;
+
+  std::ofstream edge_file;
+  edge_file.open("box_circleCut-30reg_quad_edges.csv");
+  edge_file << "x, y, z\n";
 
   for (LO i = 0; i < nedge; ++i) {
     auto v0 = ev2v_h[i*2];
@@ -267,6 +271,7 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
     }
   }
 
+  printf(" as per edge %d, as per count %d\n", wireframe_nedge*2, count_wireframe_vtx);
   for (int i = 0; i < wireframe_nedge*2; ++i) {
     host_ev2v[i] = edge_vertices[0][static_cast<std::size_t>(i)];
   }
@@ -276,7 +281,7 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
   wireframe_mesh.set_parting(OMEGA_H_ELEM_BASED);
-  wireframe_mesh.set_dim(1);
+  wireframe_mesh.set_dim(dim);
   wireframe_mesh.set_family(OMEGA_H_SIMPLEX);
   wireframe_mesh.set_verts(n_sample_pts*nedge);
 
@@ -284,8 +289,8 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
   wireframe_mesh.add_coords(Reals(host_coords.write()));
   wireframe_mesh.set_ents(1, Adj(LOs(host_ev2v.write())));
 
-  vtk::write_vtu_wireframe(
-    "/users/joshia5/Meshes/curved/box_circleCut-30reg_wireframe.vtk", &mesh);
+  std::string vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_wireframe.vtu";
+  vtk::write_vtu_wireframe(vtuPath.c_str(), &wireframe_mesh);
 
   elevate_curve_order_2to3(&mesh);
   elevate_curve_order_3to4(&mesh);
