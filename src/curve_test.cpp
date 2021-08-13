@@ -7,6 +7,7 @@
 #include<Omega_h_beziers.hpp>
 #include<Omega_h_matrix.hpp>
 #include<Omega_h_defines.hpp>
+#include<Omega_h_build.hpp>
 
 using namespace Omega_h;
 
@@ -216,23 +217,13 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
   auto ctrlPts_h = HostRead<Real>(mesh.get_ctrlPts(1));
   auto dim = 3;
   auto coords_h = HostRead<Real>(mesh.coords());
-  //binary::write("/users/joshia5/Meshes/curved/box_circleCut-30reg_quad.osh",
-    //            &mesh);
  
   LO n_sample_pts = 10;
   Real xi_start = 0.0;
   Real xi_end = 1.0;
   Real delta_xi = (xi_end - xi_start)/(n_sample_pts - 1);
-  auto u = Read<Real>(n_sample_pts, xi_start, delta_xi, "samplePts");
-  auto u_h = HostRead<Real>(u);
-
-  HostWrite<Real> host_coords(n_sample_pts*nedge*dim);
-  LO wireframe_nedge = (n_sample_pts - 1)*nedge;
-  HostWrite<LO> host_ev2v(wireframe_nedge*2);
-  std::vector<int> edge_vertices[1];
-  edge_vertices[0].reserve(wireframe_nedge*2);
-  LO count_wireframe_vtx = 0;
-  LO count_sample_edge = 0;
+  auto u_h = HostRead<Real>(Read<Real>(n_sample_pts, xi_start, delta_xi,
+                                      "samplePts"));
 
   std::ofstream edge_file;
   edge_file.open("box_circleCut-30reg_quad_edges.csv");
@@ -257,37 +248,14 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
       auto y_bezier = cy0*B0_quad(u_h[i]) + cy1*B1_quad(u_h[i]) + cy2*B2_quad(u_h[i]);
       auto z_bezier = cz0*B0_quad(u_h[i]) + cz1*B1_quad(u_h[i]) + cz2*B2_quad(u_h[i]);
       edge_file << x_bezier << ", " << y_bezier << ", " << z_bezier << "\n";
-
-      host_coords[count_wireframe_vtx*dim + 0] = x_bezier;
-      host_coords[count_wireframe_vtx*dim + 1] = y_bezier;
-      host_coords[count_wireframe_vtx*dim + 2] = z_bezier;
-
-      edge_vertices[0].push_back(count_wireframe_vtx);
-      if ((i > 0) && (i < (u_h.size() - 1))) {
-        edge_vertices[0].push_back(count_wireframe_vtx);
-      }
-
-      ++count_wireframe_vtx;
     }
   }
 
-  printf(" as per edge %d, as per count %d\n", wireframe_nedge*2, count_wireframe_vtx);
-  for (int i = 0; i < wireframe_nedge*2; ++i) {
-    host_ev2v[i] = edge_vertices[0][static_cast<std::size_t>(i)];
-  }
-  //parallel_for
   edge_file.close();
 
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
-  wireframe_mesh.set_parting(OMEGA_H_ELEM_BASED);
-  wireframe_mesh.set_dim(dim);
-  wireframe_mesh.set_family(OMEGA_H_SIMPLEX);
-  wireframe_mesh.set_verts(n_sample_pts*nedge);
-
-  //figure out how to get the coords array, vert indices and ev2v
-  wireframe_mesh.add_coords(Reals(host_coords.write()));
-  wireframe_mesh.set_ents(1, Adj(LOs(host_ev2v.write())));
+  build_quadratic_wireframe(&mesh, 1000, &wireframe_mesh);
 
   std::string vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_wireframe.vtu";
   vtk::write_vtu_wireframe(vtuPath.c_str(), &wireframe_mesh);
