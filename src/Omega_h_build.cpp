@@ -13,6 +13,7 @@
 #include "Omega_h_migrate.hpp"
 #include "Omega_h_owners.hpp"
 #include "Omega_h_simplify.hpp"
+#include "Omega_h_beziers.hpp"
 
 namespace Omega_h {
 
@@ -365,6 +366,74 @@ void assemble_slices(CommPtr comm, Omega_h_Family family, Int dim,
   *p_slice_elems2elems = slice_elems2elems;
   *p_conn_out = new_conn;
   *p_slice_verts2verts = verts2slice_verts.invert();
+}
+
+void build_quadratic_wireframe(Mesh* mesh, LO n_sample_pts,
+                               Mesh* wireframe_mesh) {
+  auto nedge = mesh->nedges();
+  auto coords_h = HostRead<Real>(mesh->coords());
+  auto ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(1));
+  auto ev2v_h = HostRead<LO>(mesh->get_adj(1, 0).ab2b);
+
+  I8 dim = 3;
+  Real xi_start = 0.0;
+  Real xi_end = 1.0;
+  Real delta_xi = (xi_end - xi_start)/(n_sample_pts - 1);
+  auto u_h = HostRead<Real>(Read<Real>(n_sample_pts, xi_start, delta_xi,
+                                      "samplePts"));
+
+  HostWrite<Real> host_coords(n_sample_pts*nedge*dim);
+  LO wireframe_nedge = (n_sample_pts - 1)*nedge;
+  HostWrite<LO> host_ev2v(wireframe_nedge*2);
+  std::vector<int> edge_vertices[1];
+  edge_vertices[0].reserve(wireframe_nedge*2);
+  LO count_wireframe_vtx = 0;
+
+  for (LO i = 0; i < nedge; ++i) {
+    auto v0 = ev2v_h[i*2];
+    auto v1 = ev2v_h[i*2 + 1];
+
+    Real cx0 = coords_h[v0*dim + 0];
+    Real cy0 = coords_h[v0*dim + 1];
+    Real cz0 = coords_h[v0*dim + 2];
+    Real cx1 = ctrlPts_h[i*dim + 0];
+    Real cy1 = ctrlPts_h[i*dim + 1];
+    Real cz1 = ctrlPts_h[i*dim + 2];
+    Real cx2 = coords_h[v1*dim + 0];
+    Real cy2 = coords_h[v1*dim + 1];
+    Real cz2 = coords_h[v1*dim + 2];
+
+    for (LO i = 0; i < u_h.size(); ++i) {
+      auto x_bezier = cx0*B0_quad(u_h[i]) + cx1*B1_quad(u_h[i]) + cx2*B2_quad(u_h[i]);
+      auto y_bezier = cy0*B0_quad(u_h[i]) + cy1*B1_quad(u_h[i]) + cy2*B2_quad(u_h[i]);
+      auto z_bezier = cz0*B0_quad(u_h[i]) + cz1*B1_quad(u_h[i]) + cz2*B2_quad(u_h[i]);
+
+      host_coords[count_wireframe_vtx*dim + 0] = x_bezier;
+      host_coords[count_wireframe_vtx*dim + 1] = y_bezier;
+      host_coords[count_wireframe_vtx*dim + 2] = z_bezier;
+
+      edge_vertices[0].push_back(count_wireframe_vtx);
+      if ((i > 0) && (i < (u_h.size() - 1))) {
+        edge_vertices[0].push_back(count_wireframe_vtx);
+      }
+
+      ++count_wireframe_vtx;
+    }
+  }
+
+  for (int i = 0; i < wireframe_nedge*2; ++i) {
+    host_ev2v[i] = edge_vertices[0][static_cast<std::size_t>(i)];
+  }
+
+  wireframe_mesh->set_parting(OMEGA_H_ELEM_BASED);
+  wireframe_mesh->set_dim(dim);
+  wireframe_mesh->set_family(OMEGA_H_SIMPLEX);
+  wireframe_mesh->set_verts(n_sample_pts*nedge);
+
+  wireframe_mesh->add_coords(Reals(host_coords.write()));
+  wireframe_mesh->set_ents(1, Adj(LOs(host_ev2v.write())));
+
+  return;
 }
 
 }  // end namespace Omega_h
