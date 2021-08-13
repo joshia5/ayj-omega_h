@@ -1378,6 +1378,76 @@ void FullWriter::write() {
   for (auto& writer : writers_) writer.write();
 }
 
+void write_vtu_wireframe(std::ostream& stream, Mesh* mesh, 
+                         bool compress) {
+  //minimum inputs needed 1. coordinates array, 2. connectivity
+  Int cell_dim = 1;
+  OMEGA_H_TIME_FUNCTION;
+  default_dim(mesh, &cell_dim);
+  write_vtkfile_vtu_start_tag(stream, compress);
+  stream << "<UnstructuredGrid>\n";
+  write_piece_start_tag(stream, mesh, cell_dim);
+  stream << "<Cells>\n";
+
+  Read<I8> types(mesh->nents(cell_dim), vtk_type(mesh->family(), cell_dim));
+  write_array(stream, "types", 1, types, compress);
+  LOs ev2v = mesh->ask_verts_of(cell_dim);
+  auto deg = element_degree(mesh->family(), cell_dim, VERT);
+  /* starts off already at the end of the first entity's adjacencies,
+     increments by a constant value */
+  LOs ends(mesh->nents(cell_dim), deg, deg);
+  write_array(stream, "connectivity", 1, ev2v, compress);
+  write_array(stream, "offsets", 1, ends, compress);
+
+  stream << "</Cells>\n";
+  stream << "<Points>\n";
+  auto coords = mesh->coords();
+  write_array(stream, "coordinates", 3, resize_vectors(coords, mesh->dim(), 3),
+      compress);
+  stream << "</Points>\n";
+  stream << "<PointData>\n";
+  /* globals go first so read_vtu() knows where to find them */
+  /*
+  if (mesh->has_tag(VERT, "global") && tags[VERT].count("global")) {
+    write_tag(stream, mesh->get_tag<GO>(VERT, "global"), mesh->dim(), VERT, 
+              mesh, compress);
+  }
+  write_locals_and_owners(stream, mesh, VERT, tags, compress);
+  for (Int i = 0; i < mesh->ntags(VERT); ++i) {
+    auto tag = mesh->get_tag(VERT, i);
+    if (tag->name() != "coordinates" && tag->name() != "global" &&
+        tags[VERT].count(tag->name())) {
+      write_tag(stream, tag, mesh->dim(), VERT, mesh, compress);
+    }
+  }
+  */
+  stream << "</PointData>\n";
+  stream << "<CellData>\n";
+  /* globals go first so read_vtu() knows where to find them */
+  /*
+  if (mesh->has_tag(cell_dim, "global") &&
+      tags[size_t(cell_dim)].count("global")) {
+    write_tag(
+        stream, mesh->get_tag<GO>(cell_dim, "global"), mesh->dim(), cell_dim,
+        mesh, compress);
+  }
+  write_locals_and_owners(stream, mesh, cell_dim, tags, compress);
+  if (tags[size_t(cell_dim)].count("vtkGhostType")) {
+    write_vtk_ghost_types(stream, mesh, cell_dim, compress);
+  }
+  for (Int i = 0; i < mesh->ntags(cell_dim); ++i) {
+    auto tag = mesh->get_tag(cell_dim, i);
+    if (tag->name() != "global" && tags[size_t(cell_dim)].count(tag->name())) {
+      write_tag(stream, tag, mesh->dim(), cell_dim, mesh, compress);
+    }
+  }
+  */
+  stream << "</CellData>\n";
+  stream << "</Piece>\n";
+  stream << "</UnstructuredGrid>\n";
+  stream << "</VTKFile>\n";
+}
+
 #define OMEGA_H_EXPL_INST(T)                                                   \
   template void write_p_data_array<T>(                                         \
       std::ostream & stream, std::string const& name, Int ncomps);             \
