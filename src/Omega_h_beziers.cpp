@@ -56,7 +56,7 @@ Real B10_quad(Real u, Real v) {
 }
 
 Real B20_quad(Real u, Real v) {
-  return u*u;
+  return u*u + 0*v;
 }
 
 Real B11_quad(Real u, Real v) {
@@ -64,7 +64,7 @@ Real B11_quad(Real u, Real v) {
 }
 
 Real B02_quad(Real u, Real v) {
-  return v*v;
+  return v*v + 0*u;
 }
 
 Real B01_quad(Real u, Real v) {
