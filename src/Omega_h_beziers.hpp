@@ -23,12 +23,12 @@ Real B0_quad(Real u);
 Real B1_quad(Real u);
 Real B2_quad(Real u);
 
-Real B00_quad(Real u);
-Real B10_quad(Real u);
-Real B20_quad(Real u);
-Real B11_quad(Real u);
-Real B02_quad(Real u);
-Real B01_quad(Real u);
+Real B00_quad(Real u, Real v);
+Real B10_quad(Real u, Real v);
+Real B20_quad(Real u, Real v);
+Real B11_quad(Real u, Real v);
+Real B02_quad(Real u, Real v);
+Real B01_quad(Real u, Real v);
 
 LO binomial(int n, int i);
 
