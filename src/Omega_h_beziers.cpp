@@ -44,8 +44,31 @@ Real B1_quad(Real u) {
 }
 
 Real B2_quad(Real u) {
-//OMEGA_H_DEVICE Real B2_quad(Real u) {
   return u*u;
+}
+
+Real B00_quad(Real u, Real v) {
+  return (1-u-v)*(1-u-v);
+}
+
+Real B10_quad(Real u, Real v) {
+  return 2*u*(1-u-v);
+}
+
+Real B20_quad(Real u, Real v) {
+  return u*u;
+}
+
+Real B11_quad(Real u, Real v) {
+  return 2*u*v;
+}
+
+Real B02_quad(Real u, Real v) {
+  return v*v;
+}
+
+Real B01_quad(Real u, Real v) {
+  return 2*v*(1-u-v);
 }
 
 void calc_quad_ctrlPts_from_interpPts(Mesh *mesh) {
