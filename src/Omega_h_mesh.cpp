@@ -1284,6 +1284,16 @@ Real Mesh::imbalance(Int ent_dim) const {
   return m / a;
 }
 
+void Mesh::set_down(Int high_dim, Int low_dim, LOs hl2l) {
+  OMEGA_H_TIME_FUNCTION;
+  OMEGA_H_CHECK(high_dim > low_dim);
+  OMEGA_H_CHECK(hl2l.exists());
+  OMEGA_H_CHECK(has_ents(low_dim));
+  auto deg = element_degree(family(), high_dim, low_dim);
+  nents_[high_dim] = divide_no_remainder(hl2l.size(), deg);
+  adjs_[high_dim][low_dim] = std::make_shared<Adj>(Adj(hl2l));
+}
+
 bool can_print(Mesh* mesh) {
   return (!mesh->library()->silent_) && (mesh->comm()->rank() == 0);
 }

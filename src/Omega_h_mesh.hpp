@@ -224,6 +224,7 @@ class Mesh {
   void add_tags_for_ctrlPts();
   void set_tag_for_ctrlPts(Int ent_dim, Reals ctrlPts);
   Reals get_ctrlPts(Int ent_dim);
+  void set_down(Int high_dim, Int low_dim, LOs hl2l);
 
  public:
   typedef std::shared_ptr<TagBase> TagPtr;
