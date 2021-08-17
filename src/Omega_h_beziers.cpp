@@ -20,27 +20,27 @@ Real intpow(const Real b, const LO e) {
 }
 
 Real B0(Real u) {
-  return intpow(1-u, 3);
+  return (1.0-u)*(1.0-u)*(1.0-u);
 }
 
 Real B1(Real u) {
-  return 3*u*intpow(1-u, 2);
+  return 3.0*u*(1.0-u)*(1.0-u);
 }
 
 Real B2(Real u) {
-  return 3*(1-u)*intpow(u, 2);
+  return 3.0*(1.0-u)*u*u;
 }
 
 Real B3(Real u) {
-  return intpow(u, 3);
+  return u*u*u;
 }
 
 Real B0_quad(Real u) {
-  return (1-u)*(1-u);
+  return (1.0-u)*(1.0-u);
 }
 
 Real B1_quad(Real u) {
-  return 2*u*(1-u);
+  return 2.0*u*(1.0-u);
 }
 
 Real B2_quad(Real u) {
@@ -48,27 +48,27 @@ Real B2_quad(Real u) {
 }
 
 Real B00_quad(Real u, Real v) {
-  return (1-u-v)*(1-u-v);
+  return (1.0-u-v)*(1.0-u-v);
 }
 
 Real B10_quad(Real u, Real v) {
-  return 2*u*(1-u-v);
+  return 2.0*u*(1.0-u-v);
 }
 
 Real B20_quad(Real u, Real v) {
-  return u*u + 0*v;
+  return u*u + 0.0*v;
 }
 
 Real B11_quad(Real u, Real v) {
-  return 2*u*v;
+  return 2.0*u*v;
 }
 
 Real B02_quad(Real u, Real v) {
-  return v*v + 0*u;
+  return v*v + 0.0*u;
 }
 
 Real B01_quad(Real u, Real v) {
-  return 2*v*(1-u-v);
+  return 2.0*v*(1.0-u-v);
 }
 
 void calc_quad_ctrlPts_from_interpPts(Mesh *mesh) {
