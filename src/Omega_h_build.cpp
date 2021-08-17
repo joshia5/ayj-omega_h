@@ -543,10 +543,10 @@ void build_quadratic_curveVtk(Mesh* mesh, LO n_sample_pts,
           //face_vertices[0].push_back(count_curveVtk_mesh_vtx + n_sample_pts-j);
           face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1);
         }
-        if (i > 0) {// double check
+        if ((i < n_sample_pts - 1) && (i > 0)) {// double check
           face_vertices[0].push_back(count_curveVtk_mesh_vtx);
           face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1);
-          face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1 - (n_sample_pts-(i - 1)));
+          face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1 - (n_sample_pts-(i-1)));
           //face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1 - (n_sample_pts-j));
         }
 
