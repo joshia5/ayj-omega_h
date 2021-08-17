@@ -15,6 +15,9 @@
 #include "Omega_h_simplify.hpp"
 #include "Omega_h_beziers.hpp"
 
+#include <iostream>
+#include <fstream>
+
 namespace Omega_h {
 
 void add_ents2verts(
@@ -469,6 +472,10 @@ void build_quadratic_curveVtk(Mesh* mesh, LO n_sample_pts,
   std::vector<int> face_vertices[1];
   face_vertices[0].reserve(curveVtk_mesh_nface*3);
 
+  std::ofstream points_file;
+  points_file.open("box_circleCut-30reg_curveVtkCoords.csv");
+  points_file << "x,y,z\n";
+
   LO count_curveVtk_mesh_vtx = 0;
   for (LO i = 0; i < nface; ++i) {
     auto v0 = fv2v_h[i*3];
@@ -527,21 +534,25 @@ void build_quadratic_curveVtk(Mesh* mesh, LO n_sample_pts,
         host_coords[count_curveVtk_mesh_vtx*dim + 1] = y_bezier;
         host_coords[count_curveVtk_mesh_vtx*dim + 2] = z_bezier;
 
-        if ((i < n_sample_pts - 1) && (j < n_sample_pts - i - 1)) { // double check
+        points_file << x_bezier << ", " << y_bezier << ", " << z_bezier << "\n";
+
+        if ((i < n_sample_pts - 1) && (j < n_sample_pts - i - 1)) {// double check
           face_vertices[0].push_back(count_curveVtk_mesh_vtx);
-          face_vertices[0].push_back(count_curveVtk_mesh_vtx + n_sample_pts - j);
+          face_vertices[0].push_back(count_curveVtk_mesh_vtx + n_sample_pts-j);
           face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1);
         }
-        if (i > 0) { // double check
+        if (i > 0) {// double check
           face_vertices[0].push_back(count_curveVtk_mesh_vtx);
           face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1);
-          face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1 - (n_sample_pts - j));
+          face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1 - (n_sample_pts-j));
         }
 
         ++count_curveVtk_mesh_vtx;
       }
     }
   }
+
+  points_file.close();
 
   for (int i = 0; i < curveVtk_mesh_nface*3; ++i) {
     host_fv2v[i] = face_vertices[0][static_cast<std::size_t>(i)];
@@ -550,9 +561,9 @@ void build_quadratic_curveVtk(Mesh* mesh, LO n_sample_pts,
   curveVtk_mesh->set_parting(OMEGA_H_ELEM_BASED);
   curveVtk_mesh->set_dim(dim);
   curveVtk_mesh->set_family(OMEGA_H_SIMPLEX);
-  curveVtk_mesh->set_verts(n_sample_pts*nface);
+  curveVtk_mesh->set_verts(count_curveVtk_mesh_vtx_perTri*nface);
   curveVtk_mesh->add_coords(Reals(host_coords.write()));
-  curveVtk_mesh->set_ents(1, Adj(LOs(host_fv2v.write())));
+  curveVtk_mesh->set_down(2, 0, LOs(host_fv2v.write()));
 
   return;
 }
