@@ -474,7 +474,7 @@ void build_quadratic_curveVtk(Mesh* mesh, LO n_sample_pts,
 
   std::ofstream points_file;
   points_file.open("box_circleCut-30reg_curveVtkCoords.csv");
-  points_file << "x,y,z\n";
+  points_file << "id,x,y,z\n";
 
   LO count_curveVtk_mesh_vtx = 0;
   for (LO i = 0; i < nface; ++i) {
@@ -534,17 +534,20 @@ void build_quadratic_curveVtk(Mesh* mesh, LO n_sample_pts,
         host_coords[count_curveVtk_mesh_vtx*dim + 1] = y_bezier;
         host_coords[count_curveVtk_mesh_vtx*dim + 2] = z_bezier;
 
-        points_file << x_bezier << ", " << y_bezier << ", " << z_bezier << "\n";
+        points_file << count_curveVtk_mesh_vtx << "," <<  x_bezier << "," <<
+                       y_bezier << "," << z_bezier << "\n";
 
         if ((i < n_sample_pts - 1) && (j < n_sample_pts - i - 1)) {// double check
           face_vertices[0].push_back(count_curveVtk_mesh_vtx);
-          face_vertices[0].push_back(count_curveVtk_mesh_vtx + n_sample_pts-j);
+          face_vertices[0].push_back(count_curveVtk_mesh_vtx + n_sample_pts-i);
+          //face_vertices[0].push_back(count_curveVtk_mesh_vtx + n_sample_pts-j);
           face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1);
         }
         if (i > 0) {// double check
           face_vertices[0].push_back(count_curveVtk_mesh_vtx);
           face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1);
-          face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1 - (n_sample_pts-j));
+          face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1 - (n_sample_pts-(i - 1)));
+          //face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1 - (n_sample_pts-j));
         }
 
         ++count_curveVtk_mesh_vtx;
