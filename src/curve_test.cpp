@@ -260,6 +260,10 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
   std::string vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_wireframe.vtu";
   vtk::write_vtu_wireframe(vtuPath.c_str(), &wireframe_mesh);
 
+  auto curveVtk_mesh = Mesh(comm->library());
+  curveVtk_mesh.set_comm(comm);
+  build_quadratic_curveVtk(&mesh, 10, &curveVtk_mesh);
+
   elevate_curve_order_2to3(&mesh);
   elevate_curve_order_3to4(&mesh);
   elevate_curve_order_4to5(&mesh);

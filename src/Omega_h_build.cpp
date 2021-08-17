@@ -439,7 +439,8 @@ void build_quadratic_wireframe(Mesh* mesh, LO n_sample_pts,
   return;
 }
 
-void build_curveVtk_mesh(Mesh* mesh, LO n_sample_pts, Mesh* curveVtk_mesh) {
+void build_quadratic_curveVtk(Mesh* mesh, LO n_sample_pts,
+                              Mesh* curveVtk_mesh) {
   auto nface = mesh->nfaces();
   auto coords_h = HostRead<Real>(mesh->coords());
   auto ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(1));
@@ -451,23 +452,24 @@ void build_curveVtk_mesh(Mesh* mesh, LO n_sample_pts, Mesh* curveVtk_mesh) {
   Real xi_end = 1.0;
   Real delta_xi = (xi_end - xi_start)/(n_sample_pts - 1);
   double xi[n_sample_pts][n_sample_pts][FACE] = {0.0};
-  LO count_curveVtk_mesh_vtx = 0;
+  LO count_curveVtk_mesh_vtx_perTri = 0;
 
   for (LO i = 0; i < n_sample_pts; ++i) {
     for (LO j = 0; j < n_sample_pts - i; ++j) {
       xi[i][j][0] = i*delta_xi;
       xi[i][j][1] = j*delta_xi;
-      ++count_curveVtk_mesh_vtx;
+      ++count_curveVtk_mesh_vtx_perTri;
     }
   }
 
-  HostWrite<Real> host_coords(count_curveVtk_mesh_vtx*nface*dim);
-  count_curveVtk_mesh_vtx = 0;
-  LO curveVtk_mesh_nface = (n_sample_pts - 1)*(n_sample_pts - 1)*nface;
+  HostWrite<Real> host_coords(count_curveVtk_mesh_vtx_perTri*nface*dim);
+  LO faces_perTri = (n_sample_pts - 1)*(n_sample_pts - 1);
+  LO curveVtk_mesh_nface = faces_perTri*nface;
   HostWrite<LO> host_fv2v(curveVtk_mesh_nface*3);
   std::vector<int> face_vertices[1];
   face_vertices[0].reserve(curveVtk_mesh_nface*3);
 
+  LO count_curveVtk_mesh_vtx = 0;
   for (LO i = 0; i < nface; ++i) {
     auto v0 = fv2v_h[i*3];
     auto v1 = fv2v_h[i*3 + 1];
@@ -525,33 +527,33 @@ void build_curveVtk_mesh(Mesh* mesh, LO n_sample_pts, Mesh* curveVtk_mesh) {
         host_coords[count_curveVtk_mesh_vtx*dim + 1] = y_bezier;
         host_coords[count_curveVtk_mesh_vtx*dim + 2] = z_bezier;
 
-        /*
-        face_vertices[0].push_back(count_curveVtk_mesh_vtx);
-        if ((i > 0) && (i < (u_h.size() - 1))) {
+        if ((i < n_sample_pts - 1) && (j < n_sample_pts - i - 1)) { // double check
           face_vertices[0].push_back(count_curveVtk_mesh_vtx);
+          face_vertices[0].push_back(count_curveVtk_mesh_vtx + n_sample_pts - j);
+          face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1);
         }
-        */
+        if (i > 0) { // double check
+          face_vertices[0].push_back(count_curveVtk_mesh_vtx);
+          face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1);
+          face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1 - (n_sample_pts - j));
+        }
 
         ++count_curveVtk_mesh_vtx;
       }
     }
   }
 
-  /*
-  for (int i = 0; i < curveVtk_mesh_nface*2; ++i) {
-    host_ev2v[i] = face_vertices[0][static_cast<std::size_t>(i)];
+  for (int i = 0; i < curveVtk_mesh_nface*3; ++i) {
+    host_fv2v[i] = face_vertices[0][static_cast<std::size_t>(i)];
   }
-  */
 
   curveVtk_mesh->set_parting(OMEGA_H_ELEM_BASED);
-  /*
   curveVtk_mesh->set_dim(dim);
   curveVtk_mesh->set_family(OMEGA_H_SIMPLEX);
   curveVtk_mesh->set_verts(n_sample_pts*nface);
-
   curveVtk_mesh->add_coords(Reals(host_coords.write()));
-  curveVtk_mesh->set_ents(1, Adj(LOs(host_ev2v.write())));
-  */
+  curveVtk_mesh->set_ents(1, Adj(LOs(host_fv2v.write())));
+
   return;
 }
 

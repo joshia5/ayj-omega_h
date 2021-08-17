@@ -40,7 +40,7 @@ void assemble_slices(CommPtr comm, Omega_h_Family family, Int dim,
 
 void build_quadratic_wireframe(Mesh* mesh, LO n_sample_pts,
                                Mesh* wireframe_mesh);
-void build_curveVtk_mesh(Mesh* mesh, LO n_sample_pts, Mesh* curveVtk_mesh);
+void build_quadratic_curveVtk(Mesh* mesh, LO n_sample_pts, Mesh* curveVtk_mesh);
 
 }  // end namespace Omega_h
 
