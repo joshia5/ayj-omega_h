@@ -256,13 +256,14 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
   build_quadratic_wireframe(&mesh, 1000, &wireframe_mesh);
-
   std::string vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_wireframe.vtu";
-  vtk::write_vtu_wireframe(vtuPath.c_str(), &wireframe_mesh);
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
 
   auto curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
-  build_quadratic_curveVtk(&mesh, 10, &curveVtk_mesh);
+  build_quadratic_curveVtk(&mesh, 5, &curveVtk_mesh);
+  vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
 
   elevate_curve_order_2to3(&mesh);
   elevate_curve_order_3to4(&mesh);
