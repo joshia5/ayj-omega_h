@@ -121,8 +121,9 @@ void write_parallel(std::string const& path, Mesh* mesh,
 void read_parallel(filesystem::path const& pvtupath, CommPtr comm, Mesh* mesh);
 void read_vtu(std::istream& stream, CommPtr comm, Mesh* mesh);
 
-void write_vtu_wireframe(filesystem::path const& filename, Mesh* mesh, 
-                         bool compress = OMEGA_H_DEFAULT_COMPRESS);
+void write_simplex_connectivity(filesystem::path const& filename, Mesh* mesh,
+                                Int cell_dim,
+                                bool compress = OMEGA_H_DEFAULT_COMPRESS);
 
 class Writer {
   Mesh* mesh_;

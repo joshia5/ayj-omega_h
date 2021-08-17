@@ -1378,12 +1378,11 @@ void FullWriter::write() {
   for (auto& writer : writers_) writer.write();
 }
 
-void write_vtu_wireframe(filesystem::path const& filename, Mesh* mesh, 
-                         bool compress) {
+void write_simplex_connectivity(filesystem::path const& filename, Mesh* mesh,
+                                Int cell_dim, bool compress) {
   OMEGA_H_TIME_FUNCTION;
   std::ofstream stream(filename.c_str());
   OMEGA_H_CHECK(stream.is_open());
-  Int cell_dim = 1;
   default_dim(mesh, &cell_dim);
   write_vtkfile_vtu_start_tag(stream, compress);
   stream << "<UnstructuredGrid>\n";
