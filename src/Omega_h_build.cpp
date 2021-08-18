@@ -371,8 +371,8 @@ void assemble_slices(CommPtr comm, Omega_h_Family family, Int dim,
   *p_slice_verts2verts = verts2slice_verts.invert();
 }
 
-void build_quadratic_wireframe(Mesh* mesh, LO n_sample_pts,
-                               Mesh* wireframe_mesh) {
+void build_quadratic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
+                               LO n_sample_pts) {
   auto nedge = mesh->nedges();
   auto coords_h = HostRead<Real>(mesh->coords());
   auto ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(1));
@@ -442,8 +442,8 @@ void build_quadratic_wireframe(Mesh* mesh, LO n_sample_pts,
   return;
 }
 
-void build_quadratic_curveVtk(Mesh* mesh, LO n_sample_pts,
-                              Mesh* curveVtk_mesh) {
+void build_quadratic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
+                              LO n_sample_pts) {
   auto nface = mesh->nfaces();
   auto coords_h = HostRead<Real>(mesh->coords());
   auto ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(1));
