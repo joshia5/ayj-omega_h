@@ -210,7 +210,7 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
                             const std::string &mesh_file,
                             const char* vtk_file) {
   auto comm = lib->world();
-  auto mesh = Omega_h::meshsim::read(mesh_file, model_file, comm);
+  auto mesh = meshsim::read(mesh_file, model_file, comm);
   calc_quad_ctrlPts_from_interpPts(&mesh);
   auto nedge = mesh.nedges();
   auto ev2v_h = HostRead<LO>(mesh.get_adj(1, 0).ab2b);
@@ -255,13 +255,13 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
 
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
-  build_quadratic_wireframe(&mesh, 50, &wireframe_mesh);
+  build_quadratic_wireframe(&mesh, &wireframe_mesh);
   std::string vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_wireframe.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
 
   auto curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
-  build_quadratic_curveVtk(&mesh, 50, &curveVtk_mesh);
+  build_quadratic_curveVtk(&mesh, &curveVtk_mesh, 3);
   vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
 
@@ -271,9 +271,29 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
   elevate_curve_order_5to6(&mesh);
   vtk::write_parallel(vtk_file, &mesh, mesh.dim());
   vtk::FullWriter writer;
-  writer = Omega_h::vtk::FullWriter(
+  writer = vtk::FullWriter(
     "/users/joshia5/Meshes/curved/box_circleCut-30reg_full.vtk", &mesh);
   writer.write();
+
+  return;
+}
+
+void test_sim_kova_quadratic(Library *lib) {
+  auto comm = lib->world();
+  auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
+  calc_quad_ctrlPts_from_interpPts(&mesh);
+
+  auto wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_quadratic_wireframe(&mesh, &wireframe_mesh);
+  std::string vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+
+  auto curveVtk_mesh = Mesh(comm->library());
+  curveVtk_mesh.set_comm(comm);
+  build_quadratic_curveVtk(&mesh, &curveVtk_mesh);
+  vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
 
   return;
 }
@@ -300,6 +320,7 @@ int main(int argc, char** argv) {
 
   test_linearTri_toCubicCircle(&lib, path_2d, path_2d_vtk);
   test_sim_linearToCubic(&lib, path_3d_g, path_3d_m, path_3d_vtk);
+  test_sim_kova_quadratic(&lib);
 
   return 0;
 }
