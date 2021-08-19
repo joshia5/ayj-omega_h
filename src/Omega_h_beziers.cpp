@@ -19,22 +19,6 @@ Real intpow(const Real b, const LO e) {
   }
 }
 
-Real B0(Real u) {
-  return (1.0-u)*(1.0-u)*(1.0-u);
-}
-
-Real B1(Real u) {
-  return 3.0*u*(1.0-u)*(1.0-u);
-}
-
-Real B2(Real u) {
-  return 3.0*(1.0-u)*u*u;
-}
-
-Real B3(Real u) {
-  return u*u*u;
-}
-
 Real B0_quad(Real u) {
   return (1.0-u)*(1.0-u);
 }
@@ -45,6 +29,22 @@ Real B1_quad(Real u) {
 
 Real B2_quad(Real u) {
   return u*u;
+}
+
+Real B0_cube(Real u) {
+  return (1.0-u)*(1.0-u)*(1.0-u);
+}
+
+Real B1_cube(Real u) {
+  return 3.0*u*(1.0-u)*(1.0-u);
+}
+
+Real B2_cube(Real u) {
+  return 3.0*(1.0-u)*u*u;
+}
+
+Real B3_cube(Real u) {
+  return u*u*u;
 }
 
 Real B00_quad(Real u, Real v) {
@@ -69,6 +69,46 @@ Real B02_quad(Real u, Real v) {
 
 Real B01_quad(Real u, Real v) {
   return 2.0*v*(1.0-u-v);
+}
+
+Real B00_cube(Real u, Real v) {
+  return (1.0-u-v)*(1.0-u-v)*(1.0-u-v);
+}
+
+Real B10_cube(Real u, Real v) {
+  return 3.0*u*(1.0-u-v)*(1.0-u-v);
+}
+
+Real B20_cube(Real u, Real v) {
+  return 3.0*u*u*(1.0-u-v);
+}
+
+Real B30_cube(Real u, Real v) {
+  return u*u*u + 0.0*v;
+}
+
+Real B21_cube(Real u, Real v) {
+  return 3.0*u*u*v;
+}
+
+Real B12_cube(Real u, Real v) {
+  return 3.0*u*v*v;
+}
+
+Real B03_cube(Real u, Real v) {
+  return v*v*v + 0.0*u;
+}
+
+Real B02_cube(Real u, Real v) {
+  return 3.0*v*v*(1.0-u-v);
+}
+
+Real B01_cube(Real u, Real v) {
+  return 3.0*v*(1.0-u-v)*(1.0-u-v);
+}
+
+Real B11_cube(Real u, Real v) {
+  return 6.0*u*v*(1.0-u-v);
 }
 
 void calc_quad_ctrlPts_from_interpPts(Mesh *mesh) {
