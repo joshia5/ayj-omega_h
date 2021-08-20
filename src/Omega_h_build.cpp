@@ -472,10 +472,6 @@ void build_quadratic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
   std::vector<int> face_vertices[1];
   face_vertices[0].reserve(curveVtk_mesh_nface*3);
 
-  std::ofstream points_file;
-  points_file.open("box_circleCut-30reg_curveVtkCoords.csv");
-  points_file << "id,x,y,z\n";
-
   LO count_curveVtk_mesh_vtx = 0;
   for (LO i = 0; i < nface; ++i) {
     auto v0 = fv2v_h[i*3];
@@ -534,9 +530,6 @@ void build_quadratic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
         host_coords[count_curveVtk_mesh_vtx*dim + 1] = y_bezier;
         host_coords[count_curveVtk_mesh_vtx*dim + 2] = z_bezier;
 
-        points_file << count_curveVtk_mesh_vtx << "," <<  x_bezier << "," <<
-                       y_bezier << "," << z_bezier << "\n";
-
         if ((i < n_sample_pts - 1) && (j < n_sample_pts - i - 1)) {
           face_vertices[0].push_back(count_curveVtk_mesh_vtx);
           face_vertices[0].push_back(count_curveVtk_mesh_vtx + n_sample_pts-i);
@@ -553,7 +546,6 @@ void build_quadratic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
     }
   }
 
-  points_file.close();
 
   for (int i = 0; i < curveVtk_mesh_nface*3; ++i) {
     host_fv2v[i] = face_vertices[0][static_cast<std::size_t>(i)];
