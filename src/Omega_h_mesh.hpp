@@ -222,6 +222,7 @@ class Mesh {
   inline Int get_max_order() const { return max_order_; }
   Int n_internal_ctrlPts(Int edim);
   void add_tags_for_ctrlPts();
+  void remove_tags_for_ctrlPts();
   void set_tag_for_ctrlPts(Int ent_dim, Reals ctrlPts);
   Reals get_ctrlPts(Int ent_dim);
   void set_down(Int high_dim, Int low_dim, LOs hl2l);
