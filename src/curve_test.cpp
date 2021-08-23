@@ -17,7 +17,7 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
   binary::read (mesh_file, lib->world(), &mesh);
   mesh.set_curved(1);
   mesh.set_max_order(3);
-  mesh.add_tags_for_ctrlPts();
+  //mesh.add_tags_for_ctrlPts();
   auto coords = mesh.coords();
   auto coords_h = HostRead<Real>(coords);
   auto edge_nCtrlPts = mesh.n_internal_ctrlPts(1);
@@ -48,9 +48,11 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
     Matrix<2,1> fx({x1, x2});
     Matrix<2,1> fy({y1, y2});
 
-    Matrix<2,2> M1_inv ({B1(xi_1), B2(xi_1), B1(xi_2), B2(xi_2)});
+    Matrix<2,2> M1_inv ({B1_cube(xi_1), B2_cube(xi_1), B1_cube(xi_2),
+                         B2_cube(xi_2)});
     auto M1 = invert(M1_inv);
-    Matrix<2,2> M2 ({B0(xi_1), B3(xi_1), B0(xi_2), B3(xi_2)});
+    Matrix<2,2> M2 ({B0_cube(xi_1), B3_cube(xi_1), B0_cube(xi_2),
+                     B3_cube(xi_2)});
 
     auto Cx = M1*fx - M1*M2*p0;
     auto Cy = M1*fy - M1*M2*p1;
@@ -67,10 +69,10 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
 
     edge_file << "x, y\n";
     for (LO i = 0; i < u.size(); ++i) {
-      auto x_bezier = p0(0,0)*B0(u_h[i]) + Cx(0,0)*B1(u_h[i]) + 
-                      Cx(1,0)*B2(u_h[i]) + p1(0,0)*B3(u_h[i]);
-      auto y_bezier = p0(1,0)*B0(u_h[i]) + Cy(0,0)*B1(u_h[i]) +
-                      Cy(1,0)*B2(u_h[i]) + p1(1,0)*B3(u_h[i]);
+      auto x_bezier = p0(0,0)*B0_cube(u_h[i]) + Cx(0,0)*B1_cube(u_h[i]) + 
+                      Cx(1,0)*B2_cube(u_h[i]) + p1(0,0)*B3_cube(u_h[i]);
+      auto y_bezier = p0(1,0)*B0_cube(u_h[i]) + Cy(0,0)*B1_cube(u_h[i]) +
+                      Cy(1,0)*B2_cube(u_h[i]) + p1(1,0)*B3_cube(u_h[i]);
       edge_file << x_bezier << ", " << y_bezier << "\n";
     }
     edge_file << "\n";
@@ -111,9 +113,9 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
     Matrix<2,1> fx({x1, x2});
     Matrix<2,1> fy({y1, y2});
 
-    Matrix<2,2> M1_inv ({B1(xi_1), B2(xi_1), B1(xi_2), B2(xi_2)});
+    Matrix<2,2> M1_inv ({B1_cube(xi_1), B2_cube(xi_1), B1_cube(xi_2), B2_cube(xi_2)});
     auto M1 = invert(M1_inv);
-    Matrix<2,2> M2 ({B0(xi_1), B3(xi_1), B0(xi_2), B3(xi_2)});
+    Matrix<2,2> M2 ({B0_cube(xi_1), B3_cube(xi_1), B0_cube(xi_2), B3_cube(xi_2)});
 
     auto Cx = M1*fx - M1*M2*p0;
     auto Cy = M1*fy - M1*M2*p1;
@@ -129,10 +131,10 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
     edge_file << "for edge 2\n";
     edge_file << "x, y\n";
     for (LO i = 0; i < u.size(); ++i) {
-      auto x_bezier = p0(0,0)*B0(u_h[i]) + Cx(0,0)*B1(u_h[i]) +
-                      Cx(1,0)*B2(u_h[i]) + p1(0,0)*B3(u_h[i]);
-      auto y_bezier = p0(1,0)*B0(u_h[i]) + Cy(0,0)*B1(u_h[i]) +
-                      Cy(1,0)*B2(u_h[i]) + p1(1,0)*B3(u_h[i]);
+      auto x_bezier = p0(0,0)*B0_cube(u_h[i]) + Cx(0,0)*B1_cube(u_h[i]) +
+                      Cx(1,0)*B2_cube(u_h[i]) + p1(0,0)*B3_cube(u_h[i]);
+      auto y_bezier = p0(1,0)*B0_cube(u_h[i]) + Cy(0,0)*B1_cube(u_h[i]) +
+                      Cy(1,0)*B2_cube(u_h[i]) + p1(1,0)*B3_cube(u_h[i]);
       edge_file << x_bezier << ", " << y_bezier << "\n";
     }
     edge_file << "\n";
@@ -162,9 +164,11 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
     Matrix<2,1> fx({x1, x2});
     Matrix<2,1> fy({y1, y2});
 
-    Matrix<2,2> M1_inv ({B1(xi_1), B2(xi_1), B1(xi_2), B2(xi_2)});
+    Matrix<2,2> M1_inv ({B1_cube(xi_1), B2_cube(xi_1), B1_cube(xi_2),
+                         B2_cube(xi_2)});
     auto M1 = invert(M1_inv);
-    Matrix<2,2> M2 ({B0(xi_1), B3(xi_1), B0(xi_2), B3(xi_2)});
+    Matrix<2,2> M2 ({B0_cube(xi_1), B3_cube(xi_1), B0_cube(xi_2),
+                     B3_cube(xi_2)});
 
     auto Cx = M1*fx - M1*M2*p0;
     auto Cy = M1*fy - M1*M2*p1;
@@ -180,10 +184,10 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
     edge_file << "for edge 3\n";
     edge_file << "x, y\n";
     for (LO i = 0; i < u.size(); ++i) {
-      auto x_bezier = p0(0,0)*B0(u_h[i]) + Cx(0,0)*B1(u_h[i]) +
-                      Cx(1,0)*B2(u_h[i]) + p1(0,0)*B3(u_h[i]);
-      auto y_bezier = p0(1,0)*B0(u_h[i]) + Cy(0,0)*B1(u_h[i]) +
-                      Cy(1,0)*B2(u_h[i]) + p1(1,0)*B3(u_h[i]);
+      auto x_bezier = p0(0,0)*B0_cube(u_h[i]) + Cx(0,0)*B1_cube(u_h[i]) +
+                      Cx(1,0)*B2_cube(u_h[i]) + p1(0,0)*B3_cube(u_h[i]);
+      auto y_bezier = p0(1,0)*B0_cube(u_h[i]) + Cy(0,0)*B1_cube(u_h[i]) +
+                      Cy(1,0)*B2_cube(u_h[i]) + p1(1,0)*B3_cube(u_h[i]);
       edge_file << x_bezier << ", " << y_bezier << "\n";
     }
     edge_file << "\n";
@@ -202,7 +206,6 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
 
   mesh.set_tag_for_ctrlPts(1, Reals(edge_ctrlPts.write()));
 
-  vtk::write_parallel(vtk_file, &mesh, mesh.dim());
   return;
 }
 
@@ -225,10 +228,6 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
   auto u_h = HostRead<Real>(Read<Real>(n_sample_pts, xi_start, delta_xi,
                                       "samplePts"));
 
-  std::ofstream edge_file;
-  edge_file.open("box_circleCut-30reg_quad_edges.csv");
-  edge_file << "x, y, z\n";
-
   for (LO i = 0; i < nedge; ++i) {
     auto v0 = ev2v_h[i*2];
     auto v1 = ev2v_h[i*2 + 1];
@@ -247,11 +246,8 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
       auto x_bezier = cx0*B0_quad(u_h[i]) + cx1*B1_quad(u_h[i]) + cx2*B2_quad(u_h[i]);
       auto y_bezier = cy0*B0_quad(u_h[i]) + cy1*B1_quad(u_h[i]) + cy2*B2_quad(u_h[i]);
       auto z_bezier = cz0*B0_quad(u_h[i]) + cz1*B1_quad(u_h[i]) + cz2*B2_quad(u_h[i]);
-      edge_file << x_bezier << ", " << y_bezier << ", " << z_bezier << "\n";
     }
   }
-
-  edge_file.close();
 
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
@@ -261,19 +257,20 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
 
   auto curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
-  build_quadratic_curveVtk(&mesh, &curveVtk_mesh, 3);
+  build_quadratic_curveVtk(&mesh, &curveVtk_mesh, 10);
   vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
 
   elevate_curve_order_2to3(&mesh);
+  auto cubic_curveVtk_mesh = Mesh(comm->library());
+  cubic_curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk(&mesh, &cubic_curveVtk_mesh, 4);
+  vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_cubic_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
+
   elevate_curve_order_3to4(&mesh);
   elevate_curve_order_4to5(&mesh);
   elevate_curve_order_5to6(&mesh);
-  vtk::write_parallel(vtk_file, &mesh, mesh.dim());
-  vtk::FullWriter writer;
-  writer = vtk::FullWriter(
-    "/users/joshia5/Meshes/curved/box_circleCut-30reg_full.vtk", &mesh);
-  writer.write();
 
   return;
 }
