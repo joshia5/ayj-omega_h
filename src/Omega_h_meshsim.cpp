@@ -657,7 +657,7 @@ void read_internal(pMesh m, Mesh* mesh, pMeshNex numbering) {
       mesh->set_curved(1);
       mesh->set_max_order(edge_numPts + 1);
       mesh->add_tags_for_ctrlPts();
-      mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords.write())); 
+      mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords.write()));
     }
   }
 
