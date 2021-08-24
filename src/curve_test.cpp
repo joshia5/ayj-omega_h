@@ -257,14 +257,21 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
 
   auto curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
-  build_quadratic_curveVtk(&mesh, &curveVtk_mesh, 10);
+  build_quadratic_curveVtk(&mesh, &curveVtk_mesh);
   vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
 
   elevate_curve_order_2to3(&mesh);
+
+  auto cubic_wireframe_mesh = Mesh(comm->library());
+  cubic_wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe(&mesh, &cubic_wireframe_mesh);
+  vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_cubic_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe_mesh, 1);
+
   auto cubic_curveVtk_mesh = Mesh(comm->library());
   cubic_curveVtk_mesh.set_comm(comm);
-  build_cubic_curveVtk(&mesh, &cubic_curveVtk_mesh, 4);
+  build_cubic_curveVtk(&mesh, &cubic_curveVtk_mesh);
   vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_cubic_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
 
