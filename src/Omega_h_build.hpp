@@ -40,6 +40,8 @@ void assemble_slices(CommPtr comm, Omega_h_Family family, Int dim,
 
 void build_quadratic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
                                LO n_sample_pts = 10);
+void build_cubic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
+                               LO n_sample_pts = 10);
 void build_quadratic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
                               LO n_sample_pts = 10);
 void build_cubic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,

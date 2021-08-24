@@ -448,6 +448,7 @@ void build_cubic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
   auto coords_h = HostRead<Real>(mesh->coords());
   auto ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(1));
   auto ev2v_h = HostRead<LO>(mesh->get_adj(1, 0).ab2b);
+  auto pts_per_edge = mesh->n_internal_ctrlPts(1);
 
   I8 dim = 3;
   Real xi_start = 0.0;
@@ -470,20 +471,23 @@ void build_cubic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
     Real cx0 = coords_h[v0*dim + 0];
     Real cy0 = coords_h[v0*dim + 1];
     Real cz0 = coords_h[v0*dim + 2];
-    Real cx1 = ctrlPts_h[i*dim + 0];
-    Real cy1 = ctrlPts_h[i*dim + 1];
-    Real cz1 = ctrlPts_h[i*dim + 2];
-    Real cx2 = coords_h[v1*dim + 0];
-    Real cy2 = coords_h[v1*dim + 1];
-    Real cz2 = coords_h[v1*dim + 2];
+    Real cx1 = ctrlPts_h[i*pts_per_edge*dim + 0];
+    Real cy1 = ctrlPts_h[i*pts_per_edge*dim + 1];
+    Real cz1 = ctrlPts_h[i*pts_per_edge*dim + 2];
+    Real cx2 = ctrlPts_h[i*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+    Real cy2 = ctrlPts_h[i*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+    Real cz2 = ctrlPts_h[i*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+    Real cx3 = coords_h[v1*dim + 0];
+    Real cy3 = coords_h[v1*dim + 1];
+    Real cz3 = coords_h[v1*dim + 2];
 
     for (LO i = 0; i < u_h.size(); ++i) {
-      auto x_bezier = cx0*B0_quad(u_h[i]) + cx1*B1_quad(u_h[i]) +
-                      cx2*B2_quad(u_h[i]);
-      auto y_bezier = cy0*B0_quad(u_h[i]) + cy1*B1_quad(u_h[i]) +
-                      cy2*B2_quad(u_h[i]);
-      auto z_bezier = cz0*B0_quad(u_h[i]) + cz1*B1_quad(u_h[i]) +
-                      cz2*B2_quad(u_h[i]);
+      auto x_bezier = cx0*B0_cube(u_h[i]) + cx1*B1_cube(u_h[i]) +
+                      cx2*B2_cube(u_h[i]) + cx3*B3_cube(u_h[i]);
+      auto y_bezier = cy0*B0_cube(u_h[i]) + cy1*B1_cube(u_h[i]) +
+                      cy2*B2_cube(u_h[i]) + cy3*B3_cube(u_h[i]);
+      auto z_bezier = cz0*B0_cube(u_h[i]) + cz1*B1_cube(u_h[i]) +
+                      cz2*B2_cube(u_h[i]) + cz3*B3_cube(u_h[i]);
 
       host_coords[count_wireframe_vtx*dim + 0] = x_bezier;
       host_coords[count_wireframe_vtx*dim + 1] = y_bezier;
@@ -640,6 +644,7 @@ void build_cubic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
   auto fv2v_h = HostRead<LO>(mesh->ask_down(2, 0).ab2b);
   auto fe2e_h = HostRead<LO>(mesh->get_adj(2, 1).ab2b);
   auto ev2v_h = HostRead<LO>(mesh->get_adj(1, 0).ab2b);
+  auto pts_per_edge = mesh->n_internal_ctrlPts(1);
 
   I8 dim = 3;
   Real xi_start = 0.0;
@@ -717,12 +722,12 @@ void build_cubic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
     Real cy03 = coords_h[v2*dim + 1];
     Real cz03 = coords_h[v2*dim + 2];
 
-    Real cx10 = ctrlPts_h[e0*dim + 0];
-    Real cy10 = ctrlPts_h[e0*dim + 1];
-    Real cz10 = ctrlPts_h[e0*dim + 2];
-    Real cx20 = ctrlPts_h[e0*dim + dim + 0];
-    Real cy20 = ctrlPts_h[e0*dim + dim + 1];
-    Real cz20 = ctrlPts_h[e0*dim + dim + 2];
+    Real cx10 = ctrlPts_h[e0*pts_per_edge*dim + 0];
+    Real cy10 = ctrlPts_h[e0*pts_per_edge*dim + 1];
+    Real cz10 = ctrlPts_h[e0*pts_per_edge*dim + 2];
+    Real cx20 = ctrlPts_h[e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];//2 pts per edge
+    Real cy20 = ctrlPts_h[e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+    Real cz20 = ctrlPts_h[e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
     if (e0_flip > 0) {
       auto tempx = cx10;
       auto tempy = cy10;
@@ -735,12 +740,12 @@ void build_cubic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
       cz20 = tempz;
     }
 
-    Real cx21 = ctrlPts_h[e1*dim + 0];
-    Real cy21 = ctrlPts_h[e1*dim + 1];
-    Real cz21 = ctrlPts_h[e1*dim + 2];
-    Real cx12 = ctrlPts_h[e1*dim + dim + 0];
-    Real cy12 = ctrlPts_h[e1*dim + dim + 1];
-    Real cz12 = ctrlPts_h[e1*dim + dim + 2];
+    Real cx21 = ctrlPts_h[e1*pts_per_edge*dim + 0];
+    Real cy21 = ctrlPts_h[e1*pts_per_edge*dim + 1];
+    Real cz21 = ctrlPts_h[e1*pts_per_edge*dim + 2];
+    Real cx12 = ctrlPts_h[e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+    Real cy12 = ctrlPts_h[e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+    Real cz12 = ctrlPts_h[e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
     if (e1_flip > 0) {
       auto tempx = cx21;
       auto tempy = cy21;
@@ -753,12 +758,12 @@ void build_cubic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
       cz12 = tempz;
     }
 
-    Real cx02 = ctrlPts_h[e2*dim + 0];
-    Real cy02 = ctrlPts_h[e2*dim + 1];
-    Real cz02 = ctrlPts_h[e2*dim + 2];
-    Real cx01 = ctrlPts_h[e2*dim + dim + 0];
-    Real cy01 = ctrlPts_h[e2*dim + dim + 1];
-    Real cz01 = ctrlPts_h[e2*dim + dim + 2];
+    Real cx02 = ctrlPts_h[e2*pts_per_edge*dim + 0];
+    Real cy02 = ctrlPts_h[e2*pts_per_edge*dim + 1];
+    Real cz02 = ctrlPts_h[e2*pts_per_edge*dim + 2];
+    Real cx01 = ctrlPts_h[e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+    Real cy01 = ctrlPts_h[e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+    Real cz01 = ctrlPts_h[e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
     if (e2_flip > 0) {
       auto tempx = cx02;
       auto tempy = cy02;
