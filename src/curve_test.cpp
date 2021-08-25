@@ -17,7 +17,6 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
   binary::read (mesh_file, lib->world(), &mesh);
   mesh.set_curved(1);
   mesh.set_max_order(3);
-  //mesh.add_tags_for_ctrlPts();
   auto coords = mesh.coords();
   auto coords_h = HostRead<Real>(coords);
   auto edge_nCtrlPts = mesh.n_internal_ctrlPts(1);
@@ -215,40 +214,7 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
   auto comm = lib->world();
   auto mesh = meshsim::read(mesh_file, model_file, comm);
   calc_quad_ctrlPts_from_interpPts(&mesh);
-  auto nedge = mesh.nedges();
-  auto ev2v_h = HostRead<LO>(mesh.get_adj(1, 0).ab2b);
-  auto ctrlPts_h = HostRead<Real>(mesh.get_ctrlPts(1));
-  auto dim = 3;
-  auto coords_h = HostRead<Real>(mesh.coords());
  
-  LO n_sample_pts = 10;
-  Real xi_start = 0.0;
-  Real xi_end = 1.0;
-  Real delta_xi = (xi_end - xi_start)/(n_sample_pts - 1);
-  auto u_h = HostRead<Real>(Read<Real>(n_sample_pts, xi_start, delta_xi,
-                                      "samplePts"));
-
-  for (LO i = 0; i < nedge; ++i) {
-    auto v0 = ev2v_h[i*2];
-    auto v1 = ev2v_h[i*2 + 1];
-
-    Real cx0 = coords_h[v0*dim + 0];
-    Real cy0 = coords_h[v0*dim + 1];
-    Real cz0 = coords_h[v0*dim + 2];
-    Real cx1 = ctrlPts_h[i*dim + 0];
-    Real cy1 = ctrlPts_h[i*dim + 1];
-    Real cz1 = ctrlPts_h[i*dim + 2];
-    Real cx2 = coords_h[v1*dim + 0];
-    Real cy2 = coords_h[v1*dim + 1];
-    Real cz2 = coords_h[v1*dim + 2];
-
-    for (LO i = 0; i < u_h.size(); ++i) {
-      auto x_bezier = cx0*B0_quad(u_h[i]) + cx1*B1_quad(u_h[i]) + cx2*B2_quad(u_h[i]);
-      auto y_bezier = cy0*B0_quad(u_h[i]) + cy1*B1_quad(u_h[i]) + cy2*B2_quad(u_h[i]);
-      auto z_bezier = cz0*B0_quad(u_h[i]) + cz1*B1_quad(u_h[i]) + cz2*B2_quad(u_h[i]);
-    }
-  }
-
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
   build_quadratic_wireframe(&mesh, &wireframe_mesh);
@@ -276,6 +242,13 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
 
   elevate_curve_order_3to4(&mesh);
+
+  auto quartic_curveVtk_mesh = Mesh(comm->library());
+  quartic_curveVtk_mesh.set_comm(comm);
+  build_quartic_curveVtk(&mesh, &quartic_curveVtk_mesh);
+  vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_quartic_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &quartic_curveVtk_mesh, 2);
+
   elevate_curve_order_4to5(&mesh);
   elevate_curve_order_5to6(&mesh);
 

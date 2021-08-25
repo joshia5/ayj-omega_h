@@ -46,6 +46,8 @@ void build_quadratic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
                               LO n_sample_pts = 10);
 void build_cubic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
                           LO n_sample_pts = 10);
+void build_quartic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
+                            LO n_sample_pts = 10);
 
 }  // end namespace Omega_h
 
