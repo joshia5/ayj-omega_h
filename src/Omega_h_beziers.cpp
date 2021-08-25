@@ -97,6 +97,66 @@ Real B11_cube(Real u, Real v) {
   return 6.0*u*v*(1.0-u-v);
 }
 
+Real B00_quart(Real u, Real v) {
+  return (1.0-u-v)*(1.0-u-v)*(1.0-u-v)*(1.0-u-v);
+}
+
+Real B10_quart(Real u, Real v) {
+  return 4.0*u*(1.0-u-v)*(1.0-u-v)*(1.0-u-v);
+}
+
+Real B20_quart(Real u, Real v) {
+  return 6.0*u*u*(1.0-u-v)*(1.0-u-v);
+}
+
+Real B30_quart(Real u, Real v) {
+  return 4.0*u*u*u*(1.0-u-v);
+}
+
+Real B40_quart(Real u, Real v) {
+  return u*u*u*u + 0.0*v;
+}
+
+Real B31_quart(Real u, Real v) {
+  return 4.0*u*u*u*v;
+}
+
+Real B22_quart(Real u, Real v) {
+  return 6.0*u*u*v*v;
+}
+
+Real B13_quart(Real u, Real v) {
+  return 4.0*u*v*v*v;
+}
+
+Real B04_quart(Real u, Real v) {
+  return v*v*v*v + 0.0*u;
+}
+
+Real B03_quart(Real u, Real v) {
+  return 4.0*v*v*v*(1.0-u-v);
+}
+
+Real B02_quart(Real u, Real v) {
+  return 6.0*v*v*(1.0-u-v)*(1.0-u-v);
+}
+
+Real B01_quart(Real u, Real v) {
+  return 4.0*v*(1.0-u-v)*(1.0-u-v)*(1.0-u-v);
+}
+
+Real B11_quart(Real u, Real v) {
+  return 12.0*u*v*(1.0-u-v)*(1.0-u-v);
+}
+
+Real B21_quart(Real u, Real v) {
+  return 12.0*u*u*v*(1.0-u-v);
+}
+
+Real B12_quart(Real u, Real v) {
+  return 12.0*u*v*v*(1.0-u-v);
+}
+
 void calc_quad_ctrlPts_from_interpPts(Mesh *mesh) {
   auto coords = mesh->coords();
   auto interpPts = mesh->get_ctrlPts(1);
@@ -318,8 +378,8 @@ void elevate_curve_order_3to4(Mesh* mesh) {
     }
 
     auto oldc11 = Reals({old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 0],
-                    old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 1],
-                    old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 2]});
+                         old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 1],
+                         old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 2]});
 
     Write<Real> c11(dim, 0.0);
     Write<Real> c21(dim, 0.0);
