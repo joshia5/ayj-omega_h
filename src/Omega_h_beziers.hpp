@@ -41,35 +41,21 @@ Real B02_cube(Real u, Real v);
 Real B01_cube(Real u, Real v);
 Real B11_cube(Real u, Real v);
 
-LO binomial(int n, int i);
-
-OMEGA_H_DEVICE LO trinomial(int n, int i, int j);
-
-OMEGA_H_DEVICE LO quadnomial(int n, int i, int j, int k);
-
-OMEGA_H_DEVICE Real Bij(const int i, const int j, const double u,
-                        const double v);
-
-OMEGA_H_DEVICE Real Bijk(const int i, const int j, const int k, const double u,
-                         const double v, const double w) {
-  return intpow(u, i)*intpow(v, j)*intpow(w, k);
-}
-
-OMEGA_H_DEVICE Real Bijkl(const int i, const int j, const int k, const int l,
-                          const double u, const double v, const double w,
-                          const double t) {
-  return intpow(u, i)*intpow(v, j)*intpow(w, k)*intpow(t, l);
-}
-
-OMEGA_H_DEVICE Real Bij(const int ij[], const double xi[]);
-OMEGA_H_DEVICE Real Bijk(const int ijk[], const double xi[]);
-OMEGA_H_DEVICE Real Bijkl(const int ijkl[], const double xi[]);
-
-/*
-OMEGA_H_DEVICE static void bezierCurve(I8 P, Reals xi, Write<Real> values);
-OMEGA_H_DEVICE static void bezierTriangle(I8 P, Reals xi, Write<Real> values);
-OMEGA_H_DEVICE static void bezierTet(I8 P, Reals xi, Write<Real> values);
-*/
+Real B00_quart(Real u, Real v);
+Real B10_quart(Real u, Real v);
+Real B20_quart(Real u, Real v);
+Real B30_quart(Real u, Real v);
+Real B40_quart(Real u, Real v);
+Real B31_quart(Real u, Real v);
+Real B22_quart(Real u, Real v);
+Real B13_quart(Real u, Real v);
+Real B04_quart(Real u, Real v);
+Real B03_quart(Real u, Real v);
+Real B02_quart(Real u, Real v);
+Real B01_quart(Real u, Real v);
+Real B11_quart(Real u, Real v);
+Real B21_quart(Real u, Real v);
+Real B12_quart(Real u, Real v);
 
 // workaround CUDA compiler bug
 #ifdef OMEGA_H_USE_CUDA
