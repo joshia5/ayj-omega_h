@@ -33,6 +33,26 @@ Real B3_cube(Real u) {
   return u*u*u;
 }
 
+Real B0_quart(Real u) {
+  return (1.0-u)*(1.0-u)*(1.0-u)*(1.0-u);
+}
+
+Real B1_quart(Real u) {
+  return 4.0*u*(1.0-u)*(1.0-u)*(1.0-u);
+}
+
+Real B2_quart(Real u) {
+  return 6.0*u*u*(1.0-u)*(1.0-u);
+}
+
+Real B3_quart(Real u) {
+  return 4.0*u*u*u*(1.0-u);
+}
+
+Real B4_quart(Real u) {
+  return u*u*u*u;
+}
+
 Real B00_quad(Real u, Real v) {
   return (1.0-u-v)*(1.0-u-v);
 }
@@ -203,7 +223,7 @@ void elevate_curve_order_2to3(Mesh* mesh) {
   auto ev2v = mesh->get_adj(1, 0).ab2b;
   auto fe2e = mesh->get_adj(2, 1).ab2b;
 
-  mesh->set_max_order(new_order);
+  mesh->change_max_order(new_order);
   auto n_new_pts = mesh->n_internal_ctrlPts(1);
   Write<Real> new_pts(nedge*n_new_pts*dim, 0.0);
   Write<Real> c1(dim, 0.0);
@@ -257,7 +277,7 @@ void elevate_curve_order_3to4(Mesh* mesh) {
   auto fe2e = mesh->get_adj(2, 1).ab2b;
   auto fv2v = mesh->ask_down(2, 0).ab2b;
 
-  mesh->set_max_order(new_order);
+  mesh->change_max_order(new_order);
   auto n_new_pts = mesh->n_internal_ctrlPts(1);
   Write<Real> new_pts(nedge*n_new_pts*dim, 0.0);
   Write<Real> c1(dim, 0.0);
@@ -326,9 +346,9 @@ void elevate_curve_order_3to4(Mesh* mesh) {
     Real cx10 = old_edge_ctrl_pts[e0*pts_per_edge*dim + 0];
     Real cy10 = old_edge_ctrl_pts[e0*pts_per_edge*dim + 1];
     Real cz10 = old_edge_ctrl_pts[e0*pts_per_edge*dim + 2];
-    Real cx20 = old_edge_ctrl_pts[e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];//2 pts per edge
-    Real cy20 = old_edge_ctrl_pts[e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-    Real cz20 = old_edge_ctrl_pts[e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+    Real cx20 = old_edge_ctrl_pts[e0*pts_per_edge*dim + dim + 0];
+    Real cy20 = old_edge_ctrl_pts[e0*pts_per_edge*dim + dim + 1];
+    Real cz20 = old_edge_ctrl_pts[e0*pts_per_edge*dim + dim + 2];
     if (e0_flip > 0) {
       auto tempx = cx10;
       auto tempy = cy10;
@@ -344,9 +364,9 @@ void elevate_curve_order_3to4(Mesh* mesh) {
     Real cx21 = old_edge_ctrl_pts[e1*pts_per_edge*dim + 0];
     Real cy21 = old_edge_ctrl_pts[e1*pts_per_edge*dim + 1];
     Real cz21 = old_edge_ctrl_pts[e1*pts_per_edge*dim + 2];
-    Real cx12 = old_edge_ctrl_pts[e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-    Real cy12 = old_edge_ctrl_pts[e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-    Real cz12 = old_edge_ctrl_pts[e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+    Real cx12 = old_edge_ctrl_pts[e1*pts_per_edge*dim + dim + 0];
+    Real cy12 = old_edge_ctrl_pts[e1*pts_per_edge*dim + dim + 1];
+    Real cz12 = old_edge_ctrl_pts[e1*pts_per_edge*dim + dim + 2];
     if (e1_flip > 0) {
       auto tempx = cx21;
       auto tempy = cy21;
@@ -362,9 +382,9 @@ void elevate_curve_order_3to4(Mesh* mesh) {
     Real cx02 = old_edge_ctrl_pts[e2*pts_per_edge*dim + 0];
     Real cy02 = old_edge_ctrl_pts[e2*pts_per_edge*dim + 1];
     Real cz02 = old_edge_ctrl_pts[e2*pts_per_edge*dim + 2];
-    Real cx01 = old_edge_ctrl_pts[e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-    Real cy01 = old_edge_ctrl_pts[e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-    Real cz01 = old_edge_ctrl_pts[e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+    Real cx01 = old_edge_ctrl_pts[e2*pts_per_edge*dim + dim + 0];
+    Real cy01 = old_edge_ctrl_pts[e2*pts_per_edge*dim + dim + 1];
+    Real cz01 = old_edge_ctrl_pts[e2*pts_per_edge*dim + dim + 2];
     if (e2_flip > 0) {
       auto tempx = cx02;
       auto tempy = cy02;
@@ -385,17 +405,15 @@ void elevate_curve_order_3to4(Mesh* mesh) {
     Write<Real> c21(dim, 0.0);
     Write<Real> c12(dim, 0.0);
 
-    c11[0] = (1.0/4.0)*(cx10 + cx01 + oldc11[0]);
-    c11[1] = (1.0/4.0)*(cy10 + cy01 + oldc11[1]);
-    c11[2] = (1.0/4.0)*(cz10 + cz01 + oldc11[2]);
-
-    c21[0] = (1.0/4.0)*(cx12 + cx02) + (1.0/2.0)*oldc11[0];
-    c21[1] = (1.0/4.0)*(cy12 + cy02) + (1.0/2.0)*oldc11[1];
-    c21[2] = (1.0/4.0)*(cz12 + cz02) + (1.0/2.0)*oldc11[2];
-
-    c12[0] = (1.0/4.0)*(cx20 + cx21) + (1.0/2.0)*oldc11[0];
-    c12[1] = (1.0/4.0)*(cy20 + cy21) + (1.0/2.0)*oldc11[1];
-    c12[2] = (1.0/4.0)*(cz20 + cz21) + (1.0/2.0)*oldc11[2];
+    c11[0] = (1.0/4.0)*(cx10 + cx01 + 2.0*oldc11[0]);
+    c11[1] = (1.0/4.0)*(cy10 + cy01 + 2.0*oldc11[1]);
+    c11[2] = (1.0/4.0)*(cz10 + cz01 + 2.0*oldc11[2]);
+    c21[0] = (1.0/4.0)*(cx12 + cx02 + 2.0*oldc11[0]);
+    c21[1] = (1.0/4.0)*(cy12 + cy02 + 2.0*oldc11[1]);
+    c21[2] = (1.0/4.0)*(cz12 + cz02 + 2.0*oldc11[2]);
+    c12[0] = (1.0/4.0)*(cx20 + cx21 + 2.0*oldc11[0]);
+    c12[1] = (1.0/4.0)*(cy20 + cy21 + 2.0*oldc11[1]);
+    c12[2] = (1.0/4.0)*(cz20 + cz21 + 2.0*oldc11[2]);
 
     for (LO d = 0; d < dim; ++d) {
       face_pts[i*n_new_face_pts*dim + d] = c11[d];
@@ -406,7 +424,7 @@ void elevate_curve_order_3to4(Mesh* mesh) {
   parallel_for(nface, calc_face_pts);
   mesh->set_tag_for_ctrlPts(2, Reals(face_pts));
 
-  //is there a need to calc pts inside regions?
+  //formulae to calc pts inside regions?
 
   return;
 }
@@ -420,7 +438,7 @@ void elevate_curve_order_4to5(Mesh* mesh) {
   auto dim = mesh->dim();
   auto ev2v = mesh->get_adj(1, 0).ab2b;
 
-  mesh->set_max_order(new_order);
+  mesh->change_max_order(new_order);
   auto n_new_pts = mesh->n_internal_ctrlPts(1);
   Write<Real> new_pts(nedge*n_new_pts*dim, 0.0);
   Write<Real> c1(dim, 0.0);
@@ -460,7 +478,7 @@ void elevate_curve_order_5to6(Mesh* mesh) {
   auto dim = mesh->dim();
   auto ev2v = mesh->get_adj(1, 0).ab2b;
 
-  mesh->set_max_order(new_order);
+  mesh->change_max_order(new_order);
   auto n_new_pts = mesh->n_internal_ctrlPts(1);
   Write<Real> new_pts(nedge*n_new_pts*dim, 0.0);
   Write<Real> c1(dim, 0.0);

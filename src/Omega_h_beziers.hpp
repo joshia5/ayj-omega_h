@@ -23,6 +23,12 @@ Real B1_cube(Real u);
 Real B2_cube(Real u);
 Real B3_cube(Real u);
 
+Real B0_quart(Real u);
+Real B1_quart(Real u);
+Real B2_quart(Real u);
+Real B3_quart(Real u);
+Real B4_quart(Real u);
+
 Real B00_quad(Real u, Real v);
 Real B10_quad(Real u, Real v);
 Real B20_quad(Real u, Real v);
