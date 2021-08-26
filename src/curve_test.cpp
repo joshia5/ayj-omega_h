@@ -17,6 +17,7 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
   binary::read (mesh_file, lib->world(), &mesh);
   mesh.set_curved(1);
   mesh.set_max_order(3);
+  mesh.add_tags_for_ctrlPts();
   auto coords = mesh.coords();
   auto coords_h = HostRead<Real>(coords);
   auto edge_nCtrlPts = mesh.n_internal_ctrlPts(1);
@@ -243,6 +244,12 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
 
   elevate_curve_order_3to4(&mesh);
 
+  auto quartic_wireframe_mesh = Mesh(comm->library());
+  quartic_wireframe_mesh.set_comm(comm);
+  build_quartic_wireframe(&mesh, &quartic_wireframe_mesh);
+  vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_quartic_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &quartic_wireframe_mesh, 1);
+
   auto quartic_curveVtk_mesh = Mesh(comm->library());
   quartic_curveVtk_mesh.set_comm(comm);
   build_quartic_curveVtk(&mesh, &quartic_curveVtk_mesh);
@@ -271,6 +278,14 @@ void test_sim_kova_quadratic(Library *lib) {
   build_quadratic_curveVtk(&mesh, &curveVtk_mesh);
   vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
+
+  elevate_curve_order_2to3(&mesh);
+  elevate_curve_order_3to4(&mesh);
+  auto quartic_curveVtk_mesh = Mesh(lib);
+  quartic_curveVtk_mesh.set_comm(comm);
+  build_quartic_curveVtk(&mesh, &quartic_curveVtk_mesh);
+  vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim_quartic_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &quartic_curveVtk_mesh, 2);
 
   return;
 }
