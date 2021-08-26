@@ -330,6 +330,33 @@ static void read_tag(std::istream& stream, Mesh* mesh, Int d,
     if (n_class_ids > 0) {
       read_array(stream, class_ids, is_compressed, needs_swapping);
     }
+
+  if (type == OMEGA_H_I8) {
+    Read<I8> array;
+    read_array(stream, array, is_compressed, needs_swapping);
+    if (name == "n_bezier_pts") {
+      if (d == 1) {
+        auto n_edge_pt = get_max(array);//local max
+        mesh->set_curved(1);
+        mesh->set_max_order(n_edge_pt+1);
+      }
+    }
+    mesh->add_tag(d, name, ncomps, array, true);
+
+    size_t found = name.find("_rc");
+    if (found != std::string::npos) {
+      mesh->change_tagTorc<I8> (d, ncomps, name, class_ids);
+    }
+
+  } else if (type == OMEGA_H_I32) {
+    Read<I32> array;
+    read_array(stream, array, is_compressed, needs_swapping);
+    mesh->add_tag(d, name, ncomps, array, true);
+
+    size_t found = name.find("_rc");
+    if (found != std::string::npos) {
+      mesh->change_tagTorc<I32> (d, ncomps, name, class_ids);
+    }
   }
 
   auto f = [&](auto t) {
