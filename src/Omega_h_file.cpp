@@ -355,11 +355,17 @@ static void read_tag(std::istream& stream, Mesh* mesh, Int d,
     }
   }
   auto class_ids = LOs{};
-  //TODO: read class id info for rc tag to file
 
   if (type == OMEGA_H_I8) {
     Read<I8> array;
     read_array(stream, array, is_compressed, needs_swapping);
+    if (name == "n_bezier_pts") {
+      if (d == 1) {
+        auto n_edge_pt = get_max(array);//local max
+        mesh->set_curved(1);
+        mesh->set_max_order(n_edge_pt+1);
+      }
+    }
     mesh->add_tag(d, name, ncomps, array, true);
 
     size_t found = name.find("_rc");
