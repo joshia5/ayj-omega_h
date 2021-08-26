@@ -80,16 +80,16 @@ void Mesh::set_matched(I8 is_matched) { matched_ = is_matched; }
 void Mesh::set_curved(I8 is_curved) { curved_ = is_curved; }
 
 void Mesh::set_max_order(Int max_order) { 
-  
-  if (max_order_ > 0) remove_tags_for_ctrlPts();
+  OMEGA_H_CHECK(max_order >= 1);
+  max_order_ = max_order;
+  return;
+}
+
+void Mesh::change_max_order(Int max_order) { 
+  OMEGA_H_CHECK(max_order >= 1);
+  remove_tags_for_ctrlPts();
   max_order_ = max_order;
   add_tags_for_ctrlPts();
-  for (I8 d = 1; d <= dim_; ++d) {
-    Int n_pts = n_internal_ctrlPts(d);
-    if ((n_pts > 0) && has_tag(d, "n_bezier_pts")) {
-      set_tag(d, "n_bezier_pts", Bytes(nents(d), n_pts, "numBezierPts"));
-    }
-  }
   return;
 }
 
@@ -135,6 +135,7 @@ void Mesh::remove_tags_for_ctrlPts() {
     Int n_pts = n_internal_ctrlPts(d);
     if ((n_pts > 0) && (has_tag(d, "bezier_pts"))) {
       remove_tag(d, "bezier_pts");
+      remove_tag(d, "n_bezier_pts");
     }
   }
 

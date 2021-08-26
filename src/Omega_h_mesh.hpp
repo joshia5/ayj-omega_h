@@ -218,6 +218,7 @@ class Mesh {
 
   void set_curved(I8 is_curved);
   void set_max_order(Int max_order);
+  void change_max_order(Int max_order);
   inline I8 is_curved() const { return curved_; }
   inline Int get_max_order() const { return max_order_; }
   Int n_internal_ctrlPts(Int edim);
