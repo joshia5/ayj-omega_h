@@ -41,6 +41,15 @@ int main(int argc, char** argv) {
         mesh.set_comm(group);
         mesh.balance();
       }
+      if (!mesh.has_tag(1, "global")) {
+        mesh.add_tag(1, "global", 1, Omega_h::GOs(mesh.nedges(), 0, 1));
+      }
+      if (!mesh.has_tag(0, "global")) {
+        mesh.add_tag(0, "global", 1, Omega_h::GOs(mesh.nverts(), 0, 1));
+      }
+      if (!mesh.has_tag(2, "global")) {
+        mesh.add_tag(2, "global", 1, Omega_h::GOs(mesh.nfaces(), 0, 1));
+      }
       Omega_h::AdaptOpts opts(&mesh);
       auto nelems = mesh.nglobal_ents(mesh.dim());
       if (world_rank == 0)

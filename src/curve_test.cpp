@@ -8,6 +8,9 @@
 #include<Omega_h_matrix.hpp>
 #include<Omega_h_defines.hpp>
 #include<Omega_h_build.hpp>
+#include <Omega_h_adapt.hpp>
+#include <Omega_h_metric.hpp>
+#include <Omega_h_array_ops.hpp>
 
 using namespace Omega_h;
 
@@ -205,6 +208,36 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
   edge_file.close();
 
   mesh.set_tag_for_ctrlPts(1, Reals(edge_ctrlPts.write()));
+
+  if (!mesh.has_tag(1, "global")) {
+    mesh.add_tag(1, "global", 1, Omega_h::GOs(mesh.nedges(), 0, 1));
+  }
+  if (!mesh.has_tag(0, "global")) {
+    mesh.add_tag(0, "global", 1, Omega_h::GOs(mesh.nverts(), 0, 1));
+  }
+  if (!mesh.has_tag(2, "global")) {
+    mesh.add_tag(2, "global", 1, Omega_h::GOs(mesh.nfaces(), 0, 1));
+  }
+  AdaptOpts opts(&mesh);
+  auto nelems = mesh.nglobal_ents(mesh.dim());
+  auto desired_group_nelems = 2;
+  while (nelems < desired_group_nelems) {
+    if (!mesh.has_tag(0, "metric")) {
+      add_implied_metric_tag(&mesh);
+      adapt(&mesh, opts);
+      nelems = mesh.nglobal_ents(mesh.dim());
+      std::cout << "mesh now has " << nelems << " total elements\n";
+    }
+    auto metrics = mesh.get_array<double>(0, "metric");
+    metrics = multiply_each_by(metrics, 1.2);
+    auto const metric_ncomps =
+      divide_no_remainder(metrics.size(), mesh.nverts());
+    mesh.add_tag(0, "metric", metric_ncomps, metrics);
+    adapt(&mesh, opts);
+    nelems = mesh.nglobal_ents(mesh.dim());
+    std::cout << "mesh now has " << nelems << " total elements\n";
+  }
+  vtk::write_parallel("/users/joshia5/Meshes/curved/4tri.vtk", &mesh, 2);
 
   return;
 }
