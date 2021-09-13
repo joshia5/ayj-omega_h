@@ -5,8 +5,6 @@
 
 namespace Omega_h {
 
-Real intpow(const Real b, const LO e);
-
 void elevate_curve_order_2to3(Mesh* mesh);
 void elevate_curve_order_3to4(Mesh* mesh);
 void elevate_curve_order_4to5(Mesh* mesh);
@@ -63,6 +61,19 @@ Real B11_quart(Real u, Real v);
 Real B21_quart(Real u, Real v);
 Real B12_quart(Real u, Real v);
 
+Real xi_1_quad = 0.5;
+
+Real xi_1_cube = 0.2748043;
+Real xi_2_cube = 0.7251957;
+
+Real xi_1_quart = 0.1693976;
+Real xi_2_quart = 0.5;
+Real xi_3_quart = 0.8306024;
+
+Real xi_1_quint = 0.1133573;
+Real xi_2_quint = 0.3568239;
+Real xi_3_quint = 0.6431761;
+Real xi_4_quint = 0.8866427;
 // workaround CUDA compiler bug
 #ifdef OMEGA_H_USE_CUDA
 __host__
