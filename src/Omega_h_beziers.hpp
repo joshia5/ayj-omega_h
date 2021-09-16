@@ -61,39 +61,19 @@ Real B11_quart(Real u, Real v);
 Real B21_quart(Real u, Real v);
 Real B12_quart(Real u, Real v);
 
-Real xi_1_quad() {
- return 0.5;
-}
+Real xi_1_quad();
 
-Real xi_1_cube() {
- return 0.2748043;
-}
-Real xi_2_cube() {
-  return 0.7251957;
-}
+Real xi_1_cube();
+Real xi_2_cube();
 
-Real xi_1_quart() {
- return 0.1693976;
-}
-Real xi_2_quart() {
- return 0.5;
-}
-Real xi_3_quart() {
- return 0.8306024;
-}
+Real xi_1_quart();
+Real xi_2_quart();
+Real xi_3_quart();
 
-Real xi_1_quint() {
- return 0.1133573;
-}
-Real xi_2_quint() {
- return 0.3568239;
-}
-Real xi_3_quint() {
- return 0.6431761;
-}
-Real xi_4_quint() {
-  return 0.8866427;
-}
+Real xi_1_quint();
+Real xi_2_quint();
+Real xi_3_quint();
+Real xi_4_quint();
 
 void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
     LOs old2new, LOs prods2new, LOs keys2prods,
