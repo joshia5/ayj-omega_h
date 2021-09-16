@@ -178,6 +178,40 @@ Real B12_quart(Real u, Real v) {
   return 12.0*u*v*v*(1.0-u-v);
 }
 
+Real xi_1_quad() {
+ return 0.5;
+}
+
+Real xi_1_cube() {
+ return 0.2748043;
+}
+Real xi_2_cube() {
+  return 0.7251957;
+}
+
+Real xi_1_quart() {
+ return 0.1693976;
+}
+Real xi_2_quart() {
+ return 0.5;
+}
+Real xi_3_quart() {
+ return 0.8306024;
+}
+
+Real xi_1_quint() {
+ return 0.1133573;
+}
+Real xi_2_quint() {
+ return 0.3568239;
+}
+Real xi_3_quint() {
+ return 0.6431761;
+}
+Real xi_4_quint() {
+  return 0.8866427;
+}
+
 void calc_quad_ctrlPts_from_interpPts(Mesh *mesh) {
   auto coords = mesh->coords();
   auto interpPts = mesh->get_ctrlPts(1);
@@ -516,28 +550,29 @@ void elevate_curve_order_5to6(Mesh* mesh) {
 
 void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
     LOs old2new, LOs prods2new, LOs keys2prods,
-    LOs keys2midverts, LOs keys2edges) {
+    LOs keys2midverts) {
   
-  LO count_key = 0;
+  Write<LO> count_key(1, 0);
   auto nold_edge = old2new.size();
   auto old_ev2v = mesh->get_adj(1, 0).ab2b;
   auto new_ev2v = new_mesh->get_adj(1, 0).ab2b;
   auto old_coords = mesh->coords();
   auto new_coords = new_mesh->coords();
   auto n_edge_pts = mesh->n_internal_ctrlPts(1);
-  auto order = mesh->get_max_order;
+  auto order = mesh->get_max_order();
   auto dim = mesh->dim();
   auto old_ctrlPts = mesh->get_ctrlPts(1);
   auto nnew_edge = new_ev2v.size()/2;
   Write<Real> edge_ctrlPts(nnew_edge*n_edge_pts*dim);
+  OMEGA_H_CHECK(order == 3);
 
   auto transfer_edges = OMEGA_H_LAMBDA (LO old_edge) {
-    v0_old = old_ev2v[old_edge*2 + 0];
-    v1_old = old_ev2v[old_edge*2 + 1];
+    LO v0_old = old_ev2v[old_edge*2 + 0];
+    LO v1_old = old_ev2v[old_edge*2 + 1];
 
-    if (old2new[i] != -1) {
+    if (old2new[old_edge] != -1) {
       // map as is from old id to new id
-      new_edge = old2new[i];
+      LO new_edge = old2new[old_edge];
       for (I8 d = 0; d < dim; ++d) {
         edge_ctrlPts[new_edge*n_edge_pts*dim + d] = 
           old_ctrlPts[old_edge*n_edge_pts*dim + d];
@@ -546,20 +581,21 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
       }
     }
     else {
-      key_id = count_key;
-      mid_vert = keys2midverts[key_id];
-      start = prods2new[i];
-      end = prods2new[i+1] - 1;
+      LO key_id = count_key[0];
+      LO mid_vert = keys2midverts[key_id];
+      LO start = keys2prods[key_id];
+      LO end = keys2prods[key_id + 1] - 1;
       OMEGA_H_CHECK((end-start) == 2);
-      new_e0 = prods2new[start];
-      new_e1 = prods2new[start+1];
-      new_e2 = prods2new[start+2];
+      LO new_e0 = prods2new[start];
+      LO new_e1 = prods2new[start+1];
+      LO new_e2 = prods2new[start+2];
 
-      v0_new_e0 = new_ev2v[new_e0*2 + 0];
-      v1_new_e0 = new_ev2v[new_e0*2 + 1];
-      v0_new_e1 = new_ev2v[new_e1*2 + 0];
-      v1_new_e1 = new_ev2v[new_e1*2 + 1];
+      LO v0_new_e0 = new_ev2v[new_e0*2 + 0];
+      LO v1_new_e0 = new_ev2v[new_e0*2 + 1];
+      LO v0_new_e1 = new_ev2v[new_e1*2 + 0];
+      LO v1_new_e1 = new_ev2v[new_e1*2 + 1];
       OMEGA_H_CHECK((v1_new_e0 == mid_vert) && (v0_new_e1 == mid_vert));
+      OMEGA_H_CHECK((v0_new_e0 == v0_old) && (v1_new_e1 == v1_old));
       // swap unneeded, order checked
 
       /*
@@ -576,8 +612,10 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
         Real cy0 = new_coords[v0_old*dim + 1];
         Real cx1 = old_ctrlPts[old_edge*n_edge_pts*dim + 0];
         Real cy1 = old_ctrlPts[old_edge*n_edge_pts*dim + 1];
-        Real cx2 = old_ctrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + 0];
-        Real cy2 = old_ctrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + 1];
+        Real cx2 = old_ctrlPts[old_edge*n_edge_pts*dim +
+          (n_edge_pts-1)*dim + 0];
+        Real cy2 = old_ctrlPts[old_edge*n_edge_pts*dim +
+          (n_edge_pts-1)*dim + 1];
         Real cx3 = new_coords[v1_old*dim + 0];
         Real cy3 = new_coords[v1_old*dim + 1];
 
@@ -611,23 +649,70 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
         Matrix<2,2> M2({B0_cube(new_xi_1), B3_cube(new_xi_1), B0_cube(new_xi_2),
                         B3_cube(new_xi_2)});
 
-        auto Cx = M1*fx - M1*M2*p0;
-        auto Cy = M1*fy - M1*M2*p1;
+        auto Cx = M1*fx - M1*M2*c0;
+        auto Cy = M1*fy - M1*M2*c3;
         edge_ctrlPts[new_e0*n_edge_pts*dim + 0] = Cx(0,0);
         edge_ctrlPts[new_e0*n_edge_pts*dim + 1] = Cy(0,0);
         edge_ctrlPts[new_e0*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = Cx(1,0);
         edge_ctrlPts[new_e0*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = Cy(1,0);
-
       }
       //ctrl pts for e1
       {
+        //for 2d mesh for now, order=3
+        //query old ctrl pts
+        Real cx0 = new_coords[v0_old*dim + 0];
+        Real cy0 = new_coords[v0_old*dim + 1];
+        Real cx1 = old_ctrlPts[old_edge*n_edge_pts*dim + 0];
+        Real cy1 = old_ctrlPts[old_edge*n_edge_pts*dim + 1];
+        Real cx2 = old_ctrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + 0];
+        Real cy2 = old_ctrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + 1];
+        Real cx3 = new_coords[v1_old*dim + 0];
+        Real cy3 = new_coords[v1_old*dim + 1];
+
+        Real new_xi_0 = 0.5;
+        Real new_cx0 = cx0*B0_cube(new_xi_0) + cx1*B1_cube(new_xi_0) +
+                       cx2*B2_cube(new_xi_0) + cx3*B3_cube(new_xi_0);
+        Real new_cy0 = cy0*B0_cube(new_xi_0) + cy1*B1_cube(new_xi_0) +
+                       cy2*B2_cube(new_xi_0) + cy3*B3_cube(new_xi_0);
+
+        Real new_xi_2 = 0.5 + xi_2_cube()/2.0;
+        Real new_px2 = cx0*B0_cube(new_xi_2) + cx1*B1_cube(new_xi_2) +
+                       cx2*B2_cube(new_xi_2) + cx3*B3_cube(new_xi_2);
+        Real new_py2 = cy0*B0_cube(new_xi_2) + cy1*B1_cube(new_xi_2) +
+                       cy2*B2_cube(new_xi_2) + cy3*B3_cube(new_xi_2);
+
+        Real new_xi_1 = 0.5 + xi_1_cube()/2.0;
+        Real new_px1 = cx0*B0_cube(new_xi_1) + cx1*B1_cube(new_xi_1) +
+                       cx2*B2_cube(new_xi_1) + cx3*B3_cube(new_xi_1);
+        Real new_py1 = cy0*B0_cube(new_xi_1) + cy1*B1_cube(new_xi_1) +
+                       cy2*B2_cube(new_xi_1) + cy3*B3_cube(new_xi_1);
+
+        Matrix<2,1> c0({new_cx0, new_cy0});
+        Matrix<2,1> c3({cx3, cy3});
+
+        Matrix<2,1> fx({new_px1, new_px2});
+        Matrix<2,1> fy({new_py1, new_py2});
+
+        Matrix<2,2> M1_inv({B1_cube(new_xi_1), B2_cube(new_xi_1), B1_cube(new_xi_2),
+                            B2_cube(new_xi_2)});
+        auto M1 = invert(M1_inv);
+        Matrix<2,2> M2({B0_cube(new_xi_1), B3_cube(new_xi_1), B0_cube(new_xi_2),
+                        B3_cube(new_xi_2)});
+
+        auto Cx = M1*fx - M1*M2*c0;
+        auto Cy = M1*fy - M1*M2*c3;
+        edge_ctrlPts[new_e1*n_edge_pts*dim + 0] = Cx(0,0);
+        edge_ctrlPts[new_e1*n_edge_pts*dim + 1] = Cy(0,0);
+        edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = Cx(1,0);
+        edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = Cy(1,0);
       }
       //ctrl pts for e2
       {
-        inquire old face
+      //inquire old face
+      OMEGA_H_CHECK(new_e2 != 0);
       }
 
-      atomic_fetch_add(&count_key, 1);
+      atomic_fetch_add(&count_key[0], 1);
     }
   };
   parallel_for(nold_edge, std::move(transfer_edges));
