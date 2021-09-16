@@ -98,9 +98,12 @@ Int Mesh::n_internal_ctrlPts(Int edim) {
   OMEGA_H_CHECK(is_curved());
   auto max_order = get_max_order();
   OMEGA_H_CHECK(max_order > 0);
-  OMEGA_H_CHECK(edim > 0);
+  OMEGA_H_CHECK(edim >= 0);
 
-  if (edim == 1) {
+  if (edim == 0) {
+    return 1;
+  }
+  else if (edim == 1) {
     return max_order-1;
   }
   else if (edim == 2) {
@@ -118,7 +121,7 @@ Int Mesh::n_internal_ctrlPts(Int edim) {
 
 void Mesh::add_tags_for_ctrlPts() {
   Int dim = dim_;
-  for (I8 d = 1; d <= dim; ++d) {
+  for (I8 d = 0; d <= dim; ++d) {
     Int n_pts = n_internal_ctrlPts(d);
     if (n_pts > 0) {
       add_tag<Real>(d, "bezier_pts", n_pts*dim);
@@ -1275,9 +1278,10 @@ Mesh Mesh::copy_meta() const {
   m.nghost_layers_ = this->nghost_layers_;
   m.rib_hints_ = this->rib_hints_;
   m.class_sets = this->class_sets;
+  m.curved_ = this->curved_;
   if (this->matched_ > 0) {
     m.matched_ = this->matched_;
-    for (LO d = 0; d<DIMS; ++d) {
+    for (LO d = 0; d < DIMS; ++d) {
       m.model_ents_[d] = this->model_ents_[d];
       m.model_matches_[d] = this->model_matches_[d];
     }
