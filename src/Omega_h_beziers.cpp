@@ -536,8 +536,14 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
     v1_old = old_ev2v[old_edge*2 + 1];
 
     if (old2new[i] != -1) {
-      new_edge = old2new[i];
       // map as is from old id to new id
+      new_edge = old2new[i];
+      for (I8 d = 0; d < dim; ++d) {
+        edge_ctrlPts[new_edge*n_edge_pts*dim + d] = 
+          old_ctrlPts[old_edge*n_edge_pts*dim + d];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + d] =
+          old_ctrlPts[old_edge*n_edge_pts*dim + d];
+      }
     }
     else {
       key_id = count_key;
@@ -568,10 +574,10 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
         //query old ctrl pts
         Real cx0 = new_coords[v0_old*dim + 0];
         Real cy0 = new_coords[v0_old*dim + 1];
-        Real cx1 = old_ctrlPts[i*n_edge_pts*dim + 0];
-        Real cy1 = old_ctrlPts[i*n_edge_pts*dim + 1];
-        Real cx2 = old_ctrlPts[i*n_edge_pts*dim + (n_edge_pts-1)*dim + 0];
-        Real cy2 = old_ctrlPts[i*n_edge_pts*dim + (n_edge_pts-1)*dim + 1];
+        Real cx1 = old_ctrlPts[old_edge*n_edge_pts*dim + 0];
+        Real cy1 = old_ctrlPts[old_edge*n_edge_pts*dim + 1];
+        Real cx2 = old_ctrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + 0];
+        Real cy2 = old_ctrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + 1];
         Real cx3 = new_coords[v1_old*dim + 0];
         Real cy3 = new_coords[v1_old*dim + 1];
 
