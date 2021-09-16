@@ -1279,6 +1279,7 @@ Mesh Mesh::copy_meta() const {
   m.rib_hints_ = this->rib_hints_;
   m.class_sets = this->class_sets;
   m.curved_ = this->curved_;
+  m.max_order_ = this->max_order_;
   if (this->matched_ > 0) {
     m.matched_ = this->matched_;
     for (LO d = 0; d < DIMS; ++d) {
