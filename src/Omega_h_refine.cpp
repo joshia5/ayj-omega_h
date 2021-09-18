@@ -11,6 +11,7 @@
 #include "Omega_h_refine_qualities.hpp"
 #include "Omega_h_refine_topology.hpp"
 #include "Omega_h_transfer.hpp"
+#include "Omega_h_beziers.hpp"
 
 #include "Omega_h_file.hpp"
 
@@ -80,23 +81,30 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
         same_ents2new_ents);
 
     int waiting = 0;
-    if (ent_dim == EDGE && mesh->has_tag(1, "bezier_pts")) {
-      printf("old2new %d, same2new %d same2old %d prods2new %d\n", old_ents2new_ents.size(),
-          same_ents2new_ents.size(), same_ents2old_ents.size(), prods2new_ents.size());
+    if (ent_dim == EDGE) {
+      printf(
+      "old2new %d same2new %d same2old %d prods2new %d keys2prods %d keys2midv %d\n",
+      old_ents2new_ents.size(),
+          same_ents2new_ents.size(), same_ents2old_ents.size(),
+          prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
       waiting = 0;
+      auto new_ev2v = new_mesh.get_adj(1,0);
+      auto new_nedge = new_ev2v.ab2b.size()/2;
+      printf("new nedge %d\n", new_nedge);
+      if (mesh->is_curved()) {
+        transfer_bezier_edges(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
+                              keys2prods, keys2midverts, old_verts2new_verts);
+      }
+      
     }
     while(waiting);
     old_lows2new_lows = old_ents2new_ents;
   }
   auto old_ev2v = mesh->get_adj(1,0);
-  if (mesh->has_tag(1, "bezier_pts")) {
-    auto inter_ev2v = new_mesh.get_adj(1,0);
-    vtk::write_parallel("/users/joshia5/Meshes/curved/Example_tri_adaptItr1", &new_mesh, 2);
-  }
+  //if (mesh->has_tag(1, "bezier_pts")) {
+   // vtk::write_parallel("/users/joshia5/Meshes/curved/Example_tri_adaptItr1", &new_mesh, 2);
+  // }
   *mesh = new_mesh;
-  auto new_ev2v = mesh->get_adj(1,0);
-  auto new_nedge = new_ev2v.ab2b.size()/2;
-  printf("new nedge %d\n", new_nedge);
 }
 
 static bool refine(Mesh* mesh, AdaptOpts const& opts) {
