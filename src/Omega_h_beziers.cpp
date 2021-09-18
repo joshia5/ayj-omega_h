@@ -3,6 +3,8 @@
 #include "Omega_h_element.hpp"
 #include "Omega_h_for.hpp"
 #include "Omega_h_atomics.hpp"
+#include "Omega_h_map.hpp"
+#include "Omega_h_array_ops.hpp"
 
 namespace Omega_h {
 
@@ -550,12 +552,15 @@ void elevate_curve_order_5to6(Mesh* mesh) {
 
 void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
     LOs old2new, LOs prods2new, LOs keys2prods,
-    LOs keys2midverts) {
+    LOs keys2midverts, LOs old_verts2new_verts) {
   
   Write<LO> count_key(1, 0);
   auto nold_edge = old2new.size();
   auto old_ev2v = mesh->get_adj(1, 0).ab2b;
   auto new_ev2v = new_mesh->get_adj(1, 0).ab2b;
+  auto old_ef2f = mesh->ask_up(1, 2).ab2b;
+  auto old_e2ef = mesh->ask_up(1, 2).a2ab;
+  auto old_fv2v = mesh->ask_down(2, 0).ab2b;
   auto old_coords = mesh->coords();
   auto new_coords = new_mesh->coords();
   auto n_edge_pts = mesh->n_internal_ctrlPts(1);
@@ -563,8 +568,12 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
   auto dim = mesh->dim();
   auto old_ctrlPts = mesh->get_ctrlPts(1);
   auto nnew_edge = new_ev2v.size()/2;
+  auto nnew_verts = new_coords.size()/dim;
   Write<Real> edge_ctrlPts(nnew_edge*n_edge_pts*dim);
   OMEGA_H_CHECK(order == 3);
+  auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
+                                                   nnew_verts);
+  OMEGA_H_CHECK(new_verts2old_verts.a2ab.size() == nnew_verts + 1);
 
   auto transfer_edges = OMEGA_H_LAMBDA (LO old_edge) {
     LO v0_old = old_ev2v[old_edge*2 + 0];
@@ -590,12 +599,16 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
       LO new_e1 = prods2new[start+1];
       LO new_e2 = prods2new[start+2];
 
-      LO v0_new_e0 = new_ev2v[new_e0*2 + 0];
+      //LO v0_new_e0 = new_ev2v[new_e0*2 + 0];
       LO v1_new_e0 = new_ev2v[new_e0*2 + 1];
       LO v0_new_e1 = new_ev2v[new_e1*2 + 0];
-      LO v1_new_e1 = new_ev2v[new_e1*2 + 1];
+      //LO v1_new_e1 = new_ev2v[new_e1*2 + 1];
       OMEGA_H_CHECK((v1_new_e0 == mid_vert) && (v0_new_e1 == mid_vert));
-      OMEGA_H_CHECK((v0_new_e0 == v0_old) && (v1_new_e1 == v1_old));
+      //OMEGA_H_CHECK((v0_new_e0 == v0_old) && (v1_new_e1 == v1_old));
+      //topologically yes but diff mesh objects
+      LO v0_new_e2 = new_ev2v[new_e2*2 + 0];
+      LO v1_new_e2 = new_ev2v[new_e2*2 + 1];
+      OMEGA_H_CHECK(v1_new_e2 == mid_vert);
       // swap unneeded, order checked
 
       /*
@@ -624,6 +637,7 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
                        cx2*B2_cube(new_xi_3) + cx3*B3_cube(new_xi_3);
         Real new_cy3 = cy0*B0_cube(new_xi_3) + cy1*B1_cube(new_xi_3) +
                        cy2*B2_cube(new_xi_3) + cy3*B3_cube(new_xi_3);
+        //TODO store this with mid-vertex
 
         Real new_xi_2 = xi_2_cube()/2.0;
         Real new_px2 = cx0*B0_cube(new_xi_2) + cx1*B1_cube(new_xi_2) +
@@ -708,8 +722,36 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
       }
       //ctrl pts for e2
       {
-      //inquire old face
-      OMEGA_H_CHECK(new_e2 != 0);
+        OMEGA_H_CHECK(new_e2 != 0);
+
+        auto ab2b = new_verts2old_verts.ab2b;
+        auto a2ab = new_verts2old_verts.a2ab;
+        LO old_vert_noKey = ab2b[a2ab[v0_new_e2]];
+
+        LO old_face = -1;
+        for (LO index = old_e2ef[old_edge]; index < old_e2ef[old_edge + 1];
+             ++index) {
+          LO adj_face = old_ef2f[index];
+          for (LO vert = 0; vert < 3; ++vert) {
+            LO vert_old_face = old_fv2v[adj_face*3 + vert];
+            if (vert_old_face == old_vert_noKey) {
+              old_face = adj_face;
+              printf("for old edge %d, found old face %d\n", old_edge, old_face);
+              break;
+            }
+          }
+          if (old_face > 0) {
+            break;
+          }
+        }
+
+
+      //query adjacent vertices of e2 and get new vert id of vert that is not midvert
+      //query adjacent faces of old edge
+      //for each adjacent face
+        //query vertices
+        // if adjacent vertex contains e0v1 note the face id
+        // for that face, query points at pre calculated xi values 
       }
 
       atomic_fetch_add(&count_key[0], 1);
