@@ -77,7 +77,7 @@ Real xi_4_quint();
 
 void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
     LOs old2new, LOs prods2new, LOs keys2prods,
-    LOs keys2midverts, LOs keys2edges);
+    LOs keys2midverts, LOs old_verts2new_verts);
 
 // workaround CUDA compiler bug
 #ifdef OMEGA_H_USE_CUDA
