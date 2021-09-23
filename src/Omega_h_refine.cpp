@@ -90,15 +90,15 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
           prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
       waiting = 0;
       if (mesh->is_curved()) {
-        transfer_bezier_edges(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
-                              keys2prods, keys2midverts, old_verts2new_verts);
+        create_curved_edges(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
+                            keys2prods, keys2midverts, old_verts2new_verts);
 
         auto cubic_wireframe_mesh = Mesh(comm->library());
         cubic_wireframe_mesh.set_comm(comm);
         printf("refine ok1\n");
         build_cubic_wireframe(&new_mesh, &cubic_wireframe_mesh);
         printf("refine ok2\n");
-        std::string vtuPath = "/users/joshia5/Meshes/curved/2tri_cubic_wireframe.vtu";
+        std::string vtuPath = "/users/joshia5/Meshes/curved/discRefine_cubic_wireframe.vtu";
         vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe_mesh, 1);
         printf("refine ok3\n");
       }
