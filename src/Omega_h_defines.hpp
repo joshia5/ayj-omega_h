@@ -96,7 +96,7 @@ enum : Int {
   REGION = OMEGA_H_REGION
 };
 
-enum { OMEGA_H_INTERIOR_VAL = 127 };
+enum { OMEGA_H_INTERIOR_VAL = INT8_MAX };
 
 enum { TOPO_TYPES = 8 };
 
