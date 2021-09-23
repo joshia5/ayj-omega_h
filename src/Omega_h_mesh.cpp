@@ -147,7 +147,7 @@ void Mesh::remove_tags_for_ctrlPts() {
 
 void Mesh::set_tag_for_ctrlPts(Int ent_dim, Reals ctrlPts) {
 
-  OMEGA_H_CHECK(ent_dim > 0);
+  OMEGA_H_CHECK(ent_dim >= 0);
   set_tag(ent_dim, "bezier_pts", ctrlPts);
 
   return;
@@ -155,7 +155,7 @@ void Mesh::set_tag_for_ctrlPts(Int ent_dim, Reals ctrlPts) {
 
 Reals Mesh::get_ctrlPts(Int ent_dim) {
 
-  OMEGA_H_CHECK(ent_dim > 0);
+  OMEGA_H_CHECK(ent_dim >= 0);
   return get_array<Real>(ent_dim, "bezier_pts");
 
 }
