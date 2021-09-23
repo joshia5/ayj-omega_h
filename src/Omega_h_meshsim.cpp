@@ -208,7 +208,7 @@ void read_internal(pMesh m, Mesh* mesh) {
     if (edge_numPts > 0) {
       assert(edge_numPts == 1);
       pPoint point = E_point(edge, 0);
-      double p_coord[3];
+      double p_coord[max_dim];
       P_coord(point, p_coord);
       for(int j=0; j<max_dim; j++) {
         edgePt_coords[count_edge * max_dim + j] = p_coord[j];
