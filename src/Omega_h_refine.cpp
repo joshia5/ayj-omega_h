@@ -14,6 +14,7 @@
 #include "Omega_h_beziers.hpp"
 
 #include "Omega_h_file.hpp"
+#include<Omega_h_build.hpp>
 
 namespace Omega_h {
 
@@ -88,12 +89,18 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
           same_ents2new_ents.size(), same_ents2old_ents.size(),
           prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
       waiting = 0;
-      auto new_ev2v = new_mesh.get_adj(1,0);
-      auto new_nedge = new_ev2v.ab2b.size()/2;
-      printf("new nedge %d\n", new_nedge);
       if (mesh->is_curved()) {
         transfer_bezier_edges(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
                               keys2prods, keys2midverts, old_verts2new_verts);
+
+        auto cubic_wireframe_mesh = Mesh(comm->library());
+        cubic_wireframe_mesh.set_comm(comm);
+        printf("refine ok1\n");
+        build_cubic_wireframe(&new_mesh, &cubic_wireframe_mesh);
+        printf("refine ok2\n");
+        std::string vtuPath = "/users/joshia5/Meshes/curved/2tri_cubic_wireframe.vtu";
+        vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe_mesh, 1);
+        printf("refine ok3\n");
       }
       
     }
@@ -101,9 +108,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
     old_lows2new_lows = old_ents2new_ents;
   }
   auto old_ev2v = mesh->get_adj(1,0);
-  //if (mesh->has_tag(1, "bezier_pts")) {
-   // vtk::write_parallel("/users/joshia5/Meshes/curved/Example_tri_adaptItr1", &new_mesh, 2);
-  // }
+
   *mesh = new_mesh;
 }
 
