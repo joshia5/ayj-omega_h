@@ -5,6 +5,7 @@
 #include "Omega_h_atomics.hpp"
 #include "Omega_h_map.hpp"
 #include "Omega_h_array_ops.hpp"
+#include "Omega_h_vector.hpp"
 
 namespace Omega_h {
 
@@ -262,22 +263,28 @@ void calc_quad_ctrlPts_from_interpPts(Mesh *mesh) {
     auto v0 = ev2v[i*2];
     auto v1 = ev2v[i*2 + 1];
 
-    Real cx0 = coords[v0*dim + 0];
-    Real cy0 = coords[v0*dim + 1];
-    Real cz0 = coords[v0*dim + 2];
-    Real x1 = interpPts[i*dim + 0];
-    Real y1 = interpPts[i*dim + 1];
-    Real z1 = interpPts[i*dim + 2];
-    Real cx2 = coords[v1*dim + 0];
-    Real cy2 = coords[v1*dim + 1];
-    Real cz2 = coords[v1*dim + 2];
-
-    auto cx1 = (x1 - B0_quad(xi_1)*cx0 - B2_quad(xi_1)*cx2)/B1_quad(xi_1);
-    auto cy1 = (y1 - B0_quad(xi_1)*cy0 - B2_quad(xi_1)*cy2)/B1_quad(xi_1);
-    auto cz1 = (z1 - B0_quad(xi_1)*cz0 - B2_quad(xi_1)*cz2)/B1_quad(xi_1);
-    new_pts[i*dim + 0] = cx1;
-    new_pts[i*dim + 1] = cy1;
-    new_pts[i*dim + 2] = cz1;
+    //TODO make this a templated fn like cal_pts_tmpl
+    if (dim == 2) {
+      Vector<2> c1;
+      auto c0 = get_vector<2>(coords, v0);
+      auto p1 = get_vector<2>(interpPts, i);
+      auto c2 = get_vector<2>(coords, v1);
+      for (Int j = 0; j < dim; ++j) {
+        c1[j] = (p1[j] - B0_quad(xi_1)*c0[j] - B2_quad(xi_1)*c2[j])/B1_quad(xi_1);
+      }
+      set_vector(new_pts, i, c1);
+    }
+    else {
+      OMEGA_H_CHECK(dim == 3);
+      Vector<3> c1;
+      auto c0 = get_vector<3>(coords, v0);
+      auto p1 = get_vector<3>(interpPts, i);
+      auto c2 = get_vector<3>(coords, v1);
+      for (Int j = 0; j < dim; ++j) {
+        c1[j] = (p1[j] - B0_quad(xi_1)*c0[j] - B2_quad(xi_1)*c2[j])/B1_quad(xi_1);
+      }
+      set_vector(new_pts, i, c1);
+    }
   };
   parallel_for(nedge, std::move(f));
 
@@ -589,24 +596,31 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
     LOs old2new, LOs prods2new, LOs keys2prods,
     LOs keys2midverts, LOs old_verts2new_verts) {
   
+  printf("in transfer fn 0\n");
   Write<LO> count_key(1, 0);
   auto nold_edge = old2new.size();
   auto old_ev2v = mesh->get_adj(1, 0).ab2b;
   auto old_fe2e = mesh->get_adj(2, 1).ab2b;
+  printf("in transfer fn 1\n");
   auto new_ev2v = new_mesh->get_adj(1, 0).ab2b;
   auto old_ef2f = mesh->ask_up(1, 2).ab2b;
   auto old_e2ef = mesh->ask_up(1, 2).a2ab;
   auto old_fv2v = mesh->ask_down(2, 0).ab2b;
   auto old_coords = mesh->coords();
-  auto new_coords = new_mesh->coords();
   auto n_edge_pts = mesh->n_internal_ctrlPts(1);
+  //auto n_face_pts = mesh->n_internal_ctrlPts(2);
   auto order = mesh->get_max_order();
   auto dim = mesh->dim();
   auto old_edgeCtrlPts = mesh->get_ctrlPts(1);
   auto old_faceCtrlPts = mesh->get_ctrlPts(2);
-  auto nnew_edge = new_ev2v.size()/2;
-  auto nnew_verts = new_coords.size()/dim;
+  //auto nnew_face = new_mesh->nfaces();
+  auto nnew_edge = new_mesh->nedges();
+  auto nnew_verts = new_mesh->nverts();
+  printf("in transfer fn 3\n");
   Write<Real> edge_ctrlPts(nnew_edge*n_edge_pts*dim);
+  Write<Real> vert_ctrlPts(nnew_verts*1*dim);
+  //Write<Real> face_ctrlPts(nnew_face*n_face_pts*dim);
+  //TODO faces cant be added until the bottom up algo reaches faces
   OMEGA_H_CHECK(order == 3);
   auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
                                                    nnew_verts);
@@ -658,16 +672,16 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
       {
         //for 2d mesh for now, order=3
         //query old ctrl pts
-        Real cx0 = new_coords[v0_old*dim + 0];
-        Real cy0 = new_coords[v0_old*dim + 1];
+        Real cx0 = old_coords[v0_old*dim + 0];
+        Real cy0 = old_coords[v0_old*dim + 1];
         Real cx1 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + 0];
         Real cy1 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + 1];
         Real cx2 = old_edgeCtrlPts[old_edge*n_edge_pts*dim +
           (n_edge_pts-1)*dim + 0];
         Real cy2 = old_edgeCtrlPts[old_edge*n_edge_pts*dim +
           (n_edge_pts-1)*dim + 1];
-        Real cx3 = new_coords[v1_old*dim + 0];
-        Real cy3 = new_coords[v1_old*dim + 1];
+        Real cx3 = old_coords[v1_old*dim + 0];
+        Real cy3 = old_coords[v1_old*dim + 1];
 
         Real new_xi_3 = 0.5;
         Real new_cx3 = cx0*B0_cube(new_xi_3) + cx1*B1_cube(new_xi_3) +
@@ -675,6 +689,9 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
         Real new_cy3 = cy0*B0_cube(new_xi_3) + cy1*B1_cube(new_xi_3) +
                        cy2*B2_cube(new_xi_3) + cy3*B3_cube(new_xi_3);
         //TODO store this with mid-vertex
+        vert_ctrlPts[mid_vert*1*dim + 0] = new_cx3;
+        vert_ctrlPts[mid_vert*1*dim + 1] = new_cy3;
+        //vert_ctrlPts[mid_vert*1*dim + 2] = new_cz3;
 
         Real new_xi_2 = xi_2_cube()/2.0;
         Real new_px2 = cx0*B0_cube(new_xi_2) + cx1*B1_cube(new_xi_2) +
@@ -711,20 +728,24 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
       {
         //for 2d mesh for now, order=3
         //query old ctrl pts
-        Real cx0 = new_coords[v0_old*dim + 0];
-        Real cy0 = new_coords[v0_old*dim + 1];
+        Real cx0 = old_coords[v0_old*dim + 0];
+        Real cy0 = old_coords[v0_old*dim + 1];
         Real cx1 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + 0];
         Real cy1 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + 1];
         Real cx2 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + 0];
         Real cy2 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + 1];
-        Real cx3 = new_coords[v1_old*dim + 0];
-        Real cy3 = new_coords[v1_old*dim + 1];
+        Real cx3 = old_coords[v1_old*dim + 0];
+        Real cy3 = old_coords[v1_old*dim + 1];
 
+        Real new_cx0 = vert_ctrlPts[mid_vert*1*dim + 0];
+        Real new_cy0 = vert_ctrlPts[mid_vert*1*dim + 1];
+        /*
         Real new_xi_0 = 0.5;
         Real new_cx0 = cx0*B0_cube(new_xi_0) + cx1*B1_cube(new_xi_0) +
                        cx2*B2_cube(new_xi_0) + cx3*B3_cube(new_xi_0);
         Real new_cy0 = cy0*B0_cube(new_xi_0) + cy1*B1_cube(new_xi_0) +
                        cy2*B2_cube(new_xi_0) + cy3*B3_cube(new_xi_0);
+        */
 
         Real new_xi_2 = 0.5 + xi_2_cube()/2.0;
         Real new_px2 = cx0*B0_cube(new_xi_2) + cx1*B1_cube(new_xi_2) +
@@ -774,7 +795,6 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
             LO vert_old_face = old_fv2v[adj_face*3 + vert];
             if (vert_old_face == old_vert_noKey) {
               old_face = adj_face;
-              printf("For old edge %d, found old face %d\n", old_edge, old_face);
               break;
             }
           }
@@ -784,17 +804,17 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
         }
 
         // for that old-face, query points at calculated xi values
+        printf("For old edge %d, found old face %d\n", old_edge, old_face);
         {
           auto v0 = old_fv2v[old_face*3];
           auto v1 = old_fv2v[old_face*3 + 1];
           auto v2 = old_fv2v[old_face*3 + 2];
 
-          //determine which vertex in the old face is old_vert_noKey
-          //so that proper xi values can be chosen
           //TODO check alignment of new noKey edge
-          //from the example, for now it p1 is nearer to noKey vert
+          //from the example, for now p1 is nearer to noKey vert
           auto nodePts = xi_values_cubic(old_vert_noKey, v0, v1, v2);
 
+          printf("ok1\n");
           auto old_face_e0 = old_fe2e[old_face*3];
           auto old_face_e1 = old_fe2e[old_face*3 + 1];
           auto old_face_e2 = old_fe2e[old_face*3 + 2];
@@ -827,6 +847,7 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
             OMEGA_H_CHECK((e2v0 == v2) && (e2v1 == v0));
           }
 
+          printf("ok2\n");
           Real cx00 = old_coords[v0*dim + 0];
           Real cy00 = old_coords[v0*dim + 1];
           //Real cz00 = old_coords[v0*dim + 2];
@@ -855,13 +876,14 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
             cy20 = tempy;
             //cz20 = tempz;
           }
+          printf("ok3\n");
 
           Real cx21 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 0];
           Real cy21 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 1];
-          //Real cz21 = old_edgeCtrlPtsctrlPts_h[old_face_e1*pts_per_edge*dim + 2];
+          //Real cz21 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 2];
           Real cx12 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
           Real cy12 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-          //Real cz12 = old_edgeCtrlPtsctrlPts_h[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+          //Real cz12 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
           if (e1_flip > 0) {
             auto tempx = cx21;
             auto tempy = cy21;
@@ -891,13 +913,14 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
             cy01 = tempy;
             //cz01 = tempz;
           }
+          printf("ok4\n");
 
           Real cx11 = old_faceCtrlPts[old_face*dim + 0];
           Real cy11 = old_faceCtrlPts[old_face*dim + 1];
+          printf("ok5\n");
           //Real cz11 = old_faceCtrlPts[old_face*dim + 2];
 
           //get the interp points
-          Write<Real> p1_p2(4);
           auto p1_x = cx00*B00_cube(nodePts[0], nodePts[1]) +
                       cx10*B10_cube(nodePts[0], nodePts[1]) +
                       cx20*B20_cube(nodePts[0], nodePts[1]) +
@@ -938,34 +961,16 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
                       cy02*B02_cube(nodePts[2], nodePts[3]) +
                       cy01*B01_cube(nodePts[2], nodePts[3]) +
                       cy11*B11_cube(nodePts[2], nodePts[3]);
-          auto c3_x = cx00*B00_cube(nodePts[4], nodePts[5]) +
-                      cx10*B10_cube(nodePts[4], nodePts[5]) +
-                      cx20*B20_cube(nodePts[4], nodePts[5]) +
-                      cx30*B30_cube(nodePts[4], nodePts[5]) +
-                      cx21*B21_cube(nodePts[4], nodePts[5]) +
-                      cx12*B12_cube(nodePts[4], nodePts[5]) +
-                      cx03*B03_cube(nodePts[4], nodePts[5]) +
-                      cx02*B02_cube(nodePts[4], nodePts[5]) +
-                      cx01*B01_cube(nodePts[4], nodePts[5]) +
-                      cx11*B11_cube(nodePts[4], nodePts[5]);
-          auto c3_y = cy00*B00_cube(nodePts[4], nodePts[5]) +
-                      cy10*B10_cube(nodePts[4], nodePts[5]) +
-                      cy20*B20_cube(nodePts[4], nodePts[5]) +
-                      cy30*B30_cube(nodePts[4], nodePts[5]) +
-                      cy21*B21_cube(nodePts[4], nodePts[5]) +
-                      cy12*B12_cube(nodePts[4], nodePts[5]) +
-                      cy03*B03_cube(nodePts[4], nodePts[5]) +
-                      cy02*B02_cube(nodePts[4], nodePts[5]) +
-                      cy01*B01_cube(nodePts[4], nodePts[5]) +
-                      cy11*B11_cube(nodePts[4], nodePts[5]);
 
           //use these as interp pts to find ctrl pts in new mesh
+          printf("ok6\n");
           {
             Real cx0 = old_coords[old_vert_noKey*dim + 0];
             Real cy0 = old_coords[old_vert_noKey*dim + 1];
 
             Matrix<2,1> c0({cx0, cy0});
-            Matrix<2,1> c3({c3_x, c3_y});
+            Matrix<2,1> c3({vert_ctrlPts[mid_vert*1*dim + 0],
+                            vert_ctrlPts[mid_vert*1*dim + 1]});
 
             Matrix<2,1> fx({p1_x, p2_x});
             Matrix<2,1> fy({p1_y, p2_y});
@@ -983,15 +988,25 @@ void transfer_bezier_edges(Mesh *mesh, Mesh *new_mesh,
             edge_ctrlPts[new_e2*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = Cx(1,0);
             edge_ctrlPts[new_e2*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = Cy(1,0);
           }
+          printf("ok7\n");
         }
+        printf("ok8\n");
 
       }
+        printf("ok9\n");
       atomic_fetch_add(&count_key[0], 1);
+        printf("ok10\n");
     }
+        printf("ok11\n");
   };
   parallel_for(nold_edge, std::move(transfer_edges));
+        printf("ok12\n");
 
+  new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim);
+        printf("ok13\n");
   new_mesh->set_tag_for_ctrlPts(1, Reals(edge_ctrlPts));
+        printf("ok14\n");
+  //TODO transfer face pts
 
   return;
 }
