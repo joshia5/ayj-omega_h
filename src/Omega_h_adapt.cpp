@@ -281,7 +281,6 @@ bool adapt(Mesh* mesh, AdaptOpts const& opts) {
   auto t0 = now();
 
   mesh->change_all_rcFieldsToMesh();
-
   if (!pre_adapt(mesh, opts)) return false;
   setup_conservation_tags(mesh, opts);
   auto t1 = now();
@@ -293,9 +292,7 @@ bool adapt(Mesh* mesh, AdaptOpts const& opts) {
   auto t4 = now();
 
   mesh->change_all_rcFieldsTorc();
-
   mesh->set_parting(OMEGA_H_ELEM_BASED);
-
   mesh->change_all_rcFieldsToMesh();
 
   post_adapt(mesh, opts, t0, t1, t2, t3, t4);
