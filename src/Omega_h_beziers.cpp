@@ -619,7 +619,7 @@ void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
   auto copy_coords = OMEGA_H_LAMBDA(LO i) {
     vert_ctrlPts[i] = new_coords[i];
   };
-  parallel_for(new_coords.size(), copy_coords, "init ctrl pts as coords");
+  parallel_for(new_coords.size(), copy_coords, "init vtx ctrlPts");
   //TODO faces cant be added until the bottom up algo reaches faces
   //auto n_face_pts = mesh->n_internal_ctrlPts(2);
 
@@ -628,6 +628,7 @@ void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
 
   Write<LO> count_key(1, 0);
   OMEGA_H_CHECK(order == 3);
+  Write<Real> edge_curveXi(nnew_edge*2*1);
 
   auto create_crv_edges = OMEGA_H_LAMBDA (LO old_edge) {
     LO v0_old = old_ev2v[old_edge*2 + 0];
@@ -636,11 +637,12 @@ void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
     if (old2new[old_edge] != -1) {
       // map as is from old id to new id
       LO new_edge = old2new[old_edge];
+      printf("old edge %d same as new edge %d\n", old_edge, new_edge);
       for (I8 d = 0; d < dim; ++d) {
         edge_ctrlPts[new_edge*n_edge_pts*dim + d] = 
           old_edgeCtrlPts[old_edge*n_edge_pts*dim + d];
         edge_ctrlPts[new_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + d] =
-          old_edgeCtrlPts[old_edge*n_edge_pts*dim + d];
+          old_edgeCtrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + d];
       }
     }
     else {
@@ -653,13 +655,14 @@ void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
       LO new_e1 = prods2new[start+1];
       LO new_e2 = prods2new[start+2];
 
-      //LO v0_new_e0 = new_ev2v[new_e0*2 + 0];
       LO v1_new_e0 = new_ev2v[new_e0*2 + 1];
       LO v0_new_e1 = new_ev2v[new_e1*2 + 0];
-      //LO v1_new_e1 = new_ev2v[new_e1*2 + 1];
       OMEGA_H_CHECK((v1_new_e0 == mid_vert) && (v0_new_e1 == mid_vert));
+      //LO v0_new_e0 = new_ev2v[new_e0*2 + 0];
+      //LO v1_new_e1 = new_ev2v[new_e1*2 + 1];
       //OMEGA_H_CHECK((v0_new_e0 == v0_old) && (v1_new_e1 == v1_old));
       //topologically yes but diff mesh objects
+
       LO v0_new_e2 = new_ev2v[new_e2*2 + 0];
       LO v1_new_e2 = new_ev2v[new_e2*2 + 1];
       OMEGA_H_CHECK(v1_new_e2 == mid_vert);
@@ -691,6 +694,7 @@ void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
                        cx2*B2_cube(new_xi_3) + cx3*B3_cube(new_xi_3);
         Real new_cy3 = cy0*B0_cube(new_xi_3) + cy1*B1_cube(new_xi_3) +
                        cy2*B2_cube(new_xi_3) + cy3*B3_cube(new_xi_3);
+        printf(" new mid interp pt %f, %f \n", new_cx3, new_cy3);
         vert_ctrlPts[mid_vert*1*dim + 0] = new_cx3;
         vert_ctrlPts[mid_vert*1*dim + 1] = new_cy3;
         //vert_ctrlPts[mid_vert*1*dim + 2] = new_cz3;
@@ -700,12 +704,14 @@ void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
                        cx2*B2_cube(new_xi_2) + cx3*B3_cube(new_xi_2);
         Real new_py2 = cy0*B0_cube(new_xi_2) + cy1*B1_cube(new_xi_2) +
                        cy2*B2_cube(new_xi_2) + cy3*B3_cube(new_xi_2);
+        printf("edgo 0 p2 %f, %f , xi2 %f\n", new_px2, new_py2, new_xi_2);
 
         Real new_xi_1 = xi_1_cube()/2.0;
         Real new_px1 = cx0*B0_cube(new_xi_1) + cx1*B1_cube(new_xi_1) +
                        cx2*B2_cube(new_xi_1) + cx3*B3_cube(new_xi_1);
         Real new_py1 = cy0*B0_cube(new_xi_1) + cy1*B1_cube(new_xi_1) +
                        cy2*B2_cube(new_xi_1) + cy3*B3_cube(new_xi_1);
+        printf("edgo 0 p1 %f, %f \n", new_px1, new_py1);
 
         Matrix<2,1> c0({cx0, cy0});
         Matrix<2,1> c3({new_cx3, new_cy3});
@@ -725,6 +731,8 @@ void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
         edge_ctrlPts[new_e0*n_edge_pts*dim + 1] = Cy(0,0);
         edge_ctrlPts[new_e0*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = Cx(1,0);
         edge_ctrlPts[new_e0*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = Cy(1,0);
+        edge_curveXi[new_e0*2 + 0] = 0.0;
+        edge_curveXi[new_e0*2 + 1] = 0.5;
       }
       //ctrl pts for e1
       {
@@ -739,15 +747,6 @@ void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
         Real cx3 = old_coords[v1_old*dim + 0];
         Real cy3 = old_coords[v1_old*dim + 1];
 
-        Real new_cx0 = vert_ctrlPts[mid_vert*1*dim + 0];
-        Real new_cy0 = vert_ctrlPts[mid_vert*1*dim + 1];
-        /*
-        Real new_xi_0 = 0.5;
-        Real new_cx0 = cx0*B0_cube(new_xi_0) + cx1*B1_cube(new_xi_0) +
-                       cx2*B2_cube(new_xi_0) + cx3*B3_cube(new_xi_0);
-        Real new_cy0 = cy0*B0_cube(new_xi_0) + cy1*B1_cube(new_xi_0) +
-                       cy2*B2_cube(new_xi_0) + cy3*B3_cube(new_xi_0);
-        */
 
         Real new_xi_2 = 0.5 + xi_2_cube()/2.0;
         Real new_px2 = cx0*B0_cube(new_xi_2) + cx1*B1_cube(new_xi_2) +
@@ -761,7 +760,8 @@ void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
         Real new_py1 = cy0*B0_cube(new_xi_1) + cy1*B1_cube(new_xi_1) +
                        cy2*B2_cube(new_xi_1) + cy3*B3_cube(new_xi_1);
 
-        Matrix<2,1> c0({new_cx0, new_cy0});
+        Matrix<2,1> c0({vert_ctrlPts[mid_vert*1*dim + 0],
+                        vert_ctrlPts[mid_vert*1*dim + 1]});
         Matrix<2,1> c3({cx3, cy3});
 
         Matrix<2,1> fx({new_px1, new_px2});
@@ -779,6 +779,8 @@ void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
         edge_ctrlPts[new_e1*n_edge_pts*dim + 1] = Cy(0,0);
         edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = Cx(1,0);
         edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = Cy(1,0);
+        edge_curveXi[new_e1*2 + 0] = 0.5;
+        edge_curveXi[new_e1*2 + 1] = 1.0;
       }
       //ctrl pts for e2
       {
@@ -805,13 +807,13 @@ void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
         // for that old-face, query points at calculated xi values
         printf("For old edge %d, found old face %d\n", old_edge, old_face);
         {
-          auto v0 = old_fv2v[old_face*3];
+          auto v0_old_face = old_fv2v[old_face*3];
           auto v1 = old_fv2v[old_face*3 + 1];
           auto v2 = old_fv2v[old_face*3 + 2];
 
           //TODO check alignment of new noKey edge
           //from the example, for now p1 is nearer to noKey vert
-          auto nodePts = xi_values_cubic(old_vert_noKey, v0, v1, v2);
+          auto nodePts = xi_values_cubic(old_vert_noKey, v0_old_face, v1, v2);
 
           auto old_face_e0 = old_fe2e[old_face*3];
           auto old_face_e1 = old_fe2e[old_face*3 + 1];
@@ -820,34 +822,34 @@ void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
           I8 e0_flip = -1;
           I8 e1_flip = -1;
           I8 e2_flip = -1;
-          auto e0v0 = old_ev2v[old_face_e0*2 + 0];
+          auto e0v0_old_face = old_ev2v[old_face_e0*2 + 0];
           auto e0v1 = old_ev2v[old_face_e0*2 + 1];
-          auto e1v0 = old_ev2v[old_face_e1*2 + 0];
+          auto e1v0_old_face = old_ev2v[old_face_e1*2 + 0];
           auto e1v1 = old_ev2v[old_face_e1*2 + 1];
-          auto e2v0 = old_ev2v[old_face_e2*2 + 0];
+          auto e2v0_old_face = old_ev2v[old_face_e2*2 + 0];
           auto e2v1 = old_ev2v[old_face_e2*2 + 1];
-          if ((e0v0 == v1) && (e0v1 == v0)) {
+          if ((e0v0_old_face == v1) && (e0v1 == v0_old_face)) {
             e0_flip = 1;
           }
           else {
-            OMEGA_H_CHECK((e0v0 == v0) && (e0v1 == v1));
+            OMEGA_H_CHECK((e0v0_old_face == v0_old_face) && (e0v1 == v1));
           }
-          if ((e1v0 == v2) && (e1v1 == v1)) {
+          if ((e1v0_old_face == v2) && (e1v1 == v1)) {
             e1_flip = 1;
           }
           else {
-            OMEGA_H_CHECK((e1v0 == v1) && (e1v1 == v2));
+            OMEGA_H_CHECK((e1v0_old_face == v1) && (e1v1 == v2));
           }
-          if ((e2v0 == v0) && (e2v1 == v2)) {
+          if ((e2v0_old_face == v0_old_face) && (e2v1 == v2)) {
             e2_flip = 1;
           }
           else {
-            OMEGA_H_CHECK((e2v0 == v2) && (e2v1 == v0));
+            OMEGA_H_CHECK((e2v0_old_face == v2) && (e2v1 == v0_old_face));
           }
 
-          Real cx00 = old_coords[v0*dim + 0];
-          Real cy00 = old_coords[v0*dim + 1];
-          //Real cz00 = old_coords[v0*dim + 2];
+          Real cx00 = old_coords[v0_old_face*dim + 0];
+          Real cy00 = old_coords[v0_old_face*dim + 1];
+          //Real cz00 = old_coords[v0_old_face*dim + 2];
           Real cx30 = old_coords[v1*dim + 0];
           Real cy30 = old_coords[v1*dim + 1];
           //Real cz30 = old_coords[v1*dim + 2];
@@ -982,6 +984,8 @@ void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
             edge_ctrlPts[new_e2*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = Cy(1,0);
           }
         }
+        edge_curveXi[new_e2*2 + 0] = 0.0;
+        edge_curveXi[new_e2*2 + 1] = 1.0;
 
       }
       atomic_fetch_add(&count_key[0], 1);
@@ -991,6 +995,7 @@ void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
 
   new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim);
   new_mesh->add_tag<Real>(0, "bezier_pts", dim);
+  new_mesh->add_tag<Real>(1, "edge_ends_xi", 2, edge_curveXi);
   new_mesh->set_tag_for_ctrlPts(1, Reals(edge_ctrlPts));
   new_mesh->set_tag_for_ctrlPts(0, Reals(vert_ctrlPts));
   //TODO transfer face pts
