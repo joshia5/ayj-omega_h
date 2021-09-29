@@ -209,6 +209,15 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
 
   mesh.set_tag_for_ctrlPts(1, Reals(edge_ctrlPts.write()));
 
+  auto cubic_wireframe_mesh = Mesh(lib);
+  cubic_wireframe_mesh.set_comm(lib->world());
+  build_cubic_wireframe(&mesh, &cubic_wireframe_mesh, 20);
+  std::string vtuPath = "/users/joshia5/Meshes/curved/oneTri_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe_mesh, 1);
+
+  Write<Real> face_ctrlPts(mesh.nfaces()*1*dim, 0.0);
+  mesh.set_tag_for_ctrlPts(2, Reals(face_ctrlPts));
+
   if (!mesh.has_tag(1, "global")) {
     mesh.add_tag(1, "global", 1, Omega_h::GOs(mesh.nedges(), 0, 1));
   }
@@ -262,6 +271,38 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
 
   elevate_curve_order_2to3(&mesh);
+
+  /*
+  if (!mesh.has_tag(1, "global")) {
+    mesh.add_tag(1, "global", 1, Omega_h::GOs(mesh.nedges(), 0, 1));
+  }
+  if (!mesh.has_tag(0, "global")) {
+    mesh.add_tag(0, "global", 1, Omega_h::GOs(mesh.nverts(), 0, 1));
+  }
+  if (!mesh.has_tag(2, "global")) {
+    mesh.add_tag(2, "global", 1, Omega_h::GOs(mesh.nfaces(), 0, 1));
+  }
+  AdaptOpts opts(&mesh);
+  auto nelems = mesh.nglobal_ents(mesh.dim());
+  auto desired_group_nelems = 2;
+  while (nelems < desired_group_nelems) {
+    if (!mesh.has_tag(0, "metric")) {
+      add_implied_metric_tag(&mesh);
+      adapt(&mesh, opts);
+      nelems = mesh.nglobal_ents(mesh.dim());
+      std::cout << "mesh now has " << nelems << " total elements\n";
+    }
+    auto metrics = mesh.get_array<double>(0, "metric");
+    metrics = multiply_each_by(metrics, 1.2);
+    auto const metric_ncomps =
+      divide_no_remainder(metrics.size(), mesh.nverts());
+    mesh.add_tag(0, "metric", metric_ncomps, metrics);
+    adapt(&mesh, opts);
+    nelems = mesh.nglobal_ents(mesh.dim());
+    std::cout << "mesh now has " << nelems << " total elements\n";
+  }
+  */
+
 
   auto cubic_wireframe_mesh = Mesh(comm->library());
   cubic_wireframe_mesh.set_comm(comm);
@@ -323,6 +364,56 @@ void test_sim_kova_quadratic(Library *lib) {
   return;
 }
 
+void test_disc(Library *lib) {
+  auto comm = lib->world();
+  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
+                            "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
+
+  calc_quad_ctrlPts_from_interpPts(&mesh);
+  elevate_curve_order_2to3(&mesh);
+  auto wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe(&mesh, &wireframe_mesh);
+  std::string vtuPath = "/users/joshia5/Meshes/curved/disc2tri_cubic_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  auto cubic_curveVtk_mesh = Mesh(comm->library());
+  cubic_curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk(&mesh, &cubic_curveVtk_mesh);
+  vtuPath = "/users/joshia5/Meshes/curved/disc2tri_cubic_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
+
+  if (!mesh.has_tag(1, "global")) {
+    mesh.add_tag(1, "global", 1, Omega_h::GOs(mesh.nedges(), 0, 1));
+  }
+  if (!mesh.has_tag(0, "global")) {
+    mesh.add_tag(0, "global", 1, Omega_h::GOs(mesh.nverts(), 0, 1));
+  }
+  if (!mesh.has_tag(2, "global")) {
+    mesh.add_tag(2, "global", 1, Omega_h::GOs(mesh.nfaces(), 0, 1));
+  }
+  AdaptOpts opts(&mesh);
+  auto nelems = mesh.nglobal_ents(mesh.dim());
+  auto desired_group_nelems = 5;
+  while (nelems < desired_group_nelems) {
+    if (!mesh.has_tag(0, "metric")) {
+      add_implied_metric_tag(&mesh);
+      adapt(&mesh, opts);
+      nelems = mesh.nglobal_ents(mesh.dim());
+      std::cout << "mesh now has " << nelems << " total elements\n";
+    }
+    auto metrics = mesh.get_array<double>(0, "metric");
+    metrics = multiply_each_by(metrics, 1.2);
+    auto const metric_ncomps =
+      divide_no_remainder(metrics.size(), mesh.nverts());
+    mesh.add_tag(0, "metric", metric_ncomps, metrics);
+    adapt(&mesh, opts);
+    nelems = mesh.nglobal_ents(mesh.dim());
+    std::cout << "mesh now has " << nelems << " total elements\n";
+  }
+  vtk::write_parallel("/lore/joshia5/Meshes/curved/disc_refine_8tri.vtk", &mesh, 2);
+  return;
+}
+
 int main(int argc, char** argv) {
 
   auto lib = Library (&argc, &argv);
@@ -343,9 +434,10 @@ int main(int argc, char** argv) {
   path_3d_m = argv[4];
   path_3d_vtk = argv[5];
 
-  test_linearTri_toCubicCircle(&lib, path_2d, path_2d_vtk);
-  test_sim_linearToCubic(&lib, path_3d_g, path_3d_m, path_3d_vtk);
-  test_sim_kova_quadratic(&lib);
+  test_disc(&lib);
+  //test_linearTri_toCubicCircle(&lib, path_2d, path_2d_vtk);
+  //test_sim_linearToCubic(&lib, path_3d_g, path_3d_m, path_3d_vtk);
+  //test_sim_kova_quadratic(&lib);
 
   return 0;
 }

@@ -95,14 +95,23 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
 
         auto cubic_wireframe_mesh = Mesh(comm->library());
         cubic_wireframe_mesh.set_comm(comm);
-        printf("refine ok1\n");
-        build_cubic_wireframe(&new_mesh, &cubic_wireframe_mesh);
-        printf("refine ok2\n");
-        std::string vtuPath = "/users/joshia5/Meshes/curved/discRefine_cubic_wireframe.vtu";
+        build_cubic_wireframe(&new_mesh, &cubic_wireframe_mesh, 20);
+        std::string vtuPath = "/users/joshia5/Meshes/curved/semiDiscRefine_cubic_wireframe.vtu";
         vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe_mesh, 1);
-        printf("refine ok3\n");
       }
       
+    }
+    if (ent_dim == FACE) {
+      printf(
+      "old2new %d same2new %d same2old %d prods2new %d keys2prods %d keys2midv %d\n",
+      old_ents2new_ents.size(),
+          same_ents2new_ents.size(), same_ents2old_ents.size(),
+          prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
+      /*if (mesh->is_curved()) {
+        create_curved_faces(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
+                            keys2prods, keys2midverts, old_verts2new_verts);
+
+      }*/
     }
     while(waiting);
     old_lows2new_lows = old_ents2new_ents;
@@ -115,17 +124,13 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
 static bool refine(Mesh* mesh, AdaptOpts const& opts) {
 
   mesh->change_all_rcFieldsTorc();
-
   mesh->set_parting(OMEGA_H_GHOSTED);
-
   mesh->change_all_rcFieldsToMesh();
 
   if (!refine_ghosted(mesh, opts)) return false;
 
   mesh->change_all_rcFieldsTorc();
-
   mesh->set_parting(OMEGA_H_ELEM_BASED);
-
   mesh->change_all_rcFieldsToMesh();
 
   refine_element_based(mesh, opts);
