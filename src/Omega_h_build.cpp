@@ -373,12 +373,15 @@ void assemble_slices(CommPtr comm, Omega_h_Family family, Int dim,
 
 void build_quadratic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
                                LO n_sample_pts) {
+  auto dim = mesh->dim();
+  if (!(mesh->get_ctrlPts(0)).exists()) {
+    mesh->set_tag_for_ctrlPts(0, mesh->coords());
+  }
   auto nedge = mesh->nedges();
-  auto coords_h = HostRead<Real>(mesh->coords());
   auto ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(1));
+  auto vert_ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(0));
   auto ev2v_h = HostRead<LO>(mesh->get_adj(1, 0).ab2b);
 
-  I8 dim = 3;
   Real xi_start = 0.0;
   Real xi_end = 1.0;
   Real delta_xi = (xi_end - xi_start)/(n_sample_pts - 1);
@@ -396,27 +399,42 @@ void build_quadratic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
     auto v0 = ev2v_h[i*2];
     auto v1 = ev2v_h[i*2 + 1];
 
-    Real cx0 = coords_h[v0*dim + 0];
-    Real cy0 = coords_h[v0*dim + 1];
-    Real cz0 = coords_h[v0*dim + 2];
+    /*
+    if (dim == 2) {
+      Vector<2> sample_pt;
+      auto c0 = get_vector<2>(vert_ctrlPts_h, v0);
+      auto c1 = get_vector<2>(ctrlPts_h, i);
+      auto c2 = get_vector<2>(vert_ctrlPts_h, v1);
+      for (LO i = 0; i < u_h.size(); ++i) {
+        for (Int j = 0; j < dim; ++j) {
+          c1[j] = (p1[j] - B0_quad(xi_1)*c0[j] - B2_quad(xi_1)*c2[j])/B1_quad(xi_1);
+        }
+      }
+      set_vector(host_coords, count_wireframe_vtx, c1);
+    }
+    */
+
+    Real cx0 = vert_ctrlPts_h[v0*dim + 0];
+    Real cy0 = vert_ctrlPts_h[v0*dim + 1];
+    //Real cz0 = vert_ctrlPts_h[v0*dim + 2];
     Real cx1 = ctrlPts_h[i*dim + 0];
     Real cy1 = ctrlPts_h[i*dim + 1];
-    Real cz1 = ctrlPts_h[i*dim + 2];
-    Real cx2 = coords_h[v1*dim + 0];
-    Real cy2 = coords_h[v1*dim + 1];
-    Real cz2 = coords_h[v1*dim + 2];
+    //Real cz1 = ctrlPts_h[i*dim + 2];
+    Real cx2 = vert_ctrlPts_h[v1*dim + 0];
+    Real cy2 = vert_ctrlPts_h[v1*dim + 1];
+    //Real cz2 = vert_ctrlPts_h[v1*dim + 2];
 
     for (LO i = 0; i < u_h.size(); ++i) {
       auto x_bezier = cx0*B0_quad(u_h[i]) + cx1*B1_quad(u_h[i]) +
                       cx2*B2_quad(u_h[i]);
       auto y_bezier = cy0*B0_quad(u_h[i]) + cy1*B1_quad(u_h[i]) +
                       cy2*B2_quad(u_h[i]);
-      auto z_bezier = cz0*B0_quad(u_h[i]) + cz1*B1_quad(u_h[i]) +
-                      cz2*B2_quad(u_h[i]);
+      //auto z_bezier = cz0*B0_quad(u_h[i]) + cz1*B1_quad(u_h[i]) +
+       //               cz2*B2_quad(u_h[i]);
 
       host_coords[count_wireframe_vtx*dim + 0] = x_bezier;
       host_coords[count_wireframe_vtx*dim + 1] = y_bezier;
-      host_coords[count_wireframe_vtx*dim + 2] = z_bezier;
+      //host_coords[count_wireframe_vtx*dim + 2] = z_bezier;
 
       edge_vertices[0].push_back(count_wireframe_vtx);
       if ((i > 0) && (i < (u_h.size() - 1))) {
@@ -444,18 +462,16 @@ void build_quadratic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
 
 void build_cubic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
                            LO n_sample_pts) {
+  auto dim = mesh->dim();
+  if (!(mesh->get_ctrlPts(0)).exists()) {
+    mesh->set_tag_for_ctrlPts(0, mesh->coords());
+  }
   auto nedge = mesh->nedges();
-  auto coords_h = HostRead<Real>(mesh->coords());
   auto ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(1));
+  auto vert_ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(0));
   auto ev2v_h = HostRead<LO>(mesh->get_adj(1, 0).ab2b);
   auto pts_per_edge = mesh->n_internal_ctrlPts(1);
-
-  I8 dim = 3;
-  Real xi_start = 0.0;
-  Real xi_end = 1.0;
-  Real delta_xi = (xi_end - xi_start)/(n_sample_pts - 1);
-  auto u_h = HostRead<Real>(Read<Real>(n_sample_pts, xi_start, delta_xi,
-                                      "samplePts"));
+  //auto edge_ends_xi_h = HostRead<Real>(mesh->get_array<Real>(1, "edge_ends_xi"));
 
   HostWrite<Real> host_coords(n_sample_pts*nedge*dim);
   LO wireframe_nedge = (n_sample_pts - 1)*nedge;
@@ -468,30 +484,38 @@ void build_cubic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
     auto v0 = ev2v_h[i*2];
     auto v1 = ev2v_h[i*2 + 1];
 
-    Real cx0 = coords_h[v0*dim + 0];
-    Real cy0 = coords_h[v0*dim + 1];
-    Real cz0 = coords_h[v0*dim + 2];
+    //Real xi_start = edge_ends_xi_h[i*2 + 0];
+    //Real xi_end = edge_ends_xi_h[i*2 + 1];
+    Real xi_start = 0.0;
+    Real xi_end = 1.0;
+    Real delta_xi = (xi_end - xi_start)/(n_sample_pts - 1);
+    auto u_h = HostRead<Real>(Read<Real>(n_sample_pts, xi_start, delta_xi,
+          "samplePts"));
+ 
+    Real cx0 = vert_ctrlPts_h[v0*dim + 0];
+    Real cy0 = vert_ctrlPts_h[v0*dim + 1];
+    //Real cz0 = vert_ctrlPts_h[v0*dim + 2];
     Real cx1 = ctrlPts_h[i*pts_per_edge*dim + 0];
     Real cy1 = ctrlPts_h[i*pts_per_edge*dim + 1];
-    Real cz1 = ctrlPts_h[i*pts_per_edge*dim + 2];
+    //Real cz1 = ctrlPts_h[i*pts_per_edge*dim + 2];
     Real cx2 = ctrlPts_h[i*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
     Real cy2 = ctrlPts_h[i*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-    Real cz2 = ctrlPts_h[i*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
-    Real cx3 = coords_h[v1*dim + 0];
-    Real cy3 = coords_h[v1*dim + 1];
-    Real cz3 = coords_h[v1*dim + 2];
+    //Real cz2 = ctrlPts_h[i*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+    Real cx3 = vert_ctrlPts_h[v1*dim + 0];
+    Real cy3 = vert_ctrlPts_h[v1*dim + 1];
+    //Real cz3 = vert_ctrlPts_h[v0*dim + 2];
 
     for (LO i = 0; i < u_h.size(); ++i) {
       auto x_bezier = cx0*B0_cube(u_h[i]) + cx1*B1_cube(u_h[i]) +
                       cx2*B2_cube(u_h[i]) + cx3*B3_cube(u_h[i]);
       auto y_bezier = cy0*B0_cube(u_h[i]) + cy1*B1_cube(u_h[i]) +
                       cy2*B2_cube(u_h[i]) + cy3*B3_cube(u_h[i]);
-      auto z_bezier = cz0*B0_cube(u_h[i]) + cz1*B1_cube(u_h[i]) +
-                      cz2*B2_cube(u_h[i]) + cz3*B3_cube(u_h[i]);
+      //auto z_bezier = cz0*B0_cube(u_h[i]) + cz1*B1_cube(u_h[i]) +
+        //              cz2*B2_cube(u_h[i]) + cz3*B3_cube(u_h[i]);
 
       host_coords[count_wireframe_vtx*dim + 0] = x_bezier;
       host_coords[count_wireframe_vtx*dim + 1] = y_bezier;
-      host_coords[count_wireframe_vtx*dim + 2] = z_bezier;
+      //host_coords[count_wireframe_vtx*dim + 2] = z_bezier;
 
       edge_vertices[0].push_back(count_wireframe_vtx);
       if ((i > 0) && (i < (u_h.size() - 1))) {
@@ -727,7 +751,7 @@ void build_cubic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
   auto ev2v_h = HostRead<LO>(mesh->get_adj(1, 0).ab2b);
   auto pts_per_edge = mesh->n_internal_ctrlPts(1);
 
-  I8 dim = 3;
+  I8 dim = mesh->dim();
   Real xi_start = 0.0;
   Real xi_end = 1.0;
   Real delta_xi = (xi_end - xi_start)/(n_sample_pts - 1);
@@ -788,71 +812,71 @@ void build_cubic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
 
     Real cx00 = coords_h[v0*dim + 0];
     Real cy00 = coords_h[v0*dim + 1];
-    Real cz00 = coords_h[v0*dim + 2];
+    //Real cz00 = coords_h[v0*dim + 2];
     Real cx30 = coords_h[v1*dim + 0];
     Real cy30 = coords_h[v1*dim + 1];
-    Real cz30 = coords_h[v1*dim + 2];
+    //Real cz30 = coords_h[v1*dim + 2];
     Real cx03 = coords_h[v2*dim + 0];
     Real cy03 = coords_h[v2*dim + 1];
-    Real cz03 = coords_h[v2*dim + 2];
+    //Real cz03 = coords_h[v2*dim + 2];
 
     Real cx10 = ctrlPts_h[e0*pts_per_edge*dim + 0];
     Real cy10 = ctrlPts_h[e0*pts_per_edge*dim + 1];
-    Real cz10 = ctrlPts_h[e0*pts_per_edge*dim + 2];
+    //Real cz10 = ctrlPts_h[e0*pts_per_edge*dim + 2];
     Real cx20 = ctrlPts_h[e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];//2 pts per edge
     Real cy20 = ctrlPts_h[e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-    Real cz20 = ctrlPts_h[e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+    //Real cz20 = ctrlPts_h[e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
     if (e0_flip > 0) {
       auto tempx = cx10;
       auto tempy = cy10;
-      auto tempz = cz10;
+      //auto tempz = cz10;
       cx10 = cx20;
       cy10 = cy20;
-      cz10 = cz20;
+      //cz10 = cz20;
       cx20 = tempx;
       cy20 = tempy;
-      cz20 = tempz;
+      //cz20 = tempz;
     }
 
     Real cx21 = ctrlPts_h[e1*pts_per_edge*dim + 0];
     Real cy21 = ctrlPts_h[e1*pts_per_edge*dim + 1];
-    Real cz21 = ctrlPts_h[e1*pts_per_edge*dim + 2];
+    //Real cz21 = ctrlPts_h[e1*pts_per_edge*dim + 2];
     Real cx12 = ctrlPts_h[e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
     Real cy12 = ctrlPts_h[e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-    Real cz12 = ctrlPts_h[e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+    //Real cz12 = ctrlPts_h[e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
     if (e1_flip > 0) {
       auto tempx = cx21;
       auto tempy = cy21;
-      auto tempz = cz21;
+      //auto tempz = cz21;
       cx21 = cx12;
       cy21 = cy12;
-      cz21 = cz12;
+      //cz21 = cz12;
       cx12 = tempx;
       cy12 = tempy;
-      cz12 = tempz;
+      //cz12 = tempz;
     }
 
     Real cx02 = ctrlPts_h[e2*pts_per_edge*dim + 0];
     Real cy02 = ctrlPts_h[e2*pts_per_edge*dim + 1];
-    Real cz02 = ctrlPts_h[e2*pts_per_edge*dim + 2];
+    //Real cz02 = ctrlPts_h[e2*pts_per_edge*dim + 2];
     Real cx01 = ctrlPts_h[e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
     Real cy01 = ctrlPts_h[e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-    Real cz01 = ctrlPts_h[e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+    //Real cz01 = ctrlPts_h[e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
     if (e2_flip > 0) {
       auto tempx = cx02;
       auto tempy = cy02;
-      auto tempz = cz02;
+      //auto tempz = cz02;
       cx02 = cx01;
       cy02 = cy01;
-      cz02 = cz01;
+      //cz02 = cz01;
       cx01 = tempx;
       cy01 = tempy;
-      cz01 = tempz;
+      //cz01 = tempz;
     }
 
     Real cx11 = face_ctrlPts_h[face*dim + 0];
     Real cy11 = face_ctrlPts_h[face*dim + 1];
-    Real cz11 = face_ctrlPts_h[face*dim + 2];
+    //Real cz11 = face_ctrlPts_h[face*dim + 2];
 
     for (LO i = 0; i < n_sample_pts; ++i) {
       for (LO j = 0; j < n_sample_pts - i; ++j) {
@@ -876,6 +900,7 @@ void build_cubic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
                         cy02*B02_cube(xi[i][j][0], xi[i][j][1]) +
                         cy01*B01_cube(xi[i][j][0], xi[i][j][1]) +
                         cy11*B11_cube(xi[i][j][0], xi[i][j][1]);
+        /*
         auto z_bezier = cz00*B00_cube(xi[i][j][0], xi[i][j][1]) +
                         cz10*B10_cube(xi[i][j][0], xi[i][j][1]) +
                         cz20*B20_cube(xi[i][j][0], xi[i][j][1]) +
@@ -886,10 +911,11 @@ void build_cubic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
                         cz02*B02_cube(xi[i][j][0], xi[i][j][1]) +
                         cz01*B01_cube(xi[i][j][0], xi[i][j][1]) +
                         cz11*B11_cube(xi[i][j][0], xi[i][j][1]);
+                        */
 
         host_coords[count_curveVtk_mesh_vtx*dim + 0] = x_bezier;
         host_coords[count_curveVtk_mesh_vtx*dim + 1] = y_bezier;
-        host_coords[count_curveVtk_mesh_vtx*dim + 2] = z_bezier;
+        //host_coords[count_curveVtk_mesh_vtx*dim + 2] = z_bezier;
 
         if ((i < n_sample_pts - 1) && (j < n_sample_pts - i - 1)) {
           face_vertices[0].push_back(count_curveVtk_mesh_vtx);
