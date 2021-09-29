@@ -41,8 +41,10 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
   {
     Real s_c1 = PI * xi_1;
     Real s_c2 = PI * xi_2;
-    Matrix<2,1> p0({coords_h[4], coords_h[5]});
-    Matrix<2,1> p1({coords_h[2], coords_h[3]});
+    Matrix<2,1> p0({coords_h[4], coords_h[2]});
+    Matrix<2,1> p1({coords_h[5], coords_h[3]});
+    //Matrix<2,1> p0({coords_h[4], coords_h[5]});
+    //Matrix<2,1> p1({coords_h[2], coords_h[3]});
     Real x1 = centerx - R*cos(PI/4 + s_c1);
     Real y1 = centery + R*sin(PI/4 + s_c1);
     Real x2 = centerx - R*cos(PI/4 + s_c2);
@@ -106,8 +108,10 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
   {
     Real s_c1 = PI/2 * xi_1;
     Real s_c2 = PI/2 * xi_2;
-    Matrix<2,1> p0({coords_h[2], coords_h[3]});
-    Matrix<2,1> p1({coords_h[0], coords_h[1]});
+    Matrix<2,1> p0({coords_h[2], coords_h[0]});
+    Matrix<2,1> p1({coords_h[3], coords_h[1]});
+    //Matrix<2,1> p0({coords_h[2], coords_h[3]});
+    //Matrix<2,1> p1({coords_h[0], coords_h[1]});
     Real x1 = centerx - R*cos(5*PI/4 + s_c1);
     Real y1 = centery + R*sin(5*PI/4 + s_c1);
     Real x2 = centerx - R*cos(5*PI/4 + s_c2);
@@ -157,8 +161,10 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
   {
     Real s_c1 = PI/2 * xi_1;
     Real s_c2 = PI/2 * xi_2;
-    Matrix<2,1> p0({coords_h[0], coords_h[1]});
-    Matrix<2,1> p1({coords_h[4], coords_h[5]});
+    Matrix<2,1> p0({coords_h[0], coords_h[4]});
+    Matrix<2,1> p1({coords_h[1], coords_h[5]});
+    //Matrix<2,1> p0({coords_h[0], coords_h[1]});
+    //Matrix<2,1> p1({coords_h[4], coords_h[5]});
     Real x1 = centerx - R*cos(7*PI/4 + s_c1);
     Real y1 = centery + R*sin(7*PI/4 + s_c1);
     Real x2 = centerx - R*cos(7*PI/4 + s_c2);
