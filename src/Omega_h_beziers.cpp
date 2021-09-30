@@ -1000,7 +1000,8 @@ LOs create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
 //TODO transfer face pts
 void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
                          LOs keys2prods, LOs keys2midverts,
-                         LOs old_verts2new_verts, LOs keys2edges) {
+                         LOs old_verts2new_verts, LOs keys2edges,
+                         LOs keys2old_faces) {
   printf("in create curved faces fn\n");
   OMEGA_H_TIME_FUNCTION;
   auto const nold_face = old2new.size();
@@ -1037,56 +1038,34 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
     auto start = keys2prods[key];
     auto end = keys2prods[key + 1] - 1;
     OMEGA_H_CHECK((end-start) == 1);
-    //auto new_f0 = prods2new[start];
-    //auto new_f1 = prods2new[start+1];
+    auto new_f0 = prods2new[start];
+    auto new_f1 = prods2new[start + 1];
 
-    //auto mid_vert = keys2midverts[key];
-  };
-  parallel_for(nkeys, std::move(create_crv_prod_faces),
-               "create_crv_prod_faces");
+    auto old_face = keys2old_faces[key];
+    auto mid_vert = keys2midverts[key];
+    auto old_key_edge = keys2edges[key];
 
-  auto create_crv_faces = OMEGA_H_LAMBDA (LO old_face) {
+    auto old_key_edge_v0 = old_ev2v[old_key_edge*2 + 0];
     LO const v0_old_face = old_fv2v[old_face*3 + 0];
     LO const v1_old_face = old_fv2v[old_face*3 + 1];
     LO const v2_old_face = old_fv2v[old_face*3 + 2];
     auto const old_face_e0 = old_fe2e[old_face*3];
     auto const old_face_e1 = old_fe2e[old_face*3 + 1];
     auto const old_face_e2 = old_fe2e[old_face*3 + 2];
-
-    if (old2new[old_face] != -1) {
-      LO new_face = old2new[old_face];
-      printf("old face %d same as new face %d\n", old_face, new_face);
-      for (I8 d = 0; d < dim; ++d) {
-        face_ctrlPts[new_face*n_face_pts*dim + d] = 
-          old_faceCtrlPts[old_face*n_face_pts*dim + d];
-        face_ctrlPts[new_face*n_face_pts*dim + (n_face_pts-1)*dim + d] =
-          old_faceCtrlPts[old_face*n_face_pts*dim + (n_face_pts-1)*dim + d];
+    auto old_key_edge_v1 = old_ev2v[old_key_edge*2 + 1];
+    LO old_vert_noKey = -1;
+    for (LO k = 0; k < 3; ++k) {
+      auto old_face_vert = old_fv2v[old_face*3 + k];
+      if ((old_face_vert != old_key_edge_v0) &&
+          (old_face_vert != old_key_edge_v1)) {
+        old_vert_noKey = old_face_vert;
+        break;
       }
     }
-    else {
-      
-      auto key_id = count_key[0];
-      auto mid_vert = keys2midverts[key_id];
-      auto start = keys2prods[key_id];
-      auto end = keys2prods[key_id + 1] - 1;
-      OMEGA_H_CHECK((end-start) == 1);
-      auto new_f0 = prods2new[start];
-      auto new_f1 = prods2new[start+1];
+    printf("for old face %d , oldKeyEdge %d, found old no-key vert %d\n",
+        old_face, old_key_edge, old_vert_noKey);
+    {
 
-      auto old_key_edge = keys2edges[key_id];
-      auto old_key_edge_v0 = old_ev2v[old_key_edge*2 + 0];
-      auto old_key_edge_v1 = old_ev2v[old_key_edge*2 + 1];
-      LO old_vert_noKey = -1;
-      for (LO k = 0; k < 3; ++k) {
-        auto old_face_vert = old_fv2v[old_face*3 + k];
-        if ((old_face_vert != old_key_edge_v0) &&
-            (old_face_vert != old_key_edge_v1)) {
-          old_vert_noKey = old_face_vert;
-          break;
-        }
-      }
-      printf("for old face %d , oldKeyEdge %d, found old no-key vert %d\n",
-             old_face, old_key_edge, old_vert_noKey);
 
       printf("%d %d %d %d %d %d %d %d %d %d %d %d\n",
 mid_vert, new_f0, new_f1, v0_old_face, v1_old_face, v2_old_face, old_face_e0,
@@ -1096,6 +1075,7 @@ old_face_e1, old_face_e2, n_edge_pts, nnew_verts, old_verts2new_verts[0]);
       //old_vert_noKey = ab2b[a2ab[v0_new_e2]];
 
       /*
+
       auto nodePts = cubic_face_xi_values
         (old_vert_noKey, v0_old_face, v1_old_face, v2_old_face, old_key_edge,
          old_face_e0, old_face_e1, old_face_e2);
@@ -1310,7 +1290,23 @@ old_face_e1, old_face_e2, n_edge_pts, nnew_verts, old_verts2new_verts[0]);
       */
     }
   };
-  parallel_for(nold_face, std::move(create_crv_faces), "create_crv_faces");
+  parallel_for(nkeys, std::move(create_crv_prod_faces),
+               "create_crv_prod_faces");
+
+  auto create_crv_same_faces = OMEGA_H_LAMBDA (LO old_face) {
+    if (old2new[old_face] != -1) {
+      LO new_face = old2new[old_face];
+      printf("old face %d same as new face %d\n", old_face, new_face);
+      for (I8 d = 0; d < dim; ++d) {
+        face_ctrlPts[new_face*n_face_pts*dim + d] = 
+          old_faceCtrlPts[old_face*n_face_pts*dim + d];
+        face_ctrlPts[new_face*n_face_pts*dim + (n_face_pts-1)*dim + d] =
+          old_faceCtrlPts[old_face*n_face_pts*dim + (n_face_pts-1)*dim + d];
+      }
+    }
+  };
+  parallel_for(nold_face, std::move(create_crv_same_faces),
+               "create_crv_same_faces");
 
   new_mesh->add_tag<Real>(2, "bezier_pts", n_face_pts*dim);
   new_mesh->set_tag_for_ctrlPts(2, Reals(face_ctrlPts));
