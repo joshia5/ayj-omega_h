@@ -75,9 +75,13 @@ Real xi_2_quint();
 Real xi_3_quint();
 Real xi_4_quint();
 
-void create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
+LOs create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
                          LOs keys2prods, LOs keys2midverts,
                          LOs old_verts2new_verts);
+
+void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
+                         LOs keys2prods, LOs keys2midverts,
+                         LOs old_verts2new_verts, LOs keys2edges);
 
 // workaround CUDA compiler bug
 #ifdef OMEGA_H_USE_CUDA
