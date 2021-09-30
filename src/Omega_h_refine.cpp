@@ -57,6 +57,9 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
   auto keys2midverts = LOs();
   auto old_verts2new_verts = LOs();
   auto old_lows2new_lows = LOs();
+
+  auto keys2old_faces = LOs();
+
   for (Int ent_dim = 0; ent_dim <= mesh->dim(); ++ent_dim) {
     auto keys2prods = LOs();
     auto prod_verts2verts = LOs();
@@ -81,17 +84,16 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
         ent_dim, keys2prods, prods2new_ents, same_ents2old_ents,
         same_ents2new_ents);
 
-    int waiting = 0;
     if (ent_dim == EDGE) {
       printf(
       "old2new %d same2new %d same2old %d prods2new %d keys2prods %d keys2midv %d\n",
       old_ents2new_ents.size(),
           same_ents2new_ents.size(), same_ents2old_ents.size(),
           prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
-      waiting = 0;
       if (mesh->is_curved()) {
-        create_curved_edges(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
-                            keys2prods, keys2midverts, old_verts2new_verts);
+        keys2old_faces = create_curved_edges
+          (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
+           keys2midverts, old_verts2new_verts);
 
         auto cubic_wireframe_mesh = Mesh(comm->library());
         cubic_wireframe_mesh.set_comm(comm);
@@ -107,13 +109,13 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
       old_ents2new_ents.size(),
           same_ents2new_ents.size(), same_ents2old_ents.size(),
           prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
-      /*if (mesh->is_curved()) {
+      if (mesh->is_curved()) {
         create_curved_faces(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
-                            keys2prods, keys2midverts, old_verts2new_verts);
+                            keys2prods, keys2midverts, old_verts2new_verts,
+                            keys2edges);
 
-      }*/
+      }
     }
-    while(waiting);
     old_lows2new_lows = old_ents2new_ents;
   }
   auto old_ev2v = mesh->get_adj(1,0);
