@@ -219,6 +219,7 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
   cubic_wireframe_mesh.set_comm(lib->world());
   build_cubic_wireframe(&mesh, &cubic_wireframe_mesh, 20);
   std::string vtuPath = "/users/joshia5/Meshes/curved/oneTri_wireframe.vtu";
+  printf("wrote 1 tri wireframe\n");
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe_mesh, 1);
 
   Write<Real> face_ctrlPts(mesh.nfaces()*1*dim, 0.0);
@@ -440,8 +441,8 @@ int main(int argc, char** argv) {
   path_3d_m = argv[4];
   path_3d_vtk = argv[5];
 
-  test_disc(&lib);
-  //test_linearTri_toCubicCircle(&lib, path_2d, path_2d_vtk);
+  //test_disc(&lib);
+  test_linearTri_toCubicCircle(&lib, path_2d, path_2d_vtk);
   //test_sim_linearToCubic(&lib, path_3d_g, path_3d_m, path_3d_vtk);
   //test_sim_kova_quadratic(&lib);
 
