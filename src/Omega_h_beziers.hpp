@@ -80,9 +80,7 @@ LOs create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
                          LOs old_verts2new_verts);
 
 void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
-                         LOs keys2prods, LOs keys2midverts,
-                         LOs old_verts2new_verts, LOs keys2edges,
-                         LOs keys2old_faces);
+                         LOs keys2prods, LOs keys2edges, LOs keys2old_faces);
 
 // workaround CUDA compiler bug
 #ifdef OMEGA_H_USE_CUDA

@@ -156,7 +156,14 @@ void Mesh::set_tag_for_ctrlPts(Int ent_dim, Reals ctrlPts) {
 Reals Mesh::get_ctrlPts(Int ent_dim) {
 
   OMEGA_H_CHECK(ent_dim >= 0);
-  return get_array<Real>(ent_dim, "bezier_pts");
+  auto ctrlPts = get_array<Real>(ent_dim, "bezier_pts");
+  if ((ent_dim == 0) && (!ctrlPts.exists())) {
+    return coords();
+  }
+  else {
+    OMEGA_H_CHECK(ctrlPts.exists());
+    return ctrlPts;
+  }
 
 }
 
