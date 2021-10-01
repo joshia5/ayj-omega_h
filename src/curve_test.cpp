@@ -441,8 +441,8 @@ int main(int argc, char** argv) {
   path_3d_m = argv[4];
   path_3d_vtk = argv[5];
 
-  //test_disc(&lib);
-  test_linearTri_toCubicCircle(&lib, path_2d, path_2d_vtk);
+  test_disc(&lib);
+  //test_linearTri_toCubicCircle(&lib, path_2d, path_2d_vtk);
   //test_sim_linearToCubic(&lib, path_3d_g, path_3d_m, path_3d_vtk);
   //test_sim_kova_quadratic(&lib);
 
