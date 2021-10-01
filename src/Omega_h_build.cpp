@@ -743,7 +743,8 @@ void build_quadratic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
 void build_cubic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
                           LO n_sample_pts) {
   auto nface = mesh->nfaces();
-  auto coords_h = HostRead<Real>(mesh->coords());
+  auto coords_h = HostRead<Real>(mesh->get_ctrlPts(0));
+  //auto coords_h = HostRead<Real>(mesh->coords());
   auto ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(1));
   auto face_ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(2));
   auto fv2v_h = HostRead<LO>(mesh->ask_down(2, 0).ab2b);
