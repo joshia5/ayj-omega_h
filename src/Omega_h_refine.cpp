@@ -114,6 +114,11 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
                             keys2prods, keys2midverts, old_verts2new_verts,
                             keys2edges, keys2old_faces);
 
+        auto cubic_curveVtk_mesh = Mesh(comm->library());
+        cubic_curveVtk_mesh.set_comm(comm);
+        build_cubic_curveVtk(&new_mesh, &cubic_curveVtk_mesh, 20);
+        std::string vtuPath = "/users/joshia5/Meshes/curved/semiDiscRefine_cubic_curveVtk.vtu";
+        vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
       }
     }
     old_lows2new_lows = old_ents2new_ents;
