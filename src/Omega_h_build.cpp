@@ -374,12 +374,13 @@ void assemble_slices(CommPtr comm, Omega_h_Family family, Int dim,
 void build_quadratic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
                                LO n_sample_pts) {
   auto dim = mesh->dim();
-  if (!(mesh->get_ctrlPts(0)).exists()) {
-    mesh->set_tag_for_ctrlPts(0, mesh->coords());
-  }
   auto nedge = mesh->nedges();
   auto ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(1));
   auto vert_ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(0));
+  auto vert_ctrlPts = mesh->get_ctrlPts(0);
+  if (!vert_ctrlPts.exists()) {
+    vert_ctrlPts_h = HostRead<Real>(mesh->coords());
+  }
   auto ev2v_h = HostRead<LO>(mesh->get_adj(1, 0).ab2b);
 
   Real xi_start = 0.0;
@@ -463,12 +464,13 @@ void build_quadratic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
 void build_cubic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
                            LO n_sample_pts) {
   auto dim = mesh->dim();
-  if (!(mesh->get_ctrlPts(0)).exists()) {
-    mesh->set_tag_for_ctrlPts(0, mesh->coords());
-  }
   auto nedge = mesh->nedges();
   auto ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(1));
   auto vert_ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(0));
+  auto vert_ctrlPts = mesh->get_ctrlPts(0);
+  if (!vert_ctrlPts.exists()) {
+    vert_ctrlPts_h = HostRead<Real>(mesh->coords());
+  }
   auto ev2v_h = HostRead<LO>(mesh->get_adj(1, 0).ab2b);
   auto pts_per_edge = mesh->n_internal_ctrlPts(1);
   //auto edge_ends_xi_h = HostRead<Real>(mesh->get_array<Real>(1, "edge_ends_xi"));
@@ -743,8 +745,12 @@ void build_quadratic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
 void build_cubic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
                           LO n_sample_pts) {
   auto nface = mesh->nfaces();
-  auto coords_h = HostRead<Real>(mesh->get_ctrlPts(0));
-  //auto coords_h = HostRead<Real>(mesh->coords());
+  auto coords_h = HostRead<Real>(mesh->coords());
+  auto vert_ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(0));
+  auto vert_ctrlPts = mesh->get_ctrlPts(0);
+  if (vert_ctrlPts.exists()) {
+    coords_h = vert_ctrlPts_h;
+  }
   auto ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(1));
   auto face_ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(2));
   auto fv2v_h = HostRead<LO>(mesh->ask_down(2, 0).ab2b);

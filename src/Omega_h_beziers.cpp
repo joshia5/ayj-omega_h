@@ -645,9 +645,13 @@ LOs create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
   auto const old_ef2f = mesh->ask_up(1, 2).ab2b;
   auto const old_e2ef = mesh->ask_up(1, 2).a2ab;
   auto const old_fv2v = mesh->ask_down(2, 0).ab2b;
-  //auto const old_coords = mesh->get_ctrlPts(0);
   //TODO
-  auto const old_coords = mesh->coords();
+  auto old_coords = mesh->coords();
+  auto const old_vertCtrlPts = mesh->get_ctrlPts(0);
+  if (old_vertCtrlPts.exists()) {
+    printf("nold edge %d has old vert ctrl pts\n", nold_edge);
+    old_coords = old_vertCtrlPts;
+  }
   auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
   auto const old_faceCtrlPts = mesh->get_ctrlPts(2);
   auto const order = mesh->get_max_order();
@@ -1052,10 +1056,12 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
   auto const old_ef2f = mesh->ask_up(1, 2).ab2b;
   auto const old_e2ef = mesh->ask_up(1, 2).a2ab;
   auto const old_fv2v = mesh->ask_down(2, 0).ab2b;
-  //if (mesh->get_ctrlPts(0)).exists();
-  //auto const old_vertCtrlPts = mesh->get_ctrlPts(0);
-  //TODO query vert ctrl pts not coords
-  auto const old_coords = mesh->coords();
+  auto old_coords = mesh->coords();
+  auto const old_vertCtrlPts = mesh->get_ctrlPts(0);
+  if (old_vertCtrlPts.exists()) {
+    printf("nold face %d has old vert ctrl pts\n", nold_face);
+    old_coords = old_vertCtrlPts;
+  }
   auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
   auto const old_faceCtrlPts = mesh->get_ctrlPts(2);
   auto const order = mesh->get_max_order();
