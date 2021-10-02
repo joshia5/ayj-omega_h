@@ -152,6 +152,12 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
         ent_dim, prods2new_ents, same_ents2old_ents, same_ents2new_ents);
     old_lows2new_lows = old_ents2new_ents;
   }
+
+  new_mesh.add_tags_for_ctrlPts();
+  new_mesh.set_tag_for_ctrlPts(0, mesh->get_ctrlPts(0));
+  new_mesh.set_tag_for_ctrlPts(1, mesh->get_ctrlPts(1));
+  new_mesh.set_tag_for_ctrlPts(2, mesh->get_ctrlPts(2));
+
   *mesh = new_mesh;
 }
 
@@ -162,9 +168,7 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
   if (ret) {
 
     mesh->change_all_rcFieldsTorc();
-
     mesh->set_parting(OMEGA_H_GHOSTED);
-
     mesh->change_all_rcFieldsToMesh();
 
     ret = coarsen_ghosted(mesh, opts, overshoot, improve);
@@ -172,9 +176,7 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
   if (ret) {
 
     mesh->change_all_rcFieldsTorc();
-
     mesh->set_parting(OMEGA_H_ELEM_BASED, false);
-
     mesh->change_all_rcFieldsToMesh();
 
     coarsen_element_based2(mesh, opts);

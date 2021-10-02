@@ -802,9 +802,7 @@ void correct_integral_errors(Mesh* mesh, AdaptOpts const& opts) {
   begin_code("correct_integral_errors");
 
   mesh->change_all_rcFieldsTorc();
-
   mesh->set_parting(OMEGA_H_GHOSTED);
-
   mesh->change_all_rcFieldsToMesh();
 
   auto verbose = opts.verbosity > SILENT;
