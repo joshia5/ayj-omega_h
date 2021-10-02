@@ -801,9 +801,7 @@ void correct_integral_errors(Mesh* mesh, AdaptOpts const& opts) {
   if (!should_conserve_any(mesh, xfer_opts)) return;
   begin_code("correct_integral_errors");
 
-
   mesh->set_parting(OMEGA_H_GHOSTED);
-
 
   auto verbose = opts.verbosity > SILENT;
   auto diffusion_graph = get_elem_diffusion_graph(mesh);
