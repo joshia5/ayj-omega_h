@@ -280,7 +280,7 @@ void tri_gen(CommPtr comm, std::string const mesh_dir) {
     int numVerts = 3;
     double coords[3*3] =  {0.000, 0.000, 0.000,
                            1.000, 0.000, 0.000,
-                           0.000, 1.000, 0.000,
+                           0.000, 1.000, 0.000
                           };
     int numElems = 1;
     int elementType[1] = {5};
@@ -289,6 +289,34 @@ void tri_gen(CommPtr comm, std::string const mesh_dir) {
     pEntity eReturn[1];
     std::string mesh_path = mesh_dir + "/Example_tri.sms";
     std::string model_path = mesh_dir + "/Example_tri.smd";
+    finalize_write(numVerts, coords, numElems, elementType, elementData,
+                   vReturn, eReturn, mesh_path.c_str(), model_path.c_str());
+  } catch (pSimError err) {
+    cerr<<"SimModSuite error caught:"<<endl;
+    cerr<<"  Error code: "<<SimError_code(err)<<endl;
+    cerr<<"  Error string: "<<SimError_toString(err)<<endl;
+    SimError_delete(err);
+  } catch (...) {
+    cerr<<"Unhandled exception caught"<<endl;
+  }
+}
+
+void twotri_square_gen(CommPtr comm, std::string const mesh_dir) {
+  auto mesh = Mesh(comm->library());
+  try {
+    int numVerts = 4;
+    double coords[4*3] =  {0.000, 0.000, 0.000,
+                           1.000, 0.000, 0.000,
+                           0.000, 1.000, 0.000,
+                           1.000, 1.000, 0.000
+                          };
+    int numElems = 2;
+    int elementType[2] = {5, 5};
+    int elementData[6] = {0,1,2, 2,1,3};
+    pVertex vReturn[4];
+    pEntity eReturn[2];
+    std::string mesh_path = mesh_dir + "/Example_2tri_square.sms";
+    std::string model_path = mesh_dir + "/Example_2tri_square.smd";
     finalize_write(numVerts, coords, numElems, elementType, elementData,
                    vReturn, eReturn, mesh_path.c_str(), model_path.c_str());
   } catch (pSimError err) {
@@ -317,6 +345,7 @@ int main(int argc, char *argv[]) {
   pymOnHex_gen(comm, mesh_dir);
   allType_gen(comm, mesh_dir);
   tri_gen(comm, mesh_dir);
+  twotri_square_gen(comm, mesh_dir);
 
   return 0;
 }
