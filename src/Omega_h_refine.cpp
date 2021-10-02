@@ -84,14 +84,16 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
         ent_dim, keys2prods, prods2new_ents, same_ents2old_ents,
         same_ents2new_ents);
 
+    /*
+    */
     if (ent_dim == EDGE) {
       printf(
       "old2new %d same2new %d same2old %d prods2new %d keys2prods %d keys2midv %d\n",
       old_ents2new_ents.size(),
           same_ents2new_ents.size(), same_ents2old_ents.size(),
           prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
-      if (mesh->is_curved()) {
-        keys2old_faces = create_curved_edges
+      if (mesh->is_curved() > 0) {
+        keys2old_faces = create_curved_verts_and_edges
           (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
            keys2midverts, old_verts2new_verts);
 
@@ -101,7 +103,6 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
         std::string vtuPath = "/users/joshia5/Meshes/curved/semiDiscRefine_cubic_wireframe.vtu";
         vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe_mesh, 1);
       }
-      
     }
     if (ent_dim == FACE) {
       printf(
@@ -109,7 +110,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
       old_ents2new_ents.size(),
           same_ents2new_ents.size(), same_ents2old_ents.size(),
           prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
-      if (mesh->is_curved()) {
+      if (mesh->is_curved() > 0) {
         create_curved_faces(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
                             keys2prods, keys2edges, keys2old_faces);
 
@@ -120,11 +121,15 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
         vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
       }
     }
+    /*
+    */
     old_lows2new_lows = old_ents2new_ents;
   }
   auto old_ev2v = mesh->get_adj(1,0);
 
   *mesh = new_mesh;
+  if (mesh->nfaces() == 4) 
+    vtk::write_parallel("/lore/joshia5/Meshes/curved/refine_1iter_4tri_square.vtk", mesh, 2);
 }
 
 static bool refine(Mesh* mesh, AdaptOpts const& opts) {
