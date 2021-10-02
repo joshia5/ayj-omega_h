@@ -401,7 +401,7 @@ void test_disc(Library *lib) {
   }
   AdaptOpts opts(&mesh);
   auto nelems = mesh.nglobal_ents(mesh.dim());
-  auto desired_group_nelems = 7;
+  auto desired_group_nelems = 16;
   while (nelems < desired_group_nelems) {
     if (!mesh.has_tag(0, "metric")) {
       add_implied_metric_tag(&mesh);
@@ -414,11 +414,11 @@ void test_disc(Library *lib) {
     auto const metric_ncomps =
       divide_no_remainder(metrics.size(), mesh.nverts());
     mesh.add_tag(0, "metric", metric_ncomps, metrics);
-    adapt(&mesh, opts);
+    adapt_refine(&mesh, opts);
     nelems = mesh.nglobal_ents(mesh.dim());
     std::cout << "mesh now has " << nelems << " total elements\n";
   }
-  vtk::write_parallel("/lore/joshia5/Meshes/curved/disc_refine_8tri.vtk", &mesh, 2);
+  vtk::write_parallel("/lore/joshia5/Meshes/curved/disc_refine_16tri.vtk", &mesh, 2);
   return;
 }
 

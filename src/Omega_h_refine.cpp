@@ -99,7 +99,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
 
         auto cubic_wireframe_mesh = Mesh(comm->library());
         cubic_wireframe_mesh.set_comm(comm);
-        build_cubic_wireframe(&new_mesh, &cubic_wireframe_mesh, 20);
+        build_cubic_wireframe(&new_mesh, &cubic_wireframe_mesh, 5);
         std::string vtuPath = "/users/joshia5/Meshes/curved/semiDiscRefine_cubic_wireframe.vtu";
         vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe_mesh, 1);
       }
@@ -116,7 +116,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
 
         auto cubic_curveVtk_mesh = Mesh(comm->library());
         cubic_curveVtk_mesh.set_comm(comm);
-        build_cubic_curveVtk(&new_mesh, &cubic_curveVtk_mesh, 20);
+        build_cubic_curveVtk(&new_mesh, &cubic_curveVtk_mesh, 5);
         std::string vtuPath = "/users/joshia5/Meshes/curved/semiDiscRefine_cubic_curveVtk.vtu";
         vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
       }
