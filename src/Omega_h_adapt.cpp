@@ -186,6 +186,18 @@ static void satisfy_lengths(Mesh* mesh, AdaptOpts const& opts) {
   } while (did_anything);
 }
 
+static void satisfy_lengths_refine(Mesh* mesh, AdaptOpts const& opts) {
+  OMEGA_H_TIME_FUNCTION;
+  bool did_anything;
+  do {
+    did_anything = false;
+    if (opts.should_refine && refine_by_size(mesh, opts)) {
+      post_rebuild(mesh, opts);
+      did_anything = true;
+    }
+  } while (did_anything);
+}
+
 static bool satisfy_quality(Mesh* mesh, AdaptOpts const& opts) {
   OMEGA_H_TIME_FUNCTION;
   if (min_fixable_quality(mesh, opts) >= opts.min_quality_desired) return true;
@@ -298,6 +310,17 @@ bool adapt(Mesh* mesh, AdaptOpts const& opts) {
   post_adapt(mesh, opts, t0, t1, t2, t3, t4);
 
   mesh->change_all_rcFieldsTorc();
+
+  return true;
+}
+
+bool adapt_refine(Mesh* mesh, AdaptOpts const& opts) {
+  ScopedTimer adapt_timer("adapt_refine");
+  OMEGA_H_CHECK(mesh->family() == OMEGA_H_SIMPLEX);
+
+  if (!pre_adapt(mesh, opts)) return false;
+  setup_conservation_tags(mesh, opts);
+  satisfy_lengths_refine(mesh, opts);
 
   return true;
 }

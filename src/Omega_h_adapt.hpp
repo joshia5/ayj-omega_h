@@ -80,6 +80,7 @@ Real min_fixable_quality(Mesh* mesh, AdaptOpts const& opts);
 
 /* returns false if the mesh was not modified. */
 bool adapt(Mesh* mesh, AdaptOpts const& opts);
+bool adapt_refine(Mesh* mesh, AdaptOpts const& opts);
 
 bool print_adapt_status(Mesh* mesh, AdaptOpts const& opts);
 void print_adapt_histograms(Mesh* mesh, AdaptOpts const& opts);
