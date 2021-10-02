@@ -3,6 +3,7 @@
 #include <math.h>
 
 #include<Omega_h_mesh.hpp>
+#include<Omega_h_for.hpp>
 #include<Omega_h_file.hpp>
 #include<Omega_h_beziers.hpp>
 #include<Omega_h_matrix.hpp>
@@ -236,7 +237,7 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
   }
   AdaptOpts opts(&mesh);
   auto nelems = mesh.nglobal_ents(mesh.dim());
-  auto desired_group_nelems = 2;
+  auto desired_group_nelems = 5;
   while (nelems < desired_group_nelems) {
     if (!mesh.has_tag(0, "metric")) {
       add_implied_metric_tag(&mesh);
@@ -400,7 +401,7 @@ void test_disc(Library *lib) {
   }
   AdaptOpts opts(&mesh);
   auto nelems = mesh.nglobal_ents(mesh.dim());
-  auto desired_group_nelems = 5;
+  auto desired_group_nelems = 7;
   while (nelems < desired_group_nelems) {
     if (!mesh.has_tag(0, "metric")) {
       add_implied_metric_tag(&mesh);
@@ -418,6 +419,57 @@ void test_disc(Library *lib) {
     std::cout << "mesh now has " << nelems << " total elements\n";
   }
   vtk::write_parallel("/lore/joshia5/Meshes/curved/disc_refine_8tri.vtk", &mesh, 2);
+  return;
+}
+
+void test_2tri_square(Library *lib) {
+  auto comm = lib->world();
+  auto mesh = meshsim::read("/lore/joshia5/develop/mfem_omega/omega_h/meshes/Example_2tri_square.sms",
+                            "/lore/joshia5/develop/mfem_omega/omega_h/meshes/Example_2tri_square.smd", comm);
+
+  /*
+  calc_quad_ctrlPts_from_interpPts(&mesh);
+  elevate_curve_order_2to3(&mesh);
+  auto wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe(&mesh, &wireframe_mesh, 20);
+  std::string vtuPath = "/users/joshia5/Meshes/curved/disc2tri_cubic_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  auto cubic_curveVtk_mesh = Mesh(comm->library());
+  cubic_curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk(&mesh, &cubic_curveVtk_mesh, 20);
+  vtuPath = "/users/joshia5/Meshes/curved/disc2tri_cubic_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
+*/
+  if (!mesh.has_tag(1, "global")) {
+    mesh.add_tag(1, "global", 1, Omega_h::GOs(mesh.nedges(), 0, 1));
+  }
+  if (!mesh.has_tag(0, "global")) {
+    mesh.add_tag(0, "global", 1, Omega_h::GOs(mesh.nverts(), 0, 1));
+  }
+  if (!mesh.has_tag(2, "global")) {
+    mesh.add_tag(2, "global", 1, Omega_h::GOs(mesh.nfaces(), 0, 1));
+  }
+  AdaptOpts opts(&mesh);
+  auto nelems = mesh.nglobal_ents(mesh.dim());
+  auto desired_group_nelems = 4;
+  while (nelems < desired_group_nelems) {
+    if (!mesh.has_tag(0, "metric")) {
+      add_implied_metric_tag(&mesh);
+      adapt(&mesh, opts);
+      nelems = mesh.nglobal_ents(mesh.dim());
+      std::cout << "mesh now has " << nelems << " total elements\n";
+    }
+    auto metrics = mesh.get_array<double>(0, "metric");
+    metrics = multiply_each_by(metrics, 1.2);
+    auto const metric_ncomps =
+      divide_no_remainder(metrics.size(), mesh.nverts());
+    mesh.add_tag(0, "metric", metric_ncomps, metrics);
+    adapt(&mesh, opts);
+    nelems = mesh.nglobal_ents(mesh.dim());
+    std::cout << "mesh now has " << nelems << " total elements\n";
+  }
+  vtk::write_parallel("/lore/joshia5/Meshes/curved/4tri_square.vtk", &mesh, 2);
   return;
 }
 
@@ -442,6 +494,7 @@ int main(int argc, char** argv) {
   path_3d_vtk = argv[5];
 
   test_disc(&lib);
+  //test_2tri_square(&lib);
   //test_linearTri_toCubicCircle(&lib, path_2d, path_2d_vtk);
   //test_sim_linearToCubic(&lib, path_3d_g, path_3d_m, path_3d_vtk);
   //test_sim_kova_quadratic(&lib);
