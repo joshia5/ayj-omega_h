@@ -75,9 +75,9 @@ Real xi_2_quint();
 Real xi_3_quint();
 Real xi_4_quint();
 
-LOs create_curved_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
-                         LOs keys2prods, LOs keys2midverts,
-                         LOs old_verts2new_verts);
+LOs create_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
+                                  LOs prods2new, LOs keys2prods,
+                                  LOs keys2midverts, LOs old_verts2new_verts);
 
 void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
                          LOs keys2prods, LOs keys2edges, LOs keys2old_faces);
