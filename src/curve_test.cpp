@@ -374,8 +374,10 @@ void test_sim_kova_quadratic(Library *lib) {
 
 void test_disc(Library *lib) {
   auto comm = lib->world();
-  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_8tri_order2.sms",
-                            "/users/joshia5/Models/curved/disk_semi_geomsim_8tri.smd", comm);
+  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
+                            "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
+  //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_8tri_order2.sms",
+  //                          "/users/joshia5/Models/curved/disk_semi_geomsim_8tri.smd", comm);
   vtk::write_parallel("/lore/joshia5/Meshes/curved/disc_refine_8tri.vtk", &mesh, 2);
 
   calc_quad_ctrlPts_from_interpPts(&mesh);

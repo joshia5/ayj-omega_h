@@ -255,12 +255,12 @@ OMEGA_H_DEVICE Reals cubic_noKeyEdge_xi_values(LO old_vert, LO v0, LO v1, LO v2,
  return Reals(p1_p2);
 }
 
-OMEGA_H_DEVICE Reals cubic_face_xi_values(LO const old_noKey_vert, LO const old_v0, LO const old_v1,
-                                          LO const old_v2, LO const old_key_edge, LO const old_e0,
-                                          LO const old_e1, LO const old_e2, LO const new_v0_f0,
-                                          LO const new_v1_f0, LO const new_v2_f0, LO const new_v0_f1,
-                                          LO const new_v1_f1, LO const new_v2_f1, LO const flip_e0,
-                                          LO const flip_e1, LO const flip_e2) {
+OMEGA_H_DEVICE Reals cubic_face_xi_values
+  (LO const old_noKey_vert, LO const old_v0, LO const old_v1, LO const old_v2,
+   LO const old_key_edge, LO const old_e0, LO const old_e1, LO const old_e2,
+   LO const new_v0_f0, LO const new_v1_f0, LO const new_v2_f0,
+   LO const new_v0_f1, LO const new_v1_f1, LO const new_v2_f1,
+   LO const flip_e0, LO const flip_e1, LO const flip_e2) {
 
   Write<Real> p1_p2(4);
   I8 should_swap = -1;
@@ -277,6 +277,7 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values(LO const old_noKey_vert, LO const old_
       should_swap = -1;
     }
     else {
+      OMEGA_H_CHECK ((old_v1 == new_v0_f1) || (old_v1 == new_v1_f1) || (old_v1 == new_v2_f1));
       should_swap = 1;
     }
   }
@@ -293,6 +294,7 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values(LO const old_noKey_vert, LO const old_
       should_swap = -1;
     }
     else {
+      OMEGA_H_CHECK ((old_v2 == new_v0_f1) || (old_v2 == new_v1_f1) || (old_v2 == new_v2_f1));
       should_swap = 1;
     }
   }
@@ -856,6 +858,7 @@ LOs create_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       {
         auto ab2b = new_verts2old_verts.ab2b;
         auto a2ab = new_verts2old_verts.a2ab;
+        OMEGA_H_CHECK((a2ab[v0_new_e2+1] - a2ab[v0_new_e2]) == 1);
         LO old_vert_noKey = ab2b[a2ab[v0_new_e2]];
 
         LO old_face = -1;
@@ -1063,6 +1066,7 @@ LOs create_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
         auto ab2b = new_verts2old_verts.ab2b;
         auto a2ab = new_verts2old_verts.a2ab;
+        OMEGA_H_CHECK((a2ab[v0_new_e3+1] - a2ab[v0_new_e3]) == 1);
         LO old_vert_noKey = ab2b[a2ab[v0_new_e3]];
 
         LO old_face = -1;
@@ -1270,7 +1274,7 @@ LOs create_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
 void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
                          LOs keys2prods, LOs keys2edges, LOs keys2old_faces,
-                         LOs old_verts2new_verts, LOs old_edges2new_edges) {
+                         LOs old_verts2new_verts) {
   printf("in create curved faces fn\n");
   OMEGA_H_TIME_FUNCTION;
   auto const nold_face = old2new.size();
@@ -1304,10 +1308,6 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
   auto max_vert_old2new = get_max(old_verts2new_verts);
   auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
                                                    nnew_verts);
-  auto max_edge_old2new = get_max(old_edges2new_edges);
-  printf("%d\n", max_edge_old2new);
-  //auto new_edges2old_edges = invert_map_by_atomics(old_edges2new_edges,
-    //                                               max_edge_old2new);
 
   auto const nkeys = keys2edges.size();
   auto create_crv_prod_faces = OMEGA_H_LAMBDA (LO key) {
@@ -1454,22 +1454,34 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
       LO new_f1_new2old_v1 = -1;
       LO new_f1_new2old_v2 = -1;
       if (new_fv2v[new_f0*3 + 0] < max_vert_old2new) {
-        new_f0_new2old_v0 = ab2b[a2ab[new_fv2v[new_f0*3 + 0]]];
+        if ((a2ab[new_fv2v[new_f0*3 + 0]+1] - a2ab[new_fv2v[new_f0*3 + 0]]) == 1) {
+          new_f0_new2old_v0 = ab2b[a2ab[new_fv2v[new_f0*3 + 0]]];
+        }
       }
       if (new_fv2v[new_f0*3 + 1] < max_vert_old2new) {
-        new_f0_new2old_v1 = ab2b[a2ab[new_fv2v[new_f0*3 + 1]]];
+        if ((a2ab[new_fv2v[new_f0*3 + 1]+1] - a2ab[new_fv2v[new_f0*3 + 1]]) == 1) {
+          new_f0_new2old_v1 = ab2b[a2ab[new_fv2v[new_f0*3 + 1]]];
+        }
       }
       if (new_fv2v[new_f0*3 + 2] < max_vert_old2new) {
-        new_f0_new2old_v2 = ab2b[a2ab[new_fv2v[new_f0*3 + 2]]];
+        if ((a2ab[new_fv2v[new_f0*3 + 2]+1] - a2ab[new_fv2v[new_f0*3 + 2]]) == 1) {
+          new_f0_new2old_v2 = ab2b[a2ab[new_fv2v[new_f0*3 + 2]]];
+        }
       }
       if (new_fv2v[new_f1*3 + 0] < max_vert_old2new) {
-        new_f1_new2old_v0 = ab2b[a2ab[new_fv2v[new_f1*3 + 0]]];
+        if ((a2ab[new_fv2v[new_f1*3 + 0]+1] - a2ab[new_fv2v[new_f1*3 + 0]]) == 1) {
+          new_f1_new2old_v0 = ab2b[a2ab[new_fv2v[new_f1*3 + 0]]];
+        }
       }
       if (new_fv2v[new_f1*3 + 1] < max_vert_old2new) {
-        new_f1_new2old_v1 = ab2b[a2ab[new_fv2v[new_f1*3 + 1]]];
+        if ((a2ab[new_fv2v[new_f1*3 + 1]+1] - a2ab[new_fv2v[new_f1*3 + 1]]) == 1) {
+          new_f1_new2old_v1 = ab2b[a2ab[new_fv2v[new_f1*3 + 1]]];
+        }
       }
       if (new_fv2v[new_f1*3 + 2] < max_vert_old2new) {
-        new_f1_new2old_v2 = ab2b[a2ab[new_fv2v[new_f1*3 + 2]]];
+        if ((a2ab[new_fv2v[new_f1*3 + 2]+1] - a2ab[new_fv2v[new_f1*3 + 2]]) == 1) {
+          new_f1_new2old_v2 = ab2b[a2ab[new_fv2v[new_f1*3 + 2]]];
+        }
       }
       printf("ok1, new faces f0 f1 %d %d oldface %d\n", new_f0, new_f1, old_face);
       auto nodePts = cubic_face_xi_values
@@ -1478,39 +1490,6 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
          new_f0_new2old_v1, new_f0_new2old_v2, new_f1_new2old_v0, 
          new_f1_new2old_v1, new_f1_new2old_v2, e0_flip,
          e1_flip, e2_flip);
-      /*
-      LO new_f0_new2old_v0 = -1;
-      LO new_f0_new2old_v1 = -1;
-      LO new_f0_new2old_v2 = -1;
-      if (new_fv2v[new_f0*3 + 0] < max_vert_old2new) {
-        new_f0_new2old_v0 = ab2b[a2ab[new_fv2v[new_f0*3 + 0]]];
-      }
-      if (new_fv2v[new_f0*3 + 1] < max_vert_old2new) {
-        new_f0_new2old_v1 = ab2b[a2ab[new_fv2v[new_f0*3 + 1]]];
-      }
-      if (new_fv2v[new_f0*3 + 2] < max_vert_old2new) {
-        new_f0_new2old_v2 = ab2b[a2ab[new_fv2v[new_f0*3 + 2]]];
-      }
-      LO new_f0_new2old_e0 = -1;
-      LO new_f0_new2old_e1 = -1;
-      LO new_f0_new2old_e2 = -1;
-      auto e_ab2b = new_edges2old_edges.ab2b;
-      auto e_a2ab = new_edges2old_edges.a2ab;
-      if (new_fe2e[new_f0*3 + 0] < max_edge_old2new) {
-        new_f0_new2old_e0 = e_ab2b[e_a2ab[new_fe2e[new_f0*3 + 0]]];
-      }
-      if (new_fe2e[new_f0*3 + 1] < max_edge_old2new) {
-        new_f0_new2old_e1 = e_ab2b[e_a2ab[new_fe2e[new_f0*3 + 1]]];
-      }
-      if (new_fe2e[new_f0*3 + 2] < max_edge_old2new) {
-        new_f0_new2old_e2 = e_ab2b[e_a2ab[new_fe2e[new_f0*3 + 2]]];
-      }
-      auto nodePts = cubic_face_xi_values
-        (old_vert_noKey, v0_old_face, v1_old_face, v2_old_face, old_key_edge,
-         old_face_e0, old_face_e1, old_face_e2, new_f0_new2old_v0, 
-         new_f0_new2old_v1, new_f0_new2old_v2, e0_flip,
-         e1_flip, e2_flip);
-      */
       printf("ok2\n");
 
       //for f0
@@ -1920,22 +1899,34 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
       LO new_f1_new2old_v1 = -1;
       LO new_f1_new2old_v2 = -1;
       if (new_fv2v[new_f0*3 + 0] < max_vert_old2new) {
-        new_f0_new2old_v0 = ab2b[a2ab[new_fv2v[new_f0*3 + 0]]];
+        if ((a2ab[new_fv2v[new_f0*3 + 0]+1] - a2ab[new_fv2v[new_f0*3 + 0]]) == 1) {
+          new_f0_new2old_v0 = ab2b[a2ab[new_fv2v[new_f0*3 + 0]]];
+        }
       }
       if (new_fv2v[new_f0*3 + 1] < max_vert_old2new) {
-        new_f0_new2old_v1 = ab2b[a2ab[new_fv2v[new_f0*3 + 1]]];
+        if ((a2ab[new_fv2v[new_f0*3 + 1]+1] - a2ab[new_fv2v[new_f0*3 + 1]]) == 1) {
+          new_f0_new2old_v1 = ab2b[a2ab[new_fv2v[new_f0*3 + 1]]];
+        }
       }
       if (new_fv2v[new_f0*3 + 2] < max_vert_old2new) {
-        new_f0_new2old_v2 = ab2b[a2ab[new_fv2v[new_f0*3 + 2]]];
+        if ((a2ab[new_fv2v[new_f0*3 + 2]+1] - a2ab[new_fv2v[new_f0*3 + 2]]) == 1) {
+          new_f0_new2old_v2 = ab2b[a2ab[new_fv2v[new_f0*3 + 2]]];
+        }
       }
       if (new_fv2v[new_f1*3 + 0] < max_vert_old2new) {
-        new_f1_new2old_v0 = ab2b[a2ab[new_fv2v[new_f1*3 + 0]]];
+        if ((a2ab[new_fv2v[new_f1*3 + 0]+1] - a2ab[new_fv2v[new_f1*3 + 0]]) == 1) {
+          new_f1_new2old_v0 = ab2b[a2ab[new_fv2v[new_f1*3 + 0]]];
+        }
       }
       if (new_fv2v[new_f1*3 + 1] < max_vert_old2new) {
-        new_f1_new2old_v1 = ab2b[a2ab[new_fv2v[new_f1*3 + 1]]];
+        if ((a2ab[new_fv2v[new_f1*3 + 1]+1] - a2ab[new_fv2v[new_f1*3 + 1]]) == 1) {
+          new_f1_new2old_v1 = ab2b[a2ab[new_fv2v[new_f1*3 + 1]]];
+        }
       }
       if (new_fv2v[new_f1*3 + 2] < max_vert_old2new) {
-        new_f1_new2old_v2 = ab2b[a2ab[new_fv2v[new_f1*3 + 2]]];
+        if ((a2ab[new_fv2v[new_f1*3 + 2]+1] - a2ab[new_fv2v[new_f1*3 + 2]]) == 1) {
+          new_f1_new2old_v2 = ab2b[a2ab[new_fv2v[new_f1*3 + 2]]];
+        }
       }
       printf("ok3, new faces f2 f3 %d %d oldface %d\n", new_f0, new_f1, old_face);
       auto nodePts = cubic_face_xi_values
