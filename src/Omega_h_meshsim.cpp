@@ -239,6 +239,7 @@ void read_internal(pMesh m, Mesh* mesh, pMeshNex numbering) {
       for(int j=0; j<max_dim; j++) {
         edgePt_coords[count_edge * max_dim + j] = p_coord[j];
       }
+
     }
 
     count_edge += 1;
@@ -290,6 +291,8 @@ void read_internal(pMesh m, Mesh* mesh, pMeshNex numbering) {
   face_class_ids[1].reserve(count_quad);
   face_class_dim[1].reserve(count_quad);
 
+  HostWrite<Real> facePt_coords(numFaces*max_dim);
+  int count_face = 0;
   faces = M_faceIter(m);
   while ((face = (pFace) FIter_next(faces))) {
     if (F_numEdges(face) == 3) {
@@ -303,6 +306,20 @@ void read_internal(pMesh m, Mesh* mesh, pMeshNex numbering) {
       PList_delete(tri_vertices);
       face_class_ids[0].push_back(classId(face));
       face_class_dim[0].push_back(classType(face));
+
+      // query face pt for cubic
+      double xyz[3];
+      double lpt[2];
+      lpt[0] = 1.0/3.0;
+      lpt[1] = 1.0/3.0;
+      EN_localToGlobal(face, lpt, xyz);
+      if (max_dim < 3 && xyz[2] != 0) {
+        Omega_h_fail("The z coordinate must be zero for a 2d mesh!\n");
+      }
+      for(int j=0; j<max_dim; j++) {
+        facePt_coords[count_face * max_dim + j] = xyz[j];
+      }
+      count_face += 1;
     }
     else if (F_numEdges(face) == 4) {
       pVertex quad_vertex;
@@ -658,6 +675,8 @@ void read_internal(pMesh m, Mesh* mesh, pMeshNex numbering) {
       mesh->set_max_order(edge_numPts + 1);
       mesh->add_tags_for_ctrlPts();
       mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords.write()));
+      mesh->set_tag_for_ctrlPts(0, mesh->coords());
+      //mesh->add_tag<Real>(2, "face_interpPts", max_dim, Reals(facePt_coords.write()));
     }
   }
 
