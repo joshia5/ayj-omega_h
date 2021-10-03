@@ -111,7 +111,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
       if (mesh->is_curved() > 0) {
         create_curved_faces(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
                             keys2prods, keys2edges, keys2old_faces,
-                            old_verts2new_verts);
+                            old_verts2new_verts, old_lows2new_lows);
 
         auto cubic_curveVtk_mesh = Mesh(comm->library());
         cubic_curveVtk_mesh.set_comm(comm);
