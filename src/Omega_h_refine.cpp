@@ -84,8 +84,6 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
         ent_dim, keys2prods, prods2new_ents, same_ents2old_ents,
         same_ents2new_ents);
 
-    /*
-    */
     if (ent_dim == EDGE) {
       printf(
       "old2new %d same2new %d same2old %d prods2new %d keys2prods %d keys2midv %d\n",
@@ -112,7 +110,8 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
           prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
       if (mesh->is_curved() > 0) {
         create_curved_faces(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
-                            keys2prods, keys2edges, keys2old_faces);
+                            keys2prods, keys2edges, keys2old_faces,
+                            old_verts2new_verts);
 
         auto cubic_curveVtk_mesh = Mesh(comm->library());
         cubic_curveVtk_mesh.set_comm(comm);
@@ -121,8 +120,6 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
         vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
       }
     }
-    /*
-    */
     old_lows2new_lows = old_ents2new_ents;
   }
   auto old_ev2v = mesh->get_adj(1,0);

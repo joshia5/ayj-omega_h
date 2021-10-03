@@ -381,12 +381,12 @@ void test_disc(Library *lib) {
   elevate_curve_order_2to3(&mesh);
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
-  build_cubic_wireframe(&mesh, &wireframe_mesh, 20);
+  build_cubic_wireframe(&mesh, &wireframe_mesh, 5);
   std::string vtuPath = "/users/joshia5/Meshes/curved/disc2tri_cubic_wireframe.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
   auto cubic_curveVtk_mesh = Mesh(comm->library());
   cubic_curveVtk_mesh.set_comm(comm);
-  build_cubic_curveVtk(&mesh, &cubic_curveVtk_mesh, 20);
+  build_cubic_curveVtk(&mesh, &cubic_curveVtk_mesh, 5);
   vtuPath = "/users/joshia5/Meshes/curved/disc2tri_cubic_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
 
