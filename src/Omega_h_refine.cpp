@@ -125,8 +125,8 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
   auto old_ev2v = mesh->get_adj(1,0);
 
   *mesh = new_mesh;
-  if (mesh->nfaces() == 4) 
-    vtk::write_parallel("/lore/joshia5/Meshes/curved/refine_1iter_4tri_square.vtk", mesh, 2);
+  if (mesh->nfaces() == 12) 
+    vtk::write_parallel("/lore/joshia5/Meshes/curved/refine_1iter_8to12tri_disc.vtk", mesh, 2);
 }
 
 static bool refine(Mesh* mesh, AdaptOpts const& opts) {
