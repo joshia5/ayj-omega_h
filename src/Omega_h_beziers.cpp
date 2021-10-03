@@ -255,36 +255,58 @@ OMEGA_H_DEVICE Reals cubic_noKeyEdge_xi_values(LO old_vert, LO v0, LO v1, LO v2,
  return Reals(p1_p2);
 }
 
-OMEGA_H_DEVICE Reals cubic_face_xi_values(LO old_vert, LO v0, LO v1, LO v2,
-                                          LO old_edge, LO e0, LO e1, LO e2,
-                                          I8 should_swap) {
+OMEGA_H_DEVICE Reals cubic_face_xi_values(LO const old_vert, LO const old_v0, LO const old_v1,
+                                          LO const old_v2, LO const old_edge, LO const old_e0,
+                                          LO const old_e1, LO const old_e2, LO const new_v0,
+                                          LO const new_v1, LO const new_v2) {
 
   Write<Real> p1_p2(4);
-  if (old_vert == v0) {
-    OMEGA_H_CHECK(old_edge == e1);
+  I8 should_swap = -1;
+  if (old_vert == old_v0) {
+    OMEGA_H_CHECK(old_edge == old_e1);
     p1_p2[0] = 1.0/2.0;
     p1_p2[1] = 1.0/6.0;
     p1_p2[2] = 1.0/6.0;
     p1_p2[3] = 1.0/2.0;
+
+    if ((old_v1 == new_v0) || (old_v1 == new_v1) || (old_v1 == new_v2)) {
+      should_swap = -1;
+    }
+    else {
+      should_swap = 1;
+    }
   }
-  else if (old_vert == v1) {
-    OMEGA_H_CHECK(old_edge == e2);
+  else if (old_vert == old_v1) {
+    OMEGA_H_CHECK(old_edge == old_e2);
     p1_p2[0] = 1.0/3.0;
     p1_p2[1] = 1.0/2.0;
     p1_p2[2] = 1.0/3.0;
     p1_p2[3] = 1.0/6.0;
+
+    if ((old_v2 == new_v0) || (old_v2 == new_v1) || (old_v2 == new_v2)) {
+      should_swap = -1;
+    }
+    else {
+      should_swap = 1;
+    }
   }
-  else if (old_vert == v2) {
-    OMEGA_H_CHECK(old_edge == e0);
+  else if (old_vert == old_v2) {
+    OMEGA_H_CHECK(old_edge == old_e0);
     p1_p2[0] = 1.0/6.0;
     p1_p2[1] = 1.0/3.0;
     p1_p2[2] = 1.0/2.0;
     p1_p2[3] = 1.0/3.0;
+
+    if ((old_v0 == new_v0) || (old_v0 == new_v1) || (old_v0 == new_v2)) {
+      should_swap = -1;
+    }
+    else {
+      should_swap = 1;
+    }
   }
   else {
     Omega_h_fail("incorrect old face\n");
   }
-  //TODO order set using example for semi disc 2tri ex
   if (should_swap > -1) {
     swap2(p1_p2[0], p1_p2[2]);
     swap2(p1_p2[1], p1_p2[3]);
@@ -667,14 +689,11 @@ LOs create_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
   auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
                                                    nnew_verts);
-  //TODO optimize without inversion?
 
   Write<LO> count_key(1, 0);
   auto nkeys = keys2midverts.size();
   OMEGA_H_CHECK(order == 3);
   auto keys2old_faces_w = Write<LO>(2*nkeys, -1);
-  //TODO assume 
-  //auto keys2old_faces_w = Write<LO>(nkeys, -1);
 
   auto create_crv_edges = OMEGA_H_LAMBDA (LO old_edge) {
     LO const v0_old = old_ev2v[old_edge*2 + 0];
@@ -698,9 +717,6 @@ LOs create_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         printf("for old edge %d, new edges=%d\n", old_edge, end-start+1);
         OMEGA_H_CHECK((end-start) == 3);
       }
-      //if ((end-start) != 2)
-        //printf("for old edge %d, new edges=%d\n", old_edge, end-start+1);
-      //OMEGA_H_CHECK((end-start) == 2);
       //TODO generalize this if more than 4 new edges are produced
       LO const new_e0 = prods2new[start];
       LO const new_e1 = prods2new[start+1];
@@ -716,7 +732,7 @@ LOs create_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
       //ctrl pts for e0
       {
-        //for 2d mesh for now, order=3
+        //TODO 2d mesh for now, order=3
         Real const cx0 = old_vertCtrlPts[v0_old*dim + 0];
         Real const cy0 = old_vertCtrlPts[v0_old*dim + 1];
         Real const cx1 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + 0];
@@ -851,9 +867,6 @@ LOs create_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
         printf("For old edge %d, found old face %d\n", old_edge, old_face);
         keys2old_faces_w[2*key_id + 0] = old_face;
-        //keys2old_faces_w[key_id] = old_face;
-        //TODO case where key has 2 oldface  i.e split diag of a quad 
-        //(more than 2 doesnt seem possible)
         {
           auto const v0_old_face = old_fv2v[old_face*3];
           auto const v1 = old_fv2v[old_face*3 + 1];
@@ -1062,8 +1075,6 @@ LOs create_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         }
 
         printf("For old edge %d, found old face %d\n", old_edge, old_face);
-        //TODO case where key has 2 oldface  i.e split diag of a quad 
-        //(more than 2 doesnt seem possible)
         keys2old_faces_w[2*key_id + 1] = old_face;
         {
           auto const v0_old_face = old_fv2v[old_face*3];
@@ -1249,9 +1260,9 @@ LOs create_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   return LOs(keys2old_faces_w);
 }
 
-//TODO transfer face pts
 void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
-                         LOs keys2prods, LOs keys2edges, LOs keys2old_faces) {
+                         LOs keys2prods, LOs keys2edges, LOs keys2old_faces,
+                         LOs old_verts2new_verts) {
   printf("in create curved faces fn\n");
   OMEGA_H_TIME_FUNCTION;
   auto const nold_face = old2new.size();
@@ -1281,6 +1292,10 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
   Write<Real> face_ctrlPts(nnew_face*n_face_pts*dim);
   OMEGA_H_CHECK(order == 3);
 
+  auto max_vert_old2new = get_max(old_verts2new_verts);
+  auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
+                                                   nnew_verts);
+
   auto const nkeys = keys2edges.size();
   auto create_crv_prod_faces = OMEGA_H_LAMBDA (LO key) {
 
@@ -1290,14 +1305,12 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
       printf("key %d split into %d faces\n", key, end-start+1);
       OMEGA_H_CHECK((end-start) == 3);
     }
-    //OMEGA_H_CHECK((end-start) == 1);
-    //TODO case where 1 key makes 4 faces on both sides
+    //TODO case where 1 key makes more than 4 faces
     {
       auto new_f0 = prods2new[start];
       auto new_f1 = prods2new[start + 1];
 
       auto old_face = keys2old_faces[2*key + 0];
-      //auto old_face = keys2old_faces[key];
       auto old_key_edge = keys2edges[key];
 
       auto old_key_edge_v0 = old_ev2v[old_key_edge*2 + 0];
@@ -1419,16 +1432,30 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
       Real cy11 = old_faceCtrlPts[old_face*dim + 1];
       //Real cz11 = old_faceCtrlPts[old_face*dim + 2];
 
+      auto ab2b = new_verts2old_verts.ab2b;
+      auto a2ab = new_verts2old_verts.a2ab;
+      LO new_f0_new2old_v0 = -1;
+      LO new_f0_new2old_v1 = -1;
+      LO new_f0_new2old_v2 = -1;
+      if (new_fv2v[new_f0*3 + 0] < max_vert_old2new) {
+        new_f0_new2old_v0 = ab2b[a2ab[new_fv2v[new_f0*3 + 0]]];
+      }
+      if (new_fv2v[new_f0*3 + 1] < max_vert_old2new) {
+        new_f0_new2old_v1 = ab2b[a2ab[new_fv2v[new_f0*3 + 1]]];
+      }
+      if (new_fv2v[new_f0*3 + 2] < max_vert_old2new) {
+        new_f0_new2old_v2 = ab2b[a2ab[new_fv2v[new_f0*3 + 2]]];
+      }
+      printf("ok1\n");
       auto nodePts = cubic_face_xi_values
         (old_vert_noKey, v0_old_face, v1_old_face, v2_old_face, old_key_edge,
-         old_face_e0, old_face_e1, old_face_e2, 1);
-
-      //TODO which  xi values for which face? for now assume f0 is first
+         old_face_e0, old_face_e1, old_face_e2, new_f0_new2old_v0, 
+         new_f0_new2old_v1, new_f0_new2old_v2);
+      printf("ok2\n");
 
       //for f0
       {
         //get the interp point
-        //TODO assumed f0 is first, f1 second
         auto p11_x = cx00*B00_cube(nodePts[0], nodePts[1]) +
           cx10*B10_cube(nodePts[0], nodePts[1]) +
           cx20*B20_cube(nodePts[0], nodePts[1]) +
@@ -1566,7 +1593,6 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
       //for f1
       {
         //get the interp point
-        //TODO assumed f0 is first, f1 second
         auto p11_x = cx00*B00_cube(nodePts[2], nodePts[3]) +
           cx10*B10_cube(nodePts[2], nodePts[3]) +
           cx20*B20_cube(nodePts[2], nodePts[3]) +
@@ -1696,7 +1722,6 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
         face_ctrlPts[newface*n_face_pts*dim + 1] = newface_cy11;
       }
     }
-    //TODO case where key splits into 4 faces
     if ((end-start) == 3) {
       auto new_f0 = prods2new[start + 2];
       auto new_f1 = prods2new[start + 3];
@@ -1823,16 +1848,30 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
       Real cy11 = old_faceCtrlPts[old_face*dim + 1];
       //Real cz11 = old_faceCtrlPts[old_face*dim + 2];
 
+      auto ab2b = new_verts2old_verts.ab2b;
+      auto a2ab = new_verts2old_verts.a2ab;
+      LO new_f0_new2old_v0 = -1;
+      LO new_f0_new2old_v1 = -1;
+      LO new_f0_new2old_v2 = -1;
+      if (new_fv2v[new_f0*3 + 0] < max_vert_old2new) {
+        new_f0_new2old_v0 = ab2b[a2ab[new_fv2v[new_f0*3 + 0]]];
+      }
+      if (new_fv2v[new_f0*3 + 1] < max_vert_old2new) {
+        new_f0_new2old_v1 = ab2b[a2ab[new_fv2v[new_f0*3 + 1]]];
+      }
+      if (new_fv2v[new_f0*3 + 2] < max_vert_old2new) {
+        new_f0_new2old_v2 = ab2b[a2ab[new_fv2v[new_f0*3 + 2]]];
+      }
+      printf("ok3\n");
       auto nodePts = cubic_face_xi_values
         (old_vert_noKey, v0_old_face, v1_old_face, v2_old_face, old_key_edge,
-         old_face_e0, old_face_e1, old_face_e2, -1);
-
-      //TODO which  xi values for which face? for now assume f0 is first
+         old_face_e0, old_face_e1, old_face_e2, new_f0_new2old_v0, 
+         new_f0_new2old_v1, new_f0_new2old_v2);
+      printf("ok4\n");
 
       //for f0
       {
         //get the interp point
-        //TODO assumed f0 is first, f1 second
         auto p11_x = cx00*B00_cube(nodePts[0], nodePts[1]) +
           cx10*B10_cube(nodePts[0], nodePts[1]) +
           cx20*B20_cube(nodePts[0], nodePts[1]) +
@@ -1858,15 +1897,15 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
         //use these as interp pts to find ctrl pt in new face
         //inquire known vert and edge ctrl pts
         LO newface = new_f0;
+        LO newface_e0 = new_fe2e[newface*3 + 0];
+        LO newface_e1 = new_fe2e[newface*3 + 1];
+        LO newface_e2 = new_fe2e[newface*3 + 2];
         I8 newface_e0_flip = -1;
         I8 newface_e1_flip = -1;
         I8 newface_e2_flip = -1;
         LO newface_v0 = new_fv2v[newface*3 + 0];
         LO newface_v1 = new_fv2v[newface*3 + 1];
         LO newface_v2 = new_fv2v[newface*3 + 2];
-        LO newface_e0 = new_fe2e[newface*3 + 0];
-        LO newface_e1 = new_fe2e[newface*3 + 1];
-        LO newface_e2 = new_fe2e[newface*3 + 2];
         auto newface_e0v0 = new_ev2v[newface_e0*2 + 0];
         auto newface_e0v1 = new_ev2v[newface_e0*2 + 1];
         auto newface_e1v0 = new_ev2v[newface_e1*2 + 0];
@@ -1970,7 +2009,6 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
       //for f1
       {
         //get the interp point
-        //TODO assumed f0 is first, f1 second
         auto p11_x = cx00*B00_cube(nodePts[2], nodePts[3]) +
           cx10*B10_cube(nodePts[2], nodePts[3]) +
           cx20*B20_cube(nodePts[2], nodePts[3]) +
