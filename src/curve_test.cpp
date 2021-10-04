@@ -347,7 +347,9 @@ void test_sim_linearToCubic(Library *lib, const std::string &model_file,
 void test_sim_kova_quadratic(Library *lib) {
   auto comm = lib->world();
   auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
+  mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
   calc_quad_ctrlPts_from_interpPts(&mesh);
+  elevate_curve_order_2to3(&mesh);
 
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
@@ -362,49 +364,23 @@ void test_sim_kova_quadratic(Library *lib) {
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
 
   elevate_curve_order_2to3(&mesh);
-  elevate_curve_order_3to4(&mesh);
-  auto quartic_curveVtk_mesh = Mesh(lib);
-  quartic_curveVtk_mesh.set_comm(comm);
-  build_quartic_curveVtk(&mesh, &quartic_curveVtk_mesh);
-  vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim_quartic_curveVtk.vtu";
-  vtk::write_simplex_connectivity(vtuPath.c_str(), &quartic_curveVtk_mesh, 2);
 
-  return;
-}
-
-void test_disc(Library *lib) {
-  auto comm = lib->world();
-  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
-                            "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
-  //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_8tri_order2.sms",
-    //                        "/users/joshia5/Models/curved/disk_semi_geomsim_8tri.smd", comm);
-  vtk::write_parallel("/lore/joshia5/Meshes/curved/disc_refine_8tri.vtk", &mesh, 2);
-
-  calc_quad_ctrlPts_from_interpPts(&mesh);
-  elevate_curve_order_2to3(&mesh);
-  auto wireframe_mesh = Mesh(comm->library());
-  wireframe_mesh.set_comm(comm);
-  build_cubic_wireframe(&mesh, &wireframe_mesh, 5);
-  std::string vtuPath = "/users/joshia5/Meshes/curved/disc2tri_cubic_wireframe.vtu";
-  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
-  auto cubic_curveVtk_mesh = Mesh(comm->library());
-  cubic_curveVtk_mesh.set_comm(comm);
-  build_cubic_curveVtk(&mesh, &cubic_curveVtk_mesh, 5);
-  vtuPath = "/users/joshia5/Meshes/curved/disc2tri_cubic_curveVtk.vtu";
-  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
-
-  if (!mesh.has_tag(1, "global")) {
-    mesh.add_tag(1, "global", 1, Omega_h::GOs(mesh.nedges(), 0, 1));
+  for (LO i = 0; i <= mesh.dim(); ++i) {
+    if (!mesh.has_tag(i, "global")) {
+      mesh.add_tag(i, "global", 1, Omega_h::GOs(mesh.nents(i), 0, 1));
+    }
   }
+  /*
   if (!mesh.has_tag(0, "global")) {
     mesh.add_tag(0, "global", 1, Omega_h::GOs(mesh.nverts(), 0, 1));
   }
   if (!mesh.has_tag(2, "global")) {
     mesh.add_tag(2, "global", 1, Omega_h::GOs(mesh.nfaces(), 0, 1));
   }
+  */
   AdaptOpts opts(&mesh);
   auto nelems = mesh.nglobal_ents(mesh.dim());
-  auto desired_group_nelems = 50;
+  auto desired_group_nelems = 200;
   while (nelems < desired_group_nelems) {
     if (!mesh.has_tag(0, "metric")) {
       add_implied_metric_tag(&mesh);
@@ -421,7 +397,79 @@ void test_disc(Library *lib) {
     nelems = mesh.nglobal_ents(mesh.dim());
     std::cout << "mesh now has " << nelems << " total elements\n";
   }
-  vtk::write_parallel("/lore/joshia5/Meshes/curved/disc_refine_12tri.vtk", &mesh, 2);
+  vtk::write_parallel("/lore/joshia5/Meshes/curved/kova_refine_200.vtk", &mesh, 2);
+  /*
+  elevate_curve_order_3to4(&mesh);
+  auto quartic_curveVtk_mesh = Mesh(lib);
+  quartic_curveVtk_mesh.set_comm(comm);
+  build_quartic_curveVtk(&mesh, &quartic_curveVtk_mesh);
+  vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim_quartic_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &quartic_curveVtk_mesh, 2);
+
+  */
+  return;
+}
+
+void test_disc(Library *lib) {
+  auto comm = lib->world();
+  //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
+    //                        "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
+  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
+                            "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", comm);
+  vtk::write_parallel("/lore/joshia5/Meshes/curved/disc_refine_100.vtk", &mesh, 2);
+
+  calc_quad_ctrlPts_from_interpPts(&mesh);
+  elevate_curve_order_2to3(&mesh);
+  auto wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe(&mesh, &wireframe_mesh, 4);
+  std::string vtuPath = "/users/joshia5/Meshes/curved/disc100_cubic_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  auto cubic_curveVtk_mesh = Mesh(comm->library());
+  cubic_curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk(&mesh, &cubic_curveVtk_mesh, 4);
+  vtuPath = "/users/joshia5/Meshes/curved/disc100_cubic_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
+
+  if (!mesh.has_tag(1, "global")) {
+    mesh.add_tag(1, "global", 1, Omega_h::GOs(mesh.nedges(), 0, 1));
+  }
+  if (!mesh.has_tag(0, "global")) {
+    mesh.add_tag(0, "global", 1, Omega_h::GOs(mesh.nverts(), 0, 1));
+  }
+  if (!mesh.has_tag(2, "global")) {
+    mesh.add_tag(2, "global", 1, Omega_h::GOs(mesh.nfaces(), 0, 1));
+  }
+  AdaptOpts opts(&mesh);
+  auto nelems = mesh.nglobal_ents(mesh.dim());
+  auto desired_group_nelems = 1000;
+  while (nelems < desired_group_nelems) {
+    if (!mesh.has_tag(0, "metric")) {
+      add_implied_metric_tag(&mesh);
+      adapt(&mesh, opts);
+      nelems = mesh.nglobal_ents(mesh.dim());
+      std::cout << "mesh now has " << nelems << " total elements\n";
+    }
+    auto metrics = mesh.get_array<double>(0, "metric");
+    metrics = multiply_each_by(metrics, 1.2);
+    auto const metric_ncomps =
+      divide_no_remainder(metrics.size(), mesh.nverts());
+    mesh.add_tag(0, "metric", metric_ncomps, metrics);
+    adapt_refine(&mesh, opts);
+    nelems = mesh.nglobal_ents(mesh.dim());
+    std::cout << "mesh now has " << nelems << " total elements\n";
+  }
+  vtk::write_parallel("/lore/joshia5/Meshes/curved/disc_refined_100to1k.vtk", &mesh, 2);
+  wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe(&mesh, &wireframe_mesh, 4);
+  vtuPath = "/lore/joshia5/Meshes/curved/disc100to1k_cubic_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  cubic_curveVtk_mesh = Mesh(comm->library());
+  cubic_curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk(&mesh, &cubic_curveVtk_mesh, 4);
+  vtuPath = "/lore/joshia5/Meshes/curved/disc100to1k_cubic_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
   return;
 }
 
