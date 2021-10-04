@@ -134,6 +134,18 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
           std::string vtuPath = "/users/joshia5/Meshes/curved/semiDiscRefine_cubic_curveVtk.vtu";
           vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
         }
+        else {
+          OMEGA_H_CHECK (mesh->dim() == 3);
+          create_curved_faces_3d(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
+                                 keys2prods, keys2edges, keys2old_faces,
+                                 old_verts2new_verts);
+
+          auto cubic_curveVtk_mesh = Mesh(comm->library());
+          cubic_curveVtk_mesh.set_comm(comm);
+          build_cubic_curveVtk_3d(&new_mesh, &cubic_curveVtk_mesh, 5);
+          std::string vtuPath = "/users/joshia5/Meshes/curved/cubeCutCircleRefine_cubic_curveVtk.vtu";
+          vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
+        }
       }
     }
     old_lows2new_lows = old_ents2new_ents;
