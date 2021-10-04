@@ -317,6 +317,7 @@ bool adapt(Mesh* mesh, AdaptOpts const& opts) {
 bool adapt_refine(Mesh* mesh, AdaptOpts const& opts) {
   ScopedTimer adapt_timer("adapt_refine");
   OMEGA_H_CHECK(mesh->family() == OMEGA_H_SIMPLEX);
+  printf("new adapt refine iter\n");
 
   if (!pre_adapt(mesh, opts)) return false;
   setup_conservation_tags(mesh, opts);
