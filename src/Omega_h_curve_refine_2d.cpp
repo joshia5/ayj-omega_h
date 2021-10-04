@@ -120,9 +120,6 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                        cy2*B2_cube(new_xi_1) + cy3*B3_cube(new_xi_1);
         printf("edge 0 p1 %f, %f \n", new_px1, new_py1);
 
-        Matrix<2,1> c0({cx0, cy0});
-        Matrix<2,1> c3({new_cx3, new_cy3});
-
         Matrix<2,1> fx({new_px1, new_px2});
         Matrix<2,1> fy({new_py1, new_py2});
 
