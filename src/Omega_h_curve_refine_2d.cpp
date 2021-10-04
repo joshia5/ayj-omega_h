@@ -40,10 +40,26 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
                                                    nnew_verts);
 
+  LO max_degree_key2oldface = -1;
+  {
+    auto keyedges_noldfaces_w = Write<LO>(nold_edge, -1);
+    auto count_oldfaces = OMEGA_H_LAMBDA (LO old_edge) {
+      if (old2new[old_edge] == -1) {//old edge is key
+        //get num up adj faces of key edge
+        LO const num_adj_faces = old_e2ef[old_edge + 1] - old_e2ef[old_edge];
+        keyedges_noldfaces_w[old_edge] = num_adj_faces;
+      }
+    };
+    parallel_for(nold_edge, std::move(count_oldfaces));
+    max_degree_key2oldface = get_max(LOs(keyedges_noldfaces_w));
+  }
+  printf("max key2oldface degree = %d\n",max_degree_key2oldface);
+
   Write<LO> count_key(1, 0);
   auto nkeys = keys2midverts.size();
   OMEGA_H_CHECK(order == 3);
-  auto keys2old_faces_w = Write<LO>(2*nkeys, -1);
+  auto keys2old_faces_w = Write<LO>(max_degree_key2oldface*nkeys, -1);
+  //auto keys2old_faces_w = Write<LO>(2*nkeys, -1);
 
   auto create_crv_edges = OMEGA_H_LAMBDA (LO old_edge) {
     LO const v0_old = old_ev2v[old_edge*2 + 0];
@@ -184,7 +200,7 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = Cy(1,0);
       }
       //ctrl pts for edges on adjacent faces
-      for (LO i = 0; i < (end-start - 2); ++i) {
+      for (LO i = 0; i <= (end-start - 2); ++i) {
         LO const new_e2 = prods2new[start+2 + i];
         //LO const new_e2 = prods2new[start+2];
 
@@ -467,10 +483,10 @@ void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
     }
 
     LO const new_faces_per_old_face = 2;
-    OMEGA_H_CHECK ((((end-start-1)/new_faces_per_old_face) % 2) == 0);
+    OMEGA_H_CHECK (((end-start-1) % 2) == 0);
 
     //TODO case where 1 key makes more than 4 faces
-    for (LO i = 0; i < (end-start-1)/new_faces_per_old_face; ++i) {
+    for (LO i = 0; i <= (end-start-1)/new_faces_per_old_face; ++i) {
       auto new_f0 = prods2new[start + (i*new_faces_per_old_face) + 0];
       auto new_f1 = prods2new[start + (i*new_faces_per_old_face) + 1];
       //auto new_f0 = prods2new[start];
