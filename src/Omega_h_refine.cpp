@@ -96,6 +96,12 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
           (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
            keys2midverts, old_verts2new_verts);
         }
+        else {
+          OMEGA_H_CHECK(mesh->dim() == 3);
+          keys2old_faces = create_curved_verts_and_edges_3d
+          (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
+           keys2midverts, old_verts2new_verts);
+        }
 
         auto cubic_wireframe_mesh = Mesh(comm->library());
         cubic_wireframe_mesh.set_comm(comm);
