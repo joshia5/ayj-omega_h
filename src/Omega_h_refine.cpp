@@ -91,9 +91,11 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
           same_ents2new_ents.size(), same_ents2old_ents.size(),
           prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
       if (mesh->is_curved() > 0) {
-        keys2old_faces = create_curved_verts_and_edges
+        if (mesh->dim() == 2) {
+          keys2old_faces = create_curved_verts_and_edges_2d
           (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
            keys2midverts, old_verts2new_verts);
+        }
 
         auto cubic_wireframe_mesh = Mesh(comm->library());
         cubic_wireframe_mesh.set_comm(comm);
@@ -109,9 +111,11 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
           same_ents2new_ents.size(), same_ents2old_ents.size(),
           prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
       if (mesh->is_curved() > 0) {
-        create_curved_faces(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
-                            keys2prods, keys2edges, keys2old_faces,
-                            old_verts2new_verts);
+        if (mesh->dim() == 2) {
+          create_curved_faces_2d(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
+                                 keys2prods, keys2edges, keys2old_faces,
+                                 old_verts2new_verts);
+        }
 
         auto cubic_curveVtk_mesh = Mesh(comm->library());
         cubic_curveVtk_mesh.set_comm(comm);
