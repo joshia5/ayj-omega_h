@@ -377,7 +377,7 @@ void test_disc(Library *lib) {
   auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
                             "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
   //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_8tri_order2.sms",
-  //                          "/users/joshia5/Models/curved/disk_semi_geomsim_8tri.smd", comm);
+    //                        "/users/joshia5/Models/curved/disk_semi_geomsim_8tri.smd", comm);
   vtk::write_parallel("/lore/joshia5/Meshes/curved/disc_refine_8tri.vtk", &mesh, 2);
 
   calc_quad_ctrlPts_from_interpPts(&mesh);
@@ -404,7 +404,7 @@ void test_disc(Library *lib) {
   }
   AdaptOpts opts(&mesh);
   auto nelems = mesh.nglobal_ents(mesh.dim());
-  auto desired_group_nelems = 12;
+  auto desired_group_nelems = 5000;
   while (nelems < desired_group_nelems) {
     if (!mesh.has_tag(0, "metric")) {
       add_implied_metric_tag(&mesh);

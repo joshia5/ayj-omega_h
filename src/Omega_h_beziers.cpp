@@ -260,7 +260,7 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values
    LO const old_key_edge, LO const old_e0, LO const old_e1, LO const old_e2,
    LO const new_v0_f0, LO const new_v1_f0, LO const new_v2_f0,
    LO const new_v0_f1, LO const new_v1_f1, LO const new_v2_f1,
-   LO const flip_e0, LO const flip_e1, LO const flip_e2) {
+   LO const oldf_v0_new, LO const oldf_v1_new, LO const oldf_v2_new) {
 
   Write<Real> p1_p2(4);
   I8 should_swap = -1;
@@ -271,16 +271,13 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values
     p1_p2[2] = 1.0/6.0;
     p1_p2[3] = 1.0/2.0;
 
-    printf("\nold vert nokey is old v0\n");
-
-    printf("\nold v1 %d new_f0 verts (%d,%d,%d) new_f1 verts (%d,%d,%d)\n",
-      old_v1, new_v0_f0, new_v1_f0, new_v2_f0, new_v0_f1, new_v1_f1, new_v2_f1);
-
-    if ((old_v1 == new_v0_f0) || (old_v1 == new_v1_f0) || (old_v1 == new_v2_f0)) {
+    if ((oldf_v1_new == new_v0_f0) || (oldf_v1_new == new_v1_f0) || 
+        (oldf_v1_new == new_v2_f0)) {
       should_swap = -1;
     }
     else {
-      OMEGA_H_CHECK ((old_v1 == new_v0_f1) || (old_v1 == new_v1_f1) || (old_v1 == new_v2_f1));
+      OMEGA_H_CHECK ((oldf_v1_new == new_v0_f1) || (oldf_v1_new == new_v1_f1) ||
+                     (oldf_v1_new == new_v2_f1));
       should_swap = 1;
     }
   }
@@ -291,15 +288,13 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values
     p1_p2[2] = 1.0/3.0;
     p1_p2[3] = 1.0/6.0;
 
-    printf("\nold vert nokey is old v1\n");
-    printf("\nold v2 %d new_f0 verts (%d,%d,%d) new_f1 verts (%d,%d,%d)\n",
-      old_v2, new_v0_f0, new_v1_f0, new_v2_f0, new_v0_f1, new_v1_f1, new_v2_f1);
-
-    if ((old_v2 == new_v0_f0) || (old_v2 == new_v1_f0) || (old_v2 == new_v2_f0)) {
+    if ((oldf_v2_new == new_v0_f0) || (oldf_v2_new == new_v1_f0) ||
+        (oldf_v2_new == new_v2_f0)) {
       should_swap = -1;
     }
     else {
-      OMEGA_H_CHECK ((old_v2 == new_v0_f1) || (old_v2 == new_v1_f1) || (old_v2 == new_v2_f1));
+      OMEGA_H_CHECK ((oldf_v2_new == new_v0_f1) || (oldf_v2_new == new_v1_f1) ||
+                     (oldf_v2_new == new_v2_f1));
       should_swap = 1;
     }
   }
@@ -310,25 +305,20 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values
     p1_p2[2] = 1.0/2.0;
     p1_p2[3] = 1.0/3.0;
 
-    printf("\nold vert nokey is old v2\n");
-
-    printf("\nold v0 %d new_f0 verts (%d,%d,%d) new_f1 verts (%d,%d,%d)\n",
-      old_v0, new_v0_f0, new_v1_f0, new_v2_f0, new_v0_f1, new_v1_f1, new_v2_f1);
-
-    if ((old_v0 == new_v0_f0) || (old_v0 == new_v1_f0) || (old_v0 == new_v2_f0)) {
+    if ((oldf_v0_new == new_v0_f0) || (oldf_v0_new == new_v1_f0) ||
+        (oldf_v0_new == new_v2_f0)) {
       should_swap = -1;
     }
     else {
-      OMEGA_H_CHECK ((old_v0 == new_v0_f1) || (old_v0 == new_v1_f1) || (old_v0 == new_v2_f1));
+      OMEGA_H_CHECK ((oldf_v0_new == new_v0_f1) || (oldf_v0_new == new_v1_f1) ||
+                     (oldf_v0_new == new_v2_f1));
       should_swap = 1;
     }
   }
   else {
     Omega_h_fail("incorrect old face\n");
   }
-  printf("e0 e1 e2 %d %d %d flip \n", flip_e0, flip_e1,flip_e2);
   if (should_swap == 1) {
-    printf("needs swap\n");
     swap2(p1_p2[0], p1_p2[2]);
     swap2(p1_p2[1], p1_p2[3]);
   }
@@ -1313,7 +1303,7 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
   Write<Real> face_ctrlPts(nnew_face*n_face_pts*dim, INT8_MAX);
   OMEGA_H_CHECK(order == 3);
 
-  auto max_vert_old2new = get_max(old_verts2new_verts);
+  //auto max_vert_old2new = get_max(old_verts2new_verts);
   auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
                                                    nnew_verts);
 
@@ -1453,51 +1443,14 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
       Real cy11 = old_faceCtrlPts[old_face*dim + 1];
       //Real cz11 = old_faceCtrlPts[old_face*dim + 2];
 
-      auto ab2b = new_verts2old_verts.ab2b;
-      auto a2ab = new_verts2old_verts.a2ab;
-      LO new_f0_new2old_v0 = -1;
-      LO new_f0_new2old_v1 = -1;
-      LO new_f0_new2old_v2 = -1;
-      LO new_f1_new2old_v0 = -1;
-      LO new_f1_new2old_v1 = -1;
-      LO new_f1_new2old_v2 = -1;
-      if (new_fv2v[new_f0*3 + 0] < max_vert_old2new) {
-        if ((a2ab[new_fv2v[new_f0*3 + 0]+1] - a2ab[new_fv2v[new_f0*3 + 0]]) == 1) {
-          new_f0_new2old_v0 = ab2b[a2ab[new_fv2v[new_f0*3 + 0]]];
-        }
-      }
-      if (new_fv2v[new_f0*3 + 1] < max_vert_old2new) {
-        if ((a2ab[new_fv2v[new_f0*3 + 1]+1] - a2ab[new_fv2v[new_f0*3 + 1]]) == 1) {
-          new_f0_new2old_v1 = ab2b[a2ab[new_fv2v[new_f0*3 + 1]]];
-        }
-      }
-      if (new_fv2v[new_f0*3 + 2] < max_vert_old2new) {
-        if ((a2ab[new_fv2v[new_f0*3 + 2]+1] - a2ab[new_fv2v[new_f0*3 + 2]]) == 1) {
-          new_f0_new2old_v2 = ab2b[a2ab[new_fv2v[new_f0*3 + 2]]];
-        }
-      }
-      if (new_fv2v[new_f1*3 + 0] < max_vert_old2new) {
-        if ((a2ab[new_fv2v[new_f1*3 + 0]+1] - a2ab[new_fv2v[new_f1*3 + 0]]) == 1) {
-          new_f1_new2old_v0 = ab2b[a2ab[new_fv2v[new_f1*3 + 0]]];
-        }
-      }
-      if (new_fv2v[new_f1*3 + 1] < max_vert_old2new) {
-        if ((a2ab[new_fv2v[new_f1*3 + 1]+1] - a2ab[new_fv2v[new_f1*3 + 1]]) == 1) {
-          new_f1_new2old_v1 = ab2b[a2ab[new_fv2v[new_f1*3 + 1]]];
-        }
-      }
-      if (new_fv2v[new_f1*3 + 2] < max_vert_old2new) {
-        if ((a2ab[new_fv2v[new_f1*3 + 2]+1] - a2ab[new_fv2v[new_f1*3 + 2]]) == 1) {
-          new_f1_new2old_v2 = ab2b[a2ab[new_fv2v[new_f1*3 + 2]]];
-        }
-      }
       printf("ok1, new faces f0 f1 %d %d oldface %d\n", new_f0, new_f1, old_face);
       auto nodePts = cubic_face_xi_values
         (old_vert_noKey, v0_old_face, v1_old_face, v2_old_face, old_key_edge,
-         old_face_e0, old_face_e1, old_face_e2, new_f0_new2old_v0, 
-         new_f0_new2old_v1, new_f0_new2old_v2, new_f1_new2old_v0, 
-         new_f1_new2old_v1, new_f1_new2old_v2, e0_flip,
-         e1_flip, e2_flip);
+         old_face_e0, old_face_e1, old_face_e2, new_fv2v[new_f0*3 + 0], 
+         new_fv2v[new_f0*3 + 1], new_fv2v[new_f0*3 + 2], new_fv2v[new_f1*3 + 0], 
+         new_fv2v[new_f1*3 + 1], new_fv2v[new_f1*3 + 2],
+         old_verts2new_verts[v0_old_face],
+         old_verts2new_verts[v1_old_face], old_verts2new_verts[v2_old_face]);
       printf("ok2\n");
 
       //for f0
@@ -1898,51 +1851,14 @@ void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
       Real cy11 = old_faceCtrlPts[old_face*dim + 1];
       //Real cz11 = old_faceCtrlPts[old_face*dim + 2];
 
-      auto ab2b = new_verts2old_verts.ab2b;
-      auto a2ab = new_verts2old_verts.a2ab;
-      LO new_f0_new2old_v0 = -1;
-      LO new_f0_new2old_v1 = -1;
-      LO new_f0_new2old_v2 = -1;
-      LO new_f1_new2old_v0 = -1;
-      LO new_f1_new2old_v1 = -1;
-      LO new_f1_new2old_v2 = -1;
-      if (new_fv2v[new_f0*3 + 0] < max_vert_old2new) {
-        if ((a2ab[new_fv2v[new_f0*3 + 0]+1] - a2ab[new_fv2v[new_f0*3 + 0]]) == 1) {
-          new_f0_new2old_v0 = ab2b[a2ab[new_fv2v[new_f0*3 + 0]]];
-        }
-      }
-      if (new_fv2v[new_f0*3 + 1] < max_vert_old2new) {
-        if ((a2ab[new_fv2v[new_f0*3 + 1]+1] - a2ab[new_fv2v[new_f0*3 + 1]]) == 1) {
-          new_f0_new2old_v1 = ab2b[a2ab[new_fv2v[new_f0*3 + 1]]];
-        }
-      }
-      if (new_fv2v[new_f0*3 + 2] < max_vert_old2new) {
-        if ((a2ab[new_fv2v[new_f0*3 + 2]+1] - a2ab[new_fv2v[new_f0*3 + 2]]) == 1) {
-          new_f0_new2old_v2 = ab2b[a2ab[new_fv2v[new_f0*3 + 2]]];
-        }
-      }
-      if (new_fv2v[new_f1*3 + 0] < max_vert_old2new) {
-        if ((a2ab[new_fv2v[new_f1*3 + 0]+1] - a2ab[new_fv2v[new_f1*3 + 0]]) == 1) {
-          new_f1_new2old_v0 = ab2b[a2ab[new_fv2v[new_f1*3 + 0]]];
-        }
-      }
-      if (new_fv2v[new_f1*3 + 1] < max_vert_old2new) {
-        if ((a2ab[new_fv2v[new_f1*3 + 1]+1] - a2ab[new_fv2v[new_f1*3 + 1]]) == 1) {
-          new_f1_new2old_v1 = ab2b[a2ab[new_fv2v[new_f1*3 + 1]]];
-        }
-      }
-      if (new_fv2v[new_f1*3 + 2] < max_vert_old2new) {
-        if ((a2ab[new_fv2v[new_f1*3 + 2]+1] - a2ab[new_fv2v[new_f1*3 + 2]]) == 1) {
-          new_f1_new2old_v2 = ab2b[a2ab[new_fv2v[new_f1*3 + 2]]];
-        }
-      }
       printf("ok3, new faces f2 f3 %d %d oldface %d\n", new_f0, new_f1, old_face);
       auto nodePts = cubic_face_xi_values
         (old_vert_noKey, v0_old_face, v1_old_face, v2_old_face, old_key_edge,
-         old_face_e0, old_face_e1, old_face_e2, new_f0_new2old_v0, 
-         new_f0_new2old_v1, new_f0_new2old_v2, new_f1_new2old_v0, 
-         new_f1_new2old_v1, new_f1_new2old_v2, e0_flip,
-         e1_flip, e2_flip);
+         old_face_e0, old_face_e1, old_face_e2, new_fv2v[new_f0*3 + 0], 
+         new_fv2v[new_f0*3 + 1], new_fv2v[new_f0*3 + 2], new_fv2v[new_f1*3 + 0], 
+         new_fv2v[new_f1*3 + 1], new_fv2v[new_f1*3 + 2],
+         old_verts2new_verts[v0_old_face],
+         old_verts2new_verts[v1_old_face], old_verts2new_verts[v2_old_face]);
       printf("ok4\n");
 
       //for f2
