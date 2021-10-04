@@ -670,9 +670,9 @@ void elevate_curve_order_5to6(Mesh* mesh) {
   return;
 }
 
-LOs create_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
-                                  LOs prods2new, LOs keys2prods,
-                                  LOs keys2midverts, LOs old_verts2new_verts) {
+LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
+                                     LOs prods2new, LOs keys2prods,
+                                     LOs keys2midverts, LOs old_verts2new_verts) {
   printf("in create curved edges fn\n");
   OMEGA_H_TIME_FUNCTION;
   auto const nold_edge = old2new.size();
@@ -1270,9 +1270,9 @@ LOs create_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   return LOs(keys2old_faces_w);
 }
 
-void create_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
-                         LOs keys2prods, LOs keys2edges, LOs keys2old_faces,
-                         LOs old_verts2new_verts) {
+void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
+                            LOs keys2prods, LOs keys2edges, LOs keys2old_faces,
+                            LOs old_verts2new_verts) {
   printf("in create curved faces fn\n");
   OMEGA_H_TIME_FUNCTION;
   auto const nold_face = old2new.size();
