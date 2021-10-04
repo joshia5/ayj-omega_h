@@ -38,15 +38,21 @@ void assemble_slices(CommPtr comm, Omega_h_Family family, Int dim,
     GO vert_offset, Reals vert_coords, Dist* p_slice_elems2elems, LOs* conn_out,
     Dist* p_slice_verts2verts);
 
-void build_quadratic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
+void build_quadratic_wireframe_2d(Mesh* mesh, Mesh* wireframe_mesh,
                                LO n_sample_pts = 10);
-void build_cubic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
-                           LO n_sample_pts = 10);
+void build_quadratic_wireframe_3d(Mesh* mesh, Mesh* wireframe_mesh,
+                               LO n_sample_pts = 10);
+void build_cubic_wireframe_2d(Mesh* mesh, Mesh* wireframe_mesh,
+                              LO n_sample_pts = 10);
+void build_cubic_wireframe_3d(Mesh* mesh, Mesh* wireframe_mesh,
+                              LO n_sample_pts = 10);
 void build_quartic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
                              LO n_sample_pts = 10);
 void build_quadratic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
                               LO n_sample_pts = 10);
-void build_cubic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
+void build_cubic_curveVtk_2d(Mesh* mesh, Mesh* curveVtk_mesh,
+                          LO n_sample_pts = 10);
+void build_cubic_curveVtk_3d(Mesh* mesh, Mesh* curveVtk_mesh,
                           LO n_sample_pts = 10);
 void build_quartic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
                             LO n_sample_pts = 10);
