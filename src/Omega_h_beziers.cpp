@@ -273,6 +273,9 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values
 
     printf("\nold vert nokey is old v0\n");
 
+    printf("\nold v1 %d new_f0 verts (%d,%d,%d) new_f1 verts (%d,%d,%d)\n",
+      old_v1, new_v0_f0, new_v1_f0, new_v2_f0, new_v0_f1, new_v1_f1, new_v2_f1);
+
     if ((old_v1 == new_v0_f0) || (old_v1 == new_v1_f0) || (old_v1 == new_v2_f0)) {
       should_swap = -1;
     }
@@ -289,6 +292,8 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values
     p1_p2[3] = 1.0/6.0;
 
     printf("\nold vert nokey is old v1\n");
+    printf("\nold v2 %d new_f0 verts (%d,%d,%d) new_f1 verts (%d,%d,%d)\n",
+      old_v2, new_v0_f0, new_v1_f0, new_v2_f0, new_v0_f1, new_v1_f1, new_v2_f1);
 
     if ((old_v2 == new_v0_f0) || (old_v2 == new_v1_f0) || (old_v2 == new_v2_f0)) {
       should_swap = -1;
@@ -306,6 +311,9 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values
     p1_p2[3] = 1.0/3.0;
 
     printf("\nold vert nokey is old v2\n");
+
+    printf("\nold v0 %d new_f0 verts (%d,%d,%d) new_f1 verts (%d,%d,%d)\n",
+      old_v0, new_v0_f0, new_v1_f0, new_v2_f0, new_v0_f1, new_v1_f1, new_v2_f1);
 
     if ((old_v0 == new_v0_f0) || (old_v0 == new_v1_f0) || (old_v0 == new_v2_f0)) {
       should_swap = -1;
