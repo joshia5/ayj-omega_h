@@ -225,8 +225,8 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           }
         }
 
-        printf("For old edge %d, found old face %d\n", old_edge, old_face);
-        keys2old_faces_w[2*key_id + i] = old_face;
+        printf("For oldedge %d with key id %d, found oldface %d\n", old_edge, key_id, old_face);
+        keys2old_faces_w[max_degree_key2oldface*key_id + i] = old_face;
         {
           auto const v0_old_face = old_fv2v[old_face*3];
           auto const v1 = old_fv2v[old_face*3 + 1];
@@ -447,6 +447,8 @@ void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
                                                    nnew_verts);
 
   auto const nkeys = keys2edges.size();
+  LO const max_degree_key2oldface = keys2old_faces.size()/nkeys;
+
   auto create_crv_prod_faces = OMEGA_H_LAMBDA (LO key) {
 
     auto start = keys2prods[key];
@@ -463,9 +465,10 @@ void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
       auto new_f0 = prods2new[start + (i*new_faces_per_old_face) + 0];
       auto new_f1 = prods2new[start + (i*new_faces_per_old_face) + 1];
 
-      auto old_face = keys2old_faces[2*key + i];
+      auto old_face = keys2old_faces[max_degree_key2oldface*key + i];
       if (old_face != -1) {
         auto old_key_edge = keys2edges[key];
+        printf("for oldedge %d, oldface is %d\n", old_key_edge, old_face);
 
         LO const v0_old_face = old_fv2v[old_face*3 + 0];
         LO const v1_old_face = old_fv2v[old_face*3 + 1];
