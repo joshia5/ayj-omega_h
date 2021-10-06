@@ -488,16 +488,22 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   printf("in create curved faces fn\n");
   OMEGA_H_TIME_FUNCTION;
   auto const nold_face = old2new.size();
+  auto const dim = mesh->dim();
+
   auto const old_ev2v = mesh->get_adj(1, 0).ab2b;
-  auto const old_fe2e = mesh->get_adj(2, 1).ab2b;
   auto const old_ef2f = mesh->ask_up(1, 2).ab2b;
   auto const old_e2ef = mesh->ask_up(1, 2).a2ab;
+  auto const old_er2r = mesh->ask_up(1, 3).ab2b;
+  auto const old_e2er = mesh->ask_up(1, 3).a2ab;
+  auto const old_fe2e = mesh->get_adj(2, 1).ab2b;
   auto const old_fv2v = mesh->ask_down(2, 0).ab2b;
+  auto const old_rv2v = mesh->ask_down(3, 0).ab2b;
+  auto const old_re2e = mesh->ask_down(3, 1).ab2b;
+
   auto const old_vertCtrlPts = mesh->get_ctrlPts(0);
   auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
   auto const old_faceCtrlPts = mesh->get_ctrlPts(2);
   auto const order = mesh->get_max_order();
-  auto const dim = mesh->dim();
   auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
   auto const n_face_pts = mesh->n_internal_ctrlPts(2);
 
@@ -520,6 +526,7 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   auto const nkeys = keys2edges.size();
   LO const max_degree_key2oldface = keys2old_faces.size()/nkeys;
   printf("in old faces max degree key2of %d\n", max_degree_key2oldface);
+
   auto keys2nold_faces_w = Write<LO>(nkeys, -1);
   auto count_nold_faces = OMEGA_H_LAMBDA (LO key) {
     for (LO i = 0; i < max_degree_key2oldface; ++i) {
@@ -992,6 +999,58 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
         face_ctrlPts[newface*n_face_pts*dim + 1] = newface_cy11;
         face_ctrlPts[newface*n_face_pts*dim + 2] = newface_cz11;
       }
+    }
+    for (LO i = (keys2nold_faces[key]+1)*new_faces_per_old_face; i <= (end-start); ++i) {
+      auto old_key_edge = keys2edges[key];
+      auto newface = prods2new[start + i];
+      LO const newface_v0 = new_fv2v[newface*3 + 0];
+      LO const newface_v1 = new_fv2v[newface*3 + 1];
+      LO const newface_v2 = new_fv2v[newface*3 + 2];
+
+      LO old_rgn = -1;
+      {
+        auto adjrgn_start = old_e2er[old_key_edge];
+        auto adjrgn_end = old_e2er[old_key_edge + 1];
+        for (LO count_adj_rgn = adjrgn_start; count_adj_rgn < adjrgn_end;
+             ++count_adj_rgn) {
+          auto adj_rgn = old_er2r[count_adj_rgn];
+          auto adj_rgn_v0_old = old_rv2v[adj_rgn*4 + 0];
+          auto adj_rgn_v1_old = old_rv2v[adj_rgn*4 + 1];
+          auto adj_rgn_v2_old = old_rv2v[adj_rgn*4 + 2];
+          auto adj_rgn_v3_old = old_rv2v[adj_rgn*4 + 3];
+          auto adj_rgn_v0_new = old_verts2new_verts[adj_rgn_v0_old];
+          auto adj_rgn_v1_new = old_verts2new_verts[adj_rgn_v1_old];
+          auto adj_rgn_v2_new = old_verts2new_verts[adj_rgn_v2_old];
+          auto adj_rgn_v3_new = old_verts2new_verts[adj_rgn_v3_old];
+
+          LO count_matchverts2 = 0;
+          if ((newface_v0 == adj_rgn_v0_new) || (newface_v0 == adj_rgn_v1_new)||
+              (newface_v0 == adj_rgn_v2_new) || (newface_v0 == adj_rgn_v3_new)) {
+            ++count_matchverts2;
+          }
+          if ((newface_v1 == adj_rgn_v0_new) || (newface_v1 == adj_rgn_v1_new)||
+              (newface_v1 == adj_rgn_v2_new) || (newface_v1 == adj_rgn_v3_new)) {
+            ++count_matchverts2;
+          }
+          if ((newface_v2 == adj_rgn_v0_new) || (newface_v2 == adj_rgn_v1_new)||
+              (newface_v2 == adj_rgn_v2_new) || (newface_v2 == adj_rgn_v3_new)) {
+            ++count_matchverts2;
+          }
+          if (count_matchverts2 == 2) {
+            old_rgn = adj_rgn;
+            break;
+          }
+        }
+      }
+      printf("for i = %d, oldedge %d, newface %d, found old region %d\n", i, old_key_edge, newface, old_rgn);
+
+      auto old_rgn_e0 = old_re2e[old_rgn*6 + 0];
+      auto old_rgn_e1 = old_re2e[old_rgn*6 + 1];
+      auto old_rgn_e2 = old_re2e[old_rgn*6 + 2];
+      auto old_rgn_e3 = old_re2e[old_rgn*6 + 3];
+      auto old_rgn_e4 = old_re2e[old_rgn*6 + 4];
+      auto old_rgn_e5 = old_re2e[old_rgn*6 + 5];
+
     }
   };
   parallel_for(nkeys, std::move(create_crv_prod_faces),
