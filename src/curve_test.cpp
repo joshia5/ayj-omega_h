@@ -274,16 +274,14 @@ void test_sim_quadToCubic(Library *lib, const std::string &model_file,
 
   wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
-  build_cubic_wireframe_3d(&mesh, &wireframe_mesh);
+  build_cubic_wireframe_3d(&mesh, &wireframe_mesh, 5);
   vtuPath = "/users/joshia5/Meshes/curved/preRefinebox_circleCut-30reg_wireframe.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
-  /*
   auto curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
-  build_quadratic_curveVtk_3d(&mesh, &curveVtk_mesh);
-  vtuPath = "/users/joshia5/Meshes/curved/box_circleCut-30reg_curveVtk.vtu";
+  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh, 5);
+  vtuPath = "/users/joshia5/Meshes/curved/preRefinebox_circleCut-30reg_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
-  */
 
   for (LO i = 0; i <= mesh.dim(); ++i) {
     if (!mesh.has_tag(i, "global")) {
