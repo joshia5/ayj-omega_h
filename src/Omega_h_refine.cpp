@@ -150,11 +150,9 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
     }
     old_lows2new_lows = old_ents2new_ents;
   }
-  auto old_ev2v = mesh->get_adj(1,0);
+  printf("after 1 refine, has %d tets", new_mesh.nregions());
 
   *mesh = new_mesh;
-  if (mesh->nfaces() == 12) 
-    vtk::write_parallel("/lore/joshia5/Meshes/curved/refine_1iter_8to12tri_disc.vtk", mesh, 2);
 }
 
 static bool refine(Mesh* mesh, AdaptOpts const& opts) {
