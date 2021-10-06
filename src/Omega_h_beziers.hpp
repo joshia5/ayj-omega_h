@@ -180,6 +180,47 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values
   return Reals(p1_p2);
 }
 
+OMEGA_H_DEVICE cubic_region_xi_values
+  (LO const old_key_edge, LO const old_e0, LO const old_e1, LO const old_e2,
+   LO const old_e3, LO const old_e4, LO const old_e5) {
+  Write<Real> p11(3);
+  if (old_key_edge == old_e0) {
+    p11[0] = 1.0/6.0;
+    p11[1] = 1.0/3.0;
+    p11[2] = 1.0/3.0;
+  }
+  else if (old_key_edge == old_e1) {
+    p11[0] = 1.0/6.0;
+    p11[1] = 1.0/6.0;
+    p11[2] = 1.0/3.0;
+  }
+  else if (old_key_edge == old_e2) {
+    p11[0] = 1.0/3.0;
+    p11[1] = 1.0/6.0;
+    p11[2] = 1.0/3.0;
+  }
+  else if (old_key_edge == old_e3) {
+    p11[0] = 1.0/3.0;
+    p11[1] = 1.0/3.0;
+    p11[2] = 1.0/6.0;
+  }
+  else if (old_key_edge == old_e4) {
+    p11[0] = 1.0/6.0;
+    p11[1] = 1.0/3.0;
+    p11[2] = 1.0/6.0;
+  }
+  else if (old_key_edge == old_e1) {
+    p11[0] = 1.0/3.0;
+    p11[1] = 1.0/6.0;
+    p11[2] = 1.0/6.0;
+  }
+  else {
+    Omega_h_fail("incorrect old rgn\n");
+  }
+
+  return Reals(p11);
+}
+
 LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,
                                      LOs keys2midverts, LOs old_verts2new_verts);
