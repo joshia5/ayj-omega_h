@@ -54,6 +54,19 @@ Real B11_quart(Real u, Real v);
 Real B21_quart(Real u, Real v);
 Real B12_quart(Real u, Real v);
 
+//TODO this fn will need to be called from both host and device
+constexpr OMEGA_H_INLINE Real 
+Bijk_P(LO const P, LO const i, LO const j, LO const k, Real const u,
+       Real const v, Real const w) noexcept {
+  LO const l = P-i-j-k;
+  OMEGA_H_CHECK(l>=0);
+  LO const t = 1.0-u-v-w;
+  OMEGA_H_CHECK((t>=0.0) && (t<=1.0));
+  return factorial(1.0*P)*
+    std::pow(u,i)*std::pow(v,j)*std::pow(w,k)*std::pow(t,l)/(
+    factorial(1.0*i)*factorial(1.0*j)*factorial(1.0*k)*factorial(1.0*l));
+}
+
 Real xi_1_quad();
 
 Real xi_1_cube();
@@ -180,7 +193,7 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values
   return Reals(p1_p2);
 }
 
-OMEGA_H_DEVICE cubic_region_xi_values
+OMEGA_H_DEVICE Reals cubic_region_xi_values
   (LO const old_key_edge, LO const old_e0, LO const old_e1, LO const old_e2,
    LO const old_e3, LO const old_e4, LO const old_e5) {
   Write<Real> p11(3);
@@ -209,7 +222,7 @@ OMEGA_H_DEVICE cubic_region_xi_values
     p11[1] = 1.0/3.0;
     p11[2] = 1.0/6.0;
   }
-  else if (old_key_edge == old_e1) {
+  else if (old_key_edge == old_e5) {
     p11[0] = 1.0/3.0;
     p11[1] = 1.0/6.0;
     p11[2] = 1.0/6.0;
@@ -220,6 +233,20 @@ OMEGA_H_DEVICE cubic_region_xi_values
 
   return Reals(p11);
 }
+
+OMEGA_H_DEVICE LO edge_is_flip(LO const e0v0, LO const e0v1, LO const v0, LO const v1) {
+  LO is_flip = -1;
+  if ((e0v0 == v1) && (e0v1 == v0)) {
+    is_flip = 1;
+  }
+  else {
+    OMEGA_H_CHECK((e0v0 == v0) && (e0v1 == v1));
+  }
+  return is_flip;
+}
+
+
+//Reals OMEGA_H_DEVICE coordsFromXi(Int ent_dim, 
 
 LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,

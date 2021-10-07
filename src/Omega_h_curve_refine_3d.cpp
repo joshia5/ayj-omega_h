@@ -499,6 +499,7 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   auto const old_fv2v = mesh->ask_down(2, 0).ab2b;
   auto const old_rv2v = mesh->ask_down(3, 0).ab2b;
   auto const old_re2e = mesh->ask_down(3, 1).ab2b;
+  auto const old_rf2f = mesh->get_adj(3, 2).ab2b;
 
   auto const old_vertCtrlPts = mesh->get_ctrlPts(0);
   auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
@@ -1042,7 +1043,19 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
           }
         }
       }
-      printf("for i = %d, oldedge %d, newface %d, found old region %d\n", i, old_key_edge, newface, old_rgn);
+      printf("for i = %d, oldedge %d, newface %d, found old region %d\n",
+            i, old_key_edge, newface, old_rgn);
+
+      auto old_rgn_v0 = old_rv2v[old_rgn*4 + 0];
+      auto old_rgn_v1 = old_rv2v[old_rgn*4 + 1];
+      auto old_rgn_v2 = old_rv2v[old_rgn*4 + 2];
+      auto old_rgn_v3 = old_rv2v[old_rgn*4 + 3];
+      /*
+      auto c000 = get_vector<3>(old_vertCtrlPts, old_rgn_v0);
+      auto c300 = get_vector<3>(old_vertCtrlPts, old_rgn_v1);
+      auto c030 = get_vector<3>(old_vertCtrlPts, old_rgn_v2);
+      auto c003 = get_vector<3>(old_vertCtrlPts, old_rgn_v3);
+      */
 
       auto old_rgn_e0 = old_re2e[old_rgn*6 + 0];
       auto old_rgn_e1 = old_re2e[old_rgn*6 + 1];
@@ -1050,6 +1063,47 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
       auto old_rgn_e3 = old_re2e[old_rgn*6 + 3];
       auto old_rgn_e4 = old_re2e[old_rgn*6 + 4];
       auto old_rgn_e5 = old_re2e[old_rgn*6 + 5];
+
+      /*
+      auto old_rgn_f0 = old_rf2f[old_rgn*4 + 0];
+      auto old_rgn_f1 = old_rf2f[old_rgn*4 + 1];
+      auto old_rgn_f2 = old_rf2f[old_rgn*4 + 2];
+      auto old_rgn_f3 = old_rf2f[old_rgn*4 + 3];
+      */
+
+      LO e0_flip = -1;
+      LO e1_flip = -1;
+      LO e2_flip = -1;
+      LO e3_flip = -1;
+      LO e4_flip = -1;
+      LO e5_flip = -1;
+      //define edges such that their normal points outward
+      {
+        auto e0v0 = old_ev2v[old_rgn_e0*2 + 0];
+        auto e0v1 = old_ev2v[old_rgn_e0*2 + 1];
+        e0_flip = edge_is_flip(e0v0, e0v1, old_rgn_v0, old_rgn_v1);
+        auto e1v0 = old_ev2v[old_rgn_e1*2 + 0];
+        auto e1v1 = old_ev2v[old_rgn_e1*2 + 1];
+        e1_flip = edge_is_flip(e1v0, e1v1, old_rgn_v1, old_rgn_v2);
+        auto e2v0 = old_ev2v[old_rgn_e2*2 + 0];
+        auto e2v1 = old_ev2v[old_rgn_e2*2 + 1];
+        e2_flip = edge_is_flip(e2v0, e2v1, old_rgn_v2, old_rgn_v0);
+        auto e3v0 = old_ev2v[old_rgn_e3*2 + 0];
+        auto e3v1 = old_ev2v[old_rgn_e3*2 + 1];
+        e3_flip = edge_is_flip(e3v0, e3v1, old_rgn_v0, old_rgn_v3);
+        auto e4v0 = old_ev2v[old_rgn_e4*2 + 0];
+        auto e4v1 = old_ev2v[old_rgn_e4*2 + 1];
+        e4_flip = edge_is_flip(e4v0, e4v1, old_rgn_v3, old_rgn_v1);
+        auto e5v0 = old_ev2v[old_rgn_e5*2 + 0];
+        auto e5v1 = old_ev2v[old_rgn_e5*2 + 1];
+        e5_flip = edge_is_flip(e5v0, e5v1, old_rgn_v3, old_rgn_v2);
+      }
+      printf("oldrgn edge flips %d %d %d %d %d %d\n", e0_flip, e1_flip, e2_flip, e3_flip, e4_flip, e5_flip);
+
+      auto nodePt = cubic_region_xi_values(
+        old_key_edge, old_rgn_e0, old_rgn_e1, old_rgn_e2, old_rgn_e3,
+        old_rgn_e4, old_rgn_e5);
+
 
     }
   };
