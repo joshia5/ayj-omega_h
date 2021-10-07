@@ -6,6 +6,7 @@
 #include "Omega_h_map.hpp"
 #include "Omega_h_array_ops.hpp"
 #include "Omega_h_vector.hpp"
+#include "Omega_h_scalar.hpp"
 
 namespace Omega_h {
 
@@ -181,11 +182,11 @@ Real B12_quart(Real u, Real v) {
   return 12.0*u*v*v*(1.0-u-v);
 }
 
+// Babushka chen points
 Real xi_1_quad() {
  return 0.5;
 }
 
-// Babushka chen points
 Real xi_1_cube() {
  return 0.2748043;
 }
