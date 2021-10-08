@@ -56,8 +56,8 @@ Real B12_quart(Real u, Real v);
 
 //TODO this fn will need to be called from both host and device
 constexpr OMEGA_H_INLINE Real 
-Bijk_P(LO const P, LO const i, LO const j, LO const k, Real const u,
-       Real const v, Real const w) noexcept {
+Bijk(LO const P, LO const i, LO const j, LO const k, Real const u,
+     Real const v, Real const w) noexcept {
   LO const l = P-i-j-k;
   OMEGA_H_CHECK(l>=0);
   LO const t = 1.0-u-v-w;
@@ -65,6 +65,17 @@ Bijk_P(LO const P, LO const i, LO const j, LO const k, Real const u,
   return factorial(1.0*P)*
     std::pow(u,i)*std::pow(v,j)*std::pow(w,k)*std::pow(t,l)/(
     factorial(1.0*i)*factorial(1.0*j)*factorial(1.0*k)*factorial(1.0*l));
+}
+
+constexpr OMEGA_H_INLINE Real 
+Bij(LO const P, LO const i, LO const j, Real const u, Real const v) noexcept {
+  LO const k = P-i-j;
+  OMEGA_H_CHECK((k>=0) && (k<=P));
+  LO const w = 1.0-u-v;
+  OMEGA_H_CHECK((w>=0.0) && (w<=1.0));
+  return factorial(1.0*P)*
+    std::pow(u,i)*std::pow(v,j)*std::pow(w,k)/(
+    factorial(1.0*i)*factorial(1.0*j)*factorial(1.0*k));
 }
 
 Real xi_1_quad();
@@ -245,6 +256,124 @@ OMEGA_H_DEVICE LO edge_is_flip(LO const e0v0, LO const e0v1, LO const v0, LO con
   return is_flip;
 }
 
+OMEGA_H_DEVICE Reals calc_cubic_face_ctrlPt_3d(LO const newface, LOs new_ev2v, LOs new_fe2e,
+    Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Reals p11, LOs new_fv2v) {
+  LO const dim=3;
+  LO const pts_per_edge=2;
+  I8 newface_e0_flip = -1;
+  I8 newface_e1_flip = -1;
+  I8 newface_e2_flip = -1;
+  LO newface_v0 = new_fv2v[newface*3 + 0];
+  LO newface_v1 = new_fv2v[newface*3 + 1];
+  LO newface_v2 = new_fv2v[newface*3 + 2];
+  LO newface_e0 = new_fe2e[newface*3 + 0];
+  LO newface_e1 = new_fe2e[newface*3 + 1];
+  LO newface_e2 = new_fe2e[newface*3 + 2];
+  auto newface_e0v0 = new_ev2v[newface_e0*2 + 0];
+  auto newface_e0v1 = new_ev2v[newface_e0*2 + 1];
+  auto newface_e1v0 = new_ev2v[newface_e1*2 + 0];
+  auto newface_e1v1 = new_ev2v[newface_e1*2 + 1];
+  auto newface_e2v0 = new_ev2v[newface_e2*2 + 0];
+  auto newface_e2v1 = new_ev2v[newface_e2*2 + 1];
+  if ((newface_e0v0 == newface_v1) && (newface_e0v1 == newface_v0)) {
+    newface_e0_flip = 1;
+  }
+  else {
+    OMEGA_H_CHECK((newface_e0v0 == newface_v0) && (newface_e0v1 == newface_v1));
+  }
+  if ((newface_e1v0 == newface_v2) && (newface_e1v1 == newface_v1)) {
+    newface_e1_flip = 1;
+  }
+  else {
+    OMEGA_H_CHECK((newface_e1v0 == newface_v1) && (newface_e1v1 == newface_v2));
+  }
+  if ((newface_e2v0 == newface_v0) && (newface_e2v1 == newface_v2)) {
+    newface_e2_flip = 1;
+  }
+  else {
+    OMEGA_H_CHECK((newface_e2v0 == newface_v2) && (newface_e2v1 == newface_v0));
+  }
+
+  Real newface_cx00 = new_vertCtrlPts[newface_v0*dim + 0];
+  Real newface_cy00 = new_vertCtrlPts[newface_v0*dim + 1];
+  Real newface_cz00 = new_vertCtrlPts[newface_v0*dim + 2];
+  Real newface_cx30 = new_vertCtrlPts[newface_v1*dim + 0];
+  Real newface_cy30 = new_vertCtrlPts[newface_v1*dim + 1];
+  Real newface_cz30 = new_vertCtrlPts[newface_v1*dim + 2];
+  Real newface_cx03 = new_vertCtrlPts[newface_v2*dim + 0];
+  Real newface_cy03 = new_vertCtrlPts[newface_v2*dim + 1];
+  Real newface_cz03 = new_vertCtrlPts[newface_v2*dim + 2];
+
+  Real newface_cx10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 0];
+  Real newface_cy10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 1];
+  Real newface_cz10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 2];
+  Real newface_cx20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real newface_cy20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real newface_cz20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (newface_e0_flip > 0) {
+    swap2(newface_cx10, newface_cx20);
+    swap2(newface_cy10, newface_cy20);
+    swap2(newface_cz10, newface_cz20);
+  }
+
+  Real newface_cx21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 0];
+  Real newface_cy21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 1];
+  Real newface_cz21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 2];
+  Real newface_cx12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real newface_cy12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real newface_cz12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (newface_e1_flip > 0) {
+    swap2(newface_cx21, newface_cx12);
+    swap2(newface_cy21, newface_cy12);
+    swap2(newface_cz21, newface_cz12);
+  }
+
+  Real newface_cx02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 0];
+  Real newface_cy02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 1];
+  Real newface_cz02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 2];
+  Real newface_cx01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real newface_cy01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real newface_cz01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (newface_e2_flip > 0) {
+    swap2(newface_cx01, newface_cx02);
+    swap2(newface_cy01, newface_cy02);
+    swap2(newface_cz01, newface_cz02);
+  }
+
+  auto xi_11 = xi_11_cube();
+  Real newface_cx11 = (p11[0] - newface_cx00*B00_cube(xi_11[0], xi_11[1]) -
+      newface_cx10*B10_cube(xi_11[0], xi_11[1]) -
+      newface_cx20*B20_cube(xi_11[0], xi_11[1]) -
+      newface_cx30*B30_cube(xi_11[0], xi_11[1]) -
+      newface_cx21*B21_cube(xi_11[0], xi_11[1]) -
+      newface_cx12*B12_cube(xi_11[0], xi_11[1]) -
+      newface_cx03*B03_cube(xi_11[0], xi_11[1]) -
+      newface_cx02*B02_cube(xi_11[0], xi_11[1]) -
+      newface_cx01*B01_cube(xi_11[0], xi_11[1]))/B11_cube(xi_11[0], xi_11[1]);
+  Real newface_cy11 = (p11[1] - newface_cy00*B00_cube(xi_11[0], xi_11[1]) -
+      newface_cy10*B10_cube(xi_11[0], xi_11[1]) -
+      newface_cy20*B20_cube(xi_11[0], xi_11[1]) -
+      newface_cy30*B30_cube(xi_11[0], xi_11[1]) -
+      newface_cy21*B21_cube(xi_11[0], xi_11[1]) -
+      newface_cy12*B12_cube(xi_11[0], xi_11[1]) -
+      newface_cy03*B03_cube(xi_11[0], xi_11[1]) -
+      newface_cy02*B02_cube(xi_11[0], xi_11[1]) -
+      newface_cy01*B01_cube(xi_11[0], xi_11[1]))/B11_cube(xi_11[0], xi_11[1]);
+  Real newface_cz11 = (p11[2] - newface_cz00*B00_cube(xi_11[0], xi_11[1]) -
+      newface_cz10*B10_cube(xi_11[0], xi_11[1]) -
+      newface_cz20*B20_cube(xi_11[0], xi_11[1]) -
+      newface_cz30*B30_cube(xi_11[0], xi_11[1]) -
+      newface_cz21*B21_cube(xi_11[0], xi_11[1]) -
+      newface_cz12*B12_cube(xi_11[0], xi_11[1]) -
+      newface_cz03*B03_cube(xi_11[0], xi_11[1]) -
+      newface_cz02*B02_cube(xi_11[0], xi_11[1]) -
+      newface_cz01*B01_cube(xi_11[0], xi_11[1]))/B11_cube(xi_11[0], xi_11[1]);
+  Write<Real> new_c11(3);
+  new_c11[0] = newface_cx11;
+  new_c11[1] = newface_cy11;
+  new_c11[2] = newface_cz11;
+  return Reals(new_c11);
+}
 
 //Reals OMEGA_H_DEVICE coordsFromXi(Int ent_dim, 
 
