@@ -320,7 +320,6 @@ bool adapt_refine(Mesh* mesh, AdaptOpts const& opts) {
   printf("new adapt refine iter\n");
 
   if (!pre_adapt(mesh, opts)) return false;
-  setup_conservation_tags(mesh, opts);
   satisfy_lengths_refine(mesh, opts);
 
   return true;
