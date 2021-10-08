@@ -851,7 +851,8 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
       //for f1
       {
         //get the interp point
-        auto p11_x = cx00*Bij(order,0,0,nodePt[2],nodePt[3]) +
+        //auto p11_x = cx00*B00_cube(nodePts[2],nodePts[3]) +
+        auto p11_x = cx00*Bij(order,0,0,nodePts[2],nodePts[3]) +
           cx10*B10_cube(nodePts[2], nodePts[3]) +
           cx20*B20_cube(nodePts[2], nodePts[3]) +
           cx30*B30_cube(nodePts[2], nodePts[3]) +
@@ -1149,23 +1150,23 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
         swap2(cy002, cy001);
         swap2(cz002, cz001);
       }
-      Real cx102 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + 0];
-      Real cy102 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + 1];
-      Real cz102 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + 2];
-      Real cx201 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-      Real cy201 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-      Real cz201 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+      Real cx201 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + 0];
+      Real cy201 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + 1];
+      Real cz201 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + 2];
+      Real cx102 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+      Real cy102 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+      Real cz102 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
       if (e4_flip > 0) {
         swap2(cx102, cx201);
         swap2(cy102, cy201);
         swap2(cz102, cz201);
       }
-      Real cx012 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + 0];
-      Real cy012 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + 1];
-      Real cz012 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + 2];
-      Real cx021 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-      Real cy021 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-      Real cz021 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+      Real cx021 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + 0];
+      Real cy021 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + 1];
+      Real cz021 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + 2];
+      Real cx012 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+      Real cy012 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+      Real cz012 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
       if (e5_flip > 0) {
         swap2(cx012, cx021);
         swap2(cy012, cy021);
