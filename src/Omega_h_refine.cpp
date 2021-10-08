@@ -151,6 +151,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
     old_lows2new_lows = old_ents2new_ents;
   }
   printf("after 1 refine, has %d tets", new_mesh.nregions());
+  int wait=0; while(wait);
 
   *mesh = new_mesh;
 }
