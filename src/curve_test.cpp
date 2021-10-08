@@ -352,34 +352,23 @@ void test_sim_kova_quadratic(Library *lib) {
 
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
-  build_quadratic_wireframe_3d(&mesh, &wireframe_mesh);
-  std::string vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet_wireframe.vtu";
+  build_cubic_wireframe_3d(&mesh, &wireframe_mesh);
+  std::string vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim-123tet_wireframe.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
-
   auto curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
-  build_quadratic_curveVtk(&mesh, &curveVtk_mesh);
-  vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet_curveVtk.vtu";
+  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh);
+  vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim-123tet_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
-
-  elevate_curve_order_2to3(&mesh);
 
   for (LO i = 0; i <= mesh.dim(); ++i) {
     if (!mesh.has_tag(i, "global")) {
       mesh.add_tag(i, "global", 1, Omega_h::GOs(mesh.nents(i), 0, 1));
     }
   }
-  /*
-  if (!mesh.has_tag(0, "global")) {
-    mesh.add_tag(0, "global", 1, Omega_h::GOs(mesh.nverts(), 0, 1));
-  }
-  if (!mesh.has_tag(2, "global")) {
-    mesh.add_tag(2, "global", 1, Omega_h::GOs(mesh.nfaces(), 0, 1));
-  }
-  */
   AdaptOpts opts(&mesh);
   auto nelems = mesh.nglobal_ents(mesh.dim());
-  auto desired_group_nelems = 200;
+  auto desired_group_nelems = 5000;
   while (nelems < desired_group_nelems) {
     if (!mesh.has_tag(0, "metric")) {
       add_implied_metric_tag(&mesh);
@@ -396,7 +385,7 @@ void test_sim_kova_quadratic(Library *lib) {
     nelems = mesh.nglobal_ents(mesh.dim());
     std::cout << "mesh now has " << nelems << " total elements\n";
   }
-  vtk::write_parallel("/lore/joshia5/Meshes/curved/kova_refine_200.vtk", &mesh, 2);
+  vtk::write_parallel("/lore/joshia5/Meshes/curved/kova_refined.vtk", &mesh, 2);
   /*
   elevate_curve_order_3to4(&mesh);
   auto quartic_curveVtk_mesh = Mesh(lib);
@@ -546,8 +535,8 @@ int main(int argc, char** argv) {
   //test_disc(&lib);
   //test_2tri_square(&lib);
   //test_linearTri_toCubicCircle(&lib, path_2d, path_2d_vtk);
-  test_sim_quadToCubic(&lib, path_3d_g, path_3d_m, path_3d_vtk);
-  //test_sim_kova_quadratic(&lib);
+  //test_sim_quadToCubic(&lib, path_3d_g, path_3d_m, path_3d_vtk);
+  test_sim_kova_quadratic(&lib);
 
   return 0;
 }
