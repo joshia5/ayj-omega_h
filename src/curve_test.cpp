@@ -241,7 +241,7 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
   while (nelems < desired_group_nelems) {
     if (!mesh.has_tag(0, "metric")) {
       add_implied_metric_tag(&mesh);
-      adapt(&mesh, opts);
+      adapt_refine(&mesh, opts);
       nelems = mesh.nglobal_ents(mesh.dim());
       std::cout << "mesh now has " << nelems << " total elements\n";
     }
@@ -250,7 +250,7 @@ void test_linearTri_toCubicCircle(Library *lib, const std::string &mesh_file,
     auto const metric_ncomps =
       divide_no_remainder(metrics.size(), mesh.nverts());
     mesh.add_tag(0, "metric", metric_ncomps, metrics);
-    adapt(&mesh, opts);
+    adapt_refine(&mesh, opts);
     nelems = mesh.nglobal_ents(mesh.dim());
     std::cout << "mesh now has " << nelems << " total elements\n";
   }
@@ -294,7 +294,7 @@ void test_sim_quadToCubic(Library *lib, const std::string &model_file,
   while (nelems < desired_group_nelems) {
     if (!mesh.has_tag(0, "metric")) {
       add_implied_metric_tag(&mesh);
-      adapt(&mesh, opts);
+      adapt_refine(&mesh, opts);
       nelems = mesh.nglobal_ents(mesh.dim());
       std::cout << "mesh now has " << nelems << " total elements\n";
     }
@@ -383,7 +383,7 @@ void test_sim_kova_quadratic(Library *lib) {
   while (nelems < desired_group_nelems) {
     if (!mesh.has_tag(0, "metric")) {
       add_implied_metric_tag(&mesh);
-      adapt(&mesh, opts);
+      adapt_refine(&mesh, opts);
       nelems = mesh.nglobal_ents(mesh.dim());
       std::cout << "mesh now has " << nelems << " total elements\n";
     }
@@ -445,7 +445,7 @@ void test_disc(Library *lib) {
   while (nelems < desired_group_nelems) {
     if (!mesh.has_tag(0, "metric")) {
       add_implied_metric_tag(&mesh);
-      adapt(&mesh, opts);
+      adapt_refine(&mesh, opts);
       nelems = mesh.nglobal_ents(mesh.dim());
       std::cout << "mesh now has " << nelems << " total elements\n";
     }

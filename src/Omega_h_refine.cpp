@@ -145,13 +145,13 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
           build_cubic_curveVtk_3d(&new_mesh, &cubic_curveVtk_mesh, 5);
           std::string vtuPath = "/users/joshia5/Meshes/curved/cubeCutCircleRefine_cubic_curveVtk.vtu";
           vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
+          int wait=0; while(wait);
         }
       }
     }
     old_lows2new_lows = old_ents2new_ents;
   }
   printf("after 1 refine, has %d tets", new_mesh.nregions());
-  int wait=0; while(wait);
 
   *mesh = new_mesh;
 }
