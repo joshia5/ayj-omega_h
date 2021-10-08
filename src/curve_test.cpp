@@ -314,6 +314,8 @@ void test_sim_quadToCubic(Library *lib, const std::string &model_file,
   vtuPath = "/users/joshia5/Meshes/curved/refined_box_circleCut-30reg_cubic_wireframe.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe_mesh, 1);
 
+  vtk::write_parallel("/users/joshia5/Meshes/curved/refined_box_circleCut.vtk", &mesh, mesh.dim());
+
 /*
   auto cubic_curveVtk_mesh = Mesh(comm->library());
   cubic_curveVtk_mesh.set_comm(comm);
