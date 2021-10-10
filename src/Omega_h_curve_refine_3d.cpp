@@ -521,11 +521,9 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
     printf("key %d split into %d faces \n", key, end-start+1);
 
     LO const new_faces_per_old_face = 2;
-    //OMEGA_H_CHECK (((end-start-1) % 2) == 0);
 
     for (LO i = 0; i <= keys2nold_faces[key]; ++i) {
     //TODO create ctrl pts for new produced (non-split faces)
-    //for (LO i = 0; i <= (end-start-1)/new_faces_per_old_face; ++i)
       auto new_f0 = prods2new[start + (i*new_faces_per_old_face) + 0];
       auto new_f1 = prods2new[start + (i*new_faces_per_old_face) + 1];
 
@@ -551,117 +549,8 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
           break;
         }
       }
-      printf("for old face %d , oldKeyEdge %d, found old no-key vert %d\n",
+      printf("for old face %d, oldKeyEdge %d, found old no-key vert %d\n",
           old_face, old_key_edge, old_vert_noKey);
-
-      I8 e0_flip = -1;
-      I8 e1_flip = -1;
-      I8 e2_flip = -1;
-      LO v1 = v1_old_face;
-      LO v2 = v2_old_face;
-      auto e0v0_old_face = old_ev2v[old_face_e0*2 + 0];
-      auto e0v1 = old_ev2v[old_face_e0*2 + 1];
-      auto e1v0_old_face = old_ev2v[old_face_e1*2 + 0];
-      auto e1v1 = old_ev2v[old_face_e1*2 + 1];
-      auto e2v0_old_face = old_ev2v[old_face_e2*2 + 0];
-      auto e2v1 = old_ev2v[old_face_e2*2 + 1];
-      if ((e0v0_old_face == v1) && (e0v1 == v0_old_face)) {
-        e0_flip = 1;
-      }
-      else {
-        OMEGA_H_CHECK((e0v0_old_face == v0_old_face) && (e0v1 == v1));
-      }
-      if ((e1v0_old_face == v2) && (e1v1 == v1)) {
-        e1_flip = 1;
-      }
-      else {
-        OMEGA_H_CHECK((e1v0_old_face == v1) && (e1v1 == v2));
-      }
-      if ((e2v0_old_face == v0_old_face) && (e2v1 == v2)) {
-        e2_flip = 1;
-      }
-      else {
-        OMEGA_H_CHECK((e2v0_old_face == v2) && (e2v1 == v0_old_face));
-      }
-
-      Real cx00 = old_vertCtrlPts[v0_old_face*dim + 0];
-      Real cy00 = old_vertCtrlPts[v0_old_face*dim + 1];
-      Real cz00 = old_vertCtrlPts[v0_old_face*dim + 2];
-      Real cx30 = old_vertCtrlPts[v1*dim + 0];
-      Real cy30 = old_vertCtrlPts[v1*dim + 1];
-      Real cz30 = old_vertCtrlPts[v1*dim + 2];
-      Real cx03 = old_vertCtrlPts[v2*dim + 0];
-      Real cy03 = old_vertCtrlPts[v2*dim + 1];
-      Real cz03 = old_vertCtrlPts[v2*dim + 2];
-
-      auto pts_per_edge = n_edge_pts;
-      Real cx10 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + 0];
-      Real cy10 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + 1];
-      Real cz10 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + 2];
-      Real cx20 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-      Real cy20 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-      Real cz20 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
-      if (e0_flip > 0) {
-        auto tempx = cx10;
-        auto tempy = cy10;
-        auto tempz = cz10;
-        cx10 = cx20;
-        cy10 = cy20;
-        cz10 = cz20;
-        cx20 = tempx;
-        cy20 = tempy;
-        cz20 = tempz;
-      }
-
-      Real cx21 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 0];
-      Real cy21 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 1];
-      Real cz21 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 2];
-      Real cx12 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-      Real cy12 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-      Real cz12 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
-      if (e1_flip > 0) {
-        auto tempx = cx21;
-        auto tempy = cy21;
-        auto tempz = cz21;
-        cx21 = cx12;
-        cy21 = cy12;
-        cz21 = cz12;
-        cx12 = tempx;
-        cy12 = tempy;
-        cz12 = tempz;
-      }
-
-      Real cx02 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + 0];
-      Real cy02 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + 1];
-      Real cz02 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + 2];
-      Real cx01 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-      Real cy01 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-      Real cz01 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
-      if (e2_flip > 0) {
-        auto tempx = cx02;
-        auto tempy = cy02;
-        auto tempz = cz02;
-        cx02 = cx01;
-        cy02 = cy01;
-        cz02 = cz01;
-        cx01 = tempx;
-        cy01 = tempy;
-        cz01 = tempz;
-      }
-
-      Real cx11 = old_faceCtrlPts[old_face*dim + 0];
-      Real cy11 = old_faceCtrlPts[old_face*dim + 1];
-      Real cz11 = old_faceCtrlPts[old_face*dim + 2];
-      auto c00 = vector_3(cx00, cy00, cz00);
-      auto c10 = vector_3(cx10, cy10, cz10);
-      auto c20 = vector_3(cx20, cy20, cz20);
-      auto c30 = vector_3(cx30, cy30, cz30);
-      auto c21 = vector_3(cx21, cy21, cz21);
-      auto c12 = vector_3(cx12, cy12, cz12);
-      auto c03 = vector_3(cx03, cy03, cz03);
-      auto c02 = vector_3(cx02, cy02, cz02);
-      auto c01 = vector_3(cx01, cy01, cz01);
-      auto c11 = vector_3(cx11, cy11, cz11);
 
       printf("ok1, new faces f0 f1 %d %d oldface %d\n", new_f0, new_f1, old_face);
       auto nodePts = cubic_face_xi_values
@@ -676,24 +565,11 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
       //for f0
       {
         //get the interp points
-        Write<Real> p11_w(3);
-        for (LO k = 0; k < 3; ++k) {
-          p11_w[k] = c00[k]*Bij(order, 0, 0, nodePts[0], nodePts[1]) +
-                     c10[k]*Bij(order, 1, 0, nodePts[0], nodePts[1]) +
-                     c20[k]*Bij(order, 2, 0, nodePts[0], nodePts[1]) +
-                     c30[k]*Bij(order, 3, 0, nodePts[0], nodePts[1]) +
-                     c21[k]*Bij(order, 2, 1, nodePts[0], nodePts[1]) +
-                     c12[k]*Bij(order, 1, 2, nodePts[0], nodePts[1]) +
-                     c03[k]*Bij(order, 0, 3, nodePts[0], nodePts[1]) +
-                     c02[k]*Bij(order, 0, 2, nodePts[0], nodePts[1]) +
-                     c01[k]*Bij(order, 0, 1, nodePts[0], nodePts[1]) +
-                     c11[k]*Bij(order, 1, 1, nodePts[0], nodePts[1]);
-        }
-
+        auto p11 = face_parametricToParent_3d(order, old_face, old_ev2v, old_fe2e,
+          old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, Reals({nodePts[0], nodePts[1]}), old_fv2v);
         //use these as interp pts to find ctrl pt in new face
-        //inquire known vert and edge ctrl pts
         auto newface_c11 = face_interpToCtrlPt_3d(order, new_f0, new_ev2v, new_fe2e,
-          new_vertCtrlPts, new_edgeCtrlPts, Reals(p11_w), new_fv2v);
+          new_vertCtrlPts, new_edgeCtrlPts, p11, new_fv2v);
         for (LO k = 0; k < 3; ++k) {
           face_ctrlPts[new_f0*n_face_pts*dim + k] = newface_c11[k];
           //TODO mult pts per face
@@ -704,24 +580,11 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
       //for f1
       {
         //get the interp point
-        Write<Real> p11_w(3);
-        for (LO k = 0; k < 3; ++k) {
-          p11_w[k] = c00[k]*Bij(order, 0, 0, nodePts[2], nodePts[3]) +
-                     c10[k]*Bij(order, 1, 0, nodePts[2], nodePts[3]) +
-                     c20[k]*Bij(order, 2, 0, nodePts[2], nodePts[3]) +
-                     c30[k]*Bij(order, 3, 0, nodePts[2], nodePts[3]) +
-                     c21[k]*Bij(order, 2, 1, nodePts[2], nodePts[3]) +
-                     c12[k]*Bij(order, 1, 2, nodePts[2], nodePts[3]) +
-                     c03[k]*Bij(order, 0, 3, nodePts[2], nodePts[3]) +
-                     c02[k]*Bij(order, 0, 2, nodePts[2], nodePts[3]) +
-                     c01[k]*Bij(order, 0, 1, nodePts[2], nodePts[3]) +
-                     c11[k]*Bij(order, 1, 1, nodePts[2], nodePts[3]);
-        }
-
+        auto p11 = face_parametricToParent_3d(order, old_face, old_ev2v, old_fe2e,
+          old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, Reals({nodePts[2], nodePts[3]}), old_fv2v);
         //use these as interp pts to find ctrl pt in new face
-        //inquire known vert and edge ctrl pts
         auto newface_c11 = face_interpToCtrlPt_3d(order, new_f1, new_ev2v, new_fe2e,
-          new_vertCtrlPts, new_edgeCtrlPts, Reals(p11_w), new_fv2v);
+          new_vertCtrlPts, new_edgeCtrlPts, p11, new_fv2v);
         for (LO k = 0; k < 3; ++k) {
           face_ctrlPts[new_f1*n_face_pts*dim + k] = newface_c11[k];
           //TODO mult pts per face
@@ -937,14 +800,6 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
                  c111[j]*Bijk(order,1,1,1,nodePt[0],nodePt[1],nodePt[2]) +
                  c011[j]*Bijk(order,0,1,1,nodePt[0],nodePt[1],nodePt[2]);
       }
-      for (LO j = 0; j < dim; ++j) {
-        printf("newface vert dim=%d coords %f %f %f, p11 coord %f\n", j,
-               new_coords[newface_v0*3+j], new_coords[newface_v1*3+j],
-               new_coords[newface_v2*3+j], p11[j]);
-        //printf("old rgn vert dim=%d coords %f %f %f %f\n", j,
-          //     old_coords[old_rgn_v0*3+j], old_coords[old_rgn_v1*3+j],
-            //   old_coords[old_rgn_v2*3+j], old_coords[old_rgn_v3*3+j]);
-      }
       auto c11 = face_interpToCtrlPt_3d(order, newface, new_ev2v, new_fe2e,
           new_vertCtrlPts, new_edgeCtrlPts, Reals(p11), new_fv2v);
       printf("newface ctrlPt %f %f %f\n", c11[0], c11[1], c11[2]);
@@ -955,9 +810,10 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
           old_coords[old_ev2v[old_key_edge*2 + 1]*dim + 0],
           old_coords[old_ev2v[old_key_edge*2 + 1]*dim + 1],
           old_coords[old_ev2v[old_key_edge*2 + 1]*dim + 2]);
-      face_ctrlPts[newface*n_face_pts*dim + 0] = c11[0];
-      face_ctrlPts[newface*n_face_pts*dim + 1] = c11[1];
-      face_ctrlPts[newface*n_face_pts*dim + 2] = c11[2];
+      for (LO j = 0; j < dim; ++j) {
+        face_ctrlPts[newface*n_face_pts*dim + j] = c11[j];
+      }
+      //TODO higher than order3
     }
   };
   parallel_for(nkeys, std::move(create_crv_prod_faces),
