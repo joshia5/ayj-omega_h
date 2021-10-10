@@ -266,7 +266,7 @@ OMEGA_H_DEVICE LO edge_is_flip(LO const e0v0, LO const e0v1, LO const v0, LO con
   return is_flip;
 }
 
-OMEGA_H_DEVICE Reals calc_cubic_face_ctrlPt_3d(LO const newface, LOs new_ev2v, LOs new_fe2e,
+OMEGA_H_DEVICE Reals face_interpToCtrlPt_3d(LO const order, LO const newface, LOs new_ev2v, LOs new_fe2e,
     Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Reals p11, LOs new_fv2v) {
   LO const dim=3;
   LO const pts_per_edge=2;
@@ -349,40 +349,35 @@ OMEGA_H_DEVICE Reals calc_cubic_face_ctrlPt_3d(LO const newface, LOs new_ev2v, L
     swap2(newface_cy01, newface_cy02);
     swap2(newface_cz01, newface_cz02);
   }
+  auto newface_c00 = vector_3(newface_cx00, newface_cy00, newface_cz00);
+  auto newface_c10 = vector_3(newface_cx10, newface_cy10, newface_cz10);
+  auto newface_c20 = vector_3(newface_cx20, newface_cy20, newface_cz20);
+  auto newface_c30 = vector_3(newface_cx30, newface_cy30, newface_cz30);
+  auto newface_c21 = vector_3(newface_cx21, newface_cy21, newface_cz21);
+  auto newface_c12 = vector_3(newface_cx12, newface_cy12, newface_cz12);
+  auto newface_c03 = vector_3(newface_cx03, newface_cy03, newface_cz03);
+  auto newface_c02 = vector_3(newface_cx02, newface_cy02, newface_cz02);
+  auto newface_c01 = vector_3(newface_cx01, newface_cy01, newface_cz01);
 
   auto xi_11 = xi_11_cube();
-  Real newface_cx11 = (p11[0] - newface_cx00*B00_cube(xi_11[0], xi_11[1]) -
-      newface_cx10*B10_cube(xi_11[0], xi_11[1]) -
-      newface_cx20*B20_cube(xi_11[0], xi_11[1]) -
-      newface_cx30*B30_cube(xi_11[0], xi_11[1]) -
-      newface_cx21*B21_cube(xi_11[0], xi_11[1]) -
-      newface_cx12*B12_cube(xi_11[0], xi_11[1]) -
-      newface_cx03*B03_cube(xi_11[0], xi_11[1]) -
-      newface_cx02*B02_cube(xi_11[0], xi_11[1]) -
-      newface_cx01*B01_cube(xi_11[0], xi_11[1]))/B11_cube(xi_11[0], xi_11[1]);
-  Real newface_cy11 = (p11[1] - newface_cy00*B00_cube(xi_11[0], xi_11[1]) -
-      newface_cy10*B10_cube(xi_11[0], xi_11[1]) -
-      newface_cy20*B20_cube(xi_11[0], xi_11[1]) -
-      newface_cy30*B30_cube(xi_11[0], xi_11[1]) -
-      newface_cy21*B21_cube(xi_11[0], xi_11[1]) -
-      newface_cy12*B12_cube(xi_11[0], xi_11[1]) -
-      newface_cy03*B03_cube(xi_11[0], xi_11[1]) -
-      newface_cy02*B02_cube(xi_11[0], xi_11[1]) -
-      newface_cy01*B01_cube(xi_11[0], xi_11[1]))/B11_cube(xi_11[0], xi_11[1]);
-  Real newface_cz11 = (p11[2] - newface_cz00*B00_cube(xi_11[0], xi_11[1]) -
-      newface_cz10*B10_cube(xi_11[0], xi_11[1]) -
-      newface_cz20*B20_cube(xi_11[0], xi_11[1]) -
-      newface_cz30*B30_cube(xi_11[0], xi_11[1]) -
-      newface_cz21*B21_cube(xi_11[0], xi_11[1]) -
-      newface_cz12*B12_cube(xi_11[0], xi_11[1]) -
-      newface_cz03*B03_cube(xi_11[0], xi_11[1]) -
-      newface_cz02*B02_cube(xi_11[0], xi_11[1]) -
-      newface_cz01*B01_cube(xi_11[0], xi_11[1]))/B11_cube(xi_11[0], xi_11[1]);
-  Write<Real> new_c11(3);
-  new_c11[0] = newface_cx11;
-  new_c11[1] = newface_cy11;
-  new_c11[2] = newface_cz11;
-  return Reals(new_c11);
+  Write<Real> newface_c11_w(3);
+  for (LO k = 0; k < 3; ++k) {
+    newface_c11_w[k] = (p11[k] -
+        newface_c00[k]*Bij(order, 0, 0, xi_11[0], xi_11[1]) -
+        newface_c10[k]*Bij(order, 1, 0, xi_11[0], xi_11[1]) -
+        newface_c20[k]*Bij(order, 2, 0, xi_11[0], xi_11[1]) -
+        newface_c30[k]*Bij(order, 3, 0, xi_11[0], xi_11[1]) -
+        newface_c21[k]*Bij(order, 2, 1, xi_11[0], xi_11[1]) -
+        newface_c12[k]*Bij(order, 1, 2, xi_11[0], xi_11[1]) -
+        newface_c03[k]*Bij(order, 0, 3, xi_11[0], xi_11[1]) -
+        newface_c02[k]*Bij(order, 0, 2, xi_11[0], xi_11[1]) -
+        newface_c01[k]*Bij(order, 0, 1, xi_11[0], xi_11[1]))/
+      Bij(order, 1, 1, xi_11[0], xi_11[1]);
+
+    //TODO mult pts per face
+  }
+
+  return Reals(newface_c11_w);
 }
 
 //Reals OMEGA_H_DEVICE coordsFromXi(Int ent_dim, 

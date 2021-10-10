@@ -692,117 +692,10 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
 
         //use these as interp pts to find ctrl pt in new face
         //inquire known vert and edge ctrl pts
-        LO newface = new_f0;
-        I8 newface_e0_flip = -1;
-        I8 newface_e1_flip = -1;
-        I8 newface_e2_flip = -1;
-        LO newface_v0 = new_fv2v[newface*3 + 0];
-        LO newface_v1 = new_fv2v[newface*3 + 1];
-        LO newface_v2 = new_fv2v[newface*3 + 2];
-        LO newface_e0 = new_fe2e[newface*3 + 0];
-        LO newface_e1 = new_fe2e[newface*3 + 1];
-        LO newface_e2 = new_fe2e[newface*3 + 2];
-        auto newface_e0v0 = new_ev2v[newface_e0*2 + 0];
-        auto newface_e0v1 = new_ev2v[newface_e0*2 + 1];
-        auto newface_e1v0 = new_ev2v[newface_e1*2 + 0];
-        auto newface_e1v1 = new_ev2v[newface_e1*2 + 1];
-        auto newface_e2v0 = new_ev2v[newface_e2*2 + 0];
-        auto newface_e2v1 = new_ev2v[newface_e2*2 + 1];
-        if ((newface_e0v0 == newface_v1) && (newface_e0v1 == newface_v0)) {
-          newface_e0_flip = 1;
-        }
-        else {
-          OMEGA_H_CHECK((newface_e0v0 == newface_v0) && (newface_e0v1 == newface_v1));
-        }
-        if ((newface_e1v0 == newface_v2) && (newface_e1v1 == newface_v1)) {
-          newface_e1_flip = 1;
-        }
-        else {
-          OMEGA_H_CHECK((newface_e1v0 == newface_v1) && (newface_e1v1 == newface_v2));
-        }
-        if ((newface_e2v0 == newface_v0) && (newface_e2v1 == newface_v2)) {
-          newface_e2_flip = 1;
-        }
-        else {
-          OMEGA_H_CHECK((newface_e2v0 == newface_v2) && (newface_e2v1 == newface_v0));
-        }
-
-        printf("ok1\n");
-        Real newface_cx00 = new_vertCtrlPts[newface_v0*dim + 0];
-        Real newface_cy00 = new_vertCtrlPts[newface_v0*dim + 1];
-        Real newface_cz00 = new_vertCtrlPts[newface_v0*dim + 2];
-        Real newface_cx30 = new_vertCtrlPts[newface_v1*dim + 0];
-        Real newface_cy30 = new_vertCtrlPts[newface_v1*dim + 1];
-        Real newface_cz30 = new_vertCtrlPts[newface_v1*dim + 2];
-        Real newface_cx03 = new_vertCtrlPts[newface_v2*dim + 0];
-        Real newface_cy03 = new_vertCtrlPts[newface_v2*dim + 1];
-        Real newface_cz03 = new_vertCtrlPts[newface_v2*dim + 2];
-        printf("ok2\n");
-
-        Real newface_cx10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 0];
-        Real newface_cy10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 1];
-        Real newface_cz10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 2];
-        Real newface_cx20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-        Real newface_cy20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-        Real newface_cz20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
-        if (newface_e0_flip > 0) {
-          swap2(newface_cx10, newface_cx20);
-          swap2(newface_cy10, newface_cy20);
-          swap2(newface_cz10, newface_cz20);
-        }
-
-        printf("ok3\n");
-        Real newface_cx21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 0];
-        Real newface_cy21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 1];
-        Real newface_cz21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 2];
-        Real newface_cx12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-        Real newface_cy12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-        Real newface_cz12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
-        if (newface_e1_flip > 0) {
-          swap2(newface_cx21, newface_cx12);
-          swap2(newface_cy21, newface_cy12);
-          swap2(newface_cz21, newface_cz12);
-        }
-        printf("ok4\n");
-
-        Real newface_cx02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 0];
-        Real newface_cy02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 1];
-        Real newface_cz02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 2];
-        Real newface_cx01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-        Real newface_cy01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-        Real newface_cz01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
-        if (newface_e2_flip > 0) {
-          swap2(newface_cx01, newface_cx02);
-          swap2(newface_cy01, newface_cy02);
-          swap2(newface_cz01, newface_cz02);
-        }
-        printf("ok5\n");
-        auto newface_c00 = vector_3(newface_cx00, newface_cy00, newface_cz00);
-        auto newface_c10 = vector_3(newface_cx10, newface_cy10, newface_cz10);
-        auto newface_c20 = vector_3(newface_cx20, newface_cy20, newface_cz20);
-        auto newface_c30 = vector_3(newface_cx30, newface_cy30, newface_cz30);
-        auto newface_c21 = vector_3(newface_cx21, newface_cy21, newface_cz21);
-        auto newface_c12 = vector_3(newface_cx12, newface_cy12, newface_cz12);
-        auto newface_c03 = vector_3(newface_cx03, newface_cy03, newface_cz03);
-        auto newface_c02 = vector_3(newface_cx02, newface_cy02, newface_cz02);
-        auto newface_c01 = vector_3(newface_cx01, newface_cy01, newface_cz01);
-
-        auto xi_11 = xi_11_cube();
-        Write<Real> newface_c11_w(3);
+        auto newface_c11 = face_interpToCtrlPt_3d(order, new_f0, new_ev2v, new_fe2e,
+          new_vertCtrlPts, new_edgeCtrlPts, Reals(p11_w), new_fv2v);
         for (LO k = 0; k < 3; ++k) {
-          newface_c11_w[k] = (p11_w[k] -
-            newface_c00[k]*Bij(order, 0, 0, xi_11[0], xi_11[1]) -
-            newface_c10[k]*Bij(order, 1, 0, xi_11[0], xi_11[1]) -
-            newface_c20[k]*Bij(order, 2, 0, xi_11[0], xi_11[1]) -
-            newface_c30[k]*Bij(order, 3, 0, xi_11[0], xi_11[1]) -
-            newface_c21[k]*Bij(order, 2, 1, xi_11[0], xi_11[1]) -
-            newface_c12[k]*Bij(order, 1, 2, xi_11[0], xi_11[1]) -
-            newface_c03[k]*Bij(order, 0, 3, xi_11[0], xi_11[1]) -
-            newface_c02[k]*Bij(order, 0, 2, xi_11[0], xi_11[1]) -
-            newface_c01[k]*Bij(order, 0, 1, xi_11[0], xi_11[1]))/
-            Bij(order, 1, 1, xi_11[0], xi_11[1]);
-
-          face_ctrlPts[newface*n_face_pts*dim + k] = newface_c11_w[k];
+          face_ctrlPts[new_f0*n_face_pts*dim + k] = newface_c11[k];
           //TODO mult pts per face
         }
 
@@ -827,112 +720,10 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
 
         //use these as interp pts to find ctrl pt in new face
         //inquire known vert and edge ctrl pts
-        LO newface = new_f1;
-        I8 newface_e0_flip = -1;
-        I8 newface_e1_flip = -1;
-        I8 newface_e2_flip = -1;
-        LO newface_v0 = new_fv2v[newface*3 + 0];
-        LO newface_v1 = new_fv2v[newface*3 + 1];
-        LO newface_v2 = new_fv2v[newface*3 + 2];
-        LO newface_e0 = new_fe2e[newface*3 + 0];
-        LO newface_e1 = new_fe2e[newface*3 + 1];
-        LO newface_e2 = new_fe2e[newface*3 + 2];
-        auto newface_e0v0 = new_ev2v[newface_e0*2 + 0];
-        auto newface_e0v1 = new_ev2v[newface_e0*2 + 1];
-        auto newface_e1v0 = new_ev2v[newface_e1*2 + 0];
-        auto newface_e1v1 = new_ev2v[newface_e1*2 + 1];
-        auto newface_e2v0 = new_ev2v[newface_e2*2 + 0];
-        auto newface_e2v1 = new_ev2v[newface_e2*2 + 1];
-        if ((newface_e0v0 == newface_v1) && (newface_e0v1 == newface_v0)) {
-          newface_e0_flip = 1;
-        }
-        else {
-          OMEGA_H_CHECK((newface_e0v0 == newface_v0) && (newface_e0v1 == newface_v1));
-        }
-        if ((newface_e1v0 == newface_v2) && (newface_e1v1 == newface_v1)) {
-          newface_e1_flip = 1;
-        }
-        else {
-          OMEGA_H_CHECK((newface_e1v0 == newface_v1) && (newface_e1v1 == newface_v2));
-        }
-        if ((newface_e2v0 == newface_v0) && (newface_e2v1 == newface_v2)) {
-          newface_e2_flip = 1;
-        }
-        else {
-          OMEGA_H_CHECK((newface_e2v0 == newface_v2) && (newface_e2v1 == newface_v0));
-        }
-
-        Real newface_cx00 = new_vertCtrlPts[newface_v0*dim + 0];
-        Real newface_cy00 = new_vertCtrlPts[newface_v0*dim + 1];
-        Real newface_cz00 = new_vertCtrlPts[newface_v0*dim + 2];
-        Real newface_cx30 = new_vertCtrlPts[newface_v1*dim + 0];
-        Real newface_cy30 = new_vertCtrlPts[newface_v1*dim + 1];
-        Real newface_cz30 = new_vertCtrlPts[newface_v1*dim + 2];
-        Real newface_cx03 = new_vertCtrlPts[newface_v2*dim + 0];
-        Real newface_cy03 = new_vertCtrlPts[newface_v2*dim + 1];
-        Real newface_cz03 = new_vertCtrlPts[newface_v2*dim + 2];
-
-        Real newface_cx10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 0];
-        Real newface_cy10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 1];
-        Real newface_cz10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 2];
-        Real newface_cx20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-        Real newface_cy20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-        Real newface_cz20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
-        if (newface_e0_flip > 0) {
-          swap2(newface_cx10, newface_cx20);
-          swap2(newface_cy10, newface_cy20);
-          swap2(newface_cz10, newface_cz20);
-        }
-
-        Real newface_cx21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 0];
-        Real newface_cy21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 1];
-        Real newface_cz21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 2];
-        Real newface_cx12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-        Real newface_cy12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-        Real newface_cz12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
-        if (newface_e1_flip > 0) {
-          swap2(newface_cx21, newface_cx12);
-          swap2(newface_cy21, newface_cy12);
-          swap2(newface_cz21, newface_cz12);
-        }
-
-        Real newface_cx02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 0];
-        Real newface_cy02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 1];
-        Real newface_cz02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 2];
-        Real newface_cx01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-        Real newface_cy01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-        Real newface_cz01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
-        if (newface_e2_flip > 0) {
-          swap2(newface_cx01, newface_cx02);
-          swap2(newface_cy01, newface_cy02);
-          swap2(newface_cz01, newface_cz02);
-        }
-        auto newface_c00 = vector_3(newface_cx00, newface_cy00, newface_cz00);
-        auto newface_c10 = vector_3(newface_cx10, newface_cy10, newface_cz10);
-        auto newface_c20 = vector_3(newface_cx20, newface_cy20, newface_cz20);
-        auto newface_c30 = vector_3(newface_cx30, newface_cy30, newface_cz30);
-        auto newface_c21 = vector_3(newface_cx21, newface_cy21, newface_cz21);
-        auto newface_c12 = vector_3(newface_cx12, newface_cy12, newface_cz12);
-        auto newface_c03 = vector_3(newface_cx03, newface_cy03, newface_cz03);
-        auto newface_c02 = vector_3(newface_cx02, newface_cy02, newface_cz02);
-        auto newface_c01 = vector_3(newface_cx01, newface_cy01, newface_cz01);
-
-        auto xi_11 = xi_11_cube();
-        Write<Real> newface_c11_w(3);
+        auto newface_c11 = face_interpToCtrlPt_3d(order, new_f1, new_ev2v, new_fe2e,
+          new_vertCtrlPts, new_edgeCtrlPts, Reals(p11_w), new_fv2v);
         for (LO k = 0; k < 3; ++k) {
-          newface_c11_w[k] = (p11_w[k] -
-            newface_c00[k]*Bij(order, 0, 0, xi_11[0], xi_11[1]) -
-            newface_c10[k]*Bij(order, 1, 0, xi_11[0], xi_11[1]) -
-            newface_c20[k]*Bij(order, 2, 0, xi_11[0], xi_11[1]) -
-            newface_c30[k]*Bij(order, 3, 0, xi_11[0], xi_11[1]) -
-            newface_c21[k]*Bij(order, 2, 1, xi_11[0], xi_11[1]) -
-            newface_c12[k]*Bij(order, 1, 2, xi_11[0], xi_11[1]) -
-            newface_c03[k]*Bij(order, 0, 3, xi_11[0], xi_11[1]) -
-            newface_c02[k]*Bij(order, 0, 2, xi_11[0], xi_11[1]) -
-            newface_c01[k]*Bij(order, 0, 1, xi_11[0], xi_11[1]))/
-            Bij(order, 1, 1, xi_11[0], xi_11[1]);
-
-          face_ctrlPts[newface*n_face_pts*dim + k] = newface_c11_w[k];
+          face_ctrlPts[new_f1*n_face_pts*dim + k] = newface_c11[k];
           //TODO mult pts per face
         }
 
@@ -1025,18 +816,15 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
         auto e2v0 = old_ev2v[old_rgn_e2*2 + 0];
         auto e2v1 = old_ev2v[old_rgn_e2*2 + 1];
         e2_flip = edge_is_flip(e2v0, e2v1, old_rgn_v2, old_rgn_v0);
-        //TODO recheck the flip logic for e3,4,5
         auto e3v0 = old_ev2v[old_rgn_e3*2 + 0];
         auto e3v1 = old_ev2v[old_rgn_e3*2 + 1];
         e3_flip = edge_is_flip(e3v0, e3v1, old_rgn_v0, old_rgn_v3);
         auto e4v0 = old_ev2v[old_rgn_e4*2 + 0];
         auto e4v1 = old_ev2v[old_rgn_e4*2 + 1];
         e4_flip = edge_is_flip(e4v0, e4v1, old_rgn_v1, old_rgn_v3);
-        //e4_flip = edge_is_flip(e4v0, e4v1, old_rgn_v3, old_rgn_v1);
         auto e5v0 = old_ev2v[old_rgn_e5*2 + 0];
         auto e5v1 = old_ev2v[old_rgn_e5*2 + 1];
         e5_flip = edge_is_flip(e5v0, e5v1, old_rgn_v2, old_rgn_v3);
-        //e5_flip = edge_is_flip(e5v0, e5v1, old_rgn_v3, old_rgn_v2);
       }
       printf("oldrgn edge flips %d %d %d %d %d %d\n", e0_flip, e1_flip, e2_flip, e3_flip, e4_flip, e5_flip);
 
@@ -1157,7 +945,7 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
           //     old_coords[old_rgn_v0*3+j], old_coords[old_rgn_v1*3+j],
             //   old_coords[old_rgn_v2*3+j], old_coords[old_rgn_v3*3+j]);
       }
-      auto c11 = calc_cubic_face_ctrlPt_3d(newface, new_ev2v, new_fe2e,
+      auto c11 = face_interpToCtrlPt_3d(order, newface, new_ev2v, new_fe2e,
           new_vertCtrlPts, new_edgeCtrlPts, Reals(p11), new_fv2v);
       printf("newface ctrlPt %f %f %f\n", c11[0], c11[1], c11[2]);
       printf("verts of key edge (%f %f %f), (%f %f %f)\n",
