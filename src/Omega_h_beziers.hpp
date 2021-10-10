@@ -55,27 +55,37 @@ Real B21_quart(Real u, Real v);
 Real B12_quart(Real u, Real v);
 
 //TODO this fn will need to be called from both host and device
-constexpr OMEGA_H_INLINE Real 
+constexpr OMEGA_H_DEVICE Real 
 Bijk(LO const P, LO const i, LO const j, LO const k, Real const u,
      Real const v, Real const w) noexcept {
-  LO const l = P-i-j-k;
-  OMEGA_H_CHECK(l>=0);
-  Real const t = 1.0-u-v-w;
-  OMEGA_H_CHECK((t>=0.0) && (t<=1.0));
+  LO const l = P - i - j - k;
+  OMEGA_H_CHECK(l >= 0);
+  Real const t = 1.0 - u - v - w;
+  OMEGA_H_CHECK((t >= 0.0) && (t <= 1.0));
   return factorial(1.0*P)*
     std::pow(u,i)*std::pow(v,j)*std::pow(w,k)*std::pow(t,l)/(
     factorial(1.0*i)*factorial(1.0*j)*factorial(1.0*k)*factorial(1.0*l));
 }
 
-constexpr OMEGA_H_INLINE Real 
+constexpr OMEGA_H_DEVICE Real 
 Bij(LO const P, LO const i, LO const j, Real const u, Real const v) noexcept {
-  LO const k = P-i-j;
-  OMEGA_H_CHECK((k>=0) && (k<=P));
-  Real const w = 1.0-u-v;
-  OMEGA_H_CHECK((w>=0.0) && (w<=1.0));
+  LO const k = P - i - j;
+  OMEGA_H_CHECK((k >= 0) && (k <= P));
+  Real const w = 1.0 - u - v;
+  OMEGA_H_CHECK((w >= 0.0) && (w <= 1.0));
   return factorial(1.0*P)*
     std::pow(u,i)*std::pow(v,j)*std::pow(w,k)/(
     factorial(1.0*i)*factorial(1.0*j)*factorial(1.0*k));
+}
+
+constexpr OMEGA_H_DEVICE Real 
+Bi(LO const P, LO const i, Real const u) noexcept {
+  LO const j = P - i;
+  OMEGA_H_CHECK((j >= 0) && (j <= P));
+  Real const v = 1.0 - u;
+  OMEGA_H_CHECK((v >= 0.0) && (v <= 1.0));
+  return factorial(1.0*P)*
+    std::pow(u,i)*std::pow(v,j)/(factorial(1.0*i)*factorial(1.0*j));
 }
 
 Real xi_1_quad();
