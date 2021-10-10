@@ -368,7 +368,7 @@ void test_sim_kova_quadratic(Library *lib) {
   }
   AdaptOpts opts(&mesh);
   auto nelems = mesh.nglobal_ents(mesh.dim());
-  auto desired_group_nelems = 5000;
+  auto desired_group_nelems = 500;
   while (nelems < desired_group_nelems) {
     if (!mesh.has_tag(0, "metric")) {
       add_implied_metric_tag(&mesh);
