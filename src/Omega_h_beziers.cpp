@@ -182,48 +182,6 @@ Real B12_quart(Real u, Real v) {
   return 12.0*u*v*v*(1.0-u-v);
 }
 
-// Babushka chen points
-Real xi_1_quad() {
- return 0.5;
-}
-
-Real xi_1_cube() {
- return 0.2748043;
-}
-Real xi_2_cube() {
-  return 0.7251957;
-}
-
-Real xi_1_quart() {
- return 0.1693976;
-}
-Real xi_2_quart() {
- return 0.5;
-}
-Real xi_3_quart() {
- return 0.8306024;
-}
-
-Real xi_1_quint() {
- return 0.1133573;
-}
-Real xi_2_quint() {
- return 0.3568239;
-}
-Real xi_3_quint() {
- return 0.6431761;
-}
-Real xi_4_quint() {
-  return 0.8866427;
-}
-
-Reals xi_11_cube() {
-  Write<Real> xi_11(2);
-    xi_11[0] = 1.0/3.0;
-    xi_11[1] = 1.0/3.0;
- return Reals(xi_11);
-}
-
 void calc_quad_ctrlPts_from_interpPts(Mesh *mesh) {
   auto coords = mesh->coords();
   auto interpPts = mesh->get_ctrlPts(1);
