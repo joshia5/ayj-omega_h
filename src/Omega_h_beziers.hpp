@@ -2,6 +2,7 @@
 #define OMEGA_H_BEZIERS_HPP
 
 #include "Omega_h_array.hpp"
+#include "Omega_h_array_ops.hpp"
 
 namespace Omega_h {
 
@@ -54,8 +55,147 @@ Real B11_quart(Real u, Real v);
 Real B21_quart(Real u, Real v);
 Real B12_quart(Real u, Real v);
 
-//TODO this fn will need to be called from both host and device
-constexpr OMEGA_H_DEVICE Real 
+// Babushka chen points
+constexpr OMEGA_H_DEVICE Real xi_1_quad() {
+  return 0.5;
+}
+
+constexpr OMEGA_H_DEVICE Real xi_1_cube() {
+  return 0.2748043;
+}
+constexpr OMEGA_H_DEVICE Real xi_2_cube() {
+  return 0.7251957;
+}
+
+constexpr OMEGA_H_DEVICE Real xi_1_quart() {
+  return 0.1693976;
+}
+constexpr OMEGA_H_DEVICE Real xi_2_quart() {
+  return 0.5;
+}
+constexpr OMEGA_H_DEVICE Real xi_3_quart() {
+  return 0.8306024;
+}
+
+constexpr OMEGA_H_DEVICE Real xi_1_quint() {
+  return 0.1133573;
+}
+constexpr OMEGA_H_DEVICE Real xi_2_quint() {
+  return 0.3568239;
+}
+constexpr OMEGA_H_DEVICE Real xi_3_quint() {
+  return 0.6431761;
+}
+constexpr OMEGA_H_DEVICE Real xi_4_quint() {
+  return 0.8866427;
+}
+
+constexpr OMEGA_H_DEVICE Real xi_1_hex() {
+  return 0.0805979;
+}
+constexpr OMEGA_H_DEVICE Real xi_2_hex() {
+  return 0.2650895;
+}
+constexpr OMEGA_H_DEVICE Real xi_3_hex() {
+  return 0.5;
+}
+constexpr OMEGA_H_DEVICE Real xi_4_hex() {
+  return 0.7349105;
+}
+constexpr OMEGA_H_DEVICE Real xi_5_hex() {
+  return 0.9194021;
+}
+
+OMEGA_H_DEVICE Reals xi_11_cube() {
+  Write<Real> xi_11(2);
+  xi_11[0] = 1.0/3.0;
+  xi_11[1] = 1.0/3.0;
+  return Reals(xi_11);
+}
+
+OMEGA_H_DEVICE Reals xi_11_quart() {
+  Write<Real> xi_11(2);
+  xi_11[0] = 0.22088805;
+  xi_11[1] = 0.22088805;
+  return Reals(xi_11);
+}
+OMEGA_H_DEVICE Reals xi_21_quart() {
+  Write<Real> xi_21(2);
+  xi_21[0] = 0.5582239;
+  xi_21[1] = 0.22088805;
+  return Reals(xi_21);
+}
+OMEGA_H_DEVICE Reals xi_12_quart() {
+  Write<Real> xi_12(2);
+  xi_12[0] = 0.22088805;
+  xi_12[1] = 0.5582239;
+  return Reals(xi_12);
+}
+
+OMEGA_H_DEVICE Reals xi_111_quart() {
+  Write<Real> xi_111(3);
+  xi_111[0] = 1.0/4.0;
+  xi_111[1] = 1.0/4.0;
+  xi_111[2] = 1.0/4.0;
+  return Reals(xi_111);
+}
+
+OMEGA_H_DEVICE Reals curve_bezier_pts(LO const P) {
+  switch (P) {
+    case 2: {
+      return Reals({xi_1_quad()});
+    }
+    case 3: {
+      return Reals({xi_1_cube(),xi_2_cube()});
+    }
+    case 4: {
+      return Reals({xi_1_quart(),xi_2_quart(),xi_3_quart()});
+    }
+    case 5: {
+      return Reals({xi_1_quint(),xi_2_quint(),xi_3_quint(),xi_4_quint()});
+    }
+    case 6: {
+      return Reals({xi_1_hex(),xi_2_hex(),xi_3_hex(),xi_4_hex(),xi_5_hex()});
+    }
+    OMEGA_H_NORETURN(Reals());
+  }
+}
+
+OMEGA_H_DEVICE Reals triangle_bezier_pts(LO const P) {
+  switch (P) {
+    case 3: {
+      return xi_11_cube();
+    }
+    case 4: {
+      return Read<Real>(concat<Real>(concat<Real>(xi_11_quart(), xi_21_quart()), xi_12_quart()));
+    }
+    case 5: {
+      return Reals({});
+    }
+    case 6: {
+      return Reals({});
+    }
+    OMEGA_H_NORETURN(Reals());
+  }
+}
+
+OMEGA_H_DEVICE Reals tet_bezier_pts(LO const P) {
+  switch (P) {
+    case 4: {
+      return xi_111_quart();
+    }
+    case 5: {
+      return Reals({});
+    }
+    case 6: {
+      return Reals({});
+    }
+    OMEGA_H_NORETURN(Reals());
+  }
+}
+
+//TODO these fns will need to be called from both host and device
+constexpr OMEGA_H_DEVICE Real
 Bijk(LO const P, LO const i, LO const j, LO const k, Real const u,
      Real const v, Real const w) noexcept {
   LO const l = P - i - j - k;
@@ -87,22 +227,6 @@ Bi(LO const P, LO const i, Real const u) noexcept {
   return factorial(1.0*P)*
     std::pow(u,i)*std::pow(v,j)/(factorial(1.0*i)*factorial(1.0*j));
 }
-
-Real xi_1_quad();
-
-Real xi_1_cube();
-Real xi_2_cube();
-
-Real xi_1_quart();
-Real xi_2_quart();
-Real xi_3_quart();
-
-Real xi_1_quint();
-Real xi_2_quint();
-Real xi_3_quint();
-Real xi_4_quint();
-
-Reals xi_11_cube();
 
 void elevate_curve_order_2to3(Mesh* mesh);
 void elevate_curve_order_3to4(Mesh* mesh);
@@ -284,10 +408,178 @@ OMEGA_H_DEVICE Int n_internal_ctrlPts(Int edim, Int max_order) {
     return ((max_order-1)*(max_order-2)*(max_order-3))/6;
   }
   else {
+    Omega_h_fail("invalid entity dim\n");
     return -1;
   }
-
   return -1;
+}
+
+OMEGA_H_DEVICE Reals rgn_parametricToParent_3d(
+    LO const order, LO const old_rgn, LOs old_ev2v, LOs old_rv2v,
+    Reals old_vertCtrlPts, Reals old_edgeCtrlPts, Reals old_faceCtrlPts,
+    Reals nodePt, LOs old_re2e, LOs old_rf2f) {
+  LO const dim = 3;
+  LO const n_edge_pts = n_internal_ctrlPts(EDGE, order);
+  auto old_rgn_v0 = old_rv2v[old_rgn*4 + 0];
+  auto old_rgn_v1 = old_rv2v[old_rgn*4 + 1];
+  auto old_rgn_v2 = old_rv2v[old_rgn*4 + 2];
+  auto old_rgn_v3 = old_rv2v[old_rgn*4 + 3];
+  auto c000 = get_vector<3>(old_vertCtrlPts, old_rgn_v0);
+  auto c300 = get_vector<3>(old_vertCtrlPts, old_rgn_v1);
+  auto c030 = get_vector<3>(old_vertCtrlPts, old_rgn_v2);
+  auto c003 = get_vector<3>(old_vertCtrlPts, old_rgn_v3);
+
+  auto old_rgn_e0 = old_re2e[old_rgn*6 + 0];
+  auto old_rgn_e1 = old_re2e[old_rgn*6 + 1];
+  auto old_rgn_e2 = old_re2e[old_rgn*6 + 2];
+  auto old_rgn_e3 = old_re2e[old_rgn*6 + 3];
+  auto old_rgn_e4 = old_re2e[old_rgn*6 + 4];
+  auto old_rgn_e5 = old_re2e[old_rgn*6 + 5];
+
+  auto old_rgn_f0 = old_rf2f[old_rgn*4 + 0];
+  auto old_rgn_f1 = old_rf2f[old_rgn*4 + 1];
+  auto old_rgn_f2 = old_rf2f[old_rgn*4 + 2];
+  auto old_rgn_f3 = old_rf2f[old_rgn*4 + 3];
+  auto c110 = get_vector<3>(old_faceCtrlPts, old_rgn_f0);
+  auto c101 = get_vector<3>(old_faceCtrlPts, old_rgn_f1);
+  auto c111 = get_vector<3>(old_faceCtrlPts, old_rgn_f2);
+  auto c011 = get_vector<3>(old_faceCtrlPts, old_rgn_f3);
+
+  LO e0_flip = -1;
+  LO e1_flip = -1;
+  LO e2_flip = -1;
+  LO e3_flip = -1;
+  LO e4_flip = -1;
+  LO e5_flip = -1;
+  //define edges as per template
+  {
+    auto e0v0 = old_ev2v[old_rgn_e0*2 + 0];
+    auto e0v1 = old_ev2v[old_rgn_e0*2 + 1];
+    e0_flip = edge_is_flip(e0v0, e0v1, old_rgn_v0, old_rgn_v1);
+    auto e1v0 = old_ev2v[old_rgn_e1*2 + 0];
+    auto e1v1 = old_ev2v[old_rgn_e1*2 + 1];
+    e1_flip = edge_is_flip(e1v0, e1v1, old_rgn_v1, old_rgn_v2);
+    auto e2v0 = old_ev2v[old_rgn_e2*2 + 0];
+    auto e2v1 = old_ev2v[old_rgn_e2*2 + 1];
+    e2_flip = edge_is_flip(e2v0, e2v1, old_rgn_v2, old_rgn_v0);
+    auto e3v0 = old_ev2v[old_rgn_e3*2 + 0];
+    auto e3v1 = old_ev2v[old_rgn_e3*2 + 1];
+    e3_flip = edge_is_flip(e3v0, e3v1, old_rgn_v0, old_rgn_v3);
+    auto e4v0 = old_ev2v[old_rgn_e4*2 + 0];
+    auto e4v1 = old_ev2v[old_rgn_e4*2 + 1];
+    e4_flip = edge_is_flip(e4v0, e4v1, old_rgn_v1, old_rgn_v3);
+    auto e5v0 = old_ev2v[old_rgn_e5*2 + 0];
+    auto e5v1 = old_ev2v[old_rgn_e5*2 + 1];
+    e5_flip = edge_is_flip(e5v0, e5v1, old_rgn_v2, old_rgn_v3);
+  }
+  printf("oldrgn edge flips %d %d %d %d %d %d\n", e0_flip, e1_flip, e2_flip, e3_flip, e4_flip, e5_flip);
+
+  auto pts_per_edge = n_edge_pts;
+  Real cx100 = old_edgeCtrlPts[old_rgn_e0*pts_per_edge*dim + 0];
+  Real cy100 = old_edgeCtrlPts[old_rgn_e0*pts_per_edge*dim + 1];
+  Real cz100 = old_edgeCtrlPts[old_rgn_e0*pts_per_edge*dim + 2];
+  Real cx200 = old_edgeCtrlPts[old_rgn_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy200 = old_edgeCtrlPts[old_rgn_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real cz200 = old_edgeCtrlPts[old_rgn_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (e0_flip > 0) {
+    swap2(cx100, cx200);
+    swap2(cy100, cy200);
+    swap2(cz100, cz200);
+  }
+  Real cx210 = old_edgeCtrlPts[old_rgn_e1*pts_per_edge*dim + 0];
+  Real cy210 = old_edgeCtrlPts[old_rgn_e1*pts_per_edge*dim + 1];
+  Real cz210 = old_edgeCtrlPts[old_rgn_e1*pts_per_edge*dim + 2];
+  Real cx120 = old_edgeCtrlPts[old_rgn_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy120 = old_edgeCtrlPts[old_rgn_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real cz120 = old_edgeCtrlPts[old_rgn_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (e1_flip > 0) {
+    swap2(cx210, cx120);
+    swap2(cy210, cy120);
+    swap2(cz210, cz120);
+  }
+  Real cx020 = old_edgeCtrlPts[old_rgn_e2*pts_per_edge*dim + 0];
+  Real cy020 = old_edgeCtrlPts[old_rgn_e2*pts_per_edge*dim + 1];
+  Real cz020 = old_edgeCtrlPts[old_rgn_e2*pts_per_edge*dim + 2];
+  Real cx010 = old_edgeCtrlPts[old_rgn_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy010 = old_edgeCtrlPts[old_rgn_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real cz010 = old_edgeCtrlPts[old_rgn_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (e2_flip > 0) {
+    swap2(cx020, cx010);
+    swap2(cy020, cy010);
+    swap2(cz020, cz010);
+  }
+  Real cx001 = old_edgeCtrlPts[old_rgn_e3*pts_per_edge*dim + 0];
+  Real cy001 = old_edgeCtrlPts[old_rgn_e3*pts_per_edge*dim + 1];
+  Real cz001 = old_edgeCtrlPts[old_rgn_e3*pts_per_edge*dim + 2];
+  Real cx002 = old_edgeCtrlPts[old_rgn_e3*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy002 = old_edgeCtrlPts[old_rgn_e3*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real cz002 = old_edgeCtrlPts[old_rgn_e3*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (e3_flip > 0) {
+    swap2(cx002, cx001);
+    swap2(cy002, cy001);
+    swap2(cz002, cz001);
+  }
+  Real cx201 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + 0];
+  Real cy201 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + 1];
+  Real cz201 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + 2];
+  Real cx102 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy102 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real cz102 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (e4_flip > 0) {
+    swap2(cx102, cx201);
+    swap2(cy102, cy201);
+    swap2(cz102, cz201);
+  }
+  Real cx021 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + 0];
+  Real cy021 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + 1];
+  Real cz021 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + 2];
+  Real cx012 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy012 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real cz012 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (e5_flip > 0) {
+    swap2(cx012, cx021);
+    swap2(cy012, cy021);
+    swap2(cz012, cz021);
+  }
+  auto c100 = vector_3(cx100, cy100, cz100);
+  auto c200 = vector_3(cx200, cy200, cz200);
+  auto c210 = vector_3(cx210, cy210, cz210);
+  auto c120 = vector_3(cx120, cy120, cz120);
+  auto c020 = vector_3(cx020, cy020, cz020);
+  auto c010 = vector_3(cx010, cy010, cz010);
+  auto c001 = vector_3(cx001, cy001, cz001);
+  auto c002 = vector_3(cx002, cy002, cz002);
+  auto c102 = vector_3(cx102, cy102, cz102);
+  auto c201 = vector_3(cx201, cy201, cz201);
+  auto c012 = vector_3(cx012, cy012, cz012);
+  auto c021 = vector_3(cx021, cy021, cz021);
+
+  Write<Real> p11(3);
+  for (LO j = 0; j < dim; ++j) {
+    p11[j] = c000[j]*Bijk(order,0,0,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c300[j]*Bijk(order,3,0,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c030[j]*Bijk(order,0,3,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c003[j]*Bijk(order,0,0,3,nodePt[0],nodePt[1],nodePt[2]) +
+      //edges
+      c100[j]*Bijk(order,1,0,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c200[j]*Bijk(order,2,0,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c210[j]*Bijk(order,2,1,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c120[j]*Bijk(order,1,2,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c020[j]*Bijk(order,0,2,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c010[j]*Bijk(order,0,1,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c001[j]*Bijk(order,0,0,1,nodePt[0],nodePt[1],nodePt[2]) +
+      c002[j]*Bijk(order,0,0,2,nodePt[0],nodePt[1],nodePt[2]) +
+      c201[j]*Bijk(order,2,0,1,nodePt[0],nodePt[1],nodePt[2]) +
+      c102[j]*Bijk(order,1,0,2,nodePt[0],nodePt[1],nodePt[2]) +
+      c012[j]*Bijk(order,0,1,2,nodePt[0],nodePt[1],nodePt[2]) +
+      c021[j]*Bijk(order,0,2,1,nodePt[0],nodePt[1],nodePt[2]) +
+      //faces
+      c110[j]*Bijk(order,1,1,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c101[j]*Bijk(order,1,0,1,nodePt[0],nodePt[1],nodePt[2]) +
+      c111[j]*Bijk(order,1,1,1,nodePt[0],nodePt[1],nodePt[2]) +
+      c011[j]*Bijk(order,0,1,1,nodePt[0],nodePt[1],nodePt[2]);
+  }
+  return Reals(p11);
 }
 
 OMEGA_H_DEVICE Reals face_parametricToParent_3d(
@@ -432,7 +724,7 @@ OMEGA_H_DEVICE Reals face_interpToCtrlPt_3d(
     Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Reals p11, LOs new_fv2v) {
   LO const dim=3;
   //TODO higher than cubic
-  LO const pts_per_edge=2;
+  LO const pts_per_edge = n_internal_ctrlPts(EDGE, order);
   I8 newface_e0_flip = -1;
   I8 newface_e1_flip = -1;
   I8 newface_e2_flip = -1;
@@ -542,8 +834,29 @@ OMEGA_H_DEVICE Reals face_interpToCtrlPt_3d(
   return Reals(newface_c11_w);
 }
 
-//Reals OMEGA_H_DEVICE coordsFromXi(Int ent_dim, 
+/*
+OMEGA_H_DEVICE Reals edge_interpToCtrlPt_3d(
+    LO const order, Reals interp_pts, Reals c0, Reals cN, t newface, LOs new_ev2v, LOs new_fe2e,
+    Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Reals p11, LOs new_fv2v) {
+  //TODO higher than cubic
 
+  Matrix<2,1> cx({cx0, vert_ctrlPts[mid_vert*1*dim + 0]});
+  Matrix<2,1> cy({cy0, vert_ctrlPts[mid_vert*1*dim + 1]});
+  Matrix<2,1> cz({cz0, vert_ctrlPts[mid_vert*1*dim + 2]});
+  Matrix<2,2> M1_inv({Bi(order, 1, xi_1_cube()), Bi(order, 2, xi_1_cube()),
+      Bi(order, 1, xi_2_cube()), Bi(order, 2, xi_2_cube())});
+  Matrix<2,2> M2({Bi(order, 0,  xi_1_cube()), Bi(order, 3,  xi_1_cube()),
+      Bi(order, 0,  xi_2_cube()), Bi(order, 3,  xi_2_cube())});
+  auto M1 = invert(M1_inv);
+
+  Matrix<2,1> fx({p1[0], p2[0]});
+  Matrix<2,1> fy({p1[1], p2[1]});
+  Matrix<2,1> fz({p1[2], p2[2]});
+  auto Cx = M1*fx - M1*M2*cx;
+  auto Cy = M1*fy - M1*M2*cy;
+  auto Cz = M1*fz - M1*M2*cz;
+}
+*/
 LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,
                                      LOs keys2midverts, LOs old_verts2new_verts);
