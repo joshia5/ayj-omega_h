@@ -85,11 +85,6 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
         same_ents2new_ents);
 
     if (ent_dim == EDGE) {
-      printf(
-      "old2new %d same2new %d same2old %d prods2new %d keys2prods %d keys2midv %d\n",
-      old_ents2new_ents.size(),
-          same_ents2new_ents.size(), same_ents2old_ents.size(),
-          prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
       if (mesh->is_curved() > 0) {
         if (mesh->dim() == 2) {
           keys2old_faces = create_curved_verts_and_edges_2d
@@ -151,7 +146,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
     }
     old_lows2new_lows = old_ents2new_ents;
   }
-  printf("after 1 refine, has %d tets", new_mesh.nregions());
+  printf("after 1 refine, has %d regions", new_mesh.nents(new_mesh.dim()));
 
   *mesh = new_mesh;
 }

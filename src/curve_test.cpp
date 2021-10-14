@@ -532,11 +532,11 @@ int main(int argc, char** argv) {
   path_3d_m = argv[4];
   path_3d_vtk = argv[5];
 
-  //test_disc(&lib);
+  test_disc(&lib);
   //test_2tri_square(&lib);
   //test_linearTri_toCubicCircle(&lib, path_2d, path_2d_vtk);
   //test_sim_quadToCubic(&lib, path_3d_g, path_3d_m, path_3d_vtk);
-  test_sim_kova_quadratic(&lib);
+  //test_sim_kova_quadratic(&lib);
 
   return 0;
 }
