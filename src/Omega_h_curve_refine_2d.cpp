@@ -104,37 +104,37 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         Real const cy3 = old_vertCtrlPts[v1_old*dim + 1];
 
         Real const new_xi_3 = 0.5;
-        Real const new_cx3 = cx0*B0_cube(new_xi_3) + cx1*B1_cube(new_xi_3) +
-                       cx2*B2_cube(new_xi_3) + cx3*B3_cube(new_xi_3);
-        Real const new_cy3 = cy0*B0_cube(new_xi_3) + cy1*B1_cube(new_xi_3) +
-                       cy2*B2_cube(new_xi_3) + cy3*B3_cube(new_xi_3);
+        Real const new_cx3 = cx0*Bi(order, 0, new_xi_3) + cx1*Bi(order, 1, new_xi_3) +
+                       cx2*Bi(order, 2, new_xi_3) + cx3*Bi(order, 3, new_xi_3);
+        Real const new_cy3 = cy0*Bi(order, 0, new_xi_3) + cy1*Bi(order, 1, new_xi_3) +
+                       cy2*Bi(order, 2, new_xi_3) + cy3*Bi(order, 3, new_xi_3);
         printf(" new mid interp pt %f, %f \n", new_cx3, new_cy3);
         vert_ctrlPts[mid_vert*1*dim + 0] = new_cx3;
         vert_ctrlPts[mid_vert*1*dim + 1] = new_cy3;
 
         Real const old_xi_2 = xi_2_cube();
         Real const new_xi_2 = old_xi_2/2.0;
-        Real const new_px2 = cx0*B0_cube(new_xi_2) + cx1*B1_cube(new_xi_2) +
-                       cx2*B2_cube(new_xi_2) + cx3*B3_cube(new_xi_2);
-        Real const new_py2 = cy0*B0_cube(new_xi_2) + cy1*B1_cube(new_xi_2) +
-                       cy2*B2_cube(new_xi_2) + cy3*B3_cube(new_xi_2);
+        Real const new_px2 = cx0*Bi(order, 0, new_xi_2) + cx1*Bi(order, 1, new_xi_2) +
+                       cx2*Bi(order, 2, new_xi_2) + cx3*Bi(order, 3, new_xi_2);
+        Real const new_py2 = cy0*Bi(order, 0, new_xi_2) + cy1*Bi(order, 1, new_xi_2) +
+                       cy2*Bi(order, 2, new_xi_2) + cy3*Bi(order, 3, new_xi_2);
         printf("edge 0 p2 %f, %f , xi2 %f\n", new_px2, new_py2, new_xi_2);
 
         Real const old_xi_1 = xi_1_cube();
         Real const new_xi_1 = old_xi_1/2.0;
-        Real const new_px1 = cx0*B0_cube(new_xi_1) + cx1*B1_cube(new_xi_1) +
-                       cx2*B2_cube(new_xi_1) + cx3*B3_cube(new_xi_1);
-        Real const new_py1 = cy0*B0_cube(new_xi_1) + cy1*B1_cube(new_xi_1) +
-                       cy2*B2_cube(new_xi_1) + cy3*B3_cube(new_xi_1);
+        Real const new_px1 = cx0*Bi(order, 0, new_xi_1) + cx1*Bi(order, 1, new_xi_1) +
+                       cx2*Bi(order, 2, new_xi_1) + cx3*Bi(order, 3, new_xi_1);
+        Real const new_py1 = cy0*Bi(order, 0, new_xi_1) + cy1*Bi(order, 1, new_xi_1) +
+                       cy2*Bi(order, 2, new_xi_1) + cy3*Bi(order, 3, new_xi_1);
         printf("edge 0 p1 %f, %f \n", new_px1, new_py1);
 
         Matrix<2,1> fx({new_px1, new_px2});
         Matrix<2,1> fy({new_py1, new_py2});
 
-        Matrix<2,2> M1_inv({B1_cube(old_xi_1), B2_cube(old_xi_1), B1_cube(old_xi_2),
-                            B2_cube(old_xi_2)});
-        Matrix<2,2> M2({B0_cube(old_xi_1), B3_cube(old_xi_1), B0_cube(old_xi_2),
-                        B3_cube(old_xi_2)});
+        Matrix<2,2> M1_inv({Bi(order, 1, old_xi_1), Bi(order, 2, old_xi_1),
+                            Bi(order, 1, old_xi_2), Bi(order, 2, old_xi_2)});
+        Matrix<2,2> M2({Bi(order, 0, old_xi_1), Bi(order, 3, old_xi_1),
+                        Bi(order, 0, old_xi_2), Bi(order, 3, old_xi_2)});
 
         auto M1 = invert(M1_inv);
 
@@ -165,17 +165,17 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
         Real old_xi_2 = xi_2_cube();
         Real new_xi_2 = 0.5 + old_xi_2/2.0;
-        Real new_px2 = cx0*B0_cube(new_xi_2) + cx1*B1_cube(new_xi_2) +
-                       cx2*B2_cube(new_xi_2) + cx3*B3_cube(new_xi_2);
-        Real new_py2 = cy0*B0_cube(new_xi_2) + cy1*B1_cube(new_xi_2) +
-                       cy2*B2_cube(new_xi_2) + cy3*B3_cube(new_xi_2);
+        Real const new_px2 = cx0*Bi(order, 0, new_xi_2) + cx1*Bi(order, 1, new_xi_2) +
+                       cx2*Bi(order, 2, new_xi_2) + cx3*Bi(order, 3, new_xi_2);
+        Real const new_py2 = cy0*Bi(order, 0, new_xi_2) + cy1*Bi(order, 1, new_xi_2) +
+                       cy2*Bi(order, 2, new_xi_2) + cy3*Bi(order, 3, new_xi_2);
 
         Real old_xi_1 = xi_1_cube();
         Real new_xi_1 = 0.5 + old_xi_1/2.0;
-        Real new_px1 = cx0*B0_cube(new_xi_1) + cx1*B1_cube(new_xi_1) +
-                       cx2*B2_cube(new_xi_1) + cx3*B3_cube(new_xi_1);
-        Real new_py1 = cy0*B0_cube(new_xi_1) + cy1*B1_cube(new_xi_1) +
-                       cy2*B2_cube(new_xi_1) + cy3*B3_cube(new_xi_1);
+        Real const new_px1 = cx0*Bi(order, 0, new_xi_1) + cx1*Bi(order, 1, new_xi_1) +
+                       cx2*Bi(order, 2, new_xi_1) + cx3*Bi(order, 3, new_xi_1);
+        Real const new_py1 = cy0*Bi(order, 0, new_xi_1) + cy1*Bi(order, 1, new_xi_1) +
+                       cy2*Bi(order, 2, new_xi_1) + cy3*Bi(order, 3, new_xi_1);
 
         Matrix<2,1> cx({vert_ctrlPts[mid_vert*1*dim + 0], cx3});
         Matrix<2,1> cy({vert_ctrlPts[mid_vert*1*dim + 1], cy3});
@@ -183,10 +183,10 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         Matrix<2,1> fx({new_px1, new_px2});
         Matrix<2,1> fy({new_py1, new_py2});
 
-        Matrix<2,2> M1_inv({B1_cube(old_xi_1), B2_cube(old_xi_1), B1_cube(old_xi_2),
-                            B2_cube(old_xi_2)});
-        Matrix<2,2> M2({B0_cube(old_xi_1), B3_cube(old_xi_1), B0_cube(old_xi_2),
-                        B3_cube(old_xi_2)});
+        Matrix<2,2> M1_inv({Bi(order, 1, old_xi_1), Bi(order, 2, old_xi_1),
+                            Bi(order, 1, old_xi_2), Bi(order, 2, old_xi_2)});
+        Matrix<2,2> M2({Bi(order, 0, old_xi_1), Bi(order, 3, old_xi_1),
+                        Bi(order, 0, old_xi_2), Bi(order, 3, old_xi_2)});
 
         auto M1 = invert(M1_inv);
         auto Cx = M1*fx - M1*M2*cx;
@@ -239,127 +239,10 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                             old_edge, old_face_e0, old_face_e1,
                                             old_face_e2);
 
-          I8 e0_flip = -1;
-          I8 e1_flip = -1;
-          I8 e2_flip = -1;
-          auto e0v0_old_face = old_ev2v[old_face_e0*2 + 0];
-          auto e0v1 = old_ev2v[old_face_e0*2 + 1];
-          auto e1v0_old_face = old_ev2v[old_face_e1*2 + 0];
-          auto e1v1 = old_ev2v[old_face_e1*2 + 1];
-          auto e2v0_old_face = old_ev2v[old_face_e2*2 + 0];
-          auto e2v1 = old_ev2v[old_face_e2*2 + 1];
-          if ((e0v0_old_face == v1) && (e0v1 == v0_old_face)) {
-            e0_flip = 1;
-          }
-          else {
-            OMEGA_H_CHECK((e0v0_old_face == v0_old_face) && (e0v1 == v1));
-          }
-          if ((e1v0_old_face == v2) && (e1v1 == v1)) {
-            e1_flip = 1;
-          }
-          else {
-            OMEGA_H_CHECK((e1v0_old_face == v1) && (e1v1 == v2));
-          }
-          if ((e2v0_old_face == v0_old_face) && (e2v1 == v2)) {
-            e2_flip = 1;
-          }
-          else {
-            OMEGA_H_CHECK((e2v0_old_face == v2) && (e2v1 == v0_old_face));
-          }
-
-          Real cx00 = old_vertCtrlPts[v0_old_face*dim + 0];
-          Real cy00 = old_vertCtrlPts[v0_old_face*dim + 1];
-          Real cx30 = old_vertCtrlPts[v1*dim + 0];
-          Real cy30 = old_vertCtrlPts[v1*dim + 1];
-          Real cx03 = old_vertCtrlPts[v2*dim + 0];
-          Real cy03 = old_vertCtrlPts[v2*dim + 1];
-
-          auto pts_per_edge = n_edge_pts;
-          Real cx10 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + 0];
-          Real cy10 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + 1];
-          Real cx20 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-          Real cy20 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-          if (e0_flip > 0) {
-            auto tempx = cx10;
-            auto tempy = cy10;
-            cx10 = cx20;
-            cy10 = cy20;
-            cx20 = tempx;
-            cy20 = tempy;
-          }
-
-          Real cx21 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 0];
-          Real cy21 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 1];
-          Real cx12 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-          Real cy12 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-          if (e1_flip > 0) {
-            auto tempx = cx21;
-            auto tempy = cy21;
-            cx21 = cx12;
-            cy21 = cy12;
-            cx12 = tempx;
-            cy12 = tempy;
-          }
-
-          Real cx02 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + 0];
-          Real cy02 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + 1];
-          Real cx01 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-          Real cy01 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-          if (e2_flip > 0) {
-            auto tempx = cx02;
-            auto tempy = cy02;
-            cx02 = cx01;
-            cy02 = cy01;
-            cx01 = tempx;
-            cy01 = tempy;
-          }
-
-          Real cx11 = old_faceCtrlPts[old_face*dim + 0];
-          Real cy11 = old_faceCtrlPts[old_face*dim + 1];
-
-          //get the interp points
-          auto p1_x = cx00*B00_cube(nodePts[0], nodePts[1]) +
-                      cx10*B10_cube(nodePts[0], nodePts[1]) +
-                      cx20*B20_cube(nodePts[0], nodePts[1]) +
-                      cx30*B30_cube(nodePts[0], nodePts[1]) +
-                      cx21*B21_cube(nodePts[0], nodePts[1]) +
-                      cx12*B12_cube(nodePts[0], nodePts[1]) +
-                      cx03*B03_cube(nodePts[0], nodePts[1]) +
-                      cx02*B02_cube(nodePts[0], nodePts[1]) +
-                      cx01*B01_cube(nodePts[0], nodePts[1]) +
-                      cx11*B11_cube(nodePts[0], nodePts[1]);
-          auto p1_y = cy00*B00_cube(nodePts[0], nodePts[1]) +
-                      cy10*B10_cube(nodePts[0], nodePts[1]) +
-                      cy20*B20_cube(nodePts[0], nodePts[1]) +
-                      cy30*B30_cube(nodePts[0], nodePts[1]) +
-                      cy21*B21_cube(nodePts[0], nodePts[1]) +
-                      cy12*B12_cube(nodePts[0], nodePts[1]) +
-                      cy03*B03_cube(nodePts[0], nodePts[1]) +
-                      cy02*B02_cube(nodePts[0], nodePts[1]) +
-                      cy01*B01_cube(nodePts[0], nodePts[1]) +
-                      cy11*B11_cube(nodePts[0], nodePts[1]);
-          auto p2_x = cx00*B00_cube(nodePts[2], nodePts[3]) +
-                      cx10*B10_cube(nodePts[2], nodePts[3]) +
-                      cx20*B20_cube(nodePts[2], nodePts[3]) +
-                      cx30*B30_cube(nodePts[2], nodePts[3]) +
-                      cx21*B21_cube(nodePts[2], nodePts[3]) +
-                      cx12*B12_cube(nodePts[2], nodePts[3]) +
-                      cx03*B03_cube(nodePts[2], nodePts[3]) +
-                      cx02*B02_cube(nodePts[2], nodePts[3]) +
-                      cx01*B01_cube(nodePts[2], nodePts[3]) +
-                      cx11*B11_cube(nodePts[2], nodePts[3]);
-          auto p2_y = cy00*B00_cube(nodePts[2], nodePts[3]) +
-                      cy10*B10_cube(nodePts[2], nodePts[3]) +
-                      cy20*B20_cube(nodePts[2], nodePts[3]) +
-                      cy30*B30_cube(nodePts[2], nodePts[3]) +
-                      cy21*B21_cube(nodePts[2], nodePts[3]) +
-                      cy12*B12_cube(nodePts[2], nodePts[3]) +
-                      cy03*B03_cube(nodePts[2], nodePts[3]) +
-                      cy02*B02_cube(nodePts[2], nodePts[3]) +
-                      cy01*B01_cube(nodePts[2], nodePts[3]) +
-                      cy11*B11_cube(nodePts[2], nodePts[3]);
-
-          printf("for i=%d e2 p1 is %f %f, p2 is %f %f\n", i, p1_x, p1_y, p2_x, p2_y);
+          auto p1 = face_parametricToParent_2d(order, old_face, old_ev2v, old_fe2e,
+              old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, Reals({nodePts[0], nodePts[1]}), old_fv2v);
+          auto p2 = face_parametricToParent_2d(order, old_face, old_ev2v, old_fe2e,
+              old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, Reals({nodePts[2], nodePts[3]}), old_fv2v);
           //use these as interp pts to find ctrl pts in new mesh
           {
             Real cx0 = old_vertCtrlPts[old_vert_noKey*dim + 0];
@@ -368,13 +251,13 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             Matrix<2,1> cx({cx0, vert_ctrlPts[mid_vert*1*dim + 0]});
             Matrix<2,1> cy({cy0, vert_ctrlPts[mid_vert*1*dim + 1]});
 
-            Matrix<2,1> fx({p1_x, p2_x});
-            Matrix<2,1> fy({p1_y, p2_y});
+            Matrix<2,1> fx({p1[0], p2[0]});
+            Matrix<2,1> fy({p1[1], p2[1]});
 
-            Matrix<2,2> M1_inv({B1_cube(xi_1_cube()), B2_cube(xi_1_cube()), B1_cube(xi_2_cube()),
-                B2_cube(xi_2_cube())});
-            Matrix<2,2> M2({B0_cube(xi_1_cube()), B3_cube(xi_1_cube()), B0_cube(xi_2_cube()),
-                B3_cube(xi_2_cube())});
+            Matrix<2,2> M1_inv({Bi(order, 1, xi_1_cube()), Bi(order, 2, xi_1_cube()),
+                Bi(order, 1, xi_2_cube()), Bi(order, 2, xi_2_cube())});
+            Matrix<2,2> M2({Bi(order, 0,  xi_1_cube()), Bi(order, 3,  xi_1_cube()),
+                Bi(order, 0,  xi_2_cube()), Bi(order, 3,  xi_2_cube())});
 
             auto M1 = invert(M1_inv);
             auto Cx = M1*fx - M1*M2*cx;
@@ -427,7 +310,7 @@ void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   auto const old_faceCtrlPts = mesh->get_ctrlPts(2);
   auto const order = mesh->get_max_order();
   auto const dim = mesh->dim();
-  auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
+  //auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
   auto const n_face_pts = mesh->n_internal_ctrlPts(2);
 
   auto const new_ev2v = new_mesh->get_adj(1, 0).ab2b;
@@ -490,86 +373,6 @@ void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
         printf("for old face %d , oldKeyEdge %d, found old no-key vert %d\n",
             old_face, old_key_edge, old_vert_noKey);
 
-        I8 e0_flip = -1;
-        I8 e1_flip = -1;
-        I8 e2_flip = -1;
-        LO v1 = v1_old_face;
-        LO v2 = v2_old_face;
-        auto e0v0_old_face = old_ev2v[old_face_e0*2 + 0];
-        auto e0v1 = old_ev2v[old_face_e0*2 + 1];
-        auto e1v0_old_face = old_ev2v[old_face_e1*2 + 0];
-        auto e1v1 = old_ev2v[old_face_e1*2 + 1];
-        auto e2v0_old_face = old_ev2v[old_face_e2*2 + 0];
-        auto e2v1 = old_ev2v[old_face_e2*2 + 1];
-        if ((e0v0_old_face == v1) && (e0v1 == v0_old_face)) {
-          e0_flip = 1;
-        }
-        else {
-          OMEGA_H_CHECK((e0v0_old_face == v0_old_face) && (e0v1 == v1));
-        }
-        if ((e1v0_old_face == v2) && (e1v1 == v1)) {
-          e1_flip = 1;
-        }
-        else {
-          OMEGA_H_CHECK((e1v0_old_face == v1) && (e1v1 == v2));
-        }
-        if ((e2v0_old_face == v0_old_face) && (e2v1 == v2)) {
-          e2_flip = 1;
-        }
-        else {
-          OMEGA_H_CHECK((e2v0_old_face == v2) && (e2v1 == v0_old_face));
-        }
-
-        Real cx00 = old_vertCtrlPts[v0_old_face*dim + 0];
-        Real cy00 = old_vertCtrlPts[v0_old_face*dim + 1];
-        Real cx30 = old_vertCtrlPts[v1*dim + 0];
-        Real cy30 = old_vertCtrlPts[v1*dim + 1];
-        Real cx03 = old_vertCtrlPts[v2*dim + 0];
-        Real cy03 = old_vertCtrlPts[v2*dim + 1];
-
-        auto pts_per_edge = n_edge_pts;
-        Real cx10 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + 0];
-        Real cy10 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + 1];
-        Real cx20 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-        Real cy20 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-        if (e0_flip > 0) {
-          auto tempx = cx10;
-          auto tempy = cy10;
-          cx10 = cx20;
-          cy10 = cy20;
-          cx20 = tempx;
-          cy20 = tempy;
-        }
-
-        Real cx21 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 0];
-        Real cy21 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 1];
-        Real cx12 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-        Real cy12 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-        if (e1_flip > 0) {
-          auto tempx = cx21;
-          auto tempy = cy21;
-          cx21 = cx12;
-          cy21 = cy12;
-          cx12 = tempx;
-          cy12 = tempy;
-        }
-
-        Real cx02 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + 0];
-        Real cy02 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + 1];
-        Real cx01 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-        Real cy01 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-        if (e2_flip > 0) {
-          auto tempx = cx02;
-          auto tempy = cy02;
-          cx02 = cx01;
-          cy02 = cy01;
-          cx01 = tempx;
-          cy01 = tempy;
-        }
-
-        Real cx11 = old_faceCtrlPts[old_face*dim + 0];
-        Real cy11 = old_faceCtrlPts[old_face*dim + 1];
-
         printf("ok1, new faces f0 f1 %d %d oldface %d\n", new_f0, new_f1, old_face);
         auto nodePts = cubic_face_xi_values
           (old_vert_noKey, v0_old_face, v1_old_face, v2_old_face, old_key_edge,
@@ -583,248 +386,25 @@ void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
         //for f0
         {
           //get the interp point
-          auto p11_x = cx00*B00_cube(nodePts[0], nodePts[1]) +
-            cx10*B10_cube(nodePts[0], nodePts[1]) +
-            cx20*B20_cube(nodePts[0], nodePts[1]) +
-            cx30*B30_cube(nodePts[0], nodePts[1]) +
-            cx21*B21_cube(nodePts[0], nodePts[1]) +
-            cx12*B12_cube(nodePts[0], nodePts[1]) +
-            cx03*B03_cube(nodePts[0], nodePts[1]) +
-            cx02*B02_cube(nodePts[0], nodePts[1]) +
-            cx01*B01_cube(nodePts[0], nodePts[1]) +
-            cx11*B11_cube(nodePts[0], nodePts[1]);
-          auto p11_y = cy00*B00_cube(nodePts[0], nodePts[1]) +
-            cy10*B10_cube(nodePts[0], nodePts[1]) +
-            cy20*B20_cube(nodePts[0], nodePts[1]) +
-            cy30*B30_cube(nodePts[0], nodePts[1]) +
-            cy21*B21_cube(nodePts[0], nodePts[1]) +
-            cy12*B12_cube(nodePts[0], nodePts[1]) +
-            cy03*B03_cube(nodePts[0], nodePts[1]) +
-            cy02*B02_cube(nodePts[0], nodePts[1]) +
-            cy01*B01_cube(nodePts[0], nodePts[1]) +
-            cy11*B11_cube(nodePts[0], nodePts[1]);
-
-          //use these as interp pts to find ctrl pt in new face
-          //inquire known vert and edge ctrl pts
-          LO newface = new_f0;
-          I8 newface_e0_flip = -1;
-          I8 newface_e1_flip = -1;
-          I8 newface_e2_flip = -1;
-          LO newface_v0 = new_fv2v[newface*3 + 0];
-          LO newface_v1 = new_fv2v[newface*3 + 1];
-          LO newface_v2 = new_fv2v[newface*3 + 2];
-          LO newface_e0 = new_fe2e[newface*3 + 0];
-          LO newface_e1 = new_fe2e[newface*3 + 1];
-          LO newface_e2 = new_fe2e[newface*3 + 2];
-          auto newface_e0v0 = new_ev2v[newface_e0*2 + 0];
-          auto newface_e0v1 = new_ev2v[newface_e0*2 + 1];
-          auto newface_e1v0 = new_ev2v[newface_e1*2 + 0];
-          auto newface_e1v1 = new_ev2v[newface_e1*2 + 1];
-          auto newface_e2v0 = new_ev2v[newface_e2*2 + 0];
-          auto newface_e2v1 = new_ev2v[newface_e2*2 + 1];
-          if ((newface_e0v0 == newface_v1) && (newface_e0v1 == newface_v0)) {
-            newface_e0_flip = 1;
+          auto p11 = face_parametricToParent_2d(order, old_face, old_ev2v, old_fe2e,
+            old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, Reals({nodePts[0], nodePts[1]}), old_fv2v);
+          auto newface_c11 = face_interpToCtrlPt_2d(order, new_f0, new_ev2v, new_fe2e,
+            new_vertCtrlPts, new_edgeCtrlPts, p11, new_fv2v);
+          for (LO k = 0; k < dim; ++k) {
+            face_ctrlPts[new_f0*n_face_pts*dim + k] = newface_c11[k];
           }
-          else {
-            OMEGA_H_CHECK((newface_e0v0 == newface_v0) && (newface_e0v1 == newface_v1));
-          }
-          if ((newface_e1v0 == newface_v2) && (newface_e1v1 == newface_v1)) {
-            newface_e1_flip = 1;
-          }
-          else {
-            OMEGA_H_CHECK((newface_e1v0 == newface_v1) && (newface_e1v1 == newface_v2));
-          }
-          if ((newface_e2v0 == newface_v0) && (newface_e2v1 == newface_v2)) {
-            newface_e2_flip = 1;
-          }
-          else {
-            OMEGA_H_CHECK((newface_e2v0 == newface_v2) && (newface_e2v1 == newface_v0));
-          }
-
-          printf("ok1\n");
-          Real newface_cx00 = new_vertCtrlPts[newface_v0*dim + 0];
-          Real newface_cy00 = new_vertCtrlPts[newface_v0*dim + 1];
-          Real newface_cx30 = new_vertCtrlPts[newface_v1*dim + 0];
-          Real newface_cy30 = new_vertCtrlPts[newface_v1*dim + 1];
-          Real newface_cx03 = new_vertCtrlPts[newface_v2*dim + 0];
-          Real newface_cy03 = new_vertCtrlPts[newface_v2*dim + 1];
-          printf("ok2\n");
-
-          Real newface_cx10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 0];
-          Real newface_cy10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 1];
-          Real newface_cx20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-          Real newface_cy20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-          if (newface_e0_flip > 0) {
-            swap2(newface_cx10, newface_cx20);
-            swap2(newface_cy10, newface_cy20);
-          }
-
-          printf("ok3\n");
-          Real newface_cx21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 0];
-          Real newface_cy21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 1];
-          Real newface_cx12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-          Real newface_cy12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-          if (newface_e1_flip > 0) {
-            swap2(newface_cx21, newface_cx12);
-            swap2(newface_cy21, newface_cy12);
-          }
-          printf("ok4\n");
-
-          Real newface_cx02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 0];
-          Real newface_cy02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 1];
-          Real newface_cx01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-          Real newface_cy01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-          if (newface_e2_flip > 0) {
-            swap2(newface_cx01, newface_cx02);
-            swap2(newface_cy01, newface_cy02);
-          }
-          printf("ok5\n");
-
-          auto xi_11 = xi_11_cube();
-          Real newface_cx11 = (p11_x - newface_cx00*B00_cube(xi_11[0], xi_11[1]) -
-              newface_cx10*B10_cube(xi_11[0], xi_11[1]) -
-              newface_cx20*B20_cube(xi_11[0], xi_11[1]) -
-              newface_cx30*B30_cube(xi_11[0], xi_11[1]) -
-              newface_cx21*B21_cube(xi_11[0], xi_11[1]) -
-              newface_cx12*B12_cube(xi_11[0], xi_11[1]) -
-              newface_cx03*B03_cube(xi_11[0], xi_11[1]) -
-              newface_cx02*B02_cube(xi_11[0], xi_11[1]) -
-              newface_cx01*B01_cube(xi_11[0], xi_11[1]))/B11_cube(xi_11[0], xi_11[1]);
-          Real newface_cy11 = (p11_y - newface_cy00*B00_cube(xi_11[0], xi_11[1]) -
-              newface_cy10*B10_cube(xi_11[0], xi_11[1]) -
-              newface_cy20*B20_cube(xi_11[0], xi_11[1]) -
-              newface_cy30*B30_cube(xi_11[0], xi_11[1]) -
-              newface_cy21*B21_cube(xi_11[0], xi_11[1]) -
-              newface_cy12*B12_cube(xi_11[0], xi_11[1]) -
-              newface_cy03*B03_cube(xi_11[0], xi_11[1]) -
-              newface_cy02*B02_cube(xi_11[0], xi_11[1]) -
-              newface_cy01*B01_cube(xi_11[0], xi_11[1]))/B11_cube(xi_11[0], xi_11[1]);
-          if (old_face == 5)
-            printf("for f0 newface %d p11 is (%f, %f) c11 is (%f,%f)\n",
-                newface, p11_x, p11_y, newface_cx11, newface_cy11);
-          face_ctrlPts[newface*n_face_pts*dim + 0] = newface_cx11;
-          face_ctrlPts[newface*n_face_pts*dim + 1] = newface_cy11;
         }
 
         //for f1
         {
           //get the interp point
-          auto p11_x = cx00*B00_cube(nodePts[2], nodePts[3]) +
-            cx10*B10_cube(nodePts[2], nodePts[3]) +
-            cx20*B20_cube(nodePts[2], nodePts[3]) +
-            cx30*B30_cube(nodePts[2], nodePts[3]) +
-            cx21*B21_cube(nodePts[2], nodePts[3]) +
-            cx12*B12_cube(nodePts[2], nodePts[3]) +
-            cx03*B03_cube(nodePts[2], nodePts[3]) +
-            cx02*B02_cube(nodePts[2], nodePts[3]) +
-            cx01*B01_cube(nodePts[2], nodePts[3]) +
-            cx11*B11_cube(nodePts[2], nodePts[3]);
-          auto p11_y = cy00*B00_cube(nodePts[2], nodePts[3]) +
-            cy10*B10_cube(nodePts[2], nodePts[3]) +
-            cy20*B20_cube(nodePts[2], nodePts[3]) +
-            cy30*B30_cube(nodePts[2], nodePts[3]) +
-            cy21*B21_cube(nodePts[2], nodePts[3]) +
-            cy12*B12_cube(nodePts[2], nodePts[3]) +
-            cy03*B03_cube(nodePts[2], nodePts[3]) +
-            cy02*B02_cube(nodePts[2], nodePts[3]) +
-            cy01*B01_cube(nodePts[2], nodePts[3]) +
-            cy11*B11_cube(nodePts[2], nodePts[3]);
-
-          //use these as interp pts to find ctrl pt in new face
-          //inquire known vert and edge ctrl pts
-          LO newface = new_f1;
-          I8 newface_e0_flip = -1;
-          I8 newface_e1_flip = -1;
-          I8 newface_e2_flip = -1;
-          LO newface_v0 = new_fv2v[newface*3 + 0];
-          LO newface_v1 = new_fv2v[newface*3 + 1];
-          LO newface_v2 = new_fv2v[newface*3 + 2];
-          LO newface_e0 = new_fe2e[newface*3 + 0];
-          LO newface_e1 = new_fe2e[newface*3 + 1];
-          LO newface_e2 = new_fe2e[newface*3 + 2];
-          auto newface_e0v0 = new_ev2v[newface_e0*2 + 0];
-          auto newface_e0v1 = new_ev2v[newface_e0*2 + 1];
-          auto newface_e1v0 = new_ev2v[newface_e1*2 + 0];
-          auto newface_e1v1 = new_ev2v[newface_e1*2 + 1];
-          auto newface_e2v0 = new_ev2v[newface_e2*2 + 0];
-          auto newface_e2v1 = new_ev2v[newface_e2*2 + 1];
-          if ((newface_e0v0 == newface_v1) && (newface_e0v1 == newface_v0)) {
-            newface_e0_flip = 1;
+          auto p11 = face_parametricToParent_2d(order, old_face, old_ev2v, old_fe2e,
+            old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, Reals({nodePts[2], nodePts[3]}), old_fv2v);
+          auto newface_c11 = face_interpToCtrlPt_2d(order, new_f1, new_ev2v, new_fe2e,
+            new_vertCtrlPts, new_edgeCtrlPts, p11, new_fv2v);
+          for (LO k = 0; k < dim; ++k) {
+            face_ctrlPts[new_f1*n_face_pts*dim + k] = newface_c11[k];
           }
-          else {
-            OMEGA_H_CHECK((newface_e0v0 == newface_v0) && (newface_e0v1 == newface_v1));
-          }
-          if ((newface_e1v0 == newface_v2) && (newface_e1v1 == newface_v1)) {
-            newface_e1_flip = 1;
-          }
-          else {
-            OMEGA_H_CHECK((newface_e1v0 == newface_v1) && (newface_e1v1 == newface_v2));
-          }
-          if ((newface_e2v0 == newface_v0) && (newface_e2v1 == newface_v2)) {
-            newface_e2_flip = 1;
-          }
-          else {
-            OMEGA_H_CHECK((newface_e2v0 == newface_v2) && (newface_e2v1 == newface_v0));
-          }
-
-          Real newface_cx00 = new_vertCtrlPts[newface_v0*dim + 0];
-          Real newface_cy00 = new_vertCtrlPts[newface_v0*dim + 1];
-          Real newface_cx30 = new_vertCtrlPts[newface_v1*dim + 0];
-          Real newface_cy30 = new_vertCtrlPts[newface_v1*dim + 1];
-          Real newface_cx03 = new_vertCtrlPts[newface_v2*dim + 0];
-          Real newface_cy03 = new_vertCtrlPts[newface_v2*dim + 1];
-
-          Real newface_cx10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 0];
-          Real newface_cy10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 1];
-          Real newface_cx20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];//2 pts per edge
-          Real newface_cy20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-          if (newface_e0_flip > 0) {
-            swap2(newface_cx10, newface_cx20);
-            swap2(newface_cy10, newface_cy20);
-          }
-
-          Real newface_cx21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 0];
-          Real newface_cy21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 1];
-          Real newface_cx12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-          Real newface_cy12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-          if (newface_e1_flip > 0) {
-            swap2(newface_cx21, newface_cx12);
-            swap2(newface_cy21, newface_cy12);
-          }
-
-          Real newface_cx02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 0];
-          Real newface_cy02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 1];
-          Real newface_cx01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
-          Real newface_cy01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
-          if (newface_e2_flip > 0) {
-            swap2(newface_cx01, newface_cx02);
-            swap2(newface_cy01, newface_cy02);
-          }
-
-          auto xi_11 = xi_11_cube();
-          Real newface_cx11 = (p11_x - newface_cx00*B00_cube(xi_11[0], xi_11[1]) -
-              newface_cx10*B10_cube(xi_11[0], xi_11[1]) -
-              newface_cx20*B20_cube(xi_11[0], xi_11[1]) -
-              newface_cx30*B30_cube(xi_11[0], xi_11[1]) -
-              newface_cx21*B21_cube(xi_11[0], xi_11[1]) -
-              newface_cx12*B12_cube(xi_11[0], xi_11[1]) -
-              newface_cx03*B03_cube(xi_11[0], xi_11[1]) -
-              newface_cx02*B02_cube(xi_11[0], xi_11[1]) -
-              newface_cx01*B01_cube(xi_11[0], xi_11[1]))/B11_cube(xi_11[0], xi_11[1]);
-          Real newface_cy11 = (p11_y - newface_cy00*B00_cube(xi_11[0], xi_11[1]) -
-              newface_cy10*B10_cube(xi_11[0], xi_11[1]) -
-              newface_cy20*B20_cube(xi_11[0], xi_11[1]) -
-              newface_cy30*B30_cube(xi_11[0], xi_11[1]) -
-              newface_cy21*B21_cube(xi_11[0], xi_11[1]) -
-              newface_cy12*B12_cube(xi_11[0], xi_11[1]) -
-              newface_cy03*B03_cube(xi_11[0], xi_11[1]) -
-              newface_cy02*B02_cube(xi_11[0], xi_11[1]) -
-              newface_cy01*B01_cube(xi_11[0], xi_11[1]))/B11_cube(xi_11[0], xi_11[1]);
-          if (old_face == 5)
-            printf("for f1 newface %d p11 is (%f, %f) c11 is (%f,%f)\n",
-                newface, p11_x, p11_y, newface_cx11, newface_cy11);
-          face_ctrlPts[newface*n_face_pts*dim + 0] = newface_cx11;
-          face_ctrlPts[newface*n_face_pts*dim + 1] = newface_cy11;
         }
       }
     }
