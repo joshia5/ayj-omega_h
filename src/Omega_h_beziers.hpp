@@ -157,8 +157,8 @@ OMEGA_H_DEVICE Reals curve_bezier_pts(LO const P) {
     case 6: {
       return Reals({xi_1_hex(),xi_2_hex(),xi_3_hex(),xi_4_hex(),xi_5_hex()});
     }
-    OMEGA_H_NORETURN(Reals());
   }
+  OMEGA_H_NORETURN(Reals());
 }
 
 OMEGA_H_DEVICE Reals triangle_bezier_pts(LO const P) {
@@ -175,8 +175,8 @@ OMEGA_H_DEVICE Reals triangle_bezier_pts(LO const P) {
     case 6: {
       return Reals({});
     }
-    OMEGA_H_NORETURN(Reals());
   }
+  OMEGA_H_NORETURN(Reals());
 }
 
 OMEGA_H_DEVICE Reals tet_bezier_pts(LO const P) {
@@ -190,8 +190,8 @@ OMEGA_H_DEVICE Reals tet_bezier_pts(LO const P) {
     case 6: {
       return Reals({});
     }
-    OMEGA_H_NORETURN(Reals());
   }
+  OMEGA_H_NORETURN(Reals());
 }
 
 //TODO these fns will need to be called from both host and device
@@ -261,7 +261,6 @@ OMEGA_H_DEVICE Reals cubic_noKeyEdge_xi_values(LO old_vert, LO v0, LO v1, LO v2,
     p1_p2[3] = 0.2748043;
   }
   else {
-    Omega_h_fail("incorrect old face\n");
   }
 
  return Reals(p1_p2);
@@ -328,7 +327,6 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values
     }
   }
   else {
-    Omega_h_fail("incorrect old face\n");
   }
   if (should_swap == 1) {
     swap2(p1_p2[0], p1_p2[2]);
@@ -373,7 +371,6 @@ OMEGA_H_DEVICE Reals cubic_region_xi_values
     p11[2] = 1.0/6.0;
   }
   else {
-    Omega_h_fail("incorrect old rgn\n");
   }
 
   return Reals(p11);
@@ -408,7 +405,6 @@ OMEGA_H_DEVICE Int n_internal_ctrlPts(Int edim, Int max_order) {
     return ((max_order-1)*(max_order-2)*(max_order-3))/6;
   }
   else {
-    Omega_h_fail("invalid entity dim\n");
     return -1;
   }
   return -1;
@@ -582,6 +578,112 @@ OMEGA_H_DEVICE Reals rgn_parametricToParent_3d(
   return Reals(p11);
 }
 
+OMEGA_H_DEVICE Reals face_parametricToParent_2d(
+    LO const order, LO const old_face, LOs old_ev2v, LOs old_fe2e,
+    Reals old_vertCtrlPts, Reals old_edgeCtrlPts, Reals old_faceCtrlPts,
+    Reals nodePts, LOs old_fv2v) {
+  LO const dim = 2;
+  LO const n_edge_pts = n_internal_ctrlPts(EDGE, order);
+  LO const v0_old_face = old_fv2v[old_face*3 + 0];
+  LO const v1_old_face = old_fv2v[old_face*3 + 1];
+  LO const v2_old_face = old_fv2v[old_face*3 + 2];
+  LO const old_face_e0 = old_fe2e[old_face*3 + 0];
+  LO const old_face_e1 = old_fe2e[old_face*3 + 1];
+  LO const old_face_e2 = old_fe2e[old_face*3 + 2];
+  I8 e0_flip = -1;
+  I8 e1_flip = -1;
+  I8 e2_flip = -1;
+  LO v1 = v1_old_face;
+  LO v2 = v2_old_face;
+  auto e0v0_old_face = old_ev2v[old_face_e0*2 + 0];
+  auto e0v1 = old_ev2v[old_face_e0*2 + 1];
+  auto e1v0_old_face = old_ev2v[old_face_e1*2 + 0];
+  auto e1v1 = old_ev2v[old_face_e1*2 + 1];
+  auto e2v0_old_face = old_ev2v[old_face_e2*2 + 0];
+  auto e2v1 = old_ev2v[old_face_e2*2 + 1];
+  if ((e0v0_old_face == v1) && (e0v1 == v0_old_face)) {
+    e0_flip = 1;
+  }
+  else {
+    OMEGA_H_CHECK((e0v0_old_face == v0_old_face) && (e0v1 == v1));
+  }
+  if ((e1v0_old_face == v2) && (e1v1 == v1)) {
+    e1_flip = 1;
+  }
+  else {
+    OMEGA_H_CHECK((e1v0_old_face == v1) && (e1v1 == v2));
+  }
+  if ((e2v0_old_face == v0_old_face) && (e2v1 == v2)) {
+    e2_flip = 1;
+  }
+  else {
+    OMEGA_H_CHECK((e2v0_old_face == v2) && (e2v1 == v0_old_face));
+  }
+
+  Real cx00 = old_vertCtrlPts[v0_old_face*dim + 0];
+  Real cy00 = old_vertCtrlPts[v0_old_face*dim + 1];
+  Real cx30 = old_vertCtrlPts[v1*dim + 0];
+  Real cy30 = old_vertCtrlPts[v1*dim + 1];
+  Real cx03 = old_vertCtrlPts[v2*dim + 0];
+  Real cy03 = old_vertCtrlPts[v2*dim + 1];
+
+  auto pts_per_edge = n_edge_pts;
+  Real cx10 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + 0];
+  Real cy10 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + 1];
+  Real cx20 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy20 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  if (e0_flip > 0) {
+    swap2(cx10, cx20);
+    swap2(cy10, cy20);
+  }
+
+  Real cx21 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 0];
+  Real cy21 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 1];
+  Real cx12 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy12 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  if (e1_flip > 0) {
+    swap2(cx12, cx21);
+    swap2(cy12, cy21);
+  }
+
+  Real cx02 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + 0];
+  Real cy02 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + 1];
+  Real cx01 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy01 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  if (e2_flip > 0) {
+    swap2(cx02, cx01);
+    swap2(cy02, cy01);
+  }
+
+  Real cx11 = old_faceCtrlPts[old_face*dim + 0];
+  Real cy11 = old_faceCtrlPts[old_face*dim + 1];
+  auto c00 = vector_2(cx00, cy00);
+  auto c10 = vector_2(cx10, cy10);
+  auto c20 = vector_2(cx20, cy20);
+  auto c30 = vector_2(cx30, cy30);
+  auto c21 = vector_2(cx21, cy21);
+  auto c12 = vector_2(cx12, cy12);
+  auto c03 = vector_2(cx03, cy03);
+  auto c02 = vector_2(cx02, cy02);
+  auto c01 = vector_2(cx01, cy01);
+  auto c11 = vector_2(cx11, cy11);
+
+  Write<Real> p11_w(dim);
+  for (LO k = 0; k < dim; ++k) {
+    p11_w[k] = c00[k]*Bij(order, 0, 0, nodePts[0], nodePts[1]) +
+      c10[k]*Bij(order, 1, 0, nodePts[0], nodePts[1]) +
+      c20[k]*Bij(order, 2, 0, nodePts[0], nodePts[1]) +
+      c30[k]*Bij(order, 3, 0, nodePts[0], nodePts[1]) +
+      c21[k]*Bij(order, 2, 1, nodePts[0], nodePts[1]) +
+      c12[k]*Bij(order, 1, 2, nodePts[0], nodePts[1]) +
+      c03[k]*Bij(order, 0, 3, nodePts[0], nodePts[1]) +
+      c02[k]*Bij(order, 0, 2, nodePts[0], nodePts[1]) +
+      c01[k]*Bij(order, 0, 1, nodePts[0], nodePts[1]) +
+      c11[k]*Bij(order, 1, 1, nodePts[0], nodePts[1]);
+  }
+  return Reals(p11_w);
+}
+
 OMEGA_H_DEVICE Reals face_parametricToParent_3d(
     LO const order, LO const old_face, LOs old_ev2v, LOs old_fe2e,
     Reals old_vertCtrlPts, Reals old_edgeCtrlPts, Reals old_faceCtrlPts,
@@ -717,6 +819,108 @@ OMEGA_H_DEVICE Reals face_parametricToParent_3d(
       c11[k]*Bij(order, 1, 1, nodePts[0], nodePts[1]);
   }
   return Reals(p11_w);
+}
+
+OMEGA_H_DEVICE Reals face_interpToCtrlPt_2d(
+    LO const order, LO const newface, LOs new_ev2v, LOs new_fe2e,
+    Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Reals p11, LOs new_fv2v) {
+  LO const dim=2;
+  //TODO higher than cubic
+  LO const pts_per_edge = n_internal_ctrlPts(EDGE, order);
+  I8 newface_e0_flip = -1;
+  I8 newface_e1_flip = -1;
+  I8 newface_e2_flip = -1;
+  LO newface_v0 = new_fv2v[newface*3 + 0];
+  LO newface_v1 = new_fv2v[newface*3 + 1];
+  LO newface_v2 = new_fv2v[newface*3 + 2];
+  LO newface_e0 = new_fe2e[newface*3 + 0];
+  LO newface_e1 = new_fe2e[newface*3 + 1];
+  LO newface_e2 = new_fe2e[newface*3 + 2];
+  auto newface_e0v0 = new_ev2v[newface_e0*2 + 0];
+  auto newface_e0v1 = new_ev2v[newface_e0*2 + 1];
+  auto newface_e1v0 = new_ev2v[newface_e1*2 + 0];
+  auto newface_e1v1 = new_ev2v[newface_e1*2 + 1];
+  auto newface_e2v0 = new_ev2v[newface_e2*2 + 0];
+  auto newface_e2v1 = new_ev2v[newface_e2*2 + 1];
+  if ((newface_e0v0 == newface_v1) && (newface_e0v1 == newface_v0)) {
+    newface_e0_flip = 1;
+  }
+  else {
+    OMEGA_H_CHECK((newface_e0v0 == newface_v0) && (newface_e0v1 == newface_v1));
+  }
+  if ((newface_e1v0 == newface_v2) && (newface_e1v1 == newface_v1)) {
+    newface_e1_flip = 1;
+  }
+  else {
+    OMEGA_H_CHECK((newface_e1v0 == newface_v1) && (newface_e1v1 == newface_v2));
+  }
+  if ((newface_e2v0 == newface_v0) && (newface_e2v1 == newface_v2)) {
+    newface_e2_flip = 1;
+  }
+  else {
+    OMEGA_H_CHECK((newface_e2v0 == newface_v2) && (newface_e2v1 == newface_v0));
+  }
+
+  Real newface_cx00 = new_vertCtrlPts[newface_v0*dim + 0];
+  Real newface_cy00 = new_vertCtrlPts[newface_v0*dim + 1];
+  Real newface_cx30 = new_vertCtrlPts[newface_v1*dim + 0];
+  Real newface_cy30 = new_vertCtrlPts[newface_v1*dim + 1];
+  Real newface_cx03 = new_vertCtrlPts[newface_v2*dim + 0];
+  Real newface_cy03 = new_vertCtrlPts[newface_v2*dim + 1];
+
+  Real newface_cx10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 0];
+  Real newface_cy10 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + 1];
+  Real newface_cx20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real newface_cy20 = new_edgeCtrlPts[newface_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  if (newface_e0_flip > 0) {
+    swap2(newface_cx10, newface_cx20);
+    swap2(newface_cy10, newface_cy20);
+  }
+
+  Real newface_cx21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 0];
+  Real newface_cy21 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + 1];
+  Real newface_cx12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real newface_cy12 = new_edgeCtrlPts[newface_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  if (newface_e1_flip > 0) {
+    swap2(newface_cx21, newface_cx12);
+    swap2(newface_cy21, newface_cy12);
+  }
+
+  Real newface_cx02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 0];
+  Real newface_cy02 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + 1];
+  Real newface_cx01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real newface_cy01 = new_edgeCtrlPts[newface_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  if (newface_e2_flip > 0) {
+    swap2(newface_cx01, newface_cx02);
+    swap2(newface_cy01, newface_cy02);
+  }
+  auto newface_c00 = vector_2(newface_cx00, newface_cy00);
+  auto newface_c10 = vector_2(newface_cx10, newface_cy10);
+  auto newface_c20 = vector_2(newface_cx20, newface_cy20);
+  auto newface_c30 = vector_2(newface_cx30, newface_cy30);
+  auto newface_c21 = vector_2(newface_cx21, newface_cy21);
+  auto newface_c12 = vector_2(newface_cx12, newface_cy12);
+  auto newface_c03 = vector_2(newface_cx03, newface_cy03);
+  auto newface_c02 = vector_2(newface_cx02, newface_cy02);
+  auto newface_c01 = vector_2(newface_cx01, newface_cy01);
+
+  auto xi_11 = xi_11_cube();
+  Write<Real> newface_c11_w(dim);
+  for (LO k = 0; k < dim; ++k) {
+    newface_c11_w[k] = (p11[k] -
+        newface_c00[k]*Bij(order, 0, 0, xi_11[0], xi_11[1]) -
+        newface_c10[k]*Bij(order, 1, 0, xi_11[0], xi_11[1]) -
+        newface_c20[k]*Bij(order, 2, 0, xi_11[0], xi_11[1]) -
+        newface_c30[k]*Bij(order, 3, 0, xi_11[0], xi_11[1]) -
+        newface_c21[k]*Bij(order, 2, 1, xi_11[0], xi_11[1]) -
+        newface_c12[k]*Bij(order, 1, 2, xi_11[0], xi_11[1]) -
+        newface_c03[k]*Bij(order, 0, 3, xi_11[0], xi_11[1]) -
+        newface_c02[k]*Bij(order, 0, 2, xi_11[0], xi_11[1]) -
+        newface_c01[k]*Bij(order, 0, 1, xi_11[0], xi_11[1]))/
+      Bij(order, 1, 1, xi_11[0], xi_11[1]);
+  }
+
+  return Reals(newface_c11_w);
 }
 
 OMEGA_H_DEVICE Reals face_interpToCtrlPt_3d(
