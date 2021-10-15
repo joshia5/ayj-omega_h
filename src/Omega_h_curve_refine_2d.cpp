@@ -6,6 +6,7 @@
 #include "Omega_h_map.hpp"
 #include "Omega_h_array_ops.hpp"
 #include "Omega_h_vector.hpp"
+#include "Omega_h_matrix.hpp"
 
 namespace Omega_h {
 
@@ -128,27 +129,39 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                        cy2*Bi(order, 2, new_xi_1) + cy3*Bi(order, 3, new_xi_1);
         printf("edge 0 p1 %f, %f \n", new_px1, new_py1);
 
+        auto fx = vector_2(new_px1, new_px2);
+        auto fy = vector_2(new_py1, new_py2);
+        auto M1_inv = matrix_2x2(Bi(order, 1, old_xi_1), Bi(order, 2, old_xi_1),
+                            Bi(order, 1, old_xi_2), Bi(order, 2, old_xi_2));
+        auto M2 = matrix_2x2(Bi(order, 0, old_xi_1), Bi(order, 3, old_xi_1),
+                        Bi(order, 0, old_xi_2), Bi(order, 3, old_xi_2));
+        auto M1 = invert(M1_inv);
+        auto cx = vector_2(cx0, new_cx3);
+        auto cy = vector_2(cy0, new_cy3);
+        
+        auto Cx = M1*fx - M1*M2*cx;
+        auto Cy = M1*fy - M1*M2*cy;
+        edge_ctrlPts[new_e0*n_edge_pts*dim + 0] = Cx[0];
+        edge_ctrlPts[new_e0*n_edge_pts*dim + 1] = Cy[0];
+        edge_ctrlPts[new_e0*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = Cx[1];
+        edge_ctrlPts[new_e0*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = Cy[1];
+        /*
         Matrix<2,1> fx({new_px1, new_px2});
         Matrix<2,1> fy({new_py1, new_py2});
-
         Matrix<2,2> M1_inv({Bi(order, 1, old_xi_1), Bi(order, 2, old_xi_1),
                             Bi(order, 1, old_xi_2), Bi(order, 2, old_xi_2)});
         Matrix<2,2> M2({Bi(order, 0, old_xi_1), Bi(order, 3, old_xi_1),
                         Bi(order, 0, old_xi_2), Bi(order, 3, old_xi_2)});
-
         auto M1 = invert(M1_inv);
-
         Matrix<2,1> cx({cx0, new_cx3});
         Matrix<2,1> cy({cy0, new_cy3});
-        
-        auto Cx = M1*fx - M1*M2*cx;
-        auto Cy = M1*fy - M1*M2*cy;
         edge_ctrlPts[new_e0*n_edge_pts*dim + 0] = Cx(0,0);
         edge_ctrlPts[new_e0*n_edge_pts*dim + 1] = Cy(0,0);
         edge_ctrlPts[new_e0*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = Cx(1,0);
         edge_ctrlPts[new_e0*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = Cy(1,0);
         printf("\n edge 0 c1 %f, %f \n", Cx(0,0), Cy(0,0));
         printf(" edge 0 c2 %f, %f\n", Cx(1,0), Cy(1,0));
+        */
 
       }
       //ctrl pts for e1
@@ -177,6 +190,23 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         Real const new_py1 = cy0*Bi(order, 0, new_xi_1) + cy1*Bi(order, 1, new_xi_1) +
                        cy2*Bi(order, 2, new_xi_1) + cy3*Bi(order, 3, new_xi_1);
 
+        auto cx = vector_2(vert_ctrlPts[mid_vert*1*dim + 0], cx3);
+        auto cy = vector_2(vert_ctrlPts[mid_vert*1*dim + 1], cy3);
+        auto fx = vector_2(new_px1, new_px2);
+        auto fy = vector_2(new_py1, new_py2);
+        auto M1_inv = matrix_2x2(Bi(order, 1, old_xi_1), Bi(order, 2, old_xi_1),
+                            Bi(order, 1, old_xi_2), Bi(order, 2, old_xi_2));
+        auto M2 = matrix_2x2(Bi(order, 0, old_xi_1), Bi(order, 3, old_xi_1),
+                        Bi(order, 0, old_xi_2), Bi(order, 3, old_xi_2));
+        auto M1 = invert(M1_inv);
+        
+        auto Cx = M1*fx - M1*M2*cx;
+        auto Cy = M1*fy - M1*M2*cy;
+        edge_ctrlPts[new_e1*n_edge_pts*dim + 0] = Cx[0];
+        edge_ctrlPts[new_e1*n_edge_pts*dim + 1] = Cy[0];
+        edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = Cx[1];
+        edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = Cy[1];
+        /*
         Matrix<2,1> cx({vert_ctrlPts[mid_vert*1*dim + 0], cx3});
         Matrix<2,1> cy({vert_ctrlPts[mid_vert*1*dim + 1], cy3});
                         
@@ -195,6 +225,7 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         edge_ctrlPts[new_e1*n_edge_pts*dim + 1] = Cy(0,0);
         edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = Cx(1,0);
         edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = Cy(1,0);
+        */
       }
       //ctrl pts for edges on adjacent faces
       for (LO i = 0; i <= (end-start - 2); ++i) {
@@ -240,14 +271,31 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                             old_face_e2);
 
           auto p1 = face_parametricToParent_2d(order, old_face, old_ev2v, old_fe2e,
-              old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, Reals({nodePts[0], nodePts[1]}), old_fv2v);
+              old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, nodePts[0], nodePts[1], old_fv2v);
           auto p2 = face_parametricToParent_2d(order, old_face, old_ev2v, old_fe2e,
-              old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, Reals({nodePts[2], nodePts[3]}), old_fv2v);
+              old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, nodePts[2], nodePts[3], old_fv2v);
           //use these as interp pts to find ctrl pts in new mesh
           {
             Real cx0 = old_vertCtrlPts[old_vert_noKey*dim + 0];
             Real cy0 = old_vertCtrlPts[old_vert_noKey*dim + 1];
 
+            auto cx = vector_2(cx0, vert_ctrlPts[mid_vert*1*dim + 0]);
+            auto cy = vector_2(cy0, vert_ctrlPts[mid_vert*1*dim + 1]);
+            auto fx = vector_2(p1[0], p2[0]);
+            auto fy = vector_2(p1[1], p2[1]);
+            auto M1_inv = matrix_2x2(Bi(order, 1, xi_1_cube()), Bi(order, 2, xi_1_cube()),
+                Bi(order, 1, xi_2_cube()), Bi(order, 2, xi_2_cube()));
+            auto M2 = matrix_2x2(Bi(order, 0, xi_1_cube()), Bi(order, 3, xi_1_cube()),
+                Bi(order, 0, xi_2_cube()), Bi(order, 3, xi_2_cube()));
+            auto M1 = invert(M1_inv);
+
+            auto Cx = M1*fx - M1*M2*cx;
+            auto Cy = M1*fy - M1*M2*cy;
+            edge_ctrlPts[new_e2*n_edge_pts*dim + 0] = Cx[0];
+            edge_ctrlPts[new_e2*n_edge_pts*dim + 1] = Cy[0];
+            edge_ctrlPts[new_e2*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = Cx[1];
+            edge_ctrlPts[new_e2*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = Cy[1];
+        /*
             Matrix<2,1> cx({cx0, vert_ctrlPts[mid_vert*1*dim + 0]});
             Matrix<2,1> cy({cy0, vert_ctrlPts[mid_vert*1*dim + 1]});
 
@@ -266,6 +314,7 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             edge_ctrlPts[new_e2*n_edge_pts*dim + 1] = Cy(0,0);
             edge_ctrlPts[new_e2*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = Cx(1,0);
             edge_ctrlPts[new_e2*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = Cy(1,0);
+            */
           }
         }
       }
@@ -374,7 +423,7 @@ void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
             old_face, old_key_edge, old_vert_noKey);
 
         printf("ok1, new faces f0 f1 %d %d oldface %d\n", new_f0, new_f1, old_face);
-        auto nodePts = cubic_face_xi_values
+        auto nodePts = cubic_faceSplittingEdge_xi_values
           (old_vert_noKey, v0_old_face, v1_old_face, v2_old_face, old_key_edge,
            old_face_e0, old_face_e1, old_face_e2, new_fv2v[new_f0*3 + 0], 
            new_fv2v[new_f0*3 + 1], new_fv2v[new_f0*3 + 2], new_fv2v[new_f1*3 + 0], 
@@ -387,7 +436,7 @@ void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
         {
           //get the interp point
           auto p11 = face_parametricToParent_2d(order, old_face, old_ev2v, old_fe2e,
-            old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, Reals({nodePts[0], nodePts[1]}), old_fv2v);
+            old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, nodePts[0][0], nodePts[0][1], old_fv2v);
           auto newface_c11 = face_interpToCtrlPt_2d(order, new_f0, new_ev2v, new_fe2e,
             new_vertCtrlPts, new_edgeCtrlPts, p11, new_fv2v);
           for (LO k = 0; k < dim; ++k) {
@@ -399,7 +448,7 @@ void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
         {
           //get the interp point
           auto p11 = face_parametricToParent_2d(order, old_face, old_ev2v, old_fe2e,
-            old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, Reals({nodePts[2], nodePts[3]}), old_fv2v);
+            old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, nodePts[1][0], nodePts[1][1], old_fv2v);
           auto newface_c11 = face_interpToCtrlPt_2d(order, new_f1, new_ev2v, new_fe2e,
             new_vertCtrlPts, new_edgeCtrlPts, p11, new_fv2v);
           for (LO k = 0; k < dim; ++k) {

@@ -203,7 +203,8 @@ void calc_quad_ctrlPts_from_interpPts(Mesh *mesh) {
       auto p1 = get_vector<2>(interpPts, i);
       auto c2 = get_vector<2>(coords, v1);
       for (Int j = 0; j < dim; ++j) {
-        c1[j] = (p1[j] - Bi(order, 0, xi_1)*c0[j] - Bi(order, 2, xi_1)*c2[j])/Bi(order, 1, xi_1);
+        c1[j] = (p1[j] - Bi(order, 0, xi_1)*c0[j] - Bi(order, 2, xi_1)*c2[j])/
+          Bi(order, 1, xi_1);
       }
       set_vector(new_pts, i, c1);
     }
@@ -214,7 +215,8 @@ void calc_quad_ctrlPts_from_interpPts(Mesh *mesh) {
       auto p1 = get_vector<3>(interpPts, i);
       auto c2 = get_vector<3>(coords, v1);
       for (Int j = 0; j < dim; ++j) {
-        c1[j] = (p1[j] - Bi(order, 0, xi_1)*c0[j] - Bi(order, 2, xi_1)*c2[j])/Bi(order, 1, xi_1);
+        c1[j] = (p1[j] - Bi(order, 0, xi_1)*c0[j] - Bi(order, 2, xi_1)*c2[j])/
+          Bi(order, 1, xi_1);
       }
       set_vector(new_pts, i, c1);
     }
@@ -411,34 +413,55 @@ void elevate_curve_order_3to4(Mesh* mesh) {
       cz01 = tempz;
     }
 
-    auto oldc11 = Reals({old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 0],
-                         old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 1],
-                         old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 2]});
+    auto oldc11 = vector_3(old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 0],
+                           old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 1],
+                           old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 2]);
 
-    Write<Real> c11(dim, 0.0);
-    Write<Real> c21(dim, 0.0);
-    Write<Real> c12(dim, 0.0);
+    if (dim == 2) {
+      Vector<2> c11;
+      Vector<2> c21;
+      Vector<2> c12;
 
-    c11[0] = (1.0/4.0)*(cx10 + cx01 + 2.0*oldc11[0]);
-    c11[1] = (1.0/4.0)*(cy10 + cy01 + 2.0*oldc11[1]);
-    c11[2] = (1.0/4.0)*(cz10 + cz01 + 2.0*oldc11[2]);
-    c21[0] = (1.0/4.0)*(cx12 + cx02 + 2.0*oldc11[0]);
-    c21[1] = (1.0/4.0)*(cy12 + cy02 + 2.0*oldc11[1]);
-    c21[2] = (1.0/4.0)*(cz12 + cz02 + 2.0*oldc11[2]);
-    c12[0] = (1.0/4.0)*(cx20 + cx21 + 2.0*oldc11[0]);
-    c12[1] = (1.0/4.0)*(cy20 + cy21 + 2.0*oldc11[1]);
-    c12[2] = (1.0/4.0)*(cz20 + cz21 + 2.0*oldc11[2]);
+      c11[0] = (1.0/4.0)*(cx10 + cx01 + 2.0*oldc11[0]);
+      c11[1] = (1.0/4.0)*(cy10 + cy01 + 2.0*oldc11[1]);
+      c21[0] = (1.0/4.0)*(cx12 + cx02 + 2.0*oldc11[0]);
+      c21[1] = (1.0/4.0)*(cy12 + cy02 + 2.0*oldc11[1]);
+      c12[0] = (1.0/4.0)*(cx20 + cx21 + 2.0*oldc11[0]);
+      c12[1] = (1.0/4.0)*(cy20 + cy21 + 2.0*oldc11[1]);
 
-    for (LO d = 0; d < dim; ++d) {
-      face_pts[i*n_new_face_pts*dim + d] = c11[d];
-      face_pts[i*n_new_face_pts*dim + dim + d] = c21[d];
-      face_pts[i*n_new_face_pts*dim + dim + dim + d] = c12[d];
+      for (LO d = 0; d < dim; ++d) {
+        face_pts[i*n_new_face_pts*dim + d] = c11[d];
+        face_pts[i*n_new_face_pts*dim + dim + d] = c21[d];
+        face_pts[i*n_new_face_pts*dim + dim + dim + d] = c12[d];
+      }
+    }
+    else {
+      OMEGA_H_CHECK (dim == 3); 
+      Vector<3> c11;
+      Vector<3> c21;
+      Vector<3> c12;
+
+      c11[0] = (1.0/4.0)*(cx10 + cx01 + 2.0*oldc11[0]);
+      c11[1] = (1.0/4.0)*(cy10 + cy01 + 2.0*oldc11[1]);
+      c11[2] = (1.0/4.0)*(cz10 + cz01 + 2.0*oldc11[2]);
+      c21[0] = (1.0/4.0)*(cx12 + cx02 + 2.0*oldc11[0]);
+      c21[1] = (1.0/4.0)*(cy12 + cy02 + 2.0*oldc11[1]);
+      c21[2] = (1.0/4.0)*(cz12 + cz02 + 2.0*oldc11[2]);
+      c12[0] = (1.0/4.0)*(cx20 + cx21 + 2.0*oldc11[0]);
+      c12[1] = (1.0/4.0)*(cy20 + cy21 + 2.0*oldc11[1]);
+      c12[2] = (1.0/4.0)*(cz20 + cz21 + 2.0*oldc11[2]);
+
+      for (LO d = 0; d < dim; ++d) {
+        face_pts[i*n_new_face_pts*dim + d] = c11[d];
+        face_pts[i*n_new_face_pts*dim + dim + d] = c21[d];
+        face_pts[i*n_new_face_pts*dim + dim + dim + d] = c12[d];
+      }
     }
   };
   parallel_for(nface, std::move(calc_face_pts));
   mesh->set_tag_for_ctrlPts(2, Reals(face_pts));
 
-  //formulae to calc pts inside regions?
+  //TODO calc pts inside region
 
   return;
 }
