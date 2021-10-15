@@ -3,6 +3,8 @@
 
 #include "Omega_h_array.hpp"
 #include "Omega_h_array_ops.hpp"
+#include "Omega_h_vector.hpp"
+#include "Omega_h_few.hpp"
 
 namespace Omega_h {
 
@@ -56,83 +58,89 @@ Real B21_quart(Real u, Real v);
 Real B12_quart(Real u, Real v);
 
 // Babushka chen points
-constexpr OMEGA_H_DEVICE Real xi_1_quad() {
+constexpr OMEGA_H_INLINE Real xi_1_quad() {
   return 0.5;
 }
 
-constexpr OMEGA_H_DEVICE Real xi_1_cube() {
+constexpr OMEGA_H_INLINE Real xi_1_cube() {
   return 0.2748043;
 }
-constexpr OMEGA_H_DEVICE Real xi_2_cube() {
+constexpr OMEGA_H_INLINE Real xi_2_cube() {
   return 0.7251957;
 }
 
-constexpr OMEGA_H_DEVICE Real xi_1_quart() {
+constexpr OMEGA_H_INLINE Real xi_1_quart() {
   return 0.1693976;
 }
-constexpr OMEGA_H_DEVICE Real xi_2_quart() {
+constexpr OMEGA_H_INLINE Real xi_2_quart() {
   return 0.5;
 }
-constexpr OMEGA_H_DEVICE Real xi_3_quart() {
+constexpr OMEGA_H_INLINE Real xi_3_quart() {
   return 0.8306024;
 }
 
-constexpr OMEGA_H_DEVICE Real xi_1_quint() {
+constexpr OMEGA_H_INLINE Real xi_1_quint() {
   return 0.1133573;
 }
-constexpr OMEGA_H_DEVICE Real xi_2_quint() {
+constexpr OMEGA_H_INLINE Real xi_2_quint() {
   return 0.3568239;
 }
-constexpr OMEGA_H_DEVICE Real xi_3_quint() {
+constexpr OMEGA_H_INLINE Real xi_3_quint() {
   return 0.6431761;
 }
-constexpr OMEGA_H_DEVICE Real xi_4_quint() {
+constexpr OMEGA_H_INLINE Real xi_4_quint() {
   return 0.8866427;
 }
 
-constexpr OMEGA_H_DEVICE Real xi_1_hex() {
+constexpr OMEGA_H_INLINE Real xi_1_hex() {
   return 0.0805979;
 }
-constexpr OMEGA_H_DEVICE Real xi_2_hex() {
+constexpr OMEGA_H_INLINE Real xi_2_hex() {
   return 0.2650895;
 }
-constexpr OMEGA_H_DEVICE Real xi_3_hex() {
+constexpr OMEGA_H_INLINE Real xi_3_hex() {
   return 0.5;
 }
-constexpr OMEGA_H_DEVICE Real xi_4_hex() {
+constexpr OMEGA_H_INLINE Real xi_4_hex() {
   return 0.7349105;
 }
-constexpr OMEGA_H_DEVICE Real xi_5_hex() {
+constexpr OMEGA_H_INLINE Real xi_5_hex() {
   return 0.9194021;
 }
 
-OMEGA_H_DEVICE Reals xi_11_cube() {
+OMEGA_H_INLINE Vector<2> xi_11_cube() {
+  return vector_2(1.0/3.0, 1.0/3.0);
+//OMEGA_H_INLINE Reals xi_11_cube() {
+/*
   Write<Real> xi_11(2);
+  //Write<Real> xi_11(2);
   xi_11[0] = 1.0/3.0;
   xi_11[1] = 1.0/3.0;
-  return Reals(xi_11);
+  return xi_11;
+  //return Reals(xi_11);
+  */
 }
 
-OMEGA_H_DEVICE Reals xi_11_quart() {
+OMEGA_H_INLINE Reals xi_11_quart() {
   Write<Real> xi_11(2);
   xi_11[0] = 0.22088805;
   xi_11[1] = 0.22088805;
   return Reals(xi_11);
 }
-OMEGA_H_DEVICE Reals xi_21_quart() {
+OMEGA_H_INLINE Reals xi_21_quart() {
   Write<Real> xi_21(2);
   xi_21[0] = 0.5582239;
   xi_21[1] = 0.22088805;
   return Reals(xi_21);
 }
-OMEGA_H_DEVICE Reals xi_12_quart() {
+OMEGA_H_INLINE Reals xi_12_quart() {
   Write<Real> xi_12(2);
   xi_12[0] = 0.22088805;
   xi_12[1] = 0.5582239;
   return Reals(xi_12);
 }
 
-OMEGA_H_DEVICE Reals xi_111_quart() {
+OMEGA_H_INLINE Reals xi_111_quart() {
   Write<Real> xi_111(3);
   xi_111[0] = 1.0/4.0;
   xi_111[1] = 1.0/4.0;
@@ -140,7 +148,9 @@ OMEGA_H_DEVICE Reals xi_111_quart() {
   return Reals(xi_111);
 }
 
-OMEGA_H_DEVICE Reals curve_bezier_pts(LO const P) {
+/*
+Reals curve_bezier_pts(LO const P) {
+//OMEGA_H_INLINE Reals curve_bezier_pts(LO const P) {
   switch (P) {
     case 2: {
       return Reals({xi_1_quad()});
@@ -161,7 +171,8 @@ OMEGA_H_DEVICE Reals curve_bezier_pts(LO const P) {
   OMEGA_H_NORETURN(Reals());
 }
 
-OMEGA_H_DEVICE Reals triangle_bezier_pts(LO const P) {
+Reals triangle_bezier_pts(LO const P) {
+//OMEGA_H_INLINE Reals triangle_bezier_pts(LO const P) {
   switch (P) {
     case 3: {
       return xi_11_cube();
@@ -179,7 +190,7 @@ OMEGA_H_DEVICE Reals triangle_bezier_pts(LO const P) {
   OMEGA_H_NORETURN(Reals());
 }
 
-OMEGA_H_DEVICE Reals tet_bezier_pts(LO const P) {
+OMEGA_H_INLINE Reals tet_bezier_pts(LO const P) {
   switch (P) {
     case 4: {
       return xi_111_quart();
@@ -193,9 +204,9 @@ OMEGA_H_DEVICE Reals tet_bezier_pts(LO const P) {
   }
   OMEGA_H_NORETURN(Reals());
 }
+*/
 
-//TODO these fns will need to be called from both host and device
-constexpr OMEGA_H_DEVICE Real
+constexpr OMEGA_H_INLINE Real
 Bijk(LO const P, LO const i, LO const j, LO const k, Real const u,
      Real const v, Real const w) noexcept {
   LO const l = P - i - j - k;
@@ -207,7 +218,7 @@ Bijk(LO const P, LO const i, LO const j, LO const k, Real const u,
     factorial(1.0*i)*factorial(1.0*j)*factorial(1.0*k)*factorial(1.0*l));
 }
 
-constexpr OMEGA_H_DEVICE Real 
+constexpr OMEGA_H_INLINE Real 
 Bij(LO const P, LO const i, LO const j, Real const u, Real const v) noexcept {
   LO const k = P - i - j;
   OMEGA_H_CHECK((k >= 0) && (k <= P));
@@ -218,7 +229,7 @@ Bij(LO const P, LO const i, LO const j, Real const u, Real const v) noexcept {
     factorial(1.0*i)*factorial(1.0*j)*factorial(1.0*k));
 }
 
-constexpr OMEGA_H_DEVICE Real 
+constexpr OMEGA_H_INLINE Real 
 Bi(LO const P, LO const i, Real const u) noexcept {
   LO const j = P - i;
   OMEGA_H_CHECK((j >= 0) && (j <= P));
@@ -235,7 +246,7 @@ void elevate_curve_order_5to6(Mesh* mesh);
 
 void calc_quad_ctrlPts_from_interpPts(Mesh *mesh);
 
-OMEGA_H_DEVICE Reals cubic_noKeyEdge_xi_values(LO old_vert, LO v0, LO v1, LO v2,
+OMEGA_H_INLINE Reals cubic_noKeyEdge_xi_values(LO old_vert, LO v0, LO v1, LO v2,
                                         LO old_edge, LO e0, LO e1, LO e2) {
 
   Write<Real> p1_p2(4);
@@ -263,24 +274,32 @@ OMEGA_H_DEVICE Reals cubic_noKeyEdge_xi_values(LO old_vert, LO v0, LO v1, LO v2,
   else {
   }
 
- return Reals(p1_p2);
+  return Reals(p1_p2);
 }
 
-OMEGA_H_DEVICE Reals cubic_face_xi_values
+OMEGA_H_INLINE Few<Vector<2>, 2> cubic_faceSplittingEdge_xi_values
   (LO const old_noKey_vert, LO const old_v0, LO const old_v1, LO const old_v2,
    LO const old_key_edge, LO const old_e0, LO const old_e1, LO const old_e2,
    LO const new_v0_f0, LO const new_v1_f0, LO const new_v2_f0,
    LO const new_v0_f1, LO const new_v1_f1, LO const new_v2_f1,
    LO const oldf_v0_new, LO const oldf_v1_new, LO const oldf_v2_new) {
 
-  Write<Real> p1_p2(4);
+  Vector<2> p1;
+  Vector<2> p2;
+  //Write<Real> p1_p2(4);
   I8 should_swap = -1;
   if (old_noKey_vert == old_v0) {
     OMEGA_H_CHECK(old_key_edge == old_e1);
+    p1[0] = 1.0/2.0;
+    p1[1] = 1.0/6.0;
+    p2[0] = 1.0/6.0;
+    p2[1] = 1.0/2.0;
+    /*
     p1_p2[0] = 1.0/2.0;
     p1_p2[1] = 1.0/6.0;
     p1_p2[2] = 1.0/6.0;
     p1_p2[3] = 1.0/2.0;
+    */
 
     if ((oldf_v1_new == new_v0_f0) || (oldf_v1_new == new_v1_f0) || 
         (oldf_v1_new == new_v2_f0)) {
@@ -294,11 +313,16 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values
   }
   else if (old_noKey_vert == old_v1) {
     OMEGA_H_CHECK(old_key_edge == old_e2);
+    /*
     p1_p2[0] = 1.0/3.0;
     p1_p2[1] = 1.0/2.0;
     p1_p2[2] = 1.0/3.0;
     p1_p2[3] = 1.0/6.0;
-
+*/
+    p1[0] = 1.0/3.0;
+    p1[1] = 1.0/2.0;
+    p2[0] = 1.0/3.0;
+    p2[1] = 1.0/6.0;
     if ((oldf_v2_new == new_v0_f0) || (oldf_v2_new == new_v1_f0) ||
         (oldf_v2_new == new_v2_f0)) {
       should_swap = -1;
@@ -311,11 +335,16 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values
   }
   else if (old_noKey_vert == old_v2) {
     OMEGA_H_CHECK(old_key_edge == old_e0);
+    p1[0] = 1.0/6.0;
+    p1[1] = 1.0/3.0;
+    p2[0] = 1.0/2.0;
+    p2[1] = 1.0/3.0;
+    /*
     p1_p2[0] = 1.0/6.0;
     p1_p2[1] = 1.0/3.0;
     p1_p2[2] = 1.0/2.0;
     p1_p2[3] = 1.0/3.0;
-
+*/
     if ((oldf_v0_new == new_v0_f0) || (oldf_v0_new == new_v1_f0) ||
         (oldf_v0_new == new_v2_f0)) {
       should_swap = -1;
@@ -329,17 +358,22 @@ OMEGA_H_DEVICE Reals cubic_face_xi_values
   else {
   }
   if (should_swap == 1) {
-    swap2(p1_p2[0], p1_p2[2]);
-    swap2(p1_p2[1], p1_p2[3]);
+    swap2(p1[0], p2[0]);
+    swap2(p1[1], p2[1]);
+    //swap2(p1_p2[0], p1_p2[2]);
+    //swap2(p1_p2[1], p1_p2[3]);
   }
 
-  return Reals(p1_p2);
+  Few<Vector<2>, 2> p1_p2({p1, p2});;
+  return p1_p2;
+  //return Few<Vector<2>, 2> Reals(p1_p2);
 }
 
-OMEGA_H_DEVICE Reals cubic_region_xi_values
+OMEGA_H_INLINE Vector<3> cubic_region_xi_values
+//OMEGA_H_INLINE Reals cubic_region_xi_values
   (LO const old_key_edge, LO const old_e0, LO const old_e1, LO const old_e2,
    LO const old_e3, LO const old_e4, LO const old_e5) {
-  Write<Real> p11(3);
+  Vector<3> p11;
   if (old_key_edge == old_e0) {
     p11[0] = 1.0/6.0;
     p11[1] = 1.0/3.0;
@@ -373,10 +407,11 @@ OMEGA_H_DEVICE Reals cubic_region_xi_values
   else {
   }
 
-  return Reals(p11);
+  //return Reals(p11);
+  return p11;
 }
 
-OMEGA_H_DEVICE LO edge_is_flip(LO const e0v0, LO const e0v1, LO const v0,
+OMEGA_H_INLINE LO edge_is_flip(LO const e0v0, LO const e0v1, LO const v0,
                                LO const v1) {
   LO is_flip = -1;
   if ((e0v0 == v1) && (e0v1 == v0)) {
@@ -388,7 +423,7 @@ OMEGA_H_DEVICE LO edge_is_flip(LO const e0v0, LO const e0v1, LO const v0,
   return is_flip;
 }
 
-OMEGA_H_DEVICE Int n_internal_ctrlPts(Int edim, Int max_order) {
+OMEGA_H_INLINE Int n_internal_ctrlPts(Int edim, Int max_order) {
   OMEGA_H_CHECK(max_order > 0);
   OMEGA_H_CHECK(edim >= 0);
 
@@ -410,10 +445,10 @@ OMEGA_H_DEVICE Int n_internal_ctrlPts(Int edim, Int max_order) {
   return -1;
 }
 
-OMEGA_H_DEVICE Reals rgn_parametricToParent_3d(
+OMEGA_H_INLINE Reals rgn_parametricToParent_3d(
     LO const order, LO const old_rgn, LOs old_ev2v, LOs old_rv2v,
     Reals old_vertCtrlPts, Reals old_edgeCtrlPts, Reals old_faceCtrlPts,
-    Reals nodePt, LOs old_re2e, LOs old_rf2f) {
+    Vector<3> nodePt, LOs old_re2e, LOs old_rf2f) {
   LO const dim = 3;
   LO const n_edge_pts = n_internal_ctrlPts(EDGE, order);
   auto old_rgn_v0 = old_rv2v[old_rgn*4 + 0];
@@ -578,10 +613,10 @@ OMEGA_H_DEVICE Reals rgn_parametricToParent_3d(
   return Reals(p11);
 }
 
-OMEGA_H_DEVICE Reals face_parametricToParent_2d(
+OMEGA_H_INLINE Reals face_parametricToParent_2d(
     LO const order, LO const old_face, LOs old_ev2v, LOs old_fe2e,
     Reals old_vertCtrlPts, Reals old_edgeCtrlPts, Reals old_faceCtrlPts,
-    Reals nodePts, LOs old_fv2v) {
+    Real nodePts_0, Real nodePts_1, LOs old_fv2v) {
   LO const dim = 2;
   LO const n_edge_pts = n_internal_ctrlPts(EDGE, order);
   LO const v0_old_face = old_fv2v[old_face*3 + 0];
@@ -670,24 +705,24 @@ OMEGA_H_DEVICE Reals face_parametricToParent_2d(
 
   Write<Real> p11_w(dim);
   for (LO k = 0; k < dim; ++k) {
-    p11_w[k] = c00[k]*Bij(order, 0, 0, nodePts[0], nodePts[1]) +
-      c10[k]*Bij(order, 1, 0, nodePts[0], nodePts[1]) +
-      c20[k]*Bij(order, 2, 0, nodePts[0], nodePts[1]) +
-      c30[k]*Bij(order, 3, 0, nodePts[0], nodePts[1]) +
-      c21[k]*Bij(order, 2, 1, nodePts[0], nodePts[1]) +
-      c12[k]*Bij(order, 1, 2, nodePts[0], nodePts[1]) +
-      c03[k]*Bij(order, 0, 3, nodePts[0], nodePts[1]) +
-      c02[k]*Bij(order, 0, 2, nodePts[0], nodePts[1]) +
-      c01[k]*Bij(order, 0, 1, nodePts[0], nodePts[1]) +
-      c11[k]*Bij(order, 1, 1, nodePts[0], nodePts[1]);
+    p11_w[k] = c00[k]*Bij(order, 0, 0, nodePts_0, nodePts_1) +
+      c10[k]*Bij(order, 1, 0, nodePts_0, nodePts_1) +
+      c20[k]*Bij(order, 2, 0, nodePts_0, nodePts_1) +
+      c30[k]*Bij(order, 3, 0, nodePts_0, nodePts_1) +
+      c21[k]*Bij(order, 2, 1, nodePts_0, nodePts_1) +
+      c12[k]*Bij(order, 1, 2, nodePts_0, nodePts_1) +
+      c03[k]*Bij(order, 0, 3, nodePts_0, nodePts_1) +
+      c02[k]*Bij(order, 0, 2, nodePts_0, nodePts_1) +
+      c01[k]*Bij(order, 0, 1, nodePts_0, nodePts_1) +
+      c11[k]*Bij(order, 1, 1, nodePts_0, nodePts_1);
   }
   return Reals(p11_w);
 }
 
-OMEGA_H_DEVICE Reals face_parametricToParent_3d(
+OMEGA_H_INLINE Reals face_parametricToParent_3d(
     LO const order, LO const old_face, LOs old_ev2v, LOs old_fe2e,
     Reals old_vertCtrlPts, Reals old_edgeCtrlPts, Reals old_faceCtrlPts,
-    Reals nodePts, LOs old_fv2v) {
+    Real nodePts_0, Real nodePts_1, LOs old_fv2v) {
   LO const dim = 3;
   LO const n_edge_pts = n_internal_ctrlPts(EDGE, order);
   LO const v0_old_face = old_fv2v[old_face*3 + 0];
@@ -807,21 +842,21 @@ OMEGA_H_DEVICE Reals face_parametricToParent_3d(
 
   Write<Real> p11_w(3);
   for (LO k = 0; k < 3; ++k) {
-    p11_w[k] = c00[k]*Bij(order, 0, 0, nodePts[0], nodePts[1]) +
-      c10[k]*Bij(order, 1, 0, nodePts[0], nodePts[1]) +
-      c20[k]*Bij(order, 2, 0, nodePts[0], nodePts[1]) +
-      c30[k]*Bij(order, 3, 0, nodePts[0], nodePts[1]) +
-      c21[k]*Bij(order, 2, 1, nodePts[0], nodePts[1]) +
-      c12[k]*Bij(order, 1, 2, nodePts[0], nodePts[1]) +
-      c03[k]*Bij(order, 0, 3, nodePts[0], nodePts[1]) +
-      c02[k]*Bij(order, 0, 2, nodePts[0], nodePts[1]) +
-      c01[k]*Bij(order, 0, 1, nodePts[0], nodePts[1]) +
-      c11[k]*Bij(order, 1, 1, nodePts[0], nodePts[1]);
+    p11_w[k] = c00[k]*Bij(order, 0, 0, nodePts_0, nodePts_1) +
+      c10[k]*Bij(order, 1, 0, nodePts_0, nodePts_1) +
+      c20[k]*Bij(order, 2, 0, nodePts_0, nodePts_1) +
+      c30[k]*Bij(order, 3, 0, nodePts_0, nodePts_1) +
+      c21[k]*Bij(order, 2, 1, nodePts_0, nodePts_1) +
+      c12[k]*Bij(order, 1, 2, nodePts_0, nodePts_1) +
+      c03[k]*Bij(order, 0, 3, nodePts_0, nodePts_1) +
+      c02[k]*Bij(order, 0, 2, nodePts_0, nodePts_1) +
+      c01[k]*Bij(order, 0, 1, nodePts_0, nodePts_1) +
+      c11[k]*Bij(order, 1, 1, nodePts_0, nodePts_1);
   }
   return Reals(p11_w);
 }
 
-OMEGA_H_DEVICE Reals face_interpToCtrlPt_2d(
+OMEGA_H_INLINE Reals face_interpToCtrlPt_2d(
     LO const order, LO const newface, LOs new_ev2v, LOs new_fe2e,
     Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Reals p11, LOs new_fv2v) {
   LO const dim=2;
@@ -923,7 +958,7 @@ OMEGA_H_DEVICE Reals face_interpToCtrlPt_2d(
   return Reals(newface_c11_w);
 }
 
-OMEGA_H_DEVICE Reals face_interpToCtrlPt_3d(
+OMEGA_H_INLINE Reals face_interpToCtrlPt_3d(
     LO const order, LO const newface, LOs new_ev2v, LOs new_fe2e,
     Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Reals p11, LOs new_fv2v) {
   LO const dim=3;
@@ -1039,7 +1074,7 @@ OMEGA_H_DEVICE Reals face_interpToCtrlPt_3d(
 }
 
 /*
-OMEGA_H_DEVICE Reals edge_interpToCtrlPt_3d(
+OMEGA_H_INLINE Reals edge_interpToCtrlPt_3d(
     LO const order, Reals interp_pts, Reals c0, Reals cN, t newface, LOs new_ev2v, LOs new_fe2e,
     Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Reals p11, LOs new_fv2v) {
   //TODO higher than cubic
