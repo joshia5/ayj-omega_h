@@ -110,6 +110,24 @@ constexpr OMEGA_H_INLINE Real xi_5_hex() {
 
 OMEGA_H_INLINE Vector<2> xi_11_cube() {
   return vector_2(1.0/3.0, 1.0/3.0);
+}
+OMEGA_H_INLINE Vector<2> xi_11_quart() {
+  return vector_2(0.22088805, 0.22088805);
+}
+OMEGA_H_INLINE Vector<2> xi_21_quart() {
+  return vector_2(0.5582239, 0.22088805);
+}
+OMEGA_H_INLINE Vector<2> xi_12_quart() {
+  return vector_2(0.22088805, 0.5582239);
+}
+/*
+OMEGA_H_INLINE Reals xi_11_quart() {
+  Write<Real> xi_11(2);
+  xi_11[0] = 0.22088805;
+  xi_11[1] = 0.22088805;
+  return Reals(xi_11);
+}
+*/
 //OMEGA_H_INLINE Reals xi_11_cube() {
 /*
   Write<Real> xi_11(2);
@@ -119,14 +137,7 @@ OMEGA_H_INLINE Vector<2> xi_11_cube() {
   return xi_11;
   //return Reals(xi_11);
   */
-}
-
-OMEGA_H_INLINE Reals xi_11_quart() {
-  Write<Real> xi_11(2);
-  xi_11[0] = 0.22088805;
-  xi_11[1] = 0.22088805;
-  return Reals(xi_11);
-}
+  /*
 OMEGA_H_INLINE Reals xi_21_quart() {
   Write<Real> xi_21(2);
   xi_21[0] = 0.5582239;
@@ -139,16 +150,14 @@ OMEGA_H_INLINE Reals xi_12_quart() {
   xi_12[1] = 0.5582239;
   return Reals(xi_12);
 }
-
-OMEGA_H_INLINE Reals xi_111_quart() {
-  Write<Real> xi_111(3);
-  xi_111[0] = 1.0/4.0;
-  xi_111[1] = 1.0/4.0;
-  xi_111[2] = 1.0/4.0;
-  return Reals(xi_111);
+*/
+OMEGA_H_INLINE Vector<3> xi_111_quart() {
+  return vector_3(1.0/4.0, 1.0/4.0, 1.0/4.0);
 }
 
 /*
+//TODO limititations for generalized order : 1. these fns will need to be
+//dynamically sized, 2. lin eqn solve on gpu 
 Reals curve_bezier_pts(LO const P) {
 //OMEGA_H_INLINE Reals curve_bezier_pts(LO const P) {
   switch (P) {
@@ -246,10 +255,10 @@ void elevate_curve_order_5to6(Mesh* mesh);
 
 void calc_quad_ctrlPts_from_interpPts(Mesh *mesh);
 
-OMEGA_H_INLINE Reals cubic_noKeyEdge_xi_values(LO old_vert, LO v0, LO v1, LO v2,
-                                        LO old_edge, LO e0, LO e1, LO e2) {
+OMEGA_H_INLINE Few<Real,4> cubic_noKeyEdge_xi_values(
+    LO old_vert, LO v0, LO v1, LO v2, LO old_edge, LO e0, LO e1, LO e2) {
 
-  Write<Real> p1_p2(4);
+  Few<Real, 4> p1_p2;
   if (old_vert == v0) {
     OMEGA_H_CHECK(old_edge == e1);
     p1_p2[0] = 0.13740215;
@@ -274,32 +283,24 @@ OMEGA_H_INLINE Reals cubic_noKeyEdge_xi_values(LO old_vert, LO v0, LO v1, LO v2,
   else {
   }
 
-  return Reals(p1_p2);
+  return p1_p2;
 }
 
-OMEGA_H_INLINE Few<Vector<2>, 2> cubic_faceSplittingEdge_xi_values
+OMEGA_H_INLINE Few<Real,4> cubic_faceSplittingEdge_xi_values
   (LO const old_noKey_vert, LO const old_v0, LO const old_v1, LO const old_v2,
    LO const old_key_edge, LO const old_e0, LO const old_e1, LO const old_e2,
    LO const new_v0_f0, LO const new_v1_f0, LO const new_v2_f0,
    LO const new_v0_f1, LO const new_v1_f1, LO const new_v2_f1,
    LO const oldf_v0_new, LO const oldf_v1_new, LO const oldf_v2_new) {
 
-  Vector<2> p1;
-  Vector<2> p2;
-  //Write<Real> p1_p2(4);
+  Few<Real, 4> p1_p2;
   I8 should_swap = -1;
   if (old_noKey_vert == old_v0) {
     OMEGA_H_CHECK(old_key_edge == old_e1);
-    p1[0] = 1.0/2.0;
-    p1[1] = 1.0/6.0;
-    p2[0] = 1.0/6.0;
-    p2[1] = 1.0/2.0;
-    /*
     p1_p2[0] = 1.0/2.0;
     p1_p2[1] = 1.0/6.0;
     p1_p2[2] = 1.0/6.0;
     p1_p2[3] = 1.0/2.0;
-    */
 
     if ((oldf_v1_new == new_v0_f0) || (oldf_v1_new == new_v1_f0) || 
         (oldf_v1_new == new_v2_f0)) {
@@ -313,16 +314,10 @@ OMEGA_H_INLINE Few<Vector<2>, 2> cubic_faceSplittingEdge_xi_values
   }
   else if (old_noKey_vert == old_v1) {
     OMEGA_H_CHECK(old_key_edge == old_e2);
-    /*
     p1_p2[0] = 1.0/3.0;
     p1_p2[1] = 1.0/2.0;
     p1_p2[2] = 1.0/3.0;
     p1_p2[3] = 1.0/6.0;
-*/
-    p1[0] = 1.0/3.0;
-    p1[1] = 1.0/2.0;
-    p2[0] = 1.0/3.0;
-    p2[1] = 1.0/6.0;
     if ((oldf_v2_new == new_v0_f0) || (oldf_v2_new == new_v1_f0) ||
         (oldf_v2_new == new_v2_f0)) {
       should_swap = -1;
@@ -335,16 +330,10 @@ OMEGA_H_INLINE Few<Vector<2>, 2> cubic_faceSplittingEdge_xi_values
   }
   else if (old_noKey_vert == old_v2) {
     OMEGA_H_CHECK(old_key_edge == old_e0);
-    p1[0] = 1.0/6.0;
-    p1[1] = 1.0/3.0;
-    p2[0] = 1.0/2.0;
-    p2[1] = 1.0/3.0;
-    /*
     p1_p2[0] = 1.0/6.0;
     p1_p2[1] = 1.0/3.0;
     p1_p2[2] = 1.0/2.0;
     p1_p2[3] = 1.0/3.0;
-*/
     if ((oldf_v0_new == new_v0_f0) || (oldf_v0_new == new_v1_f0) ||
         (oldf_v0_new == new_v2_f0)) {
       should_swap = -1;
@@ -358,19 +347,14 @@ OMEGA_H_INLINE Few<Vector<2>, 2> cubic_faceSplittingEdge_xi_values
   else {
   }
   if (should_swap == 1) {
-    swap2(p1[0], p2[0]);
-    swap2(p1[1], p2[1]);
-    //swap2(p1_p2[0], p1_p2[2]);
-    //swap2(p1_p2[1], p1_p2[3]);
+    swap2(p1_p2[0], p1_p2[2]);
+    swap2(p1_p2[1], p1_p2[3]);
   }
 
-  Few<Vector<2>, 2> p1_p2({p1, p2});;
   return p1_p2;
-  //return Few<Vector<2>, 2> Reals(p1_p2);
 }
 
 OMEGA_H_INLINE Vector<3> cubic_region_xi_values
-//OMEGA_H_INLINE Reals cubic_region_xi_values
   (LO const old_key_edge, LO const old_e0, LO const old_e1, LO const old_e2,
    LO const old_e3, LO const old_e4, LO const old_e5) {
   Vector<3> p11;
@@ -407,7 +391,6 @@ OMEGA_H_INLINE Vector<3> cubic_region_xi_values
   else {
   }
 
-  //return Reals(p11);
   return p11;
 }
 
@@ -445,7 +428,7 @@ OMEGA_H_INLINE Int n_internal_ctrlPts(Int edim, Int max_order) {
   return -1;
 }
 
-OMEGA_H_INLINE Reals rgn_parametricToParent_3d(
+OMEGA_H_DEVICE Vector<3> rgn_parametricToParent_3d(
     LO const order, LO const old_rgn, LOs old_ev2v, LOs old_rv2v,
     Reals old_vertCtrlPts, Reals old_edgeCtrlPts, Reals old_faceCtrlPts,
     Vector<3> nodePt, LOs old_re2e, LOs old_rf2f) {
@@ -585,7 +568,7 @@ OMEGA_H_INLINE Reals rgn_parametricToParent_3d(
   auto c012 = vector_3(cx012, cy012, cz012);
   auto c021 = vector_3(cx021, cy021, cz021);
 
-  Write<Real> p11(3);
+  Vector<3> p11;
   for (LO j = 0; j < dim; ++j) {
     p11[j] = c000[j]*Bijk(order,0,0,0,nodePt[0],nodePt[1],nodePt[2]) +
       c300[j]*Bijk(order,3,0,0,nodePt[0],nodePt[1],nodePt[2]) +
@@ -610,10 +593,10 @@ OMEGA_H_INLINE Reals rgn_parametricToParent_3d(
       c111[j]*Bijk(order,1,1,1,nodePt[0],nodePt[1],nodePt[2]) +
       c011[j]*Bijk(order,0,1,1,nodePt[0],nodePt[1],nodePt[2]);
   }
-  return Reals(p11);
+  return p11;
 }
 
-OMEGA_H_INLINE Reals face_parametricToParent_2d(
+OMEGA_H_DEVICE Vector<2> face_parametricToParent_2d(
     LO const order, LO const old_face, LOs old_ev2v, LOs old_fe2e,
     Reals old_vertCtrlPts, Reals old_edgeCtrlPts, Reals old_faceCtrlPts,
     Real nodePts_0, Real nodePts_1, LOs old_fv2v) {
@@ -703,7 +686,7 @@ OMEGA_H_INLINE Reals face_parametricToParent_2d(
   auto c01 = vector_2(cx01, cy01);
   auto c11 = vector_2(cx11, cy11);
 
-  Write<Real> p11_w(dim);
+  Vector<2> p11_w;
   for (LO k = 0; k < dim; ++k) {
     p11_w[k] = c00[k]*Bij(order, 0, 0, nodePts_0, nodePts_1) +
       c10[k]*Bij(order, 1, 0, nodePts_0, nodePts_1) +
@@ -716,10 +699,10 @@ OMEGA_H_INLINE Reals face_parametricToParent_2d(
       c01[k]*Bij(order, 0, 1, nodePts_0, nodePts_1) +
       c11[k]*Bij(order, 1, 1, nodePts_0, nodePts_1);
   }
-  return Reals(p11_w);
+  return p11_w;
 }
 
-OMEGA_H_INLINE Reals face_parametricToParent_3d(
+OMEGA_H_DEVICE Vector<3> face_parametricToParent_3d(
     LO const order, LO const old_face, LOs old_ev2v, LOs old_fe2e,
     Reals old_vertCtrlPts, Reals old_edgeCtrlPts, Reals old_faceCtrlPts,
     Real nodePts_0, Real nodePts_1, LOs old_fv2v) {
@@ -840,7 +823,7 @@ OMEGA_H_INLINE Reals face_parametricToParent_3d(
   auto c01 = vector_3(cx01, cy01, cz01);
   auto c11 = vector_3(cx11, cy11, cz11);
 
-  Write<Real> p11_w(3);
+  Vector<3> p11_w;
   for (LO k = 0; k < 3; ++k) {
     p11_w[k] = c00[k]*Bij(order, 0, 0, nodePts_0, nodePts_1) +
       c10[k]*Bij(order, 1, 0, nodePts_0, nodePts_1) +
@@ -853,12 +836,12 @@ OMEGA_H_INLINE Reals face_parametricToParent_3d(
       c01[k]*Bij(order, 0, 1, nodePts_0, nodePts_1) +
       c11[k]*Bij(order, 1, 1, nodePts_0, nodePts_1);
   }
-  return Reals(p11_w);
+  return p11_w;
 }
 
-OMEGA_H_INLINE Reals face_interpToCtrlPt_2d(
+OMEGA_H_DEVICE Vector<2> face_interpToCtrlPt_2d(
     LO const order, LO const newface, LOs new_ev2v, LOs new_fe2e,
-    Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Reals p11, LOs new_fv2v) {
+    Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Vector<2> p11, LOs new_fv2v) {
   LO const dim=2;
   //TODO higher than cubic
   LO const pts_per_edge = n_internal_ctrlPts(EDGE, order);
@@ -940,7 +923,7 @@ OMEGA_H_INLINE Reals face_interpToCtrlPt_2d(
   auto newface_c01 = vector_2(newface_cx01, newface_cy01);
 
   auto xi_11 = xi_11_cube();
-  Write<Real> newface_c11_w(dim);
+  Vector<2> newface_c11_w;
   for (LO k = 0; k < dim; ++k) {
     newface_c11_w[k] = (p11[k] -
         newface_c00[k]*Bij(order, 0, 0, xi_11[0], xi_11[1]) -
@@ -955,12 +938,12 @@ OMEGA_H_INLINE Reals face_interpToCtrlPt_2d(
       Bij(order, 1, 1, xi_11[0], xi_11[1]);
   }
 
-  return Reals(newface_c11_w);
+  return newface_c11_w;
 }
 
-OMEGA_H_INLINE Reals face_interpToCtrlPt_3d(
+OMEGA_H_DEVICE Vector<3> face_interpToCtrlPt_3d(
     LO const order, LO const newface, LOs new_ev2v, LOs new_fe2e,
-    Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Reals p11, LOs new_fv2v) {
+    Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Vector<3> p11, LOs new_fv2v) {
   LO const dim=3;
   //TODO higher than cubic
   LO const pts_per_edge = n_internal_ctrlPts(EDGE, order);
@@ -1054,7 +1037,7 @@ OMEGA_H_INLINE Reals face_interpToCtrlPt_3d(
   auto newface_c01 = vector_3(newface_cx01, newface_cy01, newface_cz01);
 
   auto xi_11 = xi_11_cube();
-  Write<Real> newface_c11_w(3);
+  Vector<3> newface_c11_w;
   for (LO k = 0; k < 3; ++k) {
     newface_c11_w[k] = (p11[k] -
         newface_c00[k]*Bij(order, 0, 0, xi_11[0], xi_11[1]) -
@@ -1070,7 +1053,7 @@ OMEGA_H_INLINE Reals face_interpToCtrlPt_3d(
 
   }
 
-  return Reals(newface_c11_w);
+  return newface_c11_w;
 }
 
 /*
@@ -1098,7 +1081,8 @@ OMEGA_H_INLINE Reals edge_interpToCtrlPt_3d(
 */
 LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,
-                                     LOs keys2midverts, LOs old_verts2new_verts);
+                                     LOs keys2midverts, LOs old_verts2new_verts,
+                                     LOs keys2edges);
 
 void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
                             LOs keys2prods, LOs keys2edges, LOs keys2old_faces,
@@ -1106,7 +1090,8 @@ void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
 
 LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,
-                                     LOs keys2midverts, LOs old_verts2new_verts);
+                                     LOs keys2midverts, LOs old_verts2new_verts,
+                                     LOs keys2edges);
 
 void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
                             LOs keys2prods, LOs keys2edges, LOs keys2old_faces,
