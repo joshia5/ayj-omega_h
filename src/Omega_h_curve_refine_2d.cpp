@@ -12,7 +12,8 @@ namespace Omega_h {
 
 LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,
-                                     LOs keys2midverts, LOs old_verts2new_verts) {
+                                     LOs keys2midverts, LOs old_verts2new_verts,
+                                     LOs keys2edges) {
   printf("in create curved edges fn\n");
   OMEGA_H_TIME_FUNCTION;
   auto const nold_edge = old2new.size();
@@ -79,6 +80,7 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       LO const mid_vert = keys2midverts[key_id];
       LO const start = keys2prods[key_id];
       LO const end = keys2prods[key_id + 1] - 1;
+      OMEGA_H_CHECK(old_edge == keys2edges[key_id]);
       if ((end-start) != 2) {
         printf("for old edge %d, new edges=%d\n", old_edge, end-start+1);
         OMEGA_H_CHECK((end-start) == 3);
@@ -436,7 +438,7 @@ void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
         {
           //get the interp point
           auto p11 = face_parametricToParent_2d(order, old_face, old_ev2v, old_fe2e,
-            old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, nodePts[0][0], nodePts[0][1], old_fv2v);
+            old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, nodePts[0], nodePts[1], old_fv2v);
           auto newface_c11 = face_interpToCtrlPt_2d(order, new_f0, new_ev2v, new_fe2e,
             new_vertCtrlPts, new_edgeCtrlPts, p11, new_fv2v);
           for (LO k = 0; k < dim; ++k) {
@@ -448,7 +450,7 @@ void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
         {
           //get the interp point
           auto p11 = face_parametricToParent_2d(order, old_face, old_ev2v, old_fe2e,
-            old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, nodePts[1][0], nodePts[1][1], old_fv2v);
+            old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, nodePts[2], nodePts[3], old_fv2v);
           auto newface_c11 = face_interpToCtrlPt_2d(order, new_f1, new_ev2v, new_fe2e,
             new_vertCtrlPts, new_edgeCtrlPts, p11, new_fv2v);
           for (LO k = 0; k < dim; ++k) {
