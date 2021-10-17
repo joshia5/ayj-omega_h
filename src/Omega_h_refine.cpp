@@ -89,24 +89,24 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
         if (mesh->dim() == 2) {
           keys2old_faces = create_curved_verts_and_edges_2d
           (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
-           keys2midverts, old_verts2new_verts);
+           keys2midverts, old_verts2new_verts, keys2edges);
 
           auto cubic_wireframe_mesh = Mesh(comm->library());
           cubic_wireframe_mesh.set_comm(comm);
           build_cubic_wireframe_2d(&new_mesh, &cubic_wireframe_mesh, 5);
-          std::string vtuPath = "/users/joshia5/Meshes/curved/semiDiscRefine_cubic_wireframe.vtu";
+          std::string vtuPath = "/users/joshia5/Meshes/curved/latest2d_wireframe.vtu";
           vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe_mesh, 1);
         }
         else {
           OMEGA_H_CHECK(mesh->dim() == 3);
           keys2old_faces = create_curved_verts_and_edges_3d
           (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
-           keys2midverts, old_verts2new_verts);
+           keys2midverts, old_verts2new_verts, keys2edges);
 
           auto cubic_wireframe_mesh = Mesh(comm->library());
           cubic_wireframe_mesh.set_comm(comm);
           build_cubic_wireframe_3d(&new_mesh, &cubic_wireframe_mesh, 5);
-          std::string vtuPath = "/users/joshia5/Meshes/curved/cubeCutCircleRefine_cubic_wireframe.vtu";
+          std::string vtuPath = "/users/joshia5/Meshes/curved/latest3d_wireframe.vtu";
           vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe_mesh, 1);
         }
       }
@@ -126,7 +126,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
           auto cubic_curveVtk_mesh = Mesh(comm->library());
           cubic_curveVtk_mesh.set_comm(comm);
           build_cubic_curveVtk_2d(&new_mesh, &cubic_curveVtk_mesh, 5);
-          std::string vtuPath = "/users/joshia5/Meshes/curved/semiDiscRefine_cubic_curveVtk.vtu";
+          std::string vtuPath = "/users/joshia5/Meshes/curved/latest2d.vtu";
           vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
         }
         else {
@@ -138,7 +138,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
           auto cubic_curveVtk_mesh = Mesh(comm->library());
           cubic_curveVtk_mesh.set_comm(comm);
           build_cubic_curveVtk_3d(&new_mesh, &cubic_curveVtk_mesh, 5);
-          std::string vtuPath = "/users/joshia5/Meshes/curved/cubeCutCircleRefine_cubic_curveVtk.vtu";
+          std::string vtuPath = "/users/joshia5/Meshes/curved/latest3dRefine.vtu";
           vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
           int wait=0; while(wait);
         }
@@ -147,6 +147,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
     old_lows2new_lows = old_ents2new_ents;
   }
   printf("after 1 refine, has %d regions", new_mesh.nents(new_mesh.dim()));
+  //int wait=1; while(wait);
 
   *mesh = new_mesh;
 }
