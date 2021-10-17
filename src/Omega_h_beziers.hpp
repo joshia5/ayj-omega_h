@@ -257,24 +257,14 @@ Bij(LO const P, LO const i, LO const j, Real const u, Real const v) noexcept {
     factorial(1.0*i)*factorial(1.0*j)*factorial(1.0*k));
 }
 
-//constexpr OMEGA_H_INLINE Real 
-//Bi(LO const P, LO const i, Real const u) noexcept {
-OMEGA_H_INLINE Real Bi(LO const P, LO const i, Real const u) {
+constexpr OMEGA_H_INLINE Real 
+Bi(LO const P, LO const i, Real const u) noexcept {
   LO const j = P - i;
   OMEGA_H_CHECK((j >= 0) && (j <= P));
   Real const v = 1.0 - u;
   OMEGA_H_CHECK((v >= 0.0) && (v <= 1.0));
-/* 
-  printf("ok1\n");
-  printf("test power %f\n", power(3, 6, 2<2, Real>(3));
-  //printf("test pow %f\n", std::pow(2,2));
-  printf("ok2\n");
-  Real resultant_u_raise = 1.0;
- */
   return factorial(1.0*P)*
-    //raise<i, Real>(u) * raise<j, Real>(v)/(factorial(1.0*i)*factorial(1.0*j));
     std::pow(u,i)*std::pow(v,j)/(factorial(1.0*i)*factorial(1.0*j));
-    //TODO raise u, v to i and j on device
 }
 
 void elevate_curve_order_2to3(Mesh* mesh);
