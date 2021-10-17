@@ -771,7 +771,7 @@ void build_quartic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
   return;
 }
 
-void build_quadratic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
+void build_quadratic_curveVtk_3d(Mesh* mesh, Mesh* curveVtk_mesh,
                               LO n_sample_pts) {
   auto nface = mesh->nfaces();
   auto coords_h = HostRead<Real>(mesh->coords());

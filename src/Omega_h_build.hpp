@@ -48,7 +48,7 @@ void build_cubic_wireframe_3d(Mesh* mesh, Mesh* wireframe_mesh,
                               LO n_sample_pts = 10);
 void build_quartic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
                              LO n_sample_pts = 10);
-void build_quadratic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
+void build_quadratic_curveVtk_3d(Mesh* mesh, Mesh* curveVtk_mesh,
                               LO n_sample_pts = 10);
 void build_cubic_curveVtk_2d(Mesh* mesh, Mesh* curveVtk_mesh,
                           LO n_sample_pts = 10);

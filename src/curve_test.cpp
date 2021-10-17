@@ -324,14 +324,26 @@ void test_sim_kova_quadratic(Library *lib) {
   auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
   calc_quad_ctrlPts_from_interpPts(&mesh);
-  elevate_curve_order_2to3(&mesh);
 
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
-  build_cubic_wireframe_3d(&mesh, &wireframe_mesh);
-  std::string vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim-123tet_wireframe.vtu";
+  build_quadratic_wireframe_3d(&mesh, &wireframe_mesh);
+  std::string vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet_wireframe.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
   auto curveVtk_mesh = Mesh(comm->library());
+  curveVtk_mesh.set_comm(comm);
+  build_quadratic_curveVtk_3d(&mesh, &curveVtk_mesh);
+  vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
+
+  elevate_curve_order_2to3(&mesh);
+
+  wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_3d(&mesh, &wireframe_mesh);
+  vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim-123tet_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
   build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh);
   vtuPath = "/users/joshia5/Meshes/curved/KovaGeomSim-123tet_curveVtk.vtu";
