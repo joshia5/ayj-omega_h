@@ -241,9 +241,18 @@ Bijk(LO const P, LO const i, LO const j, LO const k, Real const u,
   OMEGA_H_CHECK(l >= 0);
   Real const t = 1.0 - u - v - w;
   OMEGA_H_CHECK((t >= 0.0) && (t <= 1.0));
-  return factorial(1.0*P)*
-    std::pow(u,i)*std::pow(v,j)*std::pow(w,k)*std::pow(t,l)/(
-    factorial(1.0*i)*factorial(1.0*j)*factorial(1.0*k)*factorial(1.0*l));
+  Real resultant = 1.0;
+  resultant = resultant*factorial(1.0*P);
+  resultant = resultant*std::pow(u,i);
+  resultant = resultant*std::pow(v,j);
+  resultant = resultant*std::pow(w,k);
+  resultant = resultant*std::pow(t,l);
+  resultant = resultant/factorial(1.0*i);
+  resultant = resultant/factorial(1.0*j);
+  resultant = resultant/factorial(1.0*k);
+  resultant = resultant/factorial(1.0*l);
+
+  return resultant;
 }
 
 constexpr OMEGA_H_INLINE Real 
@@ -252,9 +261,16 @@ Bij(LO const P, LO const i, LO const j, Real const u, Real const v) noexcept {
   OMEGA_H_CHECK((k >= 0) && (k <= P));
   Real const w = 1.0 - u - v;
   OMEGA_H_CHECK((w >= 0.0) && (w <= 1.0));
-  return factorial(1.0*P)*
-    std::pow(u,i)*std::pow(v,j)*std::pow(w,k)/(
-    factorial(1.0*i)*factorial(1.0*j)*factorial(1.0*k));
+  Real resultant = 1.0;
+  resultant = resultant*factorial(1.0*P);
+  resultant = resultant*std::pow(u,i);
+  resultant = resultant*std::pow(v,j);
+  resultant = resultant*std::pow(w,k);
+  resultant = resultant/factorial(1.0*i);
+  resultant = resultant/factorial(1.0*j);
+  resultant = resultant/factorial(1.0*k);
+
+  return resultant;
 }
 
 constexpr OMEGA_H_INLINE Real 
@@ -263,9 +279,16 @@ Bi(LO const P, LO const i, Real const u) noexcept {
   OMEGA_H_CHECK((j >= 0) && (j <= P));
   Real const v = 1.0 - u;
   OMEGA_H_CHECK((v >= 0.0) && (v <= 1.0));
-  return factorial(1.0*P)*
-    std::pow(u,i)*std::pow(v,j)/(factorial(1.0*i)*factorial(1.0*j));
+  Real resultant = 1.0;
+  resultant = resultant*std::pow(u,i);
+  resultant = resultant*std::pow(v,j);
+  resultant = resultant*factorial(1.0*P);
+  resultant = resultant/factorial(1.0*i);
+  resultant = resultant/factorial(1.0*j);
+
+  return resultant;
 }
+//TODO can make static_factorial fn
 
 void elevate_curve_order_2to3(Mesh* mesh);
 void elevate_curve_order_3to4(Mesh* mesh);
