@@ -334,7 +334,6 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     if (old_verts2new_verts[i] != -1) {
       LO new_vert = old_verts2new_verts[i];
       for (I8 d = 0; d < dim; ++d) {
-        OMEGA_H_CHECK(vert_ctrlPts[new_vert*dim + d] = INT8_MAX);
         vert_ctrlPts[new_vert*dim + d] = old_vertCtrlPts[i*dim + d];
       }
     }
@@ -468,7 +467,6 @@ void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
       LO new_face = old2new[old_face];
       printf("old face %d same as new face %d\n", old_face, new_face);
       for (I8 d = 0; d < dim; ++d) {
-        OMEGA_H_CHECK(face_ctrlPts[new_face*n_face_pts*dim + d] = INT8_MAX);
         face_ctrlPts[new_face*n_face_pts*dim + d] = 
           old_faceCtrlPts[old_face*n_face_pts*dim + d];
       }
