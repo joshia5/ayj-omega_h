@@ -108,6 +108,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
           build_cubic_wireframe_3d(&new_mesh, &cubic_wireframe_mesh, 5);
           std::string vtuPath = "/users/joshia5/Meshes/curved/latest3d_wireframe.vtu";
           vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe_mesh, 1);
+  //int wait=1; while(wait);
         }
       }
     }
@@ -147,7 +148,6 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
     old_lows2new_lows = old_ents2new_ents;
   }
   printf("after 1 refine, has %d regions", new_mesh.nents(new_mesh.dim()));
-  //int wait=1; while(wait);
 
   *mesh = new_mesh;
 }

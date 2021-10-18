@@ -72,7 +72,6 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   }
   printf("max key2oldface degree = %d\n",max_degree_key2oldface);
 
-  //Write<LO> count_key(1, 0);
   auto nkeys = keys2edges.size();
   OMEGA_H_CHECK(order == 3);
   auto keys2old_faces_w = Write<LO>(max_degree_key2oldface*nkeys, -1);
@@ -82,7 +81,6 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     LO const v0_old = old_ev2v[old_edge*2 + 0];
     LO const v1_old = old_ev2v[old_edge*2 + 1];
 
-    //LO const key = count_key[0];
     LO const mid_vert = keys2midverts[key];
     LO const start = keys2prods[key];
     LO const end = keys2prods[key + 1] - 1;
@@ -117,20 +115,13 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       printf("oldedge %d e0 with v0 %d v1 %d; oldc0 %f %f %f; c1 %f %f %f c2 %f %f %f c3 %f %f %f \n",
           old_edge, v0_old, v1_old, cx0,cy0,cz0, cx1,cy1,cz1, cx2,cy2,cz2, cx3,cy3,cz3);
       Real const new_xi_3 = new_xi_start + 0.5;
-      Real const new_cx3 = cx0*B0_cube(new_xi_3) + cx1*B1_cube(new_xi_3) +
-        cx2*B2_cube(new_xi_3) + cx3*B3_cube(new_xi_3);
-      Real const new_cy3 = cy0*B0_cube(new_xi_3) + cy1*B1_cube(new_xi_3) +
-        cy2*B2_cube(new_xi_3) + cy3*B3_cube(new_xi_3);
-      Real const new_cz3 = cz0*B0_cube(new_xi_3) + cz1*B1_cube(new_xi_3) +
-        cz2*B2_cube(new_xi_3) + cz3*B3_cube(new_xi_3);
-      /*
       Real const new_cx3 = cx0*Bi(order, 0, new_xi_3) + cx1*Bi(order, 1, new_xi_3) +
         cx2*Bi(order, 2, new_xi_3) + cx3*Bi(order, 3, new_xi_3);
       Real const new_cy3 = cy0*Bi(order, 0, new_xi_3) + cy1*Bi(order, 1, new_xi_3) +
         cy2*Bi(order, 2, new_xi_3) + cy3*Bi(order, 3, new_xi_3);
       Real const new_cz3 = cz0*Bi(order, 0, new_xi_3) + cz1*Bi(order, 1, new_xi_3) +
         cz2*Bi(order, 2, new_xi_3) + cz3*Bi(order, 3, new_xi_3);
-        */
+        
       printf(" new mid interp pt oldedge %d e0 with v0 %d v1 %d is %f %f %f\n",
           old_edge, v0_old, v1_old, new_cx3, new_cy3, new_cz3);
       vert_ctrlPts[mid_vert*1*dim + 0] = new_cx3;
@@ -139,53 +130,31 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
       Real const old_xi_2 = xi_2_cube();
       Real const new_xi_2 = new_xi_start + old_xi_2/2.0;
-      Real const new_px2 = cx0*B0_cube(new_xi_2) + cx1*B1_cube(new_xi_2) +
-        cx2*B2_cube(new_xi_2) + cx3*B3_cube(new_xi_2);
-      Real const new_py2 = cy0*B0_cube(new_xi_2) + cy1*B1_cube(new_xi_2) +
-        cy2*B2_cube(new_xi_2) + cy3*B3_cube(new_xi_2);
-      Real const new_pz2 = cz0*B0_cube(new_xi_2) + cz1*B1_cube(new_xi_2) +
-        cz2*B2_cube(new_xi_2) + cz3*B3_cube(new_xi_2);
-      /*
       Real const new_px2 = cx0*Bi(order, 0, new_xi_2) + cx1*Bi(order, 1, new_xi_2) +
         cx2*Bi(order, 2, new_xi_2) + cx3*Bi(order, 3, new_xi_2);
       Real const new_py2 = cy0*Bi(order, 0, new_xi_2) + cy1*Bi(order, 1, new_xi_2) +
         cy2*Bi(order, 2, new_xi_2) + cy3*Bi(order, 3, new_xi_2);
       Real const new_pz2 = cz0*Bi(order, 0, new_xi_2) + cz1*Bi(order, 1, new_xi_2) +
         cz2*Bi(order, 2, new_xi_2) + cz3*Bi(order, 3, new_xi_2);
-        */
 
       Real const old_xi_1 = xi_1_cube();
       Real const new_xi_1 = new_xi_start + old_xi_1/2.0;
-      Real const new_px1 = cx0*B0_cube(new_xi_1) + cx1*B1_cube(new_xi_1) +
-        cx2*B2_cube(new_xi_1) + cx3*B3_cube(new_xi_1);
-      Real const new_py1 = cy0*B0_cube(new_xi_1) + cy1*B1_cube(new_xi_1) +
-        cy2*B2_cube(new_xi_1) + cy3*B3_cube(new_xi_1);
-      Real const new_pz1 = cz0*B0_cube(new_xi_1) + cz1*B1_cube(new_xi_1) +
-        cz2*B2_cube(new_xi_1) + cz3*B3_cube(new_xi_1);
-      /*
       Real const new_px1 = cx0*Bi(order, 0, new_xi_1) + cx1*Bi(order, 1, new_xi_1) +
         cx2*Bi(order, 2, new_xi_1) + cx3*Bi(order, 3, new_xi_1);
       Real const new_py1 = cy0*Bi(order, 0, new_xi_1) + cy1*Bi(order, 1, new_xi_1) +
         cy2*Bi(order, 2, new_xi_1) + cy3*Bi(order, 3, new_xi_1);
       Real const new_pz1 = cz0*Bi(order, 0, new_xi_1) + cz1*Bi(order, 1, new_xi_1) +
         cz2*Bi(order, 2, new_xi_1) + cz3*Bi(order, 3, new_xi_1);
-        */
       printf("oldedge %d edge 0 p2 %f, %f %f , xi2 %f\n", old_edge, new_px2, new_py2, new_pz2, new_xi_2);
       printf("oldedge %d edge 0 p1 %f, %f %f , xi1 %f\n", old_edge, new_px1, new_py1, new_pz1, new_xi_1);
 
       auto fx = vector_2(new_px1, new_px2);
       auto fy = vector_2(new_py1, new_py2);
       auto fz = vector_2(new_pz1, new_pz2);
-      auto M1_inv = matrix_2x2(B1_cube(old_xi_1), B2_cube(old_xi_1), B1_cube(old_xi_2),
-          B2_cube(old_xi_2));
-      auto M2 = matrix_2x2(B0_cube(old_xi_1), B3_cube(old_xi_1), B0_cube(old_xi_2),
-          B3_cube(old_xi_2));
-      /*
       auto M1_inv = matrix_2x2(Bi(order, 1, old_xi_1), Bi(order, 2, old_xi_1),
           Bi(order, 1, old_xi_2), Bi(order, 2, old_xi_2));
       auto M2 = matrix_2x2(Bi(order, 0, old_xi_1), Bi(order, 3, old_xi_1),
           Bi(order, 0, old_xi_2), Bi(order, 3, old_xi_2));
-          */
       auto M1 = invert(M1_inv);
       auto cx = vector_2(cx0, new_cx3);
       auto cy = vector_2(cy0, new_cy3);
@@ -342,10 +311,8 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         }
       }
     }
-    //atomic_fetch_add(&count_key[0], 1);
   };
-  parallel_for(nkeys, create_crv_prod_edges);
-  //parallel_for(nold_edge, std::move(create_crv_prod_edges));
+  parallel_for(nkeys, std::move(create_crv_prod_edges));
 
   auto create_crv_same_edges = OMEGA_H_LAMBDA (LO old_edge) {
     if (old2new[old_edge] != -1) {
@@ -359,7 +326,6 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     }
   };
   parallel_for(nold_edge, std::move(create_crv_same_edges));
-  //parallel_for(nold_edge, std::move(create_crv_same_edges));
 
   new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim);
   new_mesh->add_tag<Real>(0, "bezier_pts", dim);
@@ -402,7 +368,6 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   auto const old_re2e = mesh->ask_down(3, 1).ab2b;
   auto const old_rf2f = mesh->get_adj(3, 2).ab2b;
   auto const old_coords = mesh->coords();
-  //auto const nold_edge = mesh->nedges();
 
   auto const old_vertCtrlPts = mesh->get_ctrlPts(0);
   auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
@@ -579,7 +544,6 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
       for (LO j = 0; j < dim; ++j) {
         face_ctrlPts[newface*n_face_pts*dim + j] = c11[j];
       }
-      //TODO higher than order3
     }
   };
   parallel_for(nkeys, std::move(create_crv_prod_faces),
@@ -591,7 +555,6 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
       for (I8 d = 0; d < dim; ++d) {
         face_ctrlPts[new_face*n_face_pts*dim + d] = 
           old_faceCtrlPts[old_face*n_face_pts*dim + d];
-      //TODO higher than order3
       }
     }
   };
