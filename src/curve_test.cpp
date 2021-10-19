@@ -321,7 +321,7 @@ void test_sim_quadToCubic(Library *lib, const std::string &model_file,
 */
 void test_sim_kova_quadratic(Library *lib) {
   auto comm = lib->world();
-  auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
+  auto mesh = binary::read("../omega_h/meshes/KovaGeomSim-quadratic_123tet.osh", comm);
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
   calc_quad_ctrlPts_from_interpPts(&mesh);
 
