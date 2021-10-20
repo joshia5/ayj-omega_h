@@ -94,104 +94,30 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
     printf("oldedge %d e0 %d e1 %d \n", old_edge, new_e0, new_e1);
     //ctrl pts for e0
-    {
-      Real new_xi_start = 0.0;
-      auto c0 = get_vector<3>(old_vertCtrlPts, v0_old);
-      auto c1 = vector_3(old_edgeCtrlPts[old_edge*n_edge_pts*dim + 0],
-                         old_edgeCtrlPts[old_edge*n_edge_pts*dim + 1],
-                         old_edgeCtrlPts[old_edge*n_edge_pts*dim + 2]);
-      auto c2 = vector_3(old_edgeCtrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + 0],
-                         old_edgeCtrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + 1],
-                         old_edgeCtrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + 2]);
-      auto c3 = get_vector<3>(old_vertCtrlPts, v1_old);
-
-      Real const new_xi_3 = new_xi_start + 0.5;
-      auto new_c3 = curve_paramToParent_3d(new_xi_3, c0, c1, c2, c3, order);
-
-      set_vector<3>(vert_ctrlPts, mid_vert, new_c3); 
-
-      Real const old_xi_2 = xi_2_cube();
-      Real const new_xi_2 = new_xi_start + old_xi_2/2.0;
-      auto new_p2 = curve_paramToParent_3d(new_xi_2, c0, c1, c2, c3, order);
-
-      Real const old_xi_1 = xi_1_cube();
-      Real const new_xi_1 = new_xi_start + old_xi_1/2.0;
-      auto new_p1 = curve_paramToParent_3d(new_xi_1, c0, c1, c2, c3, order);
-      /*
-      printf("oldedge %d e0 with v0 %d v1 %d; oldc0 %f %f %f; c1 %f %f %f c2 %f %f %f c3 %f %f %f \n",
-          old_edge, v0_old, v1_old, cx0,cy0,cz0, cx1,cy1,cz1, cx2,cy2,cz2, cx3,cy3,cz3);
-      printf(" new mid interp pt oldedge %d e0 with v0 %d v1 %d is %f %f %f\n",
-          old_edge, v0_old, v1_old, new_cx3, new_cy3, new_cz3);
-      printf("oldedge %d edge 0 p2 %f, %f %f , xi2 %f\n", old_edge, new_px2, new_py2, new_pz2, new_xi_2);
-      printf("oldedge %d edge 0 p1 %f, %f %f , xi1 %f\n", old_edge, new_px1, new_py1, new_pz1, new_xi_1);
-      */
-      auto p1_p2 = curve_interpToCtrl_pts_3d(order, c0, new_c3, new_p1, new_p2);
-      edge_ctrlPts[new_e0*n_edge_pts*dim + 0] = p1_p2[0];
-      edge_ctrlPts[new_e0*n_edge_pts*dim + 1] = p1_p2[1];
-      edge_ctrlPts[new_e0*n_edge_pts*dim + 2] = p1_p2[2];
-      edge_ctrlPts[new_e0*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = p1_p2[3];
-      edge_ctrlPts[new_e0*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = p1_p2[4];
-      edge_ctrlPts[new_e0*n_edge_pts*dim + (n_edge_pts-1)*dim + 2] = p1_p2[5];
-    }
+    Real new_xi_start = 0.0;
+    auto e0_c1_c2_c3 = curve_split_e0_3d(new_xi_start, old_vertCtrlPts,
+        old_edgeCtrlPts, order, v0_old, v1_old, old_edge);
+    edge_ctrlPts[new_e0*n_edge_pts*dim + 0] = e0_c1_c2_c3[0];
+    edge_ctrlPts[new_e0*n_edge_pts*dim + 1] = e0_c1_c2_c3[1];
+    edge_ctrlPts[new_e0*n_edge_pts*dim + 2] = e0_c1_c2_c3[2];
+    edge_ctrlPts[new_e0*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = e0_c1_c2_c3[3];
+    edge_ctrlPts[new_e0*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = e0_c1_c2_c3[4];
+    edge_ctrlPts[new_e0*n_edge_pts*dim + (n_edge_pts-1)*dim + 2] = e0_c1_c2_c3[5];
+    auto mid_vert_ctrlPt = vector_3(
+      e0_c1_c2_c3[dim*2 + 0], e0_c1_c2_c3[dim*2 + 1], e0_c1_c2_c3[dim*2 + 2]);
+    set_vector<3>(vert_ctrlPts, mid_vert, mid_vert_ctrlPt);
 
     //ctrl pts for e1
-    {
-      Real new_xi_start = 0.5;
-      Real cx0 = old_vertCtrlPts[v0_old*dim + 0];
-      Real cy0 = old_vertCtrlPts[v0_old*dim + 1];
-      Real cz0 = old_vertCtrlPts[v0_old*dim + 2];
-      Real cx1 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + 0];
-      Real cy1 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + 1];
-      Real cz1 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + 2];
-      Real cx2 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + 0];
-      Real cy2 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + 1];
-      Real cz2 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + (n_edge_pts-1)*dim + 2];
-      Real cx3 = old_vertCtrlPts[v1_old*dim + 0];
-      Real cy3 = old_vertCtrlPts[v1_old*dim + 1];
-      Real cz3 = old_vertCtrlPts[v1_old*dim + 2];
+    new_xi_start = 0.5;
+    auto e1_c1_c2 = curve_split_e1_3d(new_xi_start, old_vertCtrlPts,
+        old_edgeCtrlPts, order, v0_old, v1_old, old_edge, mid_vert_ctrlPt);
+    edge_ctrlPts[new_e1*n_edge_pts*dim + 0] = e1_c1_c2[0];
+    edge_ctrlPts[new_e1*n_edge_pts*dim + 1] = e1_c1_c2[1];
+    edge_ctrlPts[new_e1*n_edge_pts*dim + 2] = e1_c1_c2[2];
+    edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = e1_c1_c2[3];
+    edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = e1_c1_c2[4];
+    edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 2] = e1_c1_c2[5];
 
-      Real old_xi_2 = xi_2_cube();
-      Real new_xi_2 = new_xi_start + old_xi_2/2.0;
-      Real const new_px2 = cx0*Bi(order, 0, new_xi_2) + cx1*Bi(order, 1, new_xi_2) +
-        cx2*Bi(order, 2, new_xi_2) + cx3*Bi(order, 3, new_xi_2);
-      Real const new_py2 = cy0*Bi(order, 0, new_xi_2) + cy1*Bi(order, 1, new_xi_2) +
-        cy2*Bi(order, 2, new_xi_2) + cy3*Bi(order, 3, new_xi_2);
-      Real const new_pz2 = cz0*Bi(order, 0, new_xi_2) + cz1*Bi(order, 1, new_xi_2) +
-        cz2*Bi(order, 2, new_xi_2) + cz3*Bi(order, 3, new_xi_2);
-
-      Real old_xi_1 = xi_1_cube();
-      Real new_xi_1 = new_xi_start + old_xi_1/2.0;
-      Real const new_px1 = cx0*Bi(order, 0, new_xi_1) + cx1*Bi(order, 1, new_xi_1) +
-        cx2*Bi(order, 2, new_xi_1) + cx3*Bi(order, 3, new_xi_1);
-      Real const new_py1 = cy0*Bi(order, 0, new_xi_1) + cy1*Bi(order, 1, new_xi_1) +
-        cy2*Bi(order, 2, new_xi_1) + cy3*Bi(order, 3, new_xi_1);
-      Real const new_pz1 = cz0*Bi(order, 0, new_xi_1) + cz1*Bi(order, 1, new_xi_1) +
-        cz2*Bi(order, 2, new_xi_1) + cz3*Bi(order, 3, new_xi_1);
-      printf("oldedge %d edge 1 p2 %f, %f %f , xi2 %f\n", old_edge, new_px2, new_py2, new_pz2, new_xi_2);
-      printf("oldedge %d edge 1 p1 %f, %f %f , xi1 %f\n", old_edge, new_px1, new_py1, new_pz1, new_xi_1);
-
-      auto fx = vector_2(new_px1, new_px2);
-      auto fy = vector_2(new_py1, new_py2);
-      auto fz = vector_2(new_pz1, new_pz2);
-      auto M1_inv = matrix_2x2(Bi(order, 1, old_xi_1), Bi(order, 2, old_xi_1),
-          Bi(order, 1, old_xi_2), Bi(order, 2, old_xi_2));
-      auto M2 = matrix_2x2(Bi(order, 0, old_xi_1), Bi(order, 3, old_xi_1),
-          Bi(order, 0, old_xi_2), Bi(order, 3, old_xi_2));
-      auto M1 = invert(M1_inv);
-      auto cx = vector_2(vert_ctrlPts[mid_vert*1*dim + 0], cx3);
-      auto cy = vector_2(vert_ctrlPts[mid_vert*1*dim + 1], cy3);
-      auto cz = vector_2(vert_ctrlPts[mid_vert*1*dim + 2], cz3);
-
-      auto Cx = M1*fx - M1*M2*cx;
-      auto Cy = M1*fy - M1*M2*cy;
-      auto Cz = M1*fz - M1*M2*cz;
-      edge_ctrlPts[new_e1*n_edge_pts*dim + 0] = Cx[0];
-      edge_ctrlPts[new_e1*n_edge_pts*dim + 1] = Cy[0];
-      edge_ctrlPts[new_e1*n_edge_pts*dim + 2] = Cz[0];
-      edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 0] = Cx[1];
-      edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 1] = Cy[1];
-      edge_ctrlPts[new_e1*n_edge_pts*dim + (n_edge_pts-1)*dim + 2] = Cz[1];
-    }
     //ctrl pts for edges on adjacent faces
     for (LO i = 0; i <= (end-start - 2); ++i) {
       LO const new_e2 = prods2new[start+2 + i];
