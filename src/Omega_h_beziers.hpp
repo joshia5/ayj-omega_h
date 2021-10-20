@@ -8,6 +8,34 @@
 
 namespace Omega_h {
 
+constexpr OMEGA_H_INLINE Real const_factorial(Int N) {
+  switch (N) {
+    case 0:
+      return 1.0;
+    case 1:
+      return 1.0;
+    case 2:
+      return 2.0;
+    case 3:
+      return 6.0;
+    case 4:
+      return 24.0;
+    case 5:
+      return 120.0;
+    case 6:
+      return 720.0;
+    case 7:
+      return 5040.0;
+    case 8:
+      return 40320.0;
+    case 9:
+      return 362880.0;
+    case 10:
+      return 3628800.0;
+  }
+  return -1.0;
+}
+
 OMEGA_H_INLINE Real B0_quad(Real u) {
   return (1.0-u)*(1.0-u);
 }
@@ -146,17 +174,6 @@ OMEGA_H_INLINE Reals xi_11_quart() {
   xi_11[1] = 0.22088805;
   return Reals(xi_11);
 }
-*/
-//OMEGA_H_INLINE Reals xi_11_cube() {
-/*
-  Write<Real> xi_11(2);
-  //Write<Real> xi_11(2);
-  xi_11[0] = 1.0/3.0;
-  xi_11[1] = 1.0/3.0;
-  return xi_11;
-  //return Reals(xi_11);
-  */
-  /*
 OMEGA_H_INLINE Reals xi_21_quart() {
   Write<Real> xi_21(2);
   xi_21[0] = 0.5582239;
@@ -176,7 +193,7 @@ OMEGA_H_INLINE Vector<3> xi_111_quart() {
 
 /*
 //TODO limititations for generalized order : 1. these fns will need to be
-//dynamically sized, 2. lin eqn solve on gpu 
+//dynamically sized, 2. lin eqn form and solve on gpu 
 Reals curve_bezier_pts(LO const P) {
 //OMEGA_H_INLINE Reals curve_bezier_pts(LO const P) {
   switch (P) {
@@ -242,15 +259,15 @@ Bijk(LO const P, LO const i, LO const j, LO const k, Real const u,
   Real const t = 1.0 - u - v - w;
   OMEGA_H_CHECK((t >= 0.0) && (t <= 1.0));
   Real resultant = 1.0;
-  resultant = resultant*factorial(1.0*P);
+  resultant = resultant*const_factorial(P);
   resultant = resultant*std::pow(u,i);
   resultant = resultant*std::pow(v,j);
   resultant = resultant*std::pow(w,k);
   resultant = resultant*std::pow(t,l);
-  resultant = resultant/factorial(1.0*i);
-  resultant = resultant/factorial(1.0*j);
-  resultant = resultant/factorial(1.0*k);
-  resultant = resultant/factorial(1.0*l);
+  resultant = resultant/const_factorial(i);
+  resultant = resultant/const_factorial(j);
+  resultant = resultant/const_factorial(k);
+  resultant = resultant/const_factorial(l);
 
   return resultant;
 }
@@ -262,13 +279,13 @@ Bij(LO const P, LO const i, LO const j, Real const u, Real const v) noexcept {
   Real const w = 1.0 - u - v;
   OMEGA_H_CHECK((w >= 0.0) && (w <= 1.0));
   Real resultant = 1.0;
-  resultant = resultant*factorial(1.0*P);
+  resultant = resultant*const_factorial(P);
   resultant = resultant*std::pow(u,i);
   resultant = resultant*std::pow(v,j);
   resultant = resultant*std::pow(w,k);
-  resultant = resultant/factorial(1.0*i);
-  resultant = resultant/factorial(1.0*j);
-  resultant = resultant/factorial(1.0*k);
+  resultant = resultant/const_factorial(i);
+  resultant = resultant/const_factorial(j);
+  resultant = resultant/const_factorial(k);
 
   return resultant;
 }
@@ -282,13 +299,12 @@ Bi(LO const P, LO const i, Real const u) noexcept {
   Real resultant = 1.0;
   resultant = resultant*std::pow(u,i);
   resultant = resultant*std::pow(v,j);
-  resultant = resultant*factorial(1.0*P);
-  resultant = resultant/factorial(1.0*i);
-  resultant = resultant/factorial(1.0*j);
+  resultant = resultant*const_factorial(P);
+  resultant = resultant/const_factorial(i);
+  resultant = resultant/const_factorial(j);
 
   return resultant;
 }
-//TODO can make static_factorial fn
 
 void elevate_curve_order_2to3(Mesh* mesh);
 void elevate_curve_order_3to4(Mesh* mesh);
@@ -300,32 +316,32 @@ void calc_quad_ctrlPts_from_interpPts(Mesh *mesh);
 OMEGA_H_INLINE Few<Real,4> cubic_noKeyEdge_xi_values(
     LO old_vert, LO v0, LO v1, LO v2, LO old_edge, LO e0, LO e1, LO e2) {
 
-  Few<Real, 4> p1_p2;
+  Few<Real, 4> xi1_xi2;
   if (old_vert == v0) {
     OMEGA_H_CHECK(old_edge == e1);
-    p1_p2[0] = 0.13740215;
-    p1_p2[1] = 0.13740215;
-    p1_p2[2] = 0.362597849;
-    p1_p2[3] = 0.362597849;
+    xi1_xi2[0] = 0.13740215;
+    xi1_xi2[1] = 0.13740215;
+    xi1_xi2[2] = 0.362597849;
+    xi1_xi2[3] = 0.362597849;
   }
   else if (old_vert == v1) {
     OMEGA_H_CHECK(old_edge == e2);
-    p1_p2[0] = 0.7251957;
-    p1_p2[1] = 0.13740215;
-    p1_p2[2] = 0.2748043;
-    p1_p2[3] = 0.362597849;
+    xi1_xi2[0] = 0.7251957;
+    xi1_xi2[1] = 0.13740215;
+    xi1_xi2[2] = 0.2748043;
+    xi1_xi2[3] = 0.362597849;
   }
   else if (old_vert == v2) {
     OMEGA_H_CHECK(old_edge == e0);
-    p1_p2[0] = 0.13740215;
-    p1_p2[1] = 0.7251957;
-    p1_p2[2] = 0.362597849;
-    p1_p2[3] = 0.2748043;
+    xi1_xi2[0] = 0.13740215;
+    xi1_xi2[1] = 0.7251957;
+    xi1_xi2[2] = 0.362597849;
+    xi1_xi2[3] = 0.2748043;
   }
   else {
   }
 
-  return p1_p2;
+  return xi1_xi2;
 }
 
 OMEGA_H_INLINE Few<Real,4> cubic_faceSplittingEdge_xi_values
@@ -335,14 +351,14 @@ OMEGA_H_INLINE Few<Real,4> cubic_faceSplittingEdge_xi_values
    LO const new_v0_f1, LO const new_v1_f1, LO const new_v2_f1,
    LO const oldf_v0_new, LO const oldf_v1_new, LO const oldf_v2_new) {
 
-  Few<Real, 4> p1_p2;
+  Few<Real, 4> xi1_xi2;
   I8 should_swap = -1;
   if (old_noKey_vert == old_v0) {
     OMEGA_H_CHECK(old_key_edge == old_e1);
-    p1_p2[0] = 1.0/2.0;
-    p1_p2[1] = 1.0/6.0;
-    p1_p2[2] = 1.0/6.0;
-    p1_p2[3] = 1.0/2.0;
+    xi1_xi2[0] = 1.0/2.0;
+    xi1_xi2[1] = 1.0/6.0;
+    xi1_xi2[2] = 1.0/6.0;
+    xi1_xi2[3] = 1.0/2.0;
 
     if ((oldf_v1_new == new_v0_f0) || (oldf_v1_new == new_v1_f0) || 
         (oldf_v1_new == new_v2_f0)) {
@@ -356,10 +372,10 @@ OMEGA_H_INLINE Few<Real,4> cubic_faceSplittingEdge_xi_values
   }
   else if (old_noKey_vert == old_v1) {
     OMEGA_H_CHECK(old_key_edge == old_e2);
-    p1_p2[0] = 1.0/3.0;
-    p1_p2[1] = 1.0/2.0;
-    p1_p2[2] = 1.0/3.0;
-    p1_p2[3] = 1.0/6.0;
+    xi1_xi2[0] = 1.0/3.0;
+    xi1_xi2[1] = 1.0/2.0;
+    xi1_xi2[2] = 1.0/3.0;
+    xi1_xi2[3] = 1.0/6.0;
     if ((oldf_v2_new == new_v0_f0) || (oldf_v2_new == new_v1_f0) ||
         (oldf_v2_new == new_v2_f0)) {
       should_swap = -1;
@@ -372,10 +388,10 @@ OMEGA_H_INLINE Few<Real,4> cubic_faceSplittingEdge_xi_values
   }
   else if (old_noKey_vert == old_v2) {
     OMEGA_H_CHECK(old_key_edge == old_e0);
-    p1_p2[0] = 1.0/6.0;
-    p1_p2[1] = 1.0/3.0;
-    p1_p2[2] = 1.0/2.0;
-    p1_p2[3] = 1.0/3.0;
+    xi1_xi2[0] = 1.0/6.0;
+    xi1_xi2[1] = 1.0/3.0;
+    xi1_xi2[2] = 1.0/2.0;
+    xi1_xi2[3] = 1.0/3.0;
     if ((oldf_v0_new == new_v0_f0) || (oldf_v0_new == new_v1_f0) ||
         (oldf_v0_new == new_v2_f0)) {
       should_swap = -1;
@@ -389,11 +405,11 @@ OMEGA_H_INLINE Few<Real,4> cubic_faceSplittingEdge_xi_values
   else {
   }
   if (should_swap == 1) {
-    swap2(p1_p2[0], p1_p2[2]);
-    swap2(p1_p2[1], p1_p2[3]);
+    swap2(xi1_xi2[0], xi1_xi2[2]);
+    swap2(xi1_xi2[1], xi1_xi2[3]);
   }
 
-  return p1_p2;
+  return xi1_xi2;
 }
 
 OMEGA_H_INLINE Vector<3> cubic_region_xi_values
@@ -451,7 +467,6 @@ OMEGA_H_INLINE LO edge_is_flip(LO const e0v0, LO const e0v1, LO const v0,
 OMEGA_H_INLINE Int n_internal_ctrlPts(Int edim, Int max_order) {
   OMEGA_H_CHECK(max_order > 0);
   OMEGA_H_CHECK(edim >= 0);
-
   if (edim == 0) {
     return 1;
   }
@@ -507,7 +522,6 @@ OMEGA_H_DEVICE Vector<3> rgn_parametricToParent_3d(
   LO e3_flip = -1;
   LO e4_flip = -1;
   LO e5_flip = -1;
-  //define edges as per template
   {
     auto e0v0 = old_ev2v[old_rgn_e0*2 + 0];
     auto e0v1 = old_ev2v[old_rgn_e0*2 + 1];
@@ -528,7 +542,6 @@ OMEGA_H_DEVICE Vector<3> rgn_parametricToParent_3d(
     auto e5v1 = old_ev2v[old_rgn_e5*2 + 1];
     e5_flip = edge_is_flip(e5v0, e5v1, old_rgn_v2, old_rgn_v3);
   }
-  printf("oldrgn edge flips %d %d %d %d %d %d\n", e0_flip, e1_flip, e2_flip, e3_flip, e4_flip, e5_flip);
 
   auto pts_per_edge = n_edge_pts;
   Real cx100 = old_edgeCtrlPts[old_rgn_e0*pts_per_edge*dim + 0];
@@ -616,7 +629,6 @@ OMEGA_H_DEVICE Vector<3> rgn_parametricToParent_3d(
       c300[j]*Bijk(order,3,0,0,nodePt[0],nodePt[1],nodePt[2]) +
       c030[j]*Bijk(order,0,3,0,nodePt[0],nodePt[1],nodePt[2]) +
       c003[j]*Bijk(order,0,0,3,nodePt[0],nodePt[1],nodePt[2]) +
-      //edges
       c100[j]*Bijk(order,1,0,0,nodePt[0],nodePt[1],nodePt[2]) +
       c200[j]*Bijk(order,2,0,0,nodePt[0],nodePt[1],nodePt[2]) +
       c210[j]*Bijk(order,2,1,0,nodePt[0],nodePt[1],nodePt[2]) +
@@ -629,7 +641,6 @@ OMEGA_H_DEVICE Vector<3> rgn_parametricToParent_3d(
       c102[j]*Bijk(order,1,0,2,nodePt[0],nodePt[1],nodePt[2]) +
       c012[j]*Bijk(order,0,1,2,nodePt[0],nodePt[1],nodePt[2]) +
       c021[j]*Bijk(order,0,2,1,nodePt[0],nodePt[1],nodePt[2]) +
-      //faces
       c110[j]*Bijk(order,1,1,0,nodePt[0],nodePt[1],nodePt[2]) +
       c101[j]*Bijk(order,1,0,1,nodePt[0],nodePt[1],nodePt[2]) +
       c111[j]*Bijk(order,1,1,1,nodePt[0],nodePt[1],nodePt[2]) +
@@ -885,7 +896,6 @@ OMEGA_H_DEVICE Vector<2> face_interpToCtrlPt_2d(
     LO const order, LO const newface, LOs new_ev2v, LOs new_fe2e,
     Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Vector<2> p11, LOs new_fv2v) {
   LO const dim=2;
-  //TODO higher than cubic
   LO const pts_per_edge = n_internal_ctrlPts(EDGE, order);
   I8 newface_e0_flip = -1;
   I8 newface_e1_flip = -1;
@@ -987,7 +997,6 @@ OMEGA_H_DEVICE Vector<3> face_interpToCtrlPt_3d(
     LO const order, LO const newface, LOs new_ev2v, LOs new_fe2e,
     Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Vector<3> p11, LOs new_fv2v) {
   LO const dim=3;
-  //TODO higher than cubic
   LO const pts_per_edge = n_internal_ctrlPts(EDGE, order);
   I8 newface_e0_flip = -1;
   I8 newface_e1_flip = -1;
