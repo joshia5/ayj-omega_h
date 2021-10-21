@@ -113,11 +113,13 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
       }
     }
     if (ent_dim == FACE) {
+      /*
       printf(
       "old2new %d same2new %d same2old %d prods2new %d keys2prods %d keys2midv %d\n",
       old_ents2new_ents.size(),
           same_ents2new_ents.size(), same_ents2old_ents.size(),
           prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
+          */
       if (mesh->is_curved() > 0) {
         if (mesh->dim() == 2) {
           create_curved_faces_2d(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
@@ -149,7 +151,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
     }
     old_lows2new_lows = old_ents2new_ents;
   }
-  printf("after 1 refine, has %d elems", new_mesh.nents(new_mesh.dim()));
+  //printf("after 1 refine, has %d elems", new_mesh.nents(new_mesh.dim()));
 
   *mesh = new_mesh;
 }

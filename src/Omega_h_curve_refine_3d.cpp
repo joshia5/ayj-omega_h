@@ -11,28 +11,13 @@
 
 namespace Omega_h {
 
-/*
-LO max_degree_key2oldents(LO const nold_edge, LOs old_key2keyent, LOs keys2edges) {
-  auto keyedges_noldents_w = Write<LO>(nold_edge, -1);
-  auto count_oldents = OMEGA_H_LAMBDA (LO key) {
-    if (old2new[old_edge] == -1) {//old edge is key
-      //get num up adj ents
-      LO const num_adj_ents = old_key2keyent[old_edge + 1] - old_key2keyent[old_edge];
-      keyedges_noldents_w[old_edge] = num_adj_ents;
-    }
-  };
-  parallel_for(keys2edges.size(), std::move(count_oldents));
-  return get_max(LOs(keyedges_noldents_w));
-}
-*/
-
 LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,
                                      LOs keys2midverts, LOs old_verts2new_verts,
                                      LOs keys2edges) {
   auto const order = mesh->get_max_order();
   OMEGA_H_CHECK(order >= 2);
-  printf("in create curved edges fn\n");
+  //printf("in create curved edges fn\n");
   OMEGA_H_TIME_FUNCTION;
   auto const nold_edge = old2new.size();
   auto const nold_verts = mesh->nverts();
@@ -71,7 +56,7 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     parallel_for(nold_edge, std::move(count_oldfaces));
     max_degree_key2oldface = get_max(LOs(keyedges_noldfaces_w));
   }
-  printf("max key2oldface degree = %d\n",max_degree_key2oldface);
+  //printf("max key2oldface degree = %d\n",max_degree_key2oldface);
 
   auto nkeys = keys2edges.size();
   OMEGA_H_CHECK(order == 3);
@@ -92,7 +77,7 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     LO const v0_new_e1 = new_ev2v[new_e1*2 + 0];
     OMEGA_H_CHECK((v1_new_e0 == mid_vert) && (v0_new_e1 == mid_vert));
 
-    printf("oldedge %d e0 %d e1 %d \n", old_edge, new_e0, new_e1);
+    //printf("oldedge %d e0 %d e1 %d \n", old_edge, new_e0, new_e1);
     //ctrl pts for e0
     Real new_xi_start = 0.0;
     auto e0_c1_c2_c3 = curve_split_e0_3d(new_xi_start, old_vertCtrlPts,
@@ -134,20 +119,21 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       LO old_face = -1;
       for (LO index = old_e2ef[old_edge]; index < old_e2ef[old_edge + 1];
           ++index) {
-        LO adj_face = old_ef2f[index];
+        LO const adj_face = old_ef2f[index];
         for (LO vert = 0; vert < 3; ++vert) {
-          LO vert_old_face = old_fv2v[adj_face*3 + vert];
+          LO const vert_old_face = old_fv2v[adj_face*3 + vert];
           if (vert_old_face == old_vert_noKey) {
             old_face = adj_face;
-            break;
+      //printf("1For old edge %d, with key id %d, found old face %d\n", old_edge, key, old_face);
+            //break;
           }
         }
-        if (old_face > 0) {
-          break;
-        }
+        //if (old_face > 0) {
+          //break;
+        //}
       }
 
-      printf("For old edge %d, with key id %d, found old face %d\n", old_edge, key, old_face);
+      //printf("2For old edge %d, with key id %d, found old face %d\n", old_edge, key, old_face);
       keys2old_faces_w[max_degree_key2oldface*key + i] = old_face;
       {
         auto const v0_old_face = old_fv2v[old_face*3];
@@ -158,15 +144,14 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         auto const old_face_e2 = old_fe2e[old_face*3 + 2];
 
         auto nodePts = cubic_noKeyEdge_xi_values(old_vert_noKey, v0_old_face, v1, v2,
-            old_edge, old_face_e0, old_face_e1,
-            old_face_e2);
+            old_edge, old_face_e0, old_face_e1, old_face_e2);
         //get the interp points
         auto p1 = face_parametricToParent_3d(order, old_face, old_ev2v, old_fe2e,
             old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, nodePts[0], nodePts[1], old_fv2v);
         auto p2 = face_parametricToParent_3d(order, old_face, old_ev2v, old_fe2e,
             old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, nodePts[2], nodePts[3], old_fv2v);
-      printf("oldedge %d splitFace edge %d p2 %f, %f %f \n", old_edge, new_e2, p2[0], p2[1], p2[2]);
-      printf("oldedge %d splitFace edge %d p1 %f, %f %f \n", old_edge, new_e2, p1[0], p1[1], p1[2]);
+        //printf("oldedge %d splitFace edge %d p2 %f, %f %f \n", old_edge, new_e2, p2[0], p2[1], p2[2]);
+        //printf("oldedge %d splitFace edge %d p1 %f, %f %f \n", old_edge, new_e2, p1[0], p1[1], p1[2]);
 
         //use these as interp pts to find ctrl pts in new mesh
         {
@@ -241,11 +226,10 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   auto const order = mesh->get_max_order();
   OMEGA_H_CHECK(order >= 2);
   //if (order == 2) return;
-  printf("in create curved faces fn\n");
+  //printf("in create curved faces fn\n");
   OMEGA_H_TIME_FUNCTION;
   auto const nold_face = old2new.size();
   auto const dim = mesh->dim();
-
   auto const old_ev2v = mesh->get_adj(1, 0).ab2b;
   auto const old_ef2f = mesh->ask_up(1, 2).ab2b;
   auto const old_e2ef = mesh->ask_up(1, 2).a2ab;
@@ -257,6 +241,8 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   auto const old_re2e = mesh->ask_down(3, 1).ab2b;
   auto const old_rf2f = mesh->get_adj(3, 2).ab2b;
   auto const old_coords = mesh->coords();
+  auto const nold_rgn = mesh->nents(3);
+  auto const nold_vert = mesh->nents(0);
 
   auto const old_vertCtrlPts = mesh->get_ctrlPts(0);
   auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
@@ -272,67 +258,75 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   auto const new_edgeCtrlPts = new_mesh->get_ctrlPts(1);
   auto const new_vertCtrlPts = new_mesh->get_ctrlPts(0);
   OMEGA_H_CHECK(nnew_verts == (new_vertCtrlPts.size()/dim));
+  auto const nkeys = keys2edges.size();
+  LO const max_degree_key2oldface = keys2old_faces.size()/nkeys;
 
   Write<Real> face_ctrlPts(nnew_face*n_face_pts*dim);
   OMEGA_H_CHECK(order == 3);
 
-  //auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
-    //                                               nnew_verts);
-  //auto max_degree_key2oldrgn = max_degree_key2oldents(nold_edge, old_e2er, old2new) {
-
-  auto const nkeys = keys2edges.size();
-  LO const max_degree_key2oldface = keys2old_faces.size()/nkeys;
-  printf("in old faces max degree key2of %d\n", max_degree_key2oldface);
-
+  //auto keys2nold_faces_w = Write<LO>(nkeys);
   auto keys2nold_faces_w = Write<LO>(nkeys, -1);
-  auto count_nold_faces = OMEGA_H_LAMBDA (LO key) {
+  auto count_nold_faces = OMEGA_H_LAMBDA (LO const key) {
     for (LO i = 0; i < max_degree_key2oldface; ++i) {
-      if (keys2old_faces[max_degree_key2oldface*key + i] != -1) {
+      if (keys2old_faces[max_degree_key2oldface*key + i] > 0) {
         atomic_increment(&keys2nold_faces_w[key]);
       }
     }
   };
   parallel_for(nkeys, count_nold_faces);
   auto keys2nold_faces = LOs(keys2nold_faces_w);
+  //TODO remove this check
+  //OMEGA_H_CHECK(0 < min key2nold, maxdegree>key2nold)
 
-  auto create_crv_prod_faces = OMEGA_H_LAMBDA (LO key) {
+  cudaDeviceSynchronize();
 
-    auto start = keys2prods[key];
-    auto end = keys2prods[key + 1] - 1;
-    printf("key %d split into %d faces \n", key, end-start+1);
+  auto create_crv_prod_faces = OMEGA_H_LAMBDA (LO const key) {
+
+    auto old_key_edge = keys2edges[key];
+    auto const start = keys2prods[key];
+    auto const end = keys2prods[key + 1] - 1;
+    //printf("key %d split into %d faces \n", key, end-start+1);
 
     LO const new_faces_per_old_face = 2;
 
     for (LO i = 0; i <= keys2nold_faces[key]; ++i) {
-      auto new_f0 = prods2new[start + (i*new_faces_per_old_face) + 0];
-      auto new_f1 = prods2new[start + (i*new_faces_per_old_face) + 1];
+      //printf("For key %d, noldfaces %d\n", key, keys2nold_faces[key]);
+      auto const new_f0 = prods2new[start + (i*new_faces_per_old_face) + 0];
+      auto const new_f1 = prods2new[start + (i*new_faces_per_old_face) + 1];
+      OMEGA_H_CHECK(new_f0 < nnew_face);
+      OMEGA_H_CHECK(new_f0 >= 0);
+      OMEGA_H_CHECK(new_f1 < nnew_face);
+      OMEGA_H_CHECK(new_f1 >= 0);
 
-      auto old_face = keys2old_faces[max_degree_key2oldface*key + i];
-      OMEGA_H_CHECK(old_face != -1);
-      auto old_key_edge = keys2edges[key];
-      printf("For old edge %d, with key id %d, found old face %d\n", old_key_edge, key, old_face);
+      auto const old_face = keys2old_faces[max_degree_key2oldface*key + i];
+      OMEGA_H_CHECK(old_face < nold_face);
+      OMEGA_H_CHECK(old_face >= 0);
+      //printf("For old edge %d, with key id %d, found old face %d\n", old_key_edge, key, old_face);
+      //TODO oldface segfault
 
       LO const v0_old_face = old_fv2v[old_face*3 + 0];
       LO const v1_old_face = old_fv2v[old_face*3 + 1];
       LO const v2_old_face = old_fv2v[old_face*3 + 2];
-      auto const old_face_e0 = old_fe2e[old_face*3];
+      auto const old_face_e0 = old_fe2e[old_face*3 + 0];
       auto const old_face_e1 = old_fe2e[old_face*3 + 1];
       auto const old_face_e2 = old_fe2e[old_face*3 + 2];
-      auto old_key_edge_v0 = old_ev2v[old_key_edge*2 + 0];
-      auto old_key_edge_v1 = old_ev2v[old_key_edge*2 + 1];
+      auto const old_key_edge_v0 = old_ev2v[old_key_edge*2 + 0];
+      auto const old_key_edge_v1 = old_ev2v[old_key_edge*2 + 1];
       LO old_vert_noKey = -1;
       for (LO k = 0; k < 3; ++k) {
         auto old_face_vert = old_fv2v[old_face*3 + k];
         if ((old_face_vert != old_key_edge_v0) &&
             (old_face_vert != old_key_edge_v1)) {
           old_vert_noKey = old_face_vert;
-          break;
+          //break;
         }
       }
-      printf("for old face %d, oldKeyEdge %d, found old no-key vert %d\n",
-          old_face, old_key_edge, old_vert_noKey);
+      OMEGA_H_CHECK(old_vert_noKey < nold_vert);
+      OMEGA_H_CHECK(old_vert_noKey >= 0);
+      //printf("for old face %d, oldKeyEdge %d, found old no-key vert %d\n",
+        //  old_face, old_key_edge, old_vert_noKey);
 
-      printf("ok1, new faces f0 f1 %d %d oldface %d\n", new_f0, new_f1, old_face);
+      //printf("ok1, new faces f0 f1 %d %d oldface %d\n", new_f0, new_f1, old_face);
       auto nodePts = cubic_faceSplittingEdge_xi_values
         (old_vert_noKey, v0_old_face, v1_old_face, v2_old_face, old_key_edge,
          old_face_e0, old_face_e1, old_face_e2, new_fv2v[new_f0*3 + 0], 
@@ -340,21 +334,17 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
          new_fv2v[new_f1*3 + 1], new_fv2v[new_f1*3 + 2],
          old_verts2new_verts[v0_old_face],
          old_verts2new_verts[v1_old_face], old_verts2new_verts[v2_old_face]);
-      printf("ok2\n");
+      //printf("ok2\n");
 
       //for f0
       {
-        //get the interp points
         auto p11 = face_parametricToParent_3d(order, old_face, old_ev2v, old_fe2e,
           old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, nodePts[0], nodePts[1], old_fv2v);
-        //use these as interp pts to find ctrl pt in new face
         auto newface_c11 = face_interpToCtrlPt_3d(order, new_f0, new_ev2v, new_fe2e,
           new_vertCtrlPts, new_edgeCtrlPts, p11, new_fv2v);
         for (LO k = 0; k < 3; ++k) {
           face_ctrlPts[new_f0*n_face_pts*dim + k] = newface_c11[k];
-          //TODO mult pts per face
         }
-
       }
 
       //for f1
@@ -366,12 +356,14 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
         for (LO k = 0; k < 3; ++k) {
           face_ctrlPts[new_f1*n_face_pts*dim + k] = newface_c11[k];
         }
-
       }
     }
     for (LO i = (keys2nold_faces[key]+1)*new_faces_per_old_face; i <= (end-start); ++i) {
-      auto old_key_edge = keys2edges[key];
+      OMEGA_H_CHECK(i < prods2new.size());
+      OMEGA_H_CHECK(i < prods2new.size()-start);
       auto newface = prods2new[start + i];
+      OMEGA_H_CHECK(newface < nnew_face);
+      OMEGA_H_CHECK(newface >= 0);
       LO const newface_v0 = new_fv2v[newface*3 + 0];
       LO const newface_v1 = new_fv2v[newface*3 + 1];
       LO const newface_v2 = new_fv2v[newface*3 + 2];
@@ -407,12 +399,14 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
           }
           if (count_matchverts2 == 2) {
             old_rgn = adj_rgn;
-            break;
+            //break;
           }
         }
       }
-      printf("for i = %d, oldedge %d, newface %d, found old region %d\n",
-            i, old_key_edge, newface, old_rgn);
+      OMEGA_H_CHECK(old_rgn < nold_rgn);
+      OMEGA_H_CHECK(old_rgn >= 0);
+      //printf("for i = %d, oldedge %d, newface %d, found old region %d\n",
+        //    i, old_key_edge, newface, old_rgn);
 
       auto old_rgn_e0 = old_re2e[old_rgn*6 + 0];
       auto old_rgn_e1 = old_re2e[old_rgn*6 + 1];
@@ -429,7 +423,7 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
           old_rf2f);
       auto c11 = face_interpToCtrlPt_3d(order, newface, new_ev2v, new_fe2e,
           new_vertCtrlPts, new_edgeCtrlPts, p11, new_fv2v);
-      printf("newface ctrlPt %f %f %f\n", c11[0], c11[1], c11[2]);
+      //printf("newface ctrlPt %f %f %f\n", c11[0], c11[1], c11[2]);
       for (LO j = 0; j < dim; ++j) {
         face_ctrlPts[newface*n_face_pts*dim + j] = c11[j];
       }
@@ -437,6 +431,8 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   };
   parallel_for(nkeys, std::move(create_crv_prod_faces),
                "create_crv_prod_faces");
+
+  cudaDeviceSynchronize();
 
   auto create_crv_same_faces = OMEGA_H_LAMBDA (LO old_face) {
     if (old2new[old_face] != -1) {
@@ -449,6 +445,8 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   };
   parallel_for(nold_face, std::move(create_crv_same_faces),
                "create_crv_same_faces");
+
+  cudaDeviceSynchronize();
 
   new_mesh->add_tag<Real>(2, "bezier_pts", n_face_pts*dim);
   new_mesh->set_tag_for_ctrlPts(2, Reals(face_ctrlPts));
