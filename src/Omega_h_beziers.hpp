@@ -251,7 +251,7 @@ OMEGA_H_INLINE Reals tet_bezier_pts(LO const P) {
 }
 */
 
-constexpr OMEGA_H_INLINE Real
+OMEGA_H_INLINE Real
 Bijk(LO const P, LO const i, LO const j, LO const k, Real const u,
      Real const v, Real const w) noexcept {
   LO const l = P - i - j - k;
@@ -272,7 +272,7 @@ Bijk(LO const P, LO const i, LO const j, LO const k, Real const u,
   return resultant;
 }
 
-constexpr OMEGA_H_INLINE Real 
+OMEGA_H_INLINE Real 
 Bij(LO const P, LO const i, LO const j, Real const u, Real const v) noexcept {
   LO const k = P - i - j;
   OMEGA_H_CHECK((k >= 0) && (k <= P));
@@ -290,7 +290,7 @@ Bij(LO const P, LO const i, LO const j, Real const u, Real const v) noexcept {
   return resultant;
 }
 
-constexpr OMEGA_H_INLINE Real 
+OMEGA_H_INLINE Real 
 Bi(LO const P, LO const i, Real const u) noexcept {
   LO const j = P - i;
   OMEGA_H_CHECK((j >= 0) && (j <= P));

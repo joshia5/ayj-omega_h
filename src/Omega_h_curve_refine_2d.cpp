@@ -320,7 +320,7 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           }
         }
       }
-      atomic_fetch_add(&count_key[0], 1);
+      atomic_increment(&count_key[0]);
     }
   };
   parallel_for(nold_edge, std::move(create_crv_edges));
