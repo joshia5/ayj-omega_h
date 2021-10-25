@@ -84,61 +84,68 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
         ent_dim, keys2prods, prods2new_ents, same_ents2old_ents,
         same_ents2new_ents);
 
+    printf("on rank %d nkeys %d\n", mesh->comm()->rank(), keys2edges.size());
     if (ent_dim == EDGE) {
       if (mesh->is_curved() > 0) {
+      //if ((mesh->is_curved() > 0) && (keys2edges.size() > 0)) {
         if (mesh->dim() == 2) {
           keys2old_faces = create_curved_verts_and_edges_2d
           (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
            keys2midverts, old_verts2new_verts, keys2edges);
 
+          /*
           auto cubic_wireframe_mesh = Mesh(comm->library());
           cubic_wireframe_mesh.set_comm(comm);
           build_cubic_wireframe_2d(&new_mesh, &cubic_wireframe_mesh, 5);
           std::string vtuPath = "/users/joshia5/Meshes/curved/latest2d_wireframe.vtu";
           vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe_mesh, 1);
+          */
         }
         else {
           OMEGA_H_CHECK(mesh->dim() == 3);
           keys2old_faces = create_curved_verts_and_edges_3d
           (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
            keys2midverts, old_verts2new_verts, keys2edges);
-/*
+
+          /*
           auto cubic_wireframe_mesh = Mesh(comm->library());
           cubic_wireframe_mesh.set_comm(comm);
           build_cubic_wireframe_3d(&new_mesh, &cubic_wireframe_mesh, 5);
           std::string vtuPath = "/users/joshia5/Meshes/curved/latest3d_wireframe.vtu";
           vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe_mesh, 1);
-  //int wait=1; while(wait);*/
+  //int wait=1; while(wait);
+  */
         }
       }
     }
     if (ent_dim == FACE) {
-      /*
+
       printf(
       "old2new %d same2new %d same2old %d prods2new %d keys2prods %d keys2midv %d\n",
       old_ents2new_ents.size(),
           same_ents2new_ents.size(), same_ents2old_ents.size(),
           prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
-          */
-      if (mesh->is_curved() > 0) {
+ 
+      if (mesh->is_curved() > 0){
+      //if ((mesh->is_curved() > 0) && (keys2edges.size() > 0)){
         if (mesh->dim() == 2) {
           create_curved_faces_2d(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
                                  keys2prods, keys2edges, keys2old_faces,
                                  old_verts2new_verts);
-
+          /*
           auto cubic_curveVtk_mesh = Mesh(comm->library());
           cubic_curveVtk_mesh.set_comm(comm);
           build_cubic_curveVtk_2d(&new_mesh, &cubic_curveVtk_mesh, 5);
           std::string vtuPath = "/users/joshia5/Meshes/curved/latest2d.vtu";
           vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
+          */
         }
         else {
-          
           OMEGA_H_CHECK (mesh->dim() == 3);
           create_curved_faces_3d(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
                                  keys2prods, keys2edges, keys2old_faces,
                                  old_verts2new_verts);
-/*
+          /*
           auto cubic_curveVtk_mesh = Mesh(comm->library());
           cubic_curveVtk_mesh.set_comm(comm);
           build_cubic_curveVtk_3d(&new_mesh, &cubic_curveVtk_mesh, 5);
@@ -149,9 +156,12 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
         }
       }
     }
+    printf("for dim %d rank %d nkeys %d came out of curve fns\n",
+        ent_dim, mesh->comm()->rank(), keys2edges.size());
     old_lows2new_lows = old_ents2new_ents;
   }
   //printf("after 1 refine, has %d elems", new_mesh.nents(new_mesh.dim()));
+    mesh->comm()->barrier();
 
   *mesh = new_mesh;
 }

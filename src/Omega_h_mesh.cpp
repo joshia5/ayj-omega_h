@@ -120,43 +120,40 @@ Int Mesh::n_internal_ctrlPts(Int edim) {
 }
 
 void Mesh::add_tags_for_ctrlPts() {
-  Int dim = dim_;
-  for (I8 d = 0; d <= dim; ++d) {
+  Int dim = this->dim();
+  for (I8 d = 1; d <= dim; ++d) {
+  //for (I8 d = 0; d <= dim; ++d) {
     Int n_pts = n_internal_ctrlPts(d);
     if (n_pts > 0) {
-      add_tag<Real>(d, "bezier_pts", n_pts*dim);
-      add_tag<I8>(d, "n_bezier_pts", 1, Bytes(nents(d), n_pts, "numBezierPts"));
+      this->add_tag<Real>(d, "bezier_pts", n_pts*dim);
+      this->add_tag<I8>(d, "n_bezier_pts", 1, Bytes(nents(d), n_pts, "numBezierPts"));
     }
   }
-
   return;
 }
 
 void Mesh::remove_tags_for_ctrlPts() {
-  Int dim = dim_;
+  Int dim = this->dim();
   for (I8 d = 1; d <= dim; ++d) {
     Int n_pts = n_internal_ctrlPts(d);
     if ((n_pts > 0) && (has_tag(d, "bezier_pts"))) {
-      remove_tag(d, "bezier_pts");
-      remove_tag(d, "n_bezier_pts");
+      this->remove_tag(d, "bezier_pts");
+      this->remove_tag(d, "n_bezier_pts");
     }
   }
-
   return;
 }
 
 void Mesh::set_tag_for_ctrlPts(Int ent_dim, Reals ctrlPts) {
-
   OMEGA_H_CHECK(ent_dim >= 0);
-  set_tag(ent_dim, "bezier_pts", ctrlPts);
-
+  this->set_tag(ent_dim, "bezier_pts", ctrlPts);
   return;
 }
 
 Reals Mesh::get_ctrlPts(Int ent_dim) {
 
   OMEGA_H_CHECK(ent_dim >= 0);
-  auto ctrlPts = get_array<Real>(ent_dim, "bezier_pts");
+  auto ctrlPts = this->get_array<Real>(ent_dim, "bezier_pts");
   if ((ent_dim == 0) && (!ctrlPts.exists())) {
     return coords();
   }
@@ -284,14 +281,14 @@ LO Mesh::nedges_mix() const { return nents(Topo_type::edge); }
 
 LO Mesh::nverts_mix() const { return nents(Topo_type::vertex); }
 
-LO Mesh::nregions_mix() const { 
+LO Mesh::nregions_mix() const {
   return (nents(Topo_type::tetrahedron) +
           nents(Topo_type::hexahedron) +
           nents(Topo_type::wedge) +
           nents(Topo_type::pyramid));
 }
 
-LO Mesh::nfaces_mix() const { 
+LO Mesh::nfaces_mix() const {
   return (nents(Topo_type::triangle) +
           nents(Topo_type::quadrilateral));
 }
