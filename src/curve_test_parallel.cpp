@@ -14,7 +14,7 @@ using namespace Omega_h;
 
 void test_sim_kova_quadratic(Library *lib) {
   auto comm = lib->world();
-  auto mesh = binary::read("/lore/joshia5/Meshes/curved/box_circleCut-100k_2p.osh", comm);
+  auto mesh = binary::read("../omega_h/meshes/box_circleCut-100k_2p.osh", comm);
   vtk::FullWriter writer;
   writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/box_circleCut-100k_2p_full.vtk", &mesh);
   writer.write();

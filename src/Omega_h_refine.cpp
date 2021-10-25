@@ -87,7 +87,6 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
     printf("on rank %d nkeys %d\n", mesh->comm()->rank(), keys2edges.size());
     if (ent_dim == EDGE) {
       if (mesh->is_curved() > 0) {
-      //if ((mesh->is_curved() > 0) && (keys2edges.size() > 0)) {
         if (mesh->dim() == 2) {
           keys2old_faces = create_curved_verts_and_edges_2d
           (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
@@ -127,7 +126,6 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
           prods2new_ents.size(), keys2prods.size(), keys2midverts.size());
  
       if (mesh->is_curved() > 0){
-      //if ((mesh->is_curved() > 0) && (keys2edges.size() > 0)){
         if (mesh->dim() == 2) {
           create_curved_faces_2d(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
                                  keys2prods, keys2edges, keys2old_faces,
