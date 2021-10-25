@@ -162,11 +162,13 @@ void push_ents(Mesh* old_mesh, Mesh* new_mesh, Int ent_dim,
    */
   if ((mode == OMEGA_H_GHOSTED) ||
       ((mode == OMEGA_H_VERT_BASED) && (ent_dim == VERT))) {
+    fprintf(stderr, "in push_ents rank %d start\n", old_mesh->comm()->rank());
     auto old_own_ranks = old_mesh->ask_owners(ent_dim).ranks;
     own_ranks = old_owners2new_ents.exch(old_own_ranks, 1);
   }
   auto owners = update_ownership(new_ents2old_owners, own_ranks);
   new_mesh->set_owners(ent_dim, owners);
+  fprintf(stderr, "in push_ents rank %d end\n", old_mesh->comm()->rank());
 }
 
 static void print_migrate_stats(CommPtr comm, Dist new_elems2old_owners) {
@@ -191,6 +193,7 @@ static void print_migrate_stats(CommPtr comm, Dist new_elems2old_owners) {
   }
 }
 
+//TODO make separate file
 void migrate_matches(Mesh* mesh, Mesh* new_mesh, Int const d,
     Dist const* old_owners2new_ents) {
   auto size = mesh->comm()->size();
@@ -330,7 +333,7 @@ void migrate_matches(Mesh* mesh, Mesh* new_mesh, Int const d,
   auto rev_max_dest_ids =
     old_rank2new_ranks.exch(Read<LO>(max_dest_i_h.write()), 1);
   //old_rank2new_ranks.exch_reduce(Read<LO>(max_dest_i_h.write()), 1,
-  //OMEGA_H_MAX);//TODO: for parallel input we want to get max
+  //OMEGA_H_MAX);//TODO: for parallel input get max
   //of dest ids recved from all old ranks
   LO rev_nroots;
   rev_nroots = rev_max_dest_ids.last()+1;
@@ -338,7 +341,6 @@ void migrate_matches(Mesh* mesh, Mesh* new_mesh, Int const d,
   Dist owners2new_leaves;
   owners2new_leaves.set_parent_comm(mesh->comm());
   owners2new_leaves.set_dest_ranks(host_dest_r.write());
-  int wait=0; while(wait);
   owners2new_leaves.set_dest_idxs(host_dest_i.write(), rev_nroots);
   owners2new_leaves.set_roots2items(new_r2i.write());
   Read<I32> own_ranks;

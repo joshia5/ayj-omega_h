@@ -321,9 +321,10 @@ void test_sim_quadToCubic(Library *lib, const std::string &model_file,
 */
 void test_sim_kova_quadratic(Library *lib) {
   auto comm = lib->world();
-  auto mesh = binary::read("/lore/joshia5/Meshes/curved/box_circleCut-100k.osh", comm);
+  auto mesh = binary::read("/lore/joshia5/Meshes/curved/box_circleCut-100k_2p.osh", comm);
   //auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
-  mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
+  if (!mesh.has_tag(0, "bezier_pts")) 
+    mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
   calc_quad_ctrlPts_from_interpPts(&mesh);
 
   /*
@@ -334,12 +335,13 @@ void test_sim_kova_quadratic(Library *lib) {
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
   */
   elevate_curve_order_2to3(&mesh);
+  /*
   auto curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
   build_quadratic_curveVtk_3d(&mesh, &curveVtk_mesh);
   std::string vtuPath = "/lore/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
-
+*/
 /*
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
@@ -376,19 +378,20 @@ void test_sim_kova_quadratic(Library *lib) {
     nelems = mesh.nglobal_ents(mesh.dim());
     std::cout << "mesh now has " << nelems << " total elements\n";
   }
-  vtk::write_parallel("/lore/joshia5/Meshes/curved/kova_refined.vtk", &mesh, 2);
   /*
+  vtk::write_parallel("/lore/joshia5/Meshes/curved/kova_refined.vtk", &mesh, 2);
   wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
   build_cubic_wireframe_3d(&mesh, &wireframe_mesh, 2);
   vtuPath = "/lore/joshia5/Meshes/curved/KovaGeomSim-123tet_wireframe_refined.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
-  */
+
   curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
   build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh, 2);
   vtuPath = "/lore/joshia5/Meshes/curved/KovaGeomSim-123tet_curveVtk_refined.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
+  */
   return;
 }
 /*

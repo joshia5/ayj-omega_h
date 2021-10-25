@@ -669,13 +669,18 @@ void read_internal(pMesh m, Mesh* mesh, pMeshNex numbering) {
   }
 
   if (is_simplex || is_hypercube) {
+    for (LO i = 0; i <= mesh->dim(); ++i) {
+      if (!mesh->has_tag(i, "global")) {
+        mesh->add_tag(i, "global", 1, Omega_h::GOs(mesh->nents(i), 0, 1));
+      }
+    }
     if (edge_numPts > 0) {
       assert(edge_numPts == 1);
       mesh->set_curved(1);
       mesh->set_max_order(edge_numPts + 1);
       mesh->add_tags_for_ctrlPts();
       mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords.write()));
-      mesh->set_tag_for_ctrlPts(0, mesh->coords());
+      //mesh->set_tag_for_ctrlPts(0, mesh->coords());
       //mesh->add_tag<Real>(2, "face_interpPts", max_dim, Reals(facePt_coords.write()));
     }
   }

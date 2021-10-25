@@ -511,10 +511,12 @@ if(BUILD_TESTING)
   test_func(amr_test2 1 ./amr_test2)
   osh_add_exe(refine_scale)
   osh_add_exe(amr_mpi_test)
+
   osh_add_exe(reverse_class_test)
   test_func(reverse_class_test 1 ./reverse_class_test
     ${CMAKE_SOURCE_DIR}/meshes/plate_6elem.osh
     ${CMAKE_SOURCE_DIR}/meshes/unitbox_cutTriCube_1k.osh)
+
   osh_add_exe(curve_test)
   test_func(curve_test 1 ./curve_test 
     ${CMAKE_SOURCE_DIR}/meshes/Example_tri.osh
@@ -523,6 +525,7 @@ if(BUILD_TESTING)
     /users/joshia5/Meshes/curved/box_cutCircle-30reg.sms
     /users/joshia5/Meshes/curved/box_cutCircle-30reg.vtk)
   set(TEST_EXES ${TEST_EXES} curve_test)
+
   osh_add_exe(rc_field_test)
   test_func(rc_field_test 1 ./rc_field_test
     ${CMAKE_SOURCE_DIR}/meshes/plate_6elem.osh
@@ -542,6 +545,9 @@ if(BUILD_TESTING)
       ${CMAKE_SOURCE_DIR}/meshes/box_3d_2p_sync.vtk
       ${CMAKE_SOURCE_DIR}/meshes/box_3d_2p_reduce.vtk
       ${CMAKE_SOURCE_DIR}/meshes/box3d_2p_adapt.vtk)
+    osh_add_exe(curve_test_parallel)
+    test_func(curve_test_parallel 2 ./curve_test_parallel)
+    set(TEST_EXES ${TEST_EXES} curve_test_parallel)
   endif()
   osh_add_exe(shape_test)
   test_basefunc(run_shape_test 1 ./shape_test)
