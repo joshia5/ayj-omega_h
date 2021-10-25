@@ -162,13 +162,11 @@ void push_ents(Mesh* old_mesh, Mesh* new_mesh, Int ent_dim,
    */
   if ((mode == OMEGA_H_GHOSTED) ||
       ((mode == OMEGA_H_VERT_BASED) && (ent_dim == VERT))) {
-    fprintf(stderr, "in push_ents rank %d start\n", old_mesh->comm()->rank());
     auto old_own_ranks = old_mesh->ask_owners(ent_dim).ranks;
     own_ranks = old_owners2new_ents.exch(old_own_ranks, 1);
   }
   auto owners = update_ownership(new_ents2old_owners, own_ranks);
   new_mesh->set_owners(ent_dim, owners);
-  fprintf(stderr, "in push_ents rank %d end\n", old_mesh->comm()->rank());
 }
 
 static void print_migrate_stats(CommPtr comm, Dist new_elems2old_owners) {
