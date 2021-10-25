@@ -1,11 +1,12 @@
 #include <iostream>
 #include <fstream>
 
-#include<Omega_h_mesh.hpp>
-#include<Omega_h_for.hpp>
-#include<Omega_h_file.hpp>
-#include<Omega_h_beziers.hpp>
-#include<Omega_h_build.hpp>
+#include <Omega_h_timer.hpp>
+#include <Omega_h_mesh.hpp>
+#include <Omega_h_for.hpp>
+#include <Omega_h_file.hpp>
+#include <Omega_h_beziers.hpp>
+#include <Omega_h_build.hpp>
 #include <Omega_h_adapt.hpp>
 #include <Omega_h_metric.hpp>
 #include <Omega_h_array_ops.hpp>
@@ -23,6 +24,7 @@ void test_sim_kova_quadratic(Library *lib) {
   AdaptOpts opts(&mesh);
   auto nelems = mesh.nglobal_ents(mesh.dim());
   auto desired_group_nelems = 1000000;
+  Now t0 = now();
   while (nelems < desired_group_nelems) {
     if (!mesh.has_tag(0, "metric")) {
       add_implied_metric_tag(&mesh);
@@ -39,6 +41,8 @@ void test_sim_kova_quadratic(Library *lib) {
     nelems = mesh.nglobal_ents(mesh.dim());
     std::cout << "mesh now has " << nelems << " total elements\n";
   }
+  Now t1 = now();
+  std::cout << "total refine time: " << (t1 - t0) << " seconds\n";
   auto curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
   build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh, 2);
