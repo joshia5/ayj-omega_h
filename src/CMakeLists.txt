@@ -147,6 +147,7 @@ if(Omega_h_USE_EGADS)
   find_library(EGADS_LIBRARY NAMES egads
       PATHS
       "${EGADS_PREFIX}/EngSketchPad/lib"
+      "${EGADS_PREFIX}/lib"
       NO_DEFAULT_PATH)
   if(NOT EGADS_LIBRARY)
     message(FATAL_ERROR "could not find EGADS_LIBRARY")
