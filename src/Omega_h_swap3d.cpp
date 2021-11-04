@@ -73,11 +73,6 @@ static void swap3d_element_based(Mesh* mesh, AdaptOpts const& opts) {
     old_lows2new_lows = old_ents2new_ents;
   }
 
-  new_mesh.add_tags_for_ctrlPts();
-  new_mesh.set_tag_for_ctrlPts(0, mesh->get_ctrlPts(0));
-  new_mesh.set_tag_for_ctrlPts(1, mesh->get_ctrlPts(1));
-  new_mesh.set_tag_for_ctrlPts(2, mesh->get_ctrlPts(2));
-
   *mesh = new_mesh;
 }
 
