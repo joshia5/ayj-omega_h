@@ -182,7 +182,7 @@ void egads_reclassify(Mesh* mesh, Egads* eg) {
     auto ents2faces = mesh->ask_up(dim, FACE);
     auto adj_class_dims = read(unmap(ents2faces.ab2b, face_class_dims, 1));
     auto keep_edges = each_eq_to(adj_class_dims, I8(2));
-    auto ents2eq_faces = filter_graph(ents2faces, keep_edges);
+    auto ents2eq_faces = filter_graph_edges(ents2faces, keep_edges);
     auto adj_eq_face_ids = unmap(ents2eq_faces.ab2b, face_class_ids, 1);
     auto host_a2ab = HostRead<LO>(ents2eq_faces.a2ab);
     auto host_face_ids = HostRead<LO>(adj_eq_face_ids);
@@ -226,7 +226,11 @@ Reals egads_get_snap_warp(Mesh* mesh, Egads* eg, bool verbose) {
   auto host_coords = HostRead<Real>(coords);
   auto host_warp = HostWrite<Real>(mesh->nverts() * 3);
   for (LO i = 0; i < mesh->nverts(); ++i) {
-    auto a = get_vector<3>(host_coords, i);
+    //auto a = get_vector<3>(coords, i);
+    Vector<3> a;                                                                    
+    for (Int j = 0; j < 3; ++j) a[j] = host_coords[i * 3 + j];
+    //auto a = get_vector<3>(host_coords, i);
+    //auto device_a = get_vector<3>(coords, i);
     Int class_dim = host_class_dims[i];
     OMEGA_H_CHECK(class_dim >= 0);
     OMEGA_H_CHECK(class_dim <= 3);
@@ -241,7 +245,8 @@ Reals egads_get_snap_warp(Mesh* mesh, Egads* eg, bool verbose) {
       auto b = get_closest_point(g, a);
       d = b - a;
     }
-    set_vector(host_warp, i, d);
+    //set_vector(host_warp, i, d);
+    for (Int j = 0; j < 3; ++j) host_warp[i * 3 + j] = d[j];
   }
   auto warp = Reals(host_warp.write());
   auto t1 = now();
