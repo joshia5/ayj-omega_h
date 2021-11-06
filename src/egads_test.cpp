@@ -76,6 +76,7 @@ int main(int argc, char** argv) {
   CALL(EG_open(&context));
   ego model;
   CALL(EG_loadModel(context, 0, argv[1], &model));
+  CALL(EG_saveModel(model, "/users/joshia5/Models/curved/donut_cut_egads-out.stp"));
   ego model_geom;
   int model_oclass;
   int model_mtype;
@@ -115,5 +116,10 @@ int main(int argc, char** argv) {
   print_closest_point(faces, 7, {{0.75, 0.0, 0.5}});
   EG_free(faces);
   CALL(EG_deleteObject(model));
+  #ifndef Omega_h_USE_EGADSlite
   CALL(EG_close(context));
+  #endif
+  #ifdef Omega_h_USE_EGADSlite
+  CALL(EGlite_close(context));
+  #endif
 }
