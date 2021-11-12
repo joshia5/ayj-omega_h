@@ -116,10 +116,5 @@ int main(int argc, char** argv) {
   print_closest_point(faces, 7, {{0.75, 0.0, 0.5}});
   EG_free(faces);
   CALL(EG_deleteObject(model));
-  #ifndef Omega_h_USE_EGADSlite
   CALL(EG_close(context));
-  #endif
-  #ifdef Omega_h_USE_EGADSlite
-  CALL(EGlite_close(context));
-  #endif
 }

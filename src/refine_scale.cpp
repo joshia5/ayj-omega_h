@@ -36,6 +36,7 @@ int main(int argc, char** argv) {
       if (shift == 0) {
         if (world_rank == 0) std::cout << "reading mesh...\n";
         mesh = Omega_h::binary::read(inpath, group, true);
+        mesh.set_curved(-1);
       } else {
         if (world_rank == 0) std::cout << "repartitioning...\n";
         mesh.set_comm(group);

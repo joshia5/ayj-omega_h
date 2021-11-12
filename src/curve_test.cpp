@@ -322,7 +322,8 @@ void test_sim_quadToCubic(Library *lib, const std::string &model_file,
 */
 void test_sim_kova_quadratic(Library *lib) {
   auto comm = lib->world();
-  auto mesh = binary::read("../omega_h/meshes/box_circleCut-100k.osh", comm);
+  auto mesh = binary::read("/lore/joshia5/Meshes/curved/box_circleCut-3p5mil.osh", comm);
+  //auto mesh = binary::read("/lore/joshia5/develop/mfem_omega/omega_h/meshes/box_circleCut-3p5mil.osh", comm);
   //auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
   if (!mesh.has_tag(0, "bezier_pts")) 
     mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
@@ -362,7 +363,7 @@ void test_sim_kova_quadratic(Library *lib) {
   }
   AdaptOpts opts(&mesh);
   auto nelems = mesh.nglobal_ents(mesh.dim());
-  auto desired_group_nelems = 1000000;
+  auto desired_group_nelems = 10000000;
   Now t0 = now();
   while (nelems < desired_group_nelems) {
     if (!mesh.has_tag(0, "metric")) {
