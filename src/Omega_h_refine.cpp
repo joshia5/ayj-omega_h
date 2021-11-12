@@ -114,9 +114,9 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
         }
       }
     }
+
     old_lows2new_lows = old_ents2new_ents;
   }
-    mesh->comm()->barrier();
 
   *mesh = new_mesh;
 }
