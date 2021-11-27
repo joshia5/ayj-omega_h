@@ -11,6 +11,7 @@
 #include "Omega_h_mesh.hpp"
 #include "Omega_h_modify.hpp"
 #include "Omega_h_transfer.hpp"
+#include "Omega_h_file.hpp"
 
 namespace Omega_h {
 
@@ -150,10 +151,16 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
     }
     transfer_coarsen(mesh, opts.xfer_opts, &new_mesh, keys2verts, keys2doms,
         ent_dim, prods2new_ents, same_ents2old_ents, same_ents2new_ents);
+
+    /*curved code here*/
+    /**/
+
     old_lows2new_lows = old_ents2new_ents;
   }
 
   *mesh = new_mesh;
+  vtk::write_parallel("coarsen_itr.vtk", mesh, mesh->dim());
+  while(1);
 }
 
 static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
