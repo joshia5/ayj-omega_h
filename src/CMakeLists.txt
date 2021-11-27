@@ -562,6 +562,7 @@ if(BUILD_TESTING)
     /users/joshia5/Meshes/curved/box_cutCircle-30reg.sms
     /users/joshia5/Meshes/curved/box_cutCircle-30reg.vtk)
   set(TEST_EXES ${TEST_EXES} curve_test)
+  osh_add_exe(crv_coarsen_test)
 
   osh_add_exe(rc_field_test)
   test_func(rc_field_test 1 ./rc_field_test
