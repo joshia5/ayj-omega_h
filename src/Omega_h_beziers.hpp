@@ -167,26 +167,6 @@ OMEGA_H_INLINE Vector<2> xi_21_quart() {
 OMEGA_H_INLINE Vector<2> xi_12_quart() {
   return vector_2(0.22088805, 0.5582239);
 }
-/*
-OMEGA_H_INLINE Reals xi_11_quart() {
-  Write<Real> xi_11(2);
-  xi_11[0] = 0.22088805;
-  xi_11[1] = 0.22088805;
-  return Reals(xi_11);
-}
-OMEGA_H_INLINE Reals xi_21_quart() {
-  Write<Real> xi_21(2);
-  xi_21[0] = 0.5582239;
-  xi_21[1] = 0.22088805;
-  return Reals(xi_21);
-}
-OMEGA_H_INLINE Reals xi_12_quart() {
-  Write<Real> xi_12(2);
-  xi_12[0] = 0.22088805;
-  xi_12[1] = 0.5582239;
-  return Reals(xi_12);
-}
-*/
 OMEGA_H_INLINE Vector<3> xi_111_quart() {
   return vector_3(1.0/4.0, 1.0/4.0, 1.0/4.0);
 }
@@ -1107,29 +1087,6 @@ OMEGA_H_DEVICE Vector<3> face_interpToCtrlPt_3d(
   return newface_c11_w;
 }
 
-/*
-OMEGA_H_INLINE Reals edge_interpToCtrlPt_3d(
-    LO const order, Reals interp_pts, Reals c0, Reals cN, t newface, LOs new_ev2v, LOs new_fe2e,
-    Reals new_vertCtrlPts, Reals new_edgeCtrlPts, Reals p11, LOs new_fv2v) {
-  //TODO higher than cubic
-
-  Matrix<2,1> cx({cx0, vert_ctrlPts[mid_vert*1*dim + 0]});
-  Matrix<2,1> cy({cy0, vert_ctrlPts[mid_vert*1*dim + 1]});
-  Matrix<2,1> cz({cz0, vert_ctrlPts[mid_vert*1*dim + 2]});
-  Matrix<2,2> M1_inv({Bi(order, 1, xi_1_cube()), Bi(order, 2, xi_1_cube()),
-      Bi(order, 1, xi_2_cube()), Bi(order, 2, xi_2_cube())});
-  Matrix<2,2> M2({Bi(order, 0,  xi_1_cube()), Bi(order, 3,  xi_1_cube()),
-      Bi(order, 0,  xi_2_cube()), Bi(order, 3,  xi_2_cube())});
-  auto M1 = invert(M1_inv);
-
-  Matrix<2,1> fx({p1[0], p2[0]});
-  Matrix<2,1> fy({p1[1], p2[1]});
-  Matrix<2,1> fz({p1[2], p2[2]});
-  auto Cx = M1*fx - M1*M2*cx;
-  auto Cy = M1*fy - M1*M2*cy;
-  auto Cz = M1*fz - M1*M2*cz;
-}
-*/
 LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,
                                      LOs keys2midverts, LOs old_verts2new_verts,
@@ -1147,6 +1104,8 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
                             LOs keys2prods, LOs keys2edges, LOs keys2old_faces,
                             LOs old_verts2new_verts);
+
+LO checkValidity_2d(LO tri);
 
 // workaround CUDA compiler bug
 #ifdef OMEGA_H_USE_CUDA
