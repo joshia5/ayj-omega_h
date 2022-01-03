@@ -2,7 +2,21 @@
 #include "Omega_h_vector.hpp"
 #include "Omega_h_scalar.hpp"
 
-LO checkValidity_2d(LO tri) {
+LO checkValidity_2d(Mesh *mesh, LOs new_tris) {
+
+  auto fv2v = mesh->ask_down(2, 0).ab2b;
+  auto fe2e = mesh->get_adj(2, 1).ab2b;
+  auto vertCtrlPts = mesh->get_ctrlPts(0);
+  auto edgeCtrlPts = mesh->get_ctrlPts(1);
+
+  Write<I8> is_valid(new_tris.size(), 1);
+
+  auto check_validity = OMEGA_H_LAMBDA (LO i) {
+    auto tri = new_tris(i);
+
+    
+  };
+  parallel_for(new_tris.size(), std::move(check_validity));
 
   apf::Element* elem = apf::createElement(mesh->getCoordinateField(),e);
   apf::NewArray<apf::Vector3> elemNodes;
