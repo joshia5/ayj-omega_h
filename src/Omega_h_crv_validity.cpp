@@ -8,12 +8,20 @@ LO checkValidity_2d(Mesh *mesh, LOs new_tris) {
   auto fe2e = mesh->get_adj(2, 1).ab2b;
   auto vertCtrlPts = mesh->get_ctrlPts(0);
   auto edgeCtrlPts = mesh->get_ctrlPts(1);
+  auto dim = mesh->dim();
 
   Write<I8> is_valid(new_tris.size(), 1);
 
   auto check_validity = OMEGA_H_LAMBDA (LO i) {
     auto tri = new_tris(i);
-
+    auto order = mesh->get_max_order();
+    OMEGA_H_CHECK(order == 3);
+    LO const ntri_pts = order*order + 1;
+    
+    Write<Real> tri_pts(ntri_pts*dim);
+    //query the tri's down verts's ctrl pts and store
+    //query the tri's down edge's ctrl pts and store
+    //query the tri's ctrl pt and store
     
   };
   parallel_for(new_tris.size(), std::move(check_validity));
