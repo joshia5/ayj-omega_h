@@ -8,7 +8,9 @@ LO checkValidity_2d(Mesh *mesh, LOs new_tris) {
   auto fe2e = mesh->get_adj(2, 1).ab2b;
   auto vertCtrlPts = mesh->get_ctrlPts(0);
   auto edgeCtrlPts = mesh->get_ctrlPts(1);
+  auto faceCtrlPts = mesh->get_ctrlPts(2);
   auto dim = mesh->dim();
+  auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
 
   Write<I8> is_valid(new_tris.size(), 1);
 
@@ -17,12 +19,29 @@ LO checkValidity_2d(Mesh *mesh, LOs new_tris) {
     auto order = mesh->get_max_order();
     OMEGA_H_CHECK(order == 3);
     LO const ntri_pts = order*order + 1;
-    
+ 
     Write<Real> tri_pts(ntri_pts*dim);
     //query the tri's down verts's ctrl pts and store
+    for (LO j = 0; j < 3; ++j) {
+      auto p = get_vector<2>(vertCtrlPts, fv2v[tri*3 + j]);
+      for (LO k = 0; k < dim; ++k) {
+        tri_pts[j*dim + k] = p[k];
+      }
+    }
     //query the tri's down edge's ctrl pts and store
+    for (LO j = 0; j < 3; ++j) {
+      for (I8 d = 0; d < dim; ++d) {
+        tri_pts[3*dim + j*n_edge_pts*dim + d] = 
+          edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
+        tri_pts[3*dim + j*n_edge_pts*dim + dim + d] = 
+          edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
+      }
+    }
     //query the tri's ctrl pt and store
-    
+    for (I8 d = 0; d < dim; ++d) {
+      tri_pts[9*dim + d] = faceCtrlPts[tri*dim + d];
+    }
+ 
   };
   parallel_for(new_tris.size(), std::move(check_validity));
 
@@ -35,7 +54,7 @@ LO checkValidity_2d(Mesh *mesh, LOs new_tris) {
   // the other method used in 3D does not work in those cases
   getTriJacDetNodes(order,elemNodes,nodes);
 
-  // check vertices
+  // first 3 vertices
   apf::Downward verts;
   mesh->getDownward(e,0,verts);
   for (int i = 0; i < 3; ++i){
