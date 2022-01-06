@@ -213,6 +213,7 @@ static void getTriJacDetNodes(int P, apf::NewArray<apf::Vector3>& elemNodes,
     for (int J = 0; J <= 2*(P-1)-I; ++J)
       nodes[getTriNodeIndex(2*(P-1),I,J)] = Nijk(elemNodes,P,I,J);
 }
+
 LO checkValidity_2d(Mesh *mesh, LOs new_tris) {
 
   auto fv2v = mesh->ask_down(2, 0).ab2b;
@@ -260,10 +261,11 @@ LO checkValidity_2d(Mesh *mesh, LOs new_tris) {
   };
   parallel_for(new_tris.size(), std::move(check_validity));
 
-
+  /*
   apf::Element* elem = apf::createElement(mesh->getCoordinateField(),e);
   apf::NewArray<apf::Vector3> elemNodes;
   apf::getVectorNodes(elem,elemNodes);
+  */
 
   // have to use this function because its for x-y plane, and
   // the other method used in 3D does not work in those cases
