@@ -2,8 +2,7 @@
 #include "Omega_h_vector.hpp"
 #include "Omega_h_scalar.hpp"
 
-int binomial(int n, int i)
-{
+int binomial(int n, int i) {
 
   i = std::min(n-i,i);
 
@@ -66,8 +65,7 @@ int binomial(int n, int i)
 
 }
 
-int trinomial(int n, int i, int j)
-{
+int trinomial(int n, int i, int j) {
   return binomial(n,i)*binomial(n-i,j);
 }
 
@@ -159,8 +157,7 @@ static unsigned const* const b2_10[11] =
 unsigned const* const* const b2[11] =
 {b2_0,b2_1,b2_2,b2_3,b2_4,b2_5,b2_6,b2_7,b2_8,b2_9,b2_10};
 
-int computeTriNodeIndex(int P, int i, int j)
-{
+int computeTriNodeIndex(int P, int i, int j) {
   int k = P-i-j;
   if(i == P) return 0;
   if(j == P) return 1;
@@ -171,8 +168,7 @@ int computeTriNodeIndex(int P, int i, int j)
   return k*(P-1)-k*(k-1)/2+j+2*P;
 }
 
-int getTriNodeIndex(int P, int i, int j)
-{
+int getTriNodeIndex(int P, int i, int j) {
   // use a table if its small, otherwise dynamically generate it on the fly
   if(P <= 10)
     return crv::b2[P][i][j];
@@ -180,19 +176,16 @@ int getTriNodeIndex(int P, int i, int j)
     return computeTriNodeIndex(P,i,j);
 }
 
-static double getTriPartialJacobianDet(apf::NewArray<apf::Vector3>& nodes,
-    int P, int i1, int j1, int i2, int j2)
-{
+static double getTriPartialJacobianDet(Reals nodes,
+    int P, int i1, int j1, int i2, int j2) {
   int p00 = getTriNodeIndex(P,i1+1,j1);
   int p01 = getTriNodeIndex(P,i1,j1+1);
   int p10 = getTriNodeIndex(P,i2+1,j2);
   int p11 = getTriNodeIndex(P,i2,j2);
-  return apf::cross(nodes[p01]-nodes[p00],
-      nodes[p11]-nodes[p10])[2];
+  return apf::cross(nodes[p01]-nodes[p00], nodes[p11]-nodes[p10])[2];
 }
-static double Nijk(apf::NewArray<apf::Vector3>& nodes,
-    int d, int I, int J)
-{
+
+static double Nijk(Reals nodes, int d, int I, int J) {
   double sum = 0.;
   int CD = trinomial(2*(d-1),I,J);
   for(int j1 = 0; j1 <= J; ++j1){
@@ -206,66 +199,19 @@ static double Nijk(apf::NewArray<apf::Vector3>& nodes,
   return sum*d*d/CD;
 }
 
-static void getTriJacDetNodes(int P, apf::NewArray<apf::Vector3>& elemNodes,
-    apf::NewArray<double>& nodes)
-{
+OMEGA_H_INLINE LOs getTriJacDetNodes(int P, Reals elemNodes) {
+  Write<Real> nodes(P*(2*P-1));
   for (int I = 0; I <= 2*(P-1); ++I)
     for (int J = 0; J <= 2*(P-1)-I; ++J)
       nodes[getTriNodeIndex(2*(P-1),I,J)] = Nijk(elemNodes,P,I,J);
+  return Reals(nodes);
 }
 
-LO checkValidity_2d(Mesh *mesh, LOs new_tris) {
-
-  auto fv2v = mesh->ask_down(2, 0).ab2b;
-  auto fe2e = mesh->get_adj(2, 1).ab2b;
-  auto vertCtrlPts = mesh->get_ctrlPts(0);
-  auto edgeCtrlPts = mesh->get_ctrlPts(1);
-  auto faceCtrlPts = mesh->get_ctrlPts(2);
-  auto dim = mesh->dim();
-  auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
-  auto order = mesh->get_max_order();
-
-  Write<I8> is_valid(new_tris.size(), 1);
-
-  apf::NewArray<double> nodes(order*(2*order-1));
-
-  auto check_validity = OMEGA_H_LAMBDA (LO i) {
-    auto tri = new_tris(i);
-    auto order = mesh->get_max_order();
-    OMEGA_H_CHECK(order == 3);
-    LO const ntri_pts = order*order + 1;
- 
-    Write<Real> tri_pts(ntri_pts*dim);
-    //query the tri's down verts's ctrl pts and store
-    for (LO j = 0; j < 3; ++j) {
-      auto p = get_vector<2>(vertCtrlPts, fv2v[tri*3 + j]);
-      for (LO k = 0; k < dim; ++k) {
-        tri_pts[j*dim + k] = p[k];
-      }
-    }
-    //query the tri's down edge's ctrl pts and store
-    for (LO j = 0; j < 3; ++j) {
-      for (I8 d = 0; d < dim; ++d) {
-        tri_pts[3*dim + j*n_edge_pts*dim + d] = 
-          edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
-        tri_pts[3*dim + j*n_edge_pts*dim + dim + d] = 
-          edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
-      }
-    }
-    //query the tri's ctrl pt and store
-    for (I8 d = 0; d < dim; ++d) {
-      tri_pts[9*dim + d] = faceCtrlPts[tri*dim + d];
-    }
- 
-    getTriJacDetNodes(order,elemNodes,nodes);
-  };
-  parallel_for(new_tris.size(), std::move(check_validity));
-
+OMEGA_H_INLINE LO checkMinJacDet(LOs nodes) {
   // first 3 vertices
-  apf::Downward verts;
-  mesh->getDownward(e,0,verts);
   for (int i = 0; i < 3; ++i){
     if(nodes[i] < minAcceptable){
+      //return -1;
       return i+2;
     }
   }
@@ -308,5 +254,55 @@ LO checkValidity_2d(Mesh *mesh, LOs new_tris) {
       }
     }
   }
-  return 1;
+  return -1;
+
+}
+
+LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
+
+  auto fv2v = mesh->ask_down(2, 0).ab2b;
+  auto fe2e = mesh->get_adj(2, 1).ab2b;
+  auto vertCtrlPts = mesh->get_ctrlPts(0);
+  auto edgeCtrlPts = mesh->get_ctrlPts(1);
+  auto faceCtrlPts = mesh->get_ctrlPts(2);
+  auto dim = mesh->dim();
+  auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
+  auto order = mesh->get_max_order();
+
+  Write<I8> is_invalid(new_tris.size());
+
+  auto check_validity = OMEGA_H_LAMBDA (LO i) {
+    auto tri = new_tris(i);
+    auto order = mesh->get_max_order();
+    OMEGA_H_CHECK(order == 3);
+    LO const ntri_pts = order*order + 1;
+ 
+    //TODO recheck indexing
+    Write<Real> tri_pts(ntri_pts*dim);
+    //query the tri's down verts's ctrl pts and store
+    for (LO j = 0; j < 3; ++j) {
+      auto p = get_vector<2>(vertCtrlPts, fv2v[tri*3 + j]);
+      for (LO k = 0; k < dim; ++k) {
+        tri_pts[j*dim + k] = p[k];
+      }
+    }
+    //query the tri's down edge's ctrl pts and store
+    for (LO j = 0; j < 3; ++j) {
+      for (I8 d = 0; d < dim; ++d) {
+        tri_pts[3*dim + j*n_edge_pts*dim + d] = 
+          edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
+        tri_pts[3*dim + j*n_edge_pts*dim + dim + d] = 
+          edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
+      }
+    }
+    //query the tri's ctrl pt and store
+    for (I8 d = 0; d < dim; ++d) {
+      tri_pts[9*dim + d] = faceCtrlPts[tri*dim + d];
+    }
+ 
+    nodes = getTriJacDetNodes(order,elemNodes);
+
+    is_invalid[i] = checkMinJacDet(nodes);
+  };
+  parallel_for(new_tris.size(), std::move(check_validity));
 }
