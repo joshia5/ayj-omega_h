@@ -261,15 +261,6 @@ LO checkValidity_2d(Mesh *mesh, LOs new_tris) {
   };
   parallel_for(new_tris.size(), std::move(check_validity));
 
-  /*
-  apf::Element* elem = apf::createElement(mesh->getCoordinateField(),e);
-  apf::NewArray<apf::Vector3> elemNodes;
-  apf::getVectorNodes(elem,elemNodes);
-  */
-
-  // have to use this function because its for x-y plane, and
-  // the other method used in 3D does not work in those cases
-
   // first 3 vertices
   apf::Downward verts;
   mesh->getDownward(e,0,verts);
@@ -293,16 +284,6 @@ LO checkValidity_2d(Mesh *mesh, LOs new_tris) {
           edgeNodes[2*(order-1)] = nodes[apf::tri_edge_verts[edge][1]];
           for (int j = 0; j < 2*(order-1)-1; ++j)
             edgeNodes[j+1] = nodes[3+edge*(2*(order-1)-1)+j];
-          /*
-          if(algorithm == 1){
-            getJacDetByElevation(apf::Mesh::EDGE,2*(order-1),edgeNodes,minJ,maxJ);
-          } else {
-            // allows recursion stop on first "conclusive" invalidity
-            bool done = false;
-            getJacDetBySubdivision(apf::Mesh::EDGE,2*(order-1),
-                0,edgeNodes,minJ,maxJ,done);
-          }
-          */
         } else {
           edgeNodes[0] = nodes[apf::tri_edge_verts[edge][0]];
           edgeNodes[1] = nodes[apf::tri_edge_verts[edge][1]];
@@ -310,8 +291,6 @@ LO checkValidity_2d(Mesh *mesh, LOs new_tris) {
             edgeNodes[j+2] = nodes[3+edge*(2*(order-1)-1)+j];
           bool done = false;
           bool quality = false;
-          getJacDetBySubdivisionMatrices(apf::Mesh::EDGE,2*(order-1),
-              0,subdivisionCoeffs[1],edgeNodes,minJ,maxJ,done,quality);
         }
         if(minJ < minAcceptable){
           return 8+edge;
@@ -324,18 +303,6 @@ LO checkValidity_2d(Mesh *mesh, LOs new_tris) {
   for (int i = 0; i < (2*order-3)*(2*order-4)/2; ++i){
     if (nodes[6*(order-1)+i] < minAcceptable){
       minJ = -1e10;
-      /*
-      if(algorithm == 1)
-        getJacDetByElevation(apf::Mesh::TRIANGLE,2*(order-1),nodes,minJ,maxJ);
-      else if(algorithm == 2){
-        bool quality = false;
-        getJacDetBySubdivisionMatrices(apf::Mesh::TRIANGLE,2*(order-1),
-            0,subdivisionCoeffs[2],nodes,minJ,maxJ,done,quality);
-      } else {
-        getJacDetBySubdivision(apf::Mesh::TRIANGLE,2*(order-1),
-            0,nodes,minJ,maxJ,done);
-      }
-      */
       if(minJ < minAcceptable){
         return 14;
       }
