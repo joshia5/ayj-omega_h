@@ -275,7 +275,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     auto tri = new_tris(i);
     auto order = mesh->get_max_order();
     OMEGA_H_CHECK(order == 3);
-    LO const ntri_pts = order*order + 1;
+    LO const ntri_pts = 10;
  
     //TODO recheck indexing
     Write<Real> tri_pts(ntri_pts*dim);
@@ -300,7 +300,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
       tri_pts[9*dim + d] = faceCtrlPts[tri*dim + d];
     }
  
-    nodes = getTriJacDetNodes(order,elemNodes);
+    auto nodes = getTriJacDetNodes(order,elemNodes);
 
     is_invalid[i] = checkMinJacDet(nodes);
   };
