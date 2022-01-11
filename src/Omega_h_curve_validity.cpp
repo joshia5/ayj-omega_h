@@ -1,6 +1,7 @@
 #include "Omega_h_mesh.hpp"
 #include "Omega_h_beziers.hpp"
 #include "Omega_h_vector.hpp"
+#include "Omega_h_for.hpp"
 #include "Omega_h_scalar.hpp"
 
 namespace Omega_h {
@@ -210,36 +211,23 @@ OMEGA_H_INLINE Reals getTriJacDetNodes(int P, Reals elemNodes) {
   return Reals(nodes);
 }
 
-OMEGA_H_INLINE LO checkMinJacDet(LOs nodes, LO order) {
+OMEGA_H_INLINE LO checkMinJacDet(Reals nodes, LO order) {
   // first 3 vertices
   Real minAcceptable = 0.0;
-  for (int i = 0; i < 3; ++i){
-    if(nodes[i] < minAcceptable){
+  for (int i = 0; i < 3; ++i) {
+    if (nodes[i] < minAcceptable) {
       //return -1;
       return i+2;
     }
   }
 
-  Real minJ = 0, maxJ = 0;
-  // Vertices will already be flagged in the first check
+  Real minJ = 0;
   for (LO edge = 0; edge < 3; ++edge) {
     for (LO i = 0; i < 2*(order-1)-1; ++i) {
       if (nodes[3+edge*(2*(order-1)-1)+i] < minAcceptable){
         minJ = -1e10;
-        apf::NewArray<double> edgeNodes(2*(order-1)+1);
-        if(algorithm < 2){
-          //What the h is up with these ordering templates????
-          edgeNodes[0] = nodes[apf::tri_edge_verts[edge][0]];
-          edgeNodes[2*(order-1)] = nodes[apf::tri_edge_verts[edge][1]];
-          for (int j = 0; j < 2*(order-1)-1; ++j)
-            edgeNodes[j+1] = nodes[3+edge*(2*(order-1)-1)+j];
-        } else {
-          edgeNodes[0] = nodes[apf::tri_edge_verts[edge][0]];
-          edgeNodes[1] = nodes[apf::tri_edge_verts[edge][1]];
-          for (int j = 0; j < 2*(order-1)-1; ++j)
-            edgeNodes[j+2] = nodes[3+edge*(2*(order-1)-1)+j];
-          bool quality = false;
-        }
+        // there is no point in doing much with edges if we dont have
+        // elevation or subdivision or subdivision matrices
         if(minJ < minAcceptable){
           return 8+edge;
         }
@@ -269,13 +257,12 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
   auto dim = mesh->dim();
   auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
   auto order = mesh->get_max_order();
+  OMEGA_H_CHECK(order == 3);
 
-  Write<I8> is_invalid(new_tris.size());
+  Write<LO> is_invalid(new_tris.size());
 
   auto check_validity = OMEGA_H_LAMBDA (LO n) {
     auto tri = new_tris[n];
-    auto order = mesh->get_max_order();
-    OMEGA_H_CHECK(order == 3);
     LO const ntri_pts = 10;
  
     //TODO recheck indexing
@@ -306,6 +293,8 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     is_invalid[n] = checkMinJacDet(nodes, order);
   };
   parallel_for(new_tris.size(), std::move(check_validity));
+
+  return LOs(is_invalid);
 }
 
 }
