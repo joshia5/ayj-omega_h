@@ -161,18 +161,38 @@ static unsigned const* const b2_10[11] =
 unsigned const* const* const b2[11] =
 {b2_0,b2_1,b2_2,b2_3,b2_4,b2_5,b2_6,b2_7,b2_8,b2_9,b2_10};
 
-int computeTriNodeIndex(int P, int i, int j) {
-  int k = P-i-j;
+OMEGA_H_INLINE LO computeTriNodeIndex (LO P, LO i, LO j) {
+  LO k = P-i-j;
   if(i == P) return 0;
   if(j == P) return 1;
   if(k == P) return 2;
-  if(k == 0) return 2+j; // 0-1
-  if(i == 0) return 2+(P-1)+k; // 1-2
-  if(j == 0) return 2+(P-1)*2+i; // 2-0
+  if(k == 0) return 2+j;
+  if(i == 0) return 2+(P-1)+k;
+  if(j == 0) return 2+(P-1)*2+i;
   return k*(P-1)-k*(k-1)/2+j+2*P;
 }
 
-int getTriNodeIndex(int P, int i, int j) {
+/*
+#include <stdio.h>
+
+int compute (int P, int i, int j) {
+    int k = P-i-j;                      
+    if(i == P) return 0;        
+    if(j == P) return 1;                
+    if(k == P) return 2;                
+    if(k == 0) return 2+j;              
+    if(i == 0) return 2+(P-1)+k;        
+    if(j == 0) return 2+(P-1)*2+i;      
+    return k*(P-1)-k*(k-1)/2+j+2*P;     
+}                     
+
+int main()
+{
+    printf("%d\n", compute(3, 1, 1));
+}
+*/
+
+OMEGA_H_INLINE LO getTriNodeIndex (LO P, LO i, LO j) {
   // use a table if its small, otherwise dynamically generate it on the fly
   if(P <= 10)
     return b2[P][i][j];
@@ -262,6 +282,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
   Write<LO> is_invalid(new_tris.size());
 
   auto check_validity = OMEGA_H_LAMBDA (LO n) {
+    //auto foo = b2[1][1][1];
     auto tri = new_tris[n];
     LO const ntri_pts = 10;
  
