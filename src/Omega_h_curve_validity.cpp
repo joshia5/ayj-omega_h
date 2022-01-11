@@ -1,6 +1,9 @@
+#include "Omega_h_mesh.hpp"
 #include "Omega_h_beziers.hpp"
 #include "Omega_h_vector.hpp"
 #include "Omega_h_scalar.hpp"
+
+namespace Omega_h {
 
 int binomial(int n, int i) {
 
@@ -171,7 +174,7 @@ int computeTriNodeIndex(int P, int i, int j) {
 int getTriNodeIndex(int P, int i, int j) {
   // use a table if its small, otherwise dynamically generate it on the fly
   if(P <= 10)
-    return crv::b2[P][i][j];
+    return b2[P][i][j];
   else
     return computeTriNodeIndex(P,i,j);
 }
@@ -182,7 +185,7 @@ static double getTriPartialJacobianDet(Reals nodes,
   int p01 = getTriNodeIndex(P,i1,j1+1);
   int p10 = getTriNodeIndex(P,i2+1,j2);
   int p11 = getTriNodeIndex(P,i2,j2);
-  return apf::cross(nodes[p01]-nodes[p00], nodes[p11]-nodes[p10])[2];
+  return cross(nodes[p01]-nodes[p00], nodes[p11]-nodes[p10])[2];
 }
 
 static double Nijk(Reals nodes, int d, int I, int J) {
@@ -199,7 +202,7 @@ static double Nijk(Reals nodes, int d, int I, int J) {
   return sum*d*d/CD;
 }
 
-OMEGA_H_INLINE LOs getTriJacDetNodes(int P, Reals elemNodes) {
+OMEGA_H_INLINE Reals getTriJacDetNodes(int P, Reals elemNodes) {
   Write<Real> nodes(P*(2*P-1));
   for (int I = 0; I <= 2*(P-1); ++I)
     for (int J = 0; J <= 2*(P-1)-I; ++J)
@@ -207,8 +210,9 @@ OMEGA_H_INLINE LOs getTriJacDetNodes(int P, Reals elemNodes) {
   return Reals(nodes);
 }
 
-OMEGA_H_INLINE LO checkMinJacDet(LOs nodes) {
+OMEGA_H_INLINE LO checkMinJacDet(LOs nodes, LO order) {
   // first 3 vertices
+  Real minAcceptable = 0.0;
   for (int i = 0; i < 3; ++i){
     if(nodes[i] < minAcceptable){
       //return -1;
@@ -216,16 +220,15 @@ OMEGA_H_INLINE LO checkMinJacDet(LOs nodes) {
     }
   }
 
-  apf::MeshEntity* edges[3];
-  mesh->getDownward(e,1,edges);
-  double minJ = 0, maxJ = 0;
+  Real minJ = 0, maxJ = 0;
   // Vertices will already be flagged in the first check
-  for (int edge = 0; edge < 3; ++edge){
-    for (int i = 0; i < 2*(order-1)-1; ++i){
+  for (LO edge = 0; edge < 3; ++edge) {
+    for (LO i = 0; i < 2*(order-1)-1; ++i) {
       if (nodes[3+edge*(2*(order-1)-1)+i] < minAcceptable){
         minJ = -1e10;
         apf::NewArray<double> edgeNodes(2*(order-1)+1);
         if(algorithm < 2){
+          //What the h is up with these ordering templates????
           edgeNodes[0] = nodes[apf::tri_edge_verts[edge][0]];
           edgeNodes[2*(order-1)] = nodes[apf::tri_edge_verts[edge][1]];
           for (int j = 0; j < 2*(order-1)-1; ++j)
@@ -235,7 +238,6 @@ OMEGA_H_INLINE LO checkMinJacDet(LOs nodes) {
           edgeNodes[1] = nodes[apf::tri_edge_verts[edge][1]];
           for (int j = 0; j < 2*(order-1)-1; ++j)
             edgeNodes[j+2] = nodes[3+edge*(2*(order-1)-1)+j];
-          bool done = false;
           bool quality = false;
         }
         if(minJ < minAcceptable){
@@ -245,8 +247,7 @@ OMEGA_H_INLINE LO checkMinJacDet(LOs nodes) {
     }
   }
 
-  bool done = false;
-  for (int i = 0; i < (2*order-3)*(2*order-4)/2; ++i){
+  for (LO i = 0; i < (2*order-3)*(2*order-4)/2; ++i){
     if (nodes[6*(order-1)+i] < minAcceptable){
       minJ = -1e10;
       if(minJ < minAcceptable){
@@ -271,8 +272,8 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
 
   Write<I8> is_invalid(new_tris.size());
 
-  auto check_validity = OMEGA_H_LAMBDA (LO i) {
-    auto tri = new_tris(i);
+  auto check_validity = OMEGA_H_LAMBDA (LO n) {
+    auto tri = new_tris[n];
     auto order = mesh->get_max_order();
     OMEGA_H_CHECK(order == 3);
     LO const ntri_pts = 10;
@@ -300,9 +301,11 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
       tri_pts[9*dim + d] = faceCtrlPts[tri*dim + d];
     }
  
-    auto nodes = getTriJacDetNodes(order,elemNodes);
+    auto nodes = getTriJacDetNodes(order, Reals(tri_pts));
 
-    is_invalid[i] = checkMinJacDet(nodes);
+    is_invalid[n] = checkMinJacDet(nodes, order);
   };
   parallel_for(new_tris.size(), std::move(check_validity));
+}
+
 }
