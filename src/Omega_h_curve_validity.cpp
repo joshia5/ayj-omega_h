@@ -291,10 +291,16 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     //query the tri's down verts's ctrl pts and store
     for (LO j = 0; j < 3; ++j) {
       auto p = get_vector<2>(vertCtrlPts, fv2v[tri*3 + j]);
-      
+
       LO index = 0;
-      if (j == 0) index = getTriNodeIndex(P, 0, 0);
-      if (j == 2) index = getTriNodeIndex(P, 0, 3);
+      if (j == 0) {
+        index = getTriNodeIndex(P, 0, 0);
+        OMEGA_H_CHECK(index == 2);
+      }
+      if (j == 2) {
+        index = getTriNodeIndex(P, 0, 3);
+        OMEGA_H_CHECK(index == 1);
+      }
 
       for (LO k = 0; k < dim; ++k) {
         tri_pts[index*dim + k] = p[k];
@@ -302,9 +308,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     }
 
     //query the tri's down edge's ctrl pts and store
-    I8 e0_flip = -1;
-    I8 e1_flip = -1;
-    I8 e2_flip = -1;
+    auto flip = vector_3(-1, -1, -1);
 
     auto v0 = fv2v[tri*3 + 0];
     auto v1 = fv2v[tri*3 + 1];
@@ -319,27 +323,41 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     auto e2v0 = ev2v[e2*2 + 0];
     auto e2v1 = ev2v[e2*2 + 1];
     if ((e0v0 == v1) && (e0v1 == v0)) {
-      e0_flip = 1;
+      flip[0] = 1;
     }
     else {
       OMEGA_H_CHECK((e0v0 == v0) && (e0v1 == v1));
     }
     if ((e1v0 == v2) && (e1v1 == v1)) {
-      e1_flip = 1;
+      flip[1] = 1;
     }
     else {
       OMEGA_H_CHECK((e1v0 == v1) && (e1v1 == v2));
     }
     if ((e2v0 == v0) && (e2v1 == v2)) {
-      e2_flip = 1;
+      flip[2] = 1;
     }
 
     for (LO j = 0; j < 3; ++j) {
-      for (I8 d = 0; d < dim; ++d) {
-        tri_pts[3*dim + j*n_edge_pts*dim + d] =
-          edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
-        tri_pts[3*dim + j*n_edge_pts*dim + dim + d] = 
-          edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
+      LO index = 3;
+      if (j == 0) {
+        index = getTriNodeIndex(P, 1, 0);
+        OMEGA_H_CHECK(index == 7);
+      }
+      if (j == 2) {
+        index = getTriNodeIndex(P, 0, 1);
+        OMEGA_H_CHECK(index == 5);
+      }
+
+      if (flip[j] == -1) {
+        for (I8 d = 0; d < dim; ++d) {
+          tri_pts[index*n_edge_pts*dim + d] =
+            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
+          tri_pts[index*n_edge_pts*dim + dim + d] = 
+            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
+        }
+      }
+      else {
       }
     }
 
