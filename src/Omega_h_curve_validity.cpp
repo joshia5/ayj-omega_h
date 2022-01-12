@@ -269,6 +269,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
 
   auto fv2v = mesh->ask_down(2, 0).ab2b;
   auto fe2e = mesh->get_adj(2, 1).ab2b;
+  auto ev2v = mesh->get_adj(1, 0).ab2b;
   auto vertCtrlPts = mesh->get_ctrlPts(0);
   auto edgeCtrlPts = mesh->get_ctrlPts(1);
   auto faceCtrlPts = mesh->get_ctrlPts(2);
@@ -292,8 +293,8 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
       auto p = get_vector<2>(vertCtrlPts, fv2v[tri*3 + j]);
       
       LO index = 0;
-      if (j == 0) index = getTriNodeIndex(P,0,0);
-      if (j == 2) index = getTriNodeIndex(P,0,3);
+      if (j == 0) index = getTriNodeIndex(P, 0, 0);
+      if (j == 2) index = getTriNodeIndex(P, 0, 3);
 
       for (LO k = 0; k < dim; ++k) {
         tri_pts[index*dim + k] = p[k];
@@ -301,6 +302,38 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     }
 
     //query the tri's down edge's ctrl pts and store
+    I8 e0_flip = -1;
+    I8 e1_flip = -1;
+    I8 e2_flip = -1;
+
+    auto v0 = fv2v[tri*3 + 0];
+    auto v1 = fv2v[tri*3 + 1];
+    auto v2 = fv2v[tri*3 + 2];
+    auto e0 = fe2e[tri*3 + 0];
+    auto e1 = fe2e[tri*3 + 1];
+    auto e2 = fe2e[tri*3 + 2];
+    auto e0v0 = ev2v[e0*2 + 0];
+    auto e0v1 = ev2v[e0*2 + 1];
+    auto e1v0 = ev2v[e1*2 + 0];
+    auto e1v1 = ev2v[e1*2 + 1];
+    auto e2v0 = ev2v[e2*2 + 0];
+    auto e2v1 = ev2v[e2*2 + 1];
+    if ((e0v0 == v1) && (e0v1 == v0)) {
+      e0_flip = 1;
+    }
+    else {
+      OMEGA_H_CHECK((e0v0 == v0) && (e0v1 == v1));
+    }
+    if ((e1v0 == v2) && (e1v1 == v1)) {
+      e1_flip = 1;
+    }
+    else {
+      OMEGA_H_CHECK((e1v0 == v1) && (e1v1 == v2));
+    }
+    if ((e2v0 == v0) && (e2v1 == v2)) {
+      e2_flip = 1;
+    }
+
     for (LO j = 0; j < 3; ++j) {
       for (I8 d = 0; d < dim; ++d) {
         tri_pts[3*dim + j*n_edge_pts*dim + d] =
@@ -312,7 +345,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
 
     //query the face's ctrl pt and store
     for (I8 d = 0; d < dim; ++d) {
-      OMEGA_H_CHECK(9 == getTriNodeIndex(P,1,1));
+      OMEGA_H_CHECK(9 == getTriNodeIndex(P, 1, 1));
       tri_pts[9*dim + d] = faceCtrlPts[tri*dim + d];
     }
  
@@ -325,4 +358,11 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
   return LOs(is_invalid);
 }
 
-}
+#define OMEGA_H_INST(T)
+OMEGA_H_INST(I8)
+OMEGA_H_INST(I32)
+OMEGA_H_INST(I64)
+OMEGA_H_INST(Real)
+#undef OMEGA_H_INST
+
+} //namespace
