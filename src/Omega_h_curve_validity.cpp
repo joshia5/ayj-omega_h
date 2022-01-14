@@ -172,7 +172,6 @@ OMEGA_H_INLINE LO computeTriNodeIndex (LO P, LO i, LO j) {
 
 /*
 #include <stdio.h>
-
 int compute (int P, int i, int j) {
     int k = P-i-j;                      
     if(i == P) return 0;        
@@ -183,7 +182,6 @@ int compute (int P, int i, int j) {
     if(j == 0) return 2+(P-1)*2+i;      
     return k*(P-1)-k*(k-1)/2+j+2*P;     
 }                     
-
 int main()
 {
     printf("%d\n", compute(3, 1, 1));
