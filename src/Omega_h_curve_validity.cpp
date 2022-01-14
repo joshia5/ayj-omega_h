@@ -356,6 +356,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
         }
       }
       else {
+//TODO add for case of flip
       }
     }
 
