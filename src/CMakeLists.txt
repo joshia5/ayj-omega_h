@@ -115,80 +115,80 @@ set(Omega_h_SOURCES
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
 else()
   set(Omega_h_SOURCES ${Omega_h_SOURCES}
-    Omega_h_random.cpp
-    Omega_h_coarsen_flip.cpp
-	)
+      Omega_h_random.cpp
+      Omega_h_coarsen_flip.cpp
+     )
 endif()
 
-if (Omega_h_USE_CUDA)
+  if (Omega_h_USE_CUDA)
   if (NOT Omega_h_USE_Kokkos)
-    set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_for.cpp)
+set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_for.cpp)
   endif()
-else()
-  set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_overlay.cpp)
+  else()
+set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_overlay.cpp)
 endif()
 
-if(Omega_h_USE_libMeshb)
-  set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_meshb.cpp)
+  if(Omega_h_USE_libMeshb)
+set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_meshb.cpp)
 endif()
 
 if(Omega_h_USE_EGADS)
   message(STATUS "Omega_h_USE_EGADS: ${Omega_h_USE_EGADS}")
-  if(NOT EGADS_PREFIX)
-    message(FATAL_ERROR "Omega_h_USE_EGADS=${Omega_h_USE_EGADS} but EGADS_PREFIX not set!")
-  endif()
+if(NOT EGADS_PREFIX)
+  message(FATAL_ERROR "Omega_h_USE_EGADS=${Omega_h_USE_EGADS} but EGADS_PREFIX not set!")
+endif()
   find_path(EGADS_INCLUDE_DIR NAMES egads.h
       PATHS
       "${EGADS_PREFIX}/EngSketchPad/include"
       "${EGADS_PREFIX}/include"
       NO_DEFAULT_PATH)
-  if(NOT EGADS_INCLUDE_DIR)
-    message(FATAL_ERROR "could not find path to \"egads.h\"")
-  endif()
+if(NOT EGADS_INCLUDE_DIR)
+  message(FATAL_ERROR "could not find path to \"egads.h\"")
+endif()
   find_library(EGADS_LIBRARY NAMES egads
       PATHS
       "${EGADS_PREFIX}/EngSketchPad/lib"
       "${EGADS_PREFIX}/lib"
       NO_DEFAULT_PATH)
-  if(NOT EGADS_LIBRARY)
-    message(FATAL_ERROR "could not find EGADS_LIBRARY")
-  endif()
+if(NOT EGADS_LIBRARY)
+  message(FATAL_ERROR "could not find EGADS_LIBRARY")
+endif()
   message(STATUS "EGADS_INCLUDE_DIR: ${EGADS_INCLUDE_DIR}")
   message(STATUS "EGADS_LIBRARY: ${EGADS_LIBRARY}")
-  set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_egads.cpp)
+set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_egads.cpp)
 endif()
 
 if(Omega_h_USE_EGADSlite)
   message(STATUS "Omega_h_USE_EGADSlite: ${Omega_h_USE_EGADSlite}")
-  if(NOT EGADSlite_PREFIX)
-    message(FATAL_ERROR "Omega_h_USE_EGADSlite=${Omega_h_USE_EGADSlite} but EGADSlite_PREFIX not set!")
-  endif()
+if(NOT EGADSlite_PREFIX)
+  message(FATAL_ERROR "Omega_h_USE_EGADSlite=${Omega_h_USE_EGADSlite} but EGADSlite_PREFIX not set!")
+endif()
   find_path(EGADSlite_INCLUDE_DIR NAMES egads_lite.h
       PATHS
       "${EGADSlite_PREFIX}/EGADSlite/include"
       "${EGADSlite_PREFIX}/include"
       NO_DEFAULT_PATH)
-  if(NOT EGADSlite_INCLUDE_DIR)
-    message(FATAL_ERROR "could not find path to \"egads_lite.h\"")
-  endif()
+if(NOT EGADSlite_INCLUDE_DIR)
+  message(FATAL_ERROR "could not find path to \"egads_lite.h\"")
+endif()
   find_library(EGADSlite_LIBRARY NAMES egadslite
       PATHS
       "${EGADSlite_PREFIX}/EGADSlite/lib"
       "${EGADSlite_PREFIX}/lib"
       NO_DEFAULT_PATH)
-  if(NOT EGADSlite_LIBRARY)
-    message(FATAL_ERROR "could not find EGADSlite_LIBRARY")
-  endif()
+if(NOT EGADSlite_LIBRARY)
+  message(FATAL_ERROR "could not find EGADSlite_LIBRARY")
+endif()
   message(STATUS "EGADSlite_INCLUDE_DIR: ${EGADSlite_INCLUDE_DIR}")
   message(STATUS "EGADSlite_LIBRARY: ${EGADSlite_LIBRARY}")
-  set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_egads_lite.cpp)
+set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_egads_lite.cpp)
 endif()
 
 if(Omega_h_USE_SimModSuite)
   message(STATUS "Omega_h_USE_SimModSuite: ${Omega_h_USE_SimModSuite}")
-  #Is there a better way? I assume CMAKE_MODULE_PATH was purposely not set in
-  # the top level CMakeLists.txt
-  set(OLD_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
+#Is there a better way? I assume CMAKE_MODULE_PATH was purposely not set in
+# the top level CMakeLists.txt
+set(OLD_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
   find_package(SimModSuite MODULE REQUIRED)
   set(CMAKE_MODULE_PATH ${OLD_CMAKE_MODULE_PATH})
@@ -199,8 +199,8 @@ if(Omega_h_USE_SimModSuite)
     "${CMAKE_CURRENT_BINARY_DIR}/Omega_h_simConfig.h")
 endif()
 
-if(Omega_h_USE_SEACASExodus)
-  set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_exodus.cpp)
+  if(Omega_h_USE_SEACASExodus)
+set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_exodus.cpp)
 endif()
 
 if(Omega_h_USE_STK)
@@ -213,20 +213,21 @@ endif()
 
 if (Omega_h_USE_CUDA AND NOT Omega_h_USE_Kokkos)
   set_source_files_properties(${Omega_h_SOURCES} PROPERTIES LANGUAGE CUDA)
+
 endif()
 
 add_library(omega_h ${Omega_h_SOURCES})
 
-set_property(TARGET omega_h PROPERTY CXX_STANDARD "14")
-set_property(TARGET omega_h PROPERTY CXX_STANDARD_REQUIRED ON)
+  set_property(TARGET omega_h PROPERTY CXX_STANDARD "14")
+  set_property(TARGET omega_h PROPERTY CXX_STANDARD_REQUIRED ON)
 set_property(TARGET omega_h PROPERTY CXX_EXTENSIONS OFF)
 
 bob_library_includes(omega_h)
 
-get_filename_component(TPL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../tpl" ABSOLUTE)
+  get_filename_component(TPL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../tpl" ABSOLUTE)
 target_include_directories(omega_h PRIVATE $<BUILD_INTERFACE:${TPL_PATH}>)
 
-if (Omega_h_USE_OpenMP)
+  if (Omega_h_USE_OpenMP)
   target_compile_options(omega_h PUBLIC -fopenmp)
 endif()
 
@@ -264,10 +265,10 @@ if (Omega_h_USE_dwarf)
   target_link_libraries(omega_h PUBLIC "${LIBDWARF_LIBRARIES}")
 endif()
 
-if(Omega_h_USE_DOLFIN)
+  if(Omega_h_USE_DOLFIN)
   target_link_libraries(omega_h PUBLIC Boost::timer dolfin)
-  target_include_directories(omega_h SYSTEM PUBLIC ${DOLFIN_INCLUDE_DIRS})
-  target_include_directories(omega_h SYSTEM PUBLIC ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
+target_include_directories(omega_h SYSTEM PUBLIC ${DOLFIN_INCLUDE_DIRS})
+target_include_directories(omega_h SYSTEM PUBLIC ${DOLFIN_3RD_PARTY_INCLUDE_DIRS})
 endif()
 
 if(Omega_h_USE_CUDA)
@@ -283,32 +284,33 @@ bob_export_target(omega_h)
 function(osh_add_exe EXE_NAME)
   if (Omega_h_USE_CUDA AND NOT Omega_h_USE_Kokkos)
     set_source_files_properties(${EXE_NAME}.cpp PROPERTIES LANGUAGE CUDA)
+
   endif()
-  add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
+add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
   set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD "14")
-  set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
-  set_property(TARGET ${EXE_NAME} PROPERTY CXX_EXTENSIONS OFF)
-  set_property(TARGET ${EXE_NAME} PROPERTY CUDA_ARCHITECTURES ${Omega_h_CUDA_ARCH})
-  target_link_libraries(${EXE_NAME} PRIVATE omega_h)
+set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD_REQUIRED ON)
+set_property(TARGET ${EXE_NAME} PROPERTY CXX_EXTENSIONS OFF)
+set_property(TARGET ${EXE_NAME} PROPERTY CUDA_ARCHITECTURES ${Omega_h_CUDA_ARCH})
+target_link_libraries(${EXE_NAME} PRIVATE omega_h)
 endfunction(osh_add_exe)
 
-macro(osh_add_util EXE_NAME)
-  osh_add_exe(${EXE_NAME})
-  bob_export_target(${EXE_NAME})
+  macro(osh_add_util EXE_NAME)
+osh_add_exe(${EXE_NAME})
+bob_export_target(${EXE_NAME})
 endmacro(osh_add_util)
 
-osh_add_util(msh2osh)
-osh_add_util(osh2vtk)
-osh_add_util(oshdiff)
-osh_add_util(vtkdiff)
-osh_add_util(osh_box)
-osh_add_util(osh_part)
-osh_add_util(osh_scale)
-osh_add_util(osh_reorder)
-osh_add_util(osh_fix)
-osh_add_util(osh_eval_implied)
-osh_add_util(osh_calc)
-if(Omega_h_USE_libMeshb)
+  osh_add_util(msh2osh)
+  osh_add_util(osh2vtk)
+  osh_add_util(oshdiff)
+  osh_add_util(vtkdiff)
+  osh_add_util(osh_box)
+  osh_add_util(osh_part)
+  osh_add_util(osh_scale)
+  osh_add_util(osh_reorder)
+  osh_add_util(osh_fix)
+  osh_add_util(osh_eval_implied)
+  osh_add_util(osh_calc)
+  if(Omega_h_USE_libMeshb)
   osh_add_util(meshb2osh)
   osh_add_util(osh2meshb)
   osh_add_util(osh_read_solb)
@@ -316,32 +318,32 @@ if(Omega_h_USE_libMeshb)
   osh_add_util(ugawg_cone_cone)
   osh_add_util(ugawg_parallel_adapt)
   if (Omega_h_USE_EGADS)
-    osh_add_util(ugawg_solution)
-    osh_add_util(egads2lite)
+  osh_add_util(ugawg_solution)
+  osh_add_util(egads2lite)
   endif()
-endif()
-if(Omega_h_USE_SEACASExodus)
+  endif()
+  if(Omega_h_USE_SEACASExodus)
   osh_add_util(exo2osh)
   osh_add_util(osh2exo)
   osh_add_util(osh_class_morph)
-endif()
-if(Omega_h_USE_SimModSuite)
+  endif()
+  if(Omega_h_USE_SimModSuite)
   osh_add_util(meshsim2osh)
   osh_add_util(matchMeshsim2osh)
-endif()
-osh_add_util(osh_adapt)
-osh_add_util(osh_filesystem)
+  endif()
+  osh_add_util(osh_adapt)
+  osh_add_util(osh_filesystem)
 osh_add_util(ascii_vtk2osh)
 
-if(BUILD_TESTING)
+  if(BUILD_TESTING)
   if(Omega_h_USE_MPI)
-    get_filename_component(COMPILER_DIR ${CMAKE_CXX_COMPILER} PATH)
-    find_program(MPIRUN mpirun PATHS ${COMPILER_DIR}
-        DOC "Location of the mpirun program")
-    if(NOT MPIRUN)
-      message(STATUS "USE_MPI and BUILD_TESTING but MPIRUN not found!")
-    endif()
+get_filename_component(COMPILER_DIR ${CMAKE_CXX_COMPILER} PATH)
+  find_program(MPIRUN mpirun PATHS ${COMPILER_DIR}
+      DOC "Location of the mpirun program")
+if(NOT MPIRUN)
+  message(STATUS "USE_MPI and BUILD_TESTING but MPIRUN not found!")
   endif()
+endif()
 
   function(test_func_impl TEST_NAME NUM_PROCS)
     string(REPLACE " " ";" VALGRIND "${Omega_h_VALGRIND}")
@@ -416,13 +418,18 @@ if(BUILD_TESTING)
     test_func(run_mixed_test 1 ./mixed_test
       ${CMAKE_SOURCE_DIR}/meshes)
 
-    osh_add_exe(periodic_test)
-    set(TEST_EXES ${TEST_EXES} periodic_test)
-    test_func(periodic_test 2 ./periodic_test 
+  osh_add_exe(mixed_test)
+set(TEST_EXES ${TEST_EXES} mixed_test)
+  test_func(run_mixed_test 1 ./mixed_test
+      ${CMAKE_SOURCE_DIR}/meshes)
+
+  osh_add_exe(periodic_test)
+set(TEST_EXES ${TEST_EXES} periodic_test)
+  test_func(periodic_test 2 ./periodic_test 
       ${CMAKE_SOURCE_DIR}/meshes/wedge_matchZ_12elem.sms
       ${CMAKE_SOURCE_DIR}/meshes/wedge_match.smd
       ${CMAKE_SOURCE_DIR}/meshes/wedge_matchZ_12elem_sync_2.osh 2)
-  endif()
+endif()
 
   osh_add_exe(unit_array_algs)
   set(TEST_EXES ${TEST_EXES} unit_array_algs)
@@ -431,7 +438,7 @@ if(BUILD_TESTING)
   set(TEST_EXES ${TEST_EXES} migrate_test)
   test_func(run_migrate_test 2 ./migrate_test)
   osh_add_exe(unit_mesh)
-  set(TEST_EXES ${TEST_EXES} unit_mesh)
+set(TEST_EXES ${TEST_EXES} unit_mesh)
   test_func(run_unit_mesh 1 ./unit_mesh)
   osh_add_exe(unit_io)
   set(TEST_EXES ${TEST_EXES} unit_io)
@@ -442,102 +449,102 @@ if(BUILD_TESTING)
   osh_add_exe(r3d_test)
   test_basefunc(run_test_r3d 1 ./r3d_test)
   osh_add_exe(mpi_tests)
-  set(TEST_EXES ${TEST_EXES} mpi_tests)
+set(TEST_EXES ${TEST_EXES} mpi_tests)
   if(Omega_h_USE_MPI)
-    test_func(run_mpi_tests 4 ./mpi_tests)
+  test_func(run_mpi_tests 4 ./mpi_tests)
   else()
-    test_func(run_mpi_tests 1 ./mpi_tests)
+  test_func(run_mpi_tests 1 ./mpi_tests)
   endif()
   osh_add_exe(1d_test)
   test_func(serial_1d_test 1 ./1d_test)
   if(Omega_h_USE_MPI)
-    test_func(parallel_1d_test 2 ./1d_test)
-    test_func(run_mpi_unit_io 2 ./unit_io)
+  test_func(parallel_1d_test 2 ./1d_test)
+  test_func(run_mpi_unit_io 2 ./unit_io)
   endif()
   osh_add_exe(corner_test)
   test_func(run_corner_test 1 ./corner_test)
   osh_add_exe(coarsen_test)
-  test_func(run_coarsen_test 1 ./coarsen_test)
+test_func(run_coarsen_test 1 ./coarsen_test)
 
   osh_add_exe(2d_conserve_test)
   test_func(serial_2d_conserve 1 ./2d_conserve_test)
   if(Omega_h_USE_MPI)
-    test_func(parallel_2d_conserve 2 ./2d_conserve_test)
+  test_func(parallel_2d_conserve 2 ./2d_conserve_test)
   endif()
   osh_add_exe(warp_test)
-  set(TEST_EXES ${TEST_EXES} warp_test)
+set(TEST_EXES ${TEST_EXES} warp_test)
   test_func(warp_test_serial 1 ./warp_test)
   if(Omega_h_USE_MPI)
-    test_func(warp_test_parallel 2 ./warp_test)
+  test_func(warp_test_parallel 2 ./warp_test)
   endif()
   osh_add_exe(3d_conserve_test)
   if(Omega_h_DATA)
-    set(TEST_EXES ${TEST_EXES} 3d_conserve_test)
-    test_func(serial_3d_conserve 1 ./3d_conserve_test
-              ${Omega_h_DATA}/ball_in_cube.msh)
-    if(Omega_h_USE_MPI)
-      test_func(parallel_3d_conserve 2 ./3d_conserve_test
-                ${Omega_h_DATA}/ball_in_cube.msh)
-    endif()
+set(TEST_EXES ${TEST_EXES} 3d_conserve_test)
+  test_func(serial_3d_conserve 1 ./3d_conserve_test
+      ${Omega_h_DATA}/ball_in_cube.msh)
+if(Omega_h_USE_MPI)
+  test_func(parallel_3d_conserve 2 ./3d_conserve_test
+      ${Omega_h_DATA}/ball_in_cube.msh)
+  endif()
   endif()
   osh_add_exe(ring_test)
   if(Omega_h_DATA)
-    set(TEST_EXES ${TEST_EXES} ring_test)
-    test_func(run_ring_test 1 ./ring_test ${Omega_h_DATA}/ring.msh)
+set(TEST_EXES ${TEST_EXES} ring_test)
+test_func(run_ring_test 1 ./ring_test ${Omega_h_DATA}/ring.msh)
   endif()
   osh_add_exe(aniso_test)
   test_func(run_aniso_test 1 ./aniso_test)
   osh_add_exe(imr_cases)
   osh_add_exe(curvature_test)
   if(Omega_h_DATA)
-    set(TEST_EXES ${TEST_EXES} curvature_test)
-    test_func(ring_curvature 1 ./curvature_test
-              ${Omega_h_DATA} ring)
-    test_func(ball_curvature 1 ./curvature_test
-              ${Omega_h_DATA} ball)
-    if(Omega_h_USE_MPI)
-      test_func(parallel_ring_curvature 2 ./curvature_test
-                ${Omega_h_DATA} ring)
-      test_func(parallel_ball_curvature 2 ./curvature_test
-                ${Omega_h_DATA} ball)
-    endif()
+set(TEST_EXES ${TEST_EXES} curvature_test)
+  test_func(ring_curvature 1 ./curvature_test
+      ${Omega_h_DATA} ring)
+  test_func(ball_curvature 1 ./curvature_test
+      ${Omega_h_DATA} ball)
+if(Omega_h_USE_MPI)
+  test_func(parallel_ring_curvature 2 ./curvature_test
+      ${Omega_h_DATA} ring)
+  test_func(parallel_ball_curvature 2 ./curvature_test
+      ${Omega_h_DATA} ball)
+  endif()
   endif()
   osh_add_exe(bend_test)
   osh_add_exe(test_degree)
   osh_add_exe(test_dihedral)
   if(Omega_h_USE_libMeshb)
-    osh_add_exe(ugawg_linear)
-    if(Omega_h_USE_EGADS)
-      osh_add_exe(ugawg_cylinder)
-    endif()
-    osh_add_exe(ugawg_hsc)
+  osh_add_exe(ugawg_linear)
+  if(Omega_h_USE_EGADS)
+  osh_add_exe(ugawg_cylinder)
+  endif()
+  osh_add_exe(ugawg_hsc)
   endif()
   osh_add_exe(slope_test)
   if(Omega_h_USE_EGADS)
-    osh_add_exe(egads_test)
+  osh_add_exe(egads_test)
   endif()
   if(Omega_h_USE_EGADSlite)
-    if(Omega_h_USE_libMeshb)
-      osh_add_exe(egads_lite_adapt_test)
-    endif()
+  if(Omega_h_USE_libMeshb)
+  osh_add_exe(egads_lite_adapt_test)
+  endif()
   endif()
   osh_add_exe(advect2d_test)
   if(Omega_h_DATA)
-    set(TEST_EXES ${TEST_EXES} advect2d_test)
-    test_func(advect2d_serial 1 ./advect2d_test ${Omega_h_DATA}/advect2d.osh)
-    if(Omega_h_USE_MPI)
-      test_func(advect2d_parallel 2 ./advect2d_test ${Omega_h_DATA}/advect2d.osh)
-    endif()
+set(TEST_EXES ${TEST_EXES} advect2d_test)
+test_func(advect2d_serial 1 ./advect2d_test ${Omega_h_DATA}/advect2d.osh)
+  if(Omega_h_USE_MPI)
+test_func(advect2d_parallel 2 ./advect2d_test ${Omega_h_DATA}/advect2d.osh)
   endif()
+endif()
   add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND}
       DEPENDS ${TEST_EXES})
   osh_add_exe(cylinder_adapt_test)
   if (Omega_h_DATA)
-    test_func(cylinder_adapt_test 1 ./cylinder_adapt_test ${Omega_h_DATA}/cylinder.msh)
+test_func(cylinder_adapt_test 1 ./cylinder_adapt_test ${Omega_h_DATA}/cylinder.msh)
   endif()
   if (Omega_h_USE_DOLFIN)
-    osh_add_exe(dolfin_test)
-  endif()
+  osh_add_exe(dolfin_test)
+endif()
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
   else()
     osh_add_exe(random_test)
@@ -548,45 +555,45 @@ if(BUILD_TESTING)
   osh_add_exe(amr_test2)
   test_func(amr_test2 1 ./amr_test2)
   osh_add_exe(refine_scale)
-  osh_add_exe(amr_mpi_test)
+osh_add_exe(amr_mpi_test)
 
-  osh_add_exe(reverse_class_test)
+osh_add_exe(reverse_class_test)
   test_func(reverse_class_test 1 ./reverse_class_test
-    ${CMAKE_SOURCE_DIR}/meshes/plate_6elem.osh
-    ${CMAKE_SOURCE_DIR}/meshes/unitbox_cutTriCube_1k.osh)
+      ${CMAKE_SOURCE_DIR}/meshes/plate_6elem.osh
+      ${CMAKE_SOURCE_DIR}/meshes/unitbox_cutTriCube_1k.osh)
 
-  osh_add_exe(curve_test)
+osh_add_exe(curve_test)
   test_func(curve_test 1 ./curve_test 
-    ${CMAKE_SOURCE_DIR}/meshes/Example_tri.osh
-    ${CMAKE_SOURCE_DIR}/meshes/Example_tri.vtk
-    /users/joshia5/Models/curved/box_circleCut_geomsim.smd
-    /users/joshia5/Meshes/curved/box_cutCircle-30reg.sms
-    /users/joshia5/Meshes/curved/box_cutCircle-30reg.vtk)
-  set(TEST_EXES ${TEST_EXES} curve_test)
-  osh_add_exe(crv_coarsen_test)
+      ${CMAKE_SOURCE_DIR}/meshes/Example_tri.osh
+      ${CMAKE_SOURCE_DIR}/meshes/Example_tri.vtk
+      /users/joshia5/Models/curved/box_circleCut_geomsim.smd
+      /users/joshia5/Meshes/curved/box_cutCircle-30reg.sms
+      /users/joshia5/Meshes/curved/box_cutCircle-30reg.vtk)
+set(TEST_EXES ${TEST_EXES} curve_test)
+osh_add_exe(crv_coarsen_test)
 
-  osh_add_exe(rc_field_test)
+osh_add_exe(rc_field_test)
   test_func(rc_field_test 1 ./rc_field_test
-    ${CMAKE_SOURCE_DIR}/meshes/plate_6elem.osh
-    ${CMAKE_SOURCE_DIR}/meshes/box_3d.osh
-    ${CMAKE_SOURCE_DIR}/meshes/box3d_adapt.osh
-    ${CMAKE_SOURCE_DIR}/meshes/plate_6elem.vtk
-    ${CMAKE_SOURCE_DIR}/meshes/plate_6elem_bField.osh)
+      ${CMAKE_SOURCE_DIR}/meshes/plate_6elem.osh
+      ${CMAKE_SOURCE_DIR}/meshes/box_3d.osh
+      ${CMAKE_SOURCE_DIR}/meshes/box3d_adapt.osh
+      ${CMAKE_SOURCE_DIR}/meshes/plate_6elem.vtk
+      ${CMAKE_SOURCE_DIR}/meshes/plate_6elem_bField.osh)
   if(Omega_h_USE_MPI)
-    osh_add_exe(reverse_class_testp)
-    test_func(reverse_class_testp 2 ./reverse_class_testp 
+osh_add_exe(reverse_class_testp)
+  test_func(reverse_class_testp 2 ./reverse_class_testp 
       ${CMAKE_SOURCE_DIR}/meshes/box_3d_2p.osh
       ${CMAKE_SOURCE_DIR}/meshes/unitbox_cutTriCube_1k_2p.osh)
-    osh_add_exe(rc_field_testp)
-    test_func(rc_field_testp 2 ./rc_field_testp
+osh_add_exe(rc_field_testp)
+  test_func(rc_field_testp 2 ./rc_field_testp
       ${CMAKE_SOURCE_DIR}/meshes/box_3d_2p.osh
       ${CMAKE_SOURCE_DIR}/meshes/box_3d_2p.vtk
       ${CMAKE_SOURCE_DIR}/meshes/box_3d_2p_sync.vtk
       ${CMAKE_SOURCE_DIR}/meshes/box_3d_2p_reduce.vtk
       ${CMAKE_SOURCE_DIR}/meshes/box3d_2p_adapt.vtk)
-    osh_add_exe(curve_test_parallel)
-    test_func(curve_test_parallel 2 ./curve_test_parallel)
-    set(TEST_EXES ${TEST_EXES} curve_test_parallel)
+  osh_add_exe(curve_test_parallel)
+  test_func(curve_test_parallel 2 ./curve_test_parallel)
+set(TEST_EXES ${TEST_EXES} curve_test_parallel)
   endif()
   osh_add_exe(shape_test)
   test_basefunc(run_shape_test 1 ./shape_test)
@@ -686,12 +693,12 @@ set(Omega_h_HEADERS
   r3d.hpp
   )
 
-if (NOT Omega_h_USE_CUDA)
-  set(Omega_h_HEADERS ${Omega_h_HEADERS} Omega_h_overlay.hpp)
+  if (NOT Omega_h_USE_CUDA)
+set(Omega_h_HEADERS ${Omega_h_HEADERS} Omega_h_overlay.hpp)
 endif()
 
-if(Omega_h_USE_DOLFIN)
-  set(Omega_h_HEADERS ${Omega_h_HEADERS} Omega_h_dolfin.hpp)
+  if(Omega_h_USE_DOLFIN)
+set(Omega_h_HEADERS ${Omega_h_HEADERS} Omega_h_dolfin.hpp)
 endif()
 
 if(Omega_h_USE_STK)
@@ -712,20 +719,20 @@ if (Omega_h_USE_pybind11)
       PyOmega_h_adapt.cpp
       PyOmega_h_file.cpp
       PyOmega_h_class.cpp
-      )
-  if (Omega_h_USE_DOLFIN)
-    set(PYBIND11_SOURCES ${PYBIND11_SOURCES}
-        PyOmega_h_dolfin.cpp
-       )
-  endif()
+     )
+if (Omega_h_USE_DOLFIN)
+  set(PYBIND11_SOURCES ${PYBIND11_SOURCES}
+      PyOmega_h_dolfin.cpp
+     )
+endif()
   pybind11_add_module(PyOmega_h
       ${PYBIND11_SOURCES})
   target_link_libraries(PyOmega_h PUBLIC omega_h)
-  if (PYTHON_VERSION_MAJOR EQUAL 3)
-    set(PyOmega_h_DEST "lib/python3/dist-packages")
-  else()
-    set(PyOmega_h_DEST "lib/python/dist-packages")
-  endif()
+if (PYTHON_VERSION_MAJOR EQUAL 3)
+  set(PyOmega_h_DEST "lib/python3/dist-packages")
+else()
+  set(PyOmega_h_DEST "lib/python/dist-packages")
+endif()
   install(TARGETS PyOmega_h
       ARCHIVE DESTINATION "${PyOmega_h_DEST}"
       LIBRARY DESTINATION "${PyOmega_h_DEST}")
