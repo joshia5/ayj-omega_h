@@ -6,7 +6,7 @@
 
 namespace Omega_h {
 
-int binomial(int n, int i) {
+LO binomial(int n, int i) {
 
   i = std::min(n-i,i);
 
@@ -15,52 +15,52 @@ int binomial(int n, int i) {
   if (i == 1)
     return n;
 
-  static int const bn4[1] = {6};
-  static int const bn5[1] = {10};
-  static int const bn6[2] = {15,20};
-  static int const bn7[2] = {21,35};
-  static int const bn8[3] = {28,56,70};
-  static int const bn9[3] = {36,84,126};
-  static int const bn10[4] = {45,120,210,252};
-  static int const bn11[4] = {55,165,330,462};
-  static int const bn12[5] = {66,220,495,792,924};
-  static int const bn13[5] = {78,286,715,1287,1716};
-  static int const bn14[6] = {91,364,1001,2002,3003,3432};
-  static int const bn15[6] = {105,455,1365,3003,5005,6435};
-  static int const bn16[7] = {120,560,1820,4368,8008,11440,12870};
-  static int const bn17[7] = {136,680,2380,6188,12376,19448,24310};
-  static int const bn18[8] = {153,816,3060,8568,18564,31824,43758,48620};
-  static int const bn19[8] = {171,969,3876,11628,27132,50388,75582,92378};
-  static int const bn20[9] = {190,1140,4845,15504,38760,77520,125970,167960,
+  static LO const bn4[1] = {6};
+  static LO const bn5[1] = {10};
+  static LO const bn6[2] = {15,20};
+  static LO const bn7[2] = {21,35};
+  static LO const bn8[3] = {28,56,70};
+  static LO const bn9[3] = {36,84,126};
+  static LO const bn10[4] = {45,120,210,252};
+  static LO const bn11[4] = {55,165,330,462};
+  static LO const bn12[5] = {66,220,495,792,924};
+  static LO const bn13[5] = {78,286,715,1287,1716};
+  static LO const bn14[6] = {91,364,1001,2002,3003,3432};
+  static LO const bn15[6] = {105,455,1365,3003,5005,6435};
+  static LO const bn16[7] = {120,560,1820,4368,8008,11440,12870};
+  static LO const bn17[7] = {136,680,2380,6188,12376,19448,24310};
+  static LO const bn18[8] = {153,816,3060,8568,18564,31824,43758,48620};
+  static LO const bn19[8] = {171,969,3876,11628,27132,50388,75582,92378};
+  static LO const bn20[9] = {190,1140,4845,15504,38760,77520,125970,167960,
     184756};
-  static int const bn21[9] = {210,1330,5985,20349,54264,116280,203490,293930,
+  static LO const bn21[9] = {210,1330,5985,20349,54264,116280,203490,293930,
     352716};
-  static int const bn22[10] = {231,1540,7315,26334,74613,170544,319770,497420,
+  static LO const bn22[10] = {231,1540,7315,26334,74613,170544,319770,497420,
     646646,705432};
-  static int const bn23[10] = {253,1771,8855,33649,100947,245157,490314,817190,
+  static LO const bn23[10] = {253,1771,8855,33649,100947,245157,490314,817190,
     1144066,1352078};
-  static int const bn24[11] = {276,2024,10626,42504,134596,346104,735471,1307504,
+  static LO const bn24[11] = {276,2024,10626,42504,134596,346104,735471,1307504,
     1961256,2496144,2704156};
-  static int const bn25[11] = {300,2300,12650,53130,177100,480700,1081575,2042975,
+  static LO const bn25[11] = {300,2300,12650,53130,177100,480700,1081575,2042975,
     3268760,4457400,5200300};
-  static int const bn26[12] = {325,2600,14950,65780,230230,657800,1562275,3124550,
+  static LO const bn26[12] = {325,2600,14950,65780,230230,657800,1562275,3124550,
     5311735,7726160,9657700,10400600};
-  static int const bn27[12] = {351,2925,17550,80730,296010,888030,2220075,4686825,
+  static LO const bn27[12] = {351,2925,17550,80730,296010,888030,2220075,4686825,
     8436285,13037895,17383860,20058300};
-  static int const bn28[13] = {378,3276,20475,98280,376740,1184040,3108105,6906900,
+  static LO const bn28[13] = {378,3276,20475,98280,376740,1184040,3108105,6906900,
     13123110,21474180,30421755,37442160,40116600};
-  static int const bn29[13] = {406,3654,23751,118755,475020,1560780,4292145,10015005,
+  static LO const bn29[13] = {406,3654,23751,118755,475020,1560780,4292145,10015005,
     20030010,34597290,51895935,67863915,77558760};
-  static int const bn30[14] = {435,4060,27405,142506,593775,2035800,5852925,14307150,
+  static LO const bn30[14] = {435,4060,27405,142506,593775,2035800,5852925,14307150,
     30045015,54627300,86493225,119759850,145422675,155117520};
-  static int const bn31[14] = {465,4495,31465,169911,736281,2629575,7888725,20160075,
+  static LO const bn31[14] = {465,4495,31465,169911,736281,2629575,7888725,20160075,
     44352165,84672315,141120525,206253075,265182525,300540195};
-  static int const bn32[15] = {496,4960,35960,201376,906192,3365856,10518300,28048800,
+  static LO const bn32[15] = {496,4960,35960,201376,906192,3365856,10518300,28048800,
     64512240,129024480,225792840,347373600,471435600,565722720,601080390};
-  static int const bn33[15] = {528,5456,40920,237336,1107568,4272048,13884156,38567100,
+  static LO const bn33[15] = {528,5456,40920,237336,1107568,4272048,13884156,38567100,
     92561040,193536720,354817320,573166440,818809200,1037158320,1166803110};
 
-  static int const* const bnTable[34] = {0,0,0,0,bn4,bn5,bn6,bn7,bn8,
+  static LO const* const bnTable[34] = {0,0,0,0,bn4,bn5,bn6,bn7,bn8,
     bn9,bn10,bn11,bn12,bn13,bn14,bn15,bn16,bn17,bn18,bn19,bn20,bn21,bn22,bn23,
     bn24,bn25,bn26,bn27,bn28,bn29,bn30,bn31,bn32,bn33};
 
@@ -172,8 +172,8 @@ OMEGA_H_INLINE LO computeTriNodeIndex (LO P, LO i, LO j) {
 
 /*
 #include <stdio.h>
-int compute (int P, int i, int j) {
-int k = P-i-j;                      
+LO compute (int P, int i, int j) {
+LO k = P-i-j;                      
 if(i == P) return 0;        
 if(j == P) return 1;                
 if(k == P) return 2;                
@@ -182,7 +182,7 @@ if(i == 0) return 2+(P-1)+k;
 if(j == 0) return 2+(P-1)*2+i;      
 return k*(P-1)-k*(k-1)/2+j+2*P;     
 }                     
-int main()
+LO main()
 {
 printf("%d\n", compute(3, 1, 1));
 }
@@ -196,13 +196,13 @@ OMEGA_H_INLINE LO getTriNodeIndex (LO P, LO i, LO j) {
     return computeTriNodeIndex(P,i,j);
 }
 
-template <Int n>
+template <LO n>
 OMEGA_H_INLINE Real getTriPartialJacobianDet(Reals nodes,
-  int P, int i1, int j1, int i2, int j2) {
-  int p00 = getTriNodeIndex(P,i1+1,j1);
-  int p01 = getTriNodeIndex(P,i1,j1+1);
-  int p10 = getTriNodeIndex(P,i2+1,j2);
-  int p11 = getTriNodeIndex(P,i2,j2);
+  LO P, LO i1, LO j1, LO i2, LO j2) {
+  LO p00 = getTriNodeIndex(P,i1+1,j1);
+  LO p01 = getTriNodeIndex(P,i1,j1+1);
+  LO p10 = getTriNodeIndex(P,i2+1,j2);
+  LO p11 = getTriNodeIndex(P,i2,j2);
   return cross(get_vector<n>(nodes, p01) - get_vector<n>(nodes, p00),
                get_vector<n>(nodes, p11) - get_vector<n>(nodes, p10));
   /*the return will be following for 3d
@@ -213,19 +213,19 @@ OMEGA_H_INLINE Real getTriPartialJacobianDet(Reals nodes,
 
 OMEGA_H_INLINE Real Nijk(Reals nodes, LO d, LO I, LO J) {
   Real sum = 0.;
-  LO CD = trinomial(2*(d-1),I,J);
-  for (int j1 = 0; j1 <= J; ++j1) {
-    int i1start = std::max(0,I+J-j1-(d-1));
-    int i1end = std::min(I,d-1-j1);
-    for (int i1 = i1start; i1 <= i1end; ++i1){
-      sum += trinomial(d-1,i1,j1)*trinomial(d-1,I-i1,J-j1)
-        *getTriPartialJacobianDet(nodes,d,i1,j1,I-i1,J-j1);
+  LO CD = trinomial(2*(d-1), I, J);
+  for (LO j1 = 0; j1 <= J; ++j1) {
+    auto i1start = max2(0, I+J-j1-(d-1));
+    auto i1end = min2(I, d-1-j1);
+    for (LO i1 = i1start; i1 <= i1end; ++i1){
+      sum += trinomial(d-1, i1, j1)*trinomial(d-1, I-i1, J-j1)
+        *getTriPartialJacobianDet<2>(nodes, d, i1, j1, I-i1, J-j1);
     }
   }
   return sum*d*d/CD;
 }
 
-OMEGA_H_INLINE Reals getTriJacDetNodes(LO P, Reals elemNodes, LO dim) {
+OMEGA_H_INLINE Reals getTriJacDetNodes(LO P, Reals elemNodes) {
   Write<Real> nodes(P*(2*P-1));
   for (LO I = 0; I <= 2*(P-1); ++I) {
     for (LO J = 0; J <= 2*(P-1)-I; ++J) {
@@ -238,7 +238,7 @@ OMEGA_H_INLINE Reals getTriJacDetNodes(LO P, Reals elemNodes, LO dim) {
 OMEGA_H_INLINE LO checkMinJacDet(Reals nodes, LO order) {
   // first 3 vertices
   Real minAcceptable = 0.0;
-  for (int i = 0; i < 3; ++i) {
+  for (LO i = 0; i < 3; ++i) {
     if (nodes[i] < minAcceptable) {
       //return -1;
       return i+2;
@@ -250,7 +250,7 @@ OMEGA_H_INLINE LO checkMinJacDet(Reals nodes, LO order) {
     for (LO i = 0; i < 2*(order-1)-1; ++i) {
       if (nodes[3+edge*(2*(order-1)-1)+i] < minAcceptable) {
         minJ = -1e10;
-        // there is no point in doing much with edges if we dont have
+        // there is no poLO in doing much with edges if we dont have
         // elevation or subdivision or subdivision matrices
         if (minJ < minAcceptable){
           return 8+edge;
@@ -298,11 +298,11 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
 
       LO index = 0;
       if (j == 0) {
-        index = getTriNodeIndex(P, 0, 0);
+        index = getTriNodeIndex(order, 0, 0);
         OMEGA_H_CHECK(index == 2);
       }
       if (j == 2) {
-        index = getTriNodeIndex(P, 0, 3);
+        index = getTriNodeIndex(order, 0, 3);
         OMEGA_H_CHECK(index == 1);
       }
 
@@ -345,11 +345,11 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     for (LO j = 0; j < 3; ++j) {
       LO index = 3;
       if (j == 0) {
-        index = getTriNodeIndex(P, 1, 0);
+        index = getTriNodeIndex(order, 1, 0);
         OMEGA_H_CHECK(index == 7);
       }
       if (j == 2) {
-        index = getTriNodeIndex(P, 0, 1);
+        index = getTriNodeIndex(order, 0, 1);
         OMEGA_H_CHECK(index == 5);
       }
 
@@ -375,11 +375,11 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
 
     //query the face's ctrl pt and store
     for (I8 d = 0; d < dim; ++d) {
-      OMEGA_H_CHECK(9 == getTriNodeIndex(P, 1, 1));
+      OMEGA_H_CHECK(9 == getTriNodeIndex(order, 1, 1));
       tri_pts[9*dim + d] = faceCtrlPts[tri*dim + d];
     }
 
-    auto nodes = getTriJacDetNodes(order, Reals(tri_pts), dim);
+    auto nodes = getTriJacDetNodes(order, Reals(tri_pts));
 
     is_invalid[n] = checkMinJacDet(nodes, order);
   };
