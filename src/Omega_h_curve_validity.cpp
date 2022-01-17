@@ -67,7 +67,7 @@ int binomial(int n, int i) {
   return bnTable[n][i-2];
 }
 
-int trinomial(int n, int i, int j) {
+LO trinomial(LO n, LO i, LO j) {
   return binomial(n,i)*binomial(n-i,j);
 }
 
@@ -189,198 +189,203 @@ printf("%d\n", compute(3, 1, 1));
  */
 
 OMEGA_H_INLINE LO getTriNodeIndex (LO P, LO i, LO j) {
-// use a table if its small, otherwise dynamically generate it on the fly
-if (P <= 10)
-  return b2[P][i][j];
-else
-  return computeTriNodeIndex(P,i,j);
+  // use a table if its small, otherwise dynamically generate it on the fly
+  if (P <= 10)
+    return b2[P][i][j];
+  else
+    return computeTriNodeIndex(P,i,j);
 }
 
+template <Int n>
 OMEGA_H_INLINE Real getTriPartialJacobianDet(Reals nodes,
   int P, int i1, int j1, int i2, int j2) {
-int p00 = getTriNodeIndex(P,i1+1,j1);
-int p01 = getTriNodeIndex(P,i1,j1+1);
-int p10 = getTriNodeIndex(P,i2+1,j2);
-int p11 = getTriNodeIndex(P,i2,j2);
-return cross(nodes[p01]-nodes[p00], nodes[p11]-nodes[p10])[2];
+  int p00 = getTriNodeIndex(P,i1+1,j1);
+  int p01 = getTriNodeIndex(P,i1,j1+1);
+  int p10 = getTriNodeIndex(P,i2+1,j2);
+  int p11 = getTriNodeIndex(P,i2,j2);
+  return cross(get_vector<n>(nodes, p01) - get_vector<n>(nodes, p00),
+               get_vector<n>(nodes, p11) - get_vector<n>(nodes, p10));
+  /*the return will be following for 3d
+  return cross(get_vector<n>(nodes, p01) - get_vector<n>(nodes, p00),
+               get_vector<n>(nodes, p11) - get_vector<n>(nodes, p10))[2];
+  */
 }
 
-OMEGA_H_INLINE Real Nijk(Reals nodes, int d, int I, int J) {
-double sum = 0.;
-int CD = trinomial(2*(d-1),I,J);
-for (int j1 = 0; j1 <= J; ++j1){
-  int i1start = std::max(0,I+J-j1-(d-1));
-  int i1end = std::min(I,d-1-j1);
-  for (int i1 = i1start; i1 <= i1end; ++i1){
-    sum += trinomial(d-1,i1,j1)*trinomial(d-1,I-i1,J-j1)
-      *getTriPartialJacobianDet(nodes,d,i1,j1,I-i1,J-j1);
+OMEGA_H_INLINE Real Nijk(Reals nodes, LO d, LO I, LO J) {
+  Real sum = 0.;
+  LO CD = trinomial(2*(d-1),I,J);
+  for (int j1 = 0; j1 <= J; ++j1) {
+    int i1start = std::max(0,I+J-j1-(d-1));
+    int i1end = std::min(I,d-1-j1);
+    for (int i1 = i1start; i1 <= i1end; ++i1){
+      sum += trinomial(d-1,i1,j1)*trinomial(d-1,I-i1,J-j1)
+        *getTriPartialJacobianDet(nodes,d,i1,j1,I-i1,J-j1);
+    }
   }
-}
-return sum*d*d/CD;
+  return sum*d*d/CD;
 }
 
 OMEGA_H_INLINE Reals getTriJacDetNodes(LO P, Reals elemNodes, LO dim) {
-  Write<Real> nodes(P*(2*P-1)*dim);
+  Write<Real> nodes(P*(2*P-1));
   for (LO I = 0; I <= 2*(P-1); ++I) {
     for (LO J = 0; J <= 2*(P-1)-I; ++J) {
-      for (LO d = 0; d < dim; ++d) {
-        nodes[getTriNodeIndex(2*(P-1),I,J)*dim + d] = 
-          Nijk(elemNodes,P,I,J);
+        nodes[getTriNodeIndex(2*(P-1),I,J)] = Nijk(elemNodes,P,I,J);
+    }
+  }
   return Reals(nodes);
 }
 
 OMEGA_H_INLINE LO checkMinJacDet(Reals nodes, LO order) {
-// first 3 vertices
-Real minAcceptable = 0.0;
-for (int i = 0; i < 3; ++i) {
-  if (nodes[i] < minAcceptable) {
-    //return -1;
-    return i+2;
+  // first 3 vertices
+  Real minAcceptable = 0.0;
+  for (int i = 0; i < 3; ++i) {
+    if (nodes[i] < minAcceptable) {
+      //return -1;
+      return i+2;
+    }
   }
-}
 
-Real minJ = 0;
-for (LO edge = 0; edge < 3; ++edge) {
-  for (LO i = 0; i < 2*(order-1)-1; ++i) {
-    if (nodes[3+edge*(2*(order-1)-1)+i] < minAcceptable) {
-      minJ = -1e10;
-      // there is no point in doing much with edges if we dont have
-      // elevation or subdivision or subdivision matrices
-      if (minJ < minAcceptable){
-        return 8+edge;
+  Real minJ = 0;
+  for (LO edge = 0; edge < 3; ++edge) {
+    for (LO i = 0; i < 2*(order-1)-1; ++i) {
+      if (nodes[3+edge*(2*(order-1)-1)+i] < minAcceptable) {
+        minJ = -1e10;
+        // there is no point in doing much with edges if we dont have
+        // elevation or subdivision or subdivision matrices
+        if (minJ < minAcceptable){
+          return 8+edge;
+        }
       }
     }
   }
-}
 
-for (LO i = 0; i < (2*order-3)*(2*order-4)/2; ++i) {
-  if (nodes[6*(order-1)+i] < minAcceptable) {
-    minJ = -1e10;
-    if (minJ < minAcceptable) {
-      return 14;
+  for (LO i = 0; i < (2*order-3)*(2*order-4)/2; ++i) {
+    if (nodes[6*(order-1)+i] < minAcceptable) {
+      minJ = -1e10;
+      if (minJ < minAcceptable) {
+        return 14;
+      }
     }
   }
-}
-return -1;
+  return -1;
 
 }
 
 LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
+  auto fv2v = mesh->ask_down(2, 0).ab2b;
+  auto fe2e = mesh->get_adj(2, 1).ab2b;
+  auto ev2v = mesh->get_adj(1, 0).ab2b;
+  auto vertCtrlPts = mesh->get_ctrlPts(0);
+  auto edgeCtrlPts = mesh->get_ctrlPts(1);
+  auto faceCtrlPts = mesh->get_ctrlPts(2);
+  auto dim = mesh->dim();
+  auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
+  auto order = mesh->get_max_order();
+  OMEGA_H_CHECK(order == 3);
 
-auto fv2v = mesh->ask_down(2, 0).ab2b;
-auto fe2e = mesh->get_adj(2, 1).ab2b;
-auto ev2v = mesh->get_adj(1, 0).ab2b;
-auto vertCtrlPts = mesh->get_ctrlPts(0);
-auto edgeCtrlPts = mesh->get_ctrlPts(1);
-auto faceCtrlPts = mesh->get_ctrlPts(2);
-auto dim = mesh->dim();
-auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
-auto order = mesh->get_max_order();
-OMEGA_H_CHECK(order == 3);
+  Write<LO> is_invalid(new_tris.size());
 
-Write<LO> is_invalid(new_tris.size());
+  auto check_validity = OMEGA_H_LAMBDA (LO n) {
+    //auto foo = b2[1][1][1];
+    auto tri = new_tris[n];
+    LO const ntri_pts = 10;
 
-auto check_validity = OMEGA_H_LAMBDA (LO n) {
-  //auto foo = b2[1][1][1];
-  auto tri = new_tris[n];
-  LO const ntri_pts = 10;
+    Write<Real> tri_pts(ntri_pts*dim);
 
-  //TODO recheck indexing
-  Write<Real> tri_pts(ntri_pts*dim);
+    //query the tri's down verts's ctrl pts and store
+    for (LO j = 0; j < 3; ++j) {
+      auto p = get_vector<2>(vertCtrlPts, fv2v[tri*3 + j]);
 
-  //query the tri's down verts's ctrl pts and store
-  for (LO j = 0; j < 3; ++j) {
-    auto p = get_vector<2>(vertCtrlPts, fv2v[tri*3 + j]);
-
-    LO index = 0;
-    if (j == 0) {
-      index = getTriNodeIndex(P, 0, 0);
-      OMEGA_H_CHECK(index == 2);
-    }
-    if (j == 2) {
-      index = getTriNodeIndex(P, 0, 3);
-      OMEGA_H_CHECK(index == 1);
-    }
-
-    for (LO k = 0; k < dim; ++k) {
-      tri_pts[index*dim + k] = p[k];
-    }
-  }
-
-  //query the tri's down edge's ctrl pts and store
-  auto flip = vector_3(-1, -1, -1);
-
-  auto v0 = fv2v[tri*3 + 0];
-  auto v1 = fv2v[tri*3 + 1];
-  auto v2 = fv2v[tri*3 + 2];
-  auto e0 = fe2e[tri*3 + 0];
-  auto e1 = fe2e[tri*3 + 1];
-  auto e2 = fe2e[tri*3 + 2];
-  auto e0v0 = ev2v[e0*2 + 0];
-  auto e0v1 = ev2v[e0*2 + 1];
-  auto e1v0 = ev2v[e1*2 + 0];
-  auto e1v1 = ev2v[e1*2 + 1];
-  auto e2v0 = ev2v[e2*2 + 0];
-  auto e2v1 = ev2v[e2*2 + 1];
-  if ((e0v0 == v1) && (e0v1 == v0)) {
-    flip[0] = 1;
-  }
-  else {
-    OMEGA_H_CHECK((e0v0 == v0) && (e0v1 == v1));
-  }
-  if ((e1v0 == v2) && (e1v1 == v1)) {
-    flip[1] = 1;
-  }
-  else {
-    OMEGA_H_CHECK((e1v0 == v1) && (e1v1 == v2));
-  }
-  if ((e2v0 == v0) && (e2v1 == v2)) {
-    flip[2] = 1;
-  }
-
-  for (LO j = 0; j < 3; ++j) {
-    LO index = 3;
-    if (j == 0) {
-      index = getTriNodeIndex(P, 1, 0);
-      OMEGA_H_CHECK(index == 7);
-    }
-    if (j == 2) {
-      index = getTriNodeIndex(P, 0, 1);
-      OMEGA_H_CHECK(index == 5);
-    }
-
-    if (flip[j] == -1) {
-      for (I8 d = 0; d < dim; ++d) {
-        tri_pts[index*n_edge_pts*dim + d] =
-          edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
-        tri_pts[index*n_edge_pts*dim + dim + d] = 
-          edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
+      LO index = 0;
+      if (j == 0) {
+        index = getTriNodeIndex(P, 0, 0);
+        OMEGA_H_CHECK(index == 2);
       }
+      if (j == 2) {
+        index = getTriNodeIndex(P, 0, 3);
+        OMEGA_H_CHECK(index == 1);
+      }
+
+      for (LO k = 0; k < dim; ++k) {
+        tri_pts[index*dim + k] = p[k];
+      }
+    }
+
+    //query the tri's down edge's ctrl pts and store
+    auto flip = vector_3(-1, -1, -1);
+
+    auto v0 = fv2v[tri*3 + 0];
+    auto v1 = fv2v[tri*3 + 1];
+    auto v2 = fv2v[tri*3 + 2];
+    auto e0 = fe2e[tri*3 + 0];
+    auto e1 = fe2e[tri*3 + 1];
+    auto e2 = fe2e[tri*3 + 2];
+    auto e0v0 = ev2v[e0*2 + 0];
+    auto e0v1 = ev2v[e0*2 + 1];
+    auto e1v0 = ev2v[e1*2 + 0];
+    auto e1v1 = ev2v[e1*2 + 1];
+    auto e2v0 = ev2v[e2*2 + 0];
+    auto e2v1 = ev2v[e2*2 + 1];
+    if ((e0v0 == v1) && (e0v1 == v0)) {
+      flip[0] = 1;
     }
     else {
-      OMEGA_H_CHECK (flip[j] == 1);
-      for (I8 d = 0; d < dim; ++d) {
-        tri_pts[index*n_edge_pts*dim + d] =
-          edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
-        tri_pts[index*n_edge_pts*dim + dim + d] =
-          edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
+      OMEGA_H_CHECK((e0v0 == v0) && (e0v1 == v1));
+    }
+    if ((e1v0 == v2) && (e1v1 == v1)) {
+      flip[1] = 1;
+    }
+    else {
+      OMEGA_H_CHECK((e1v0 == v1) && (e1v1 == v2));
+    }
+    if ((e2v0 == v0) && (e2v1 == v2)) {
+      flip[2] = 1;
+    }
+
+    for (LO j = 0; j < 3; ++j) {
+      LO index = 3;
+      if (j == 0) {
+        index = getTriNodeIndex(P, 1, 0);
+        OMEGA_H_CHECK(index == 7);
+      }
+      if (j == 2) {
+        index = getTriNodeIndex(P, 0, 1);
+        OMEGA_H_CHECK(index == 5);
+      }
+
+      if (flip[j] == -1) {
+        for (I8 d = 0; d < dim; ++d) {
+          tri_pts[index*n_edge_pts*dim + d] =
+            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
+          tri_pts[index*n_edge_pts*dim + dim + d] = 
+            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
+        }
+      }
+      else {
+        //for flipped edges
+        OMEGA_H_CHECK (flip[j] == 1);
+        for (I8 d = 0; d < dim; ++d) {
+          tri_pts[index*n_edge_pts*dim + d] =
+            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
+          tri_pts[index*n_edge_pts*dim + dim + d] =
+            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
+        }
       }
     }
-  }
 
-  //query the face's ctrl pt and store
-  for (I8 d = 0; d < dim; ++d) {
-    OMEGA_H_CHECK(9 == getTriNodeIndex(P, 1, 1));
-    tri_pts[9*dim + d] = faceCtrlPts[tri*dim + d];
-  }
+    //query the face's ctrl pt and store
+    for (I8 d = 0; d < dim; ++d) {
+      OMEGA_H_CHECK(9 == getTriNodeIndex(P, 1, 1));
+      tri_pts[9*dim + d] = faceCtrlPts[tri*dim + d];
+    }
 
-  auto nodes = getTriJacDetNodes(order, Reals(tri_pts), dim);
+    auto nodes = getTriJacDetNodes(order, Reals(tri_pts), dim);
 
-  is_invalid[n] = checkMinJacDet(nodes, order);
-};
-parallel_for(new_tris.size(), std::move(check_validity));
+    is_invalid[n] = checkMinJacDet(nodes, order);
+  };
+  parallel_for(new_tris.size(), std::move(check_validity));
 
-return LOs(is_invalid);
+  return LOs(is_invalid);
 }
 
 #define OMEGA_H_INST(T)
