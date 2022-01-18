@@ -153,14 +153,14 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
         ent_dim, prods2new_ents, same_ents2old_ents, same_ents2new_ents);
 
     /*curved code here*/
-    if (ent_dim == EDGE) {
+    if (ent_dim == FACE) {
       if (mesh->is_curved() > 0) {
         if (mesh->dim() == 2) {
-/*
-          keys2old_faces = coarsen_curved_verts_and_edges_2d
+
+          auto keys2old_faces = coarsen_curved_verts_and_edges_2d
           (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
            keys2midverts, old_verts2new_verts, keys2edges);
-*/
+
         }
       }
     }
