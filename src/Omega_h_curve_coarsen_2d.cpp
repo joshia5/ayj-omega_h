@@ -56,6 +56,8 @@ LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
   auto nkeys = keys2midverts.size();
 
+  auto valid_tris = checkValidity_2d(new_mesh, new_tris);
+
 
   new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim);
   new_mesh->add_tag<Real>(0, "bezier_pts", dim);
