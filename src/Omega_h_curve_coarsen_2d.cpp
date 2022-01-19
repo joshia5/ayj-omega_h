@@ -12,8 +12,7 @@ namespace Omega_h {
 
 LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,
-                                     LOs keys2midverts, LOs old_verts2new_verts,
-                                     LOs keys2edges) {
+                                     LOs old_verts2new_verts) {
   printf("in coarsen curved edges fn\n");
   OMEGA_H_TIME_FUNCTION;
   auto const nold_edge = old2new.size();

@@ -12,6 +12,7 @@
 #include "Omega_h_modify.hpp"
 #include "Omega_h_transfer.hpp"
 #include "Omega_h_file.hpp"
+#include "Omega_h_beziers.hpp"
 
 namespace Omega_h {
 
@@ -159,7 +160,7 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
 
           auto keys2old_faces = coarsen_curved_verts_and_edges_2d
           (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
-           keys2midverts, old_verts2new_verts, keys2edges);
+           old_verts2new_verts);
 
         }
       }
