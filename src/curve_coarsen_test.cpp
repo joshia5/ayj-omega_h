@@ -30,6 +30,6 @@ int main(int argc, char** argv) {
   while (coarsen_by_size(&mesh, opts))
     ;
   mesh.ask_qualities();
-  Omega_h::vtk::write_parallel("gold_coarsen.vtk", &mesh, mesh.dim());
+  Omega_h::vtk::write_parallel("disc_8tri_coarsen.vtk", &mesh, mesh.dim());
   return 0;
 }
