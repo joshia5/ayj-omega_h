@@ -11,10 +11,8 @@ using namespace Omega_h;
 
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
-  auto world = lib.world();
-  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_8tri_order2.sms",
-                            "/users/joshia5/Models/curved/disk_semi_geomsim.smd", world);
-  Omega_h::vtk::write_parallel("disc_8tri.vtk", &mesh, mesh.dim());
+  Mesh mesh(&lib);
+  Omega_h::vtk::read_parallel("disc_8tri.vtk", lib.world(), &mesh);
   auto opts = AdaptOpts(&mesh);
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(
