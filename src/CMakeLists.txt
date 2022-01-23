@@ -65,6 +65,7 @@ set(Omega_h_SOURCES
   Omega_h_beziers.cpp
   Omega_h_curve_refine_2d.cpp
   Omega_h_curve_refine_3d.cpp
+  Omega_h_curve_coarsen_2d.cpp
   Omega_h_curve_validity.cpp
   Omega_h_rcFields.cpp
   Omega_h_metric.cpp

@@ -15,7 +15,7 @@ LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs old_verts2new_verts) {
   printf("in coarsen curved edges fn\n");
   OMEGA_H_TIME_FUNCTION;
-  auto const nold_edge = old2new.size();
+  //auto const nold_edge = old2new.size();
   auto const nold_verts = mesh->nverts();
   OMEGA_H_CHECK(nold_verts == old_verts2new_verts.size());
   auto const old_ev2v = mesh->get_adj(1, 0).ab2b;
@@ -26,7 +26,7 @@ LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const old_vertCtrlPts = mesh->get_ctrlPts(0);
   auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
   auto const old_faceCtrlPts = mesh->get_ctrlPts(2);
-  auto const order = mesh->get_max_order();
+  //auto const order = mesh->get_max_order();
   auto const dim = mesh->dim();
   auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
 
@@ -41,7 +41,8 @@ LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
                                                    nnew_verts);
 
-  //copy ctrl pts for same verts
+  printf("curve coarsen L44, nkeys %d, old2new.size %d\n", keys2prods.size(), old2new.size());
+  //copy ctrl pts for verts
   auto copy_sameCtrlPts = OMEGA_H_LAMBDA(LO i) {
     if (old_verts2new_verts[i] != -1) {
       LO new_vert = old_verts2new_verts[i];
@@ -53,16 +54,16 @@ LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   parallel_for(nold_verts, std::move(copy_sameCtrlPts), "copy same vtx ctrlPts");
   new_mesh->set_tag_for_ctrlPts(0, Reals(vert_ctrlPts));
 
-  auto nkeys = keys2midverts.size();
+  //TODO set mid pts as ctrl pts and make edges straight sided
 
-  auto valid_tris = checkValidity_2d(new_mesh, new_tris);
+  auto valid_tris = checkValidity_2d(new_mesh, prods2new);
+  //auto valid_tris = checkValidity_2d(new_mesh, new_tris);
 
+  //new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim);
+  //new_mesh->add_tag<Real>(0, "bezier_pts", dim);
+  //new_mesh->set_tag_for_ctrlPts(1, Reals(edge_ctrlPts));
 
-  new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim);
-  new_mesh->add_tag<Real>(0, "bezier_pts", dim);
-  new_mesh->set_tag_for_ctrlPts(1, Reals(edge_ctrlPts));
-
-  return LOs(keys2old_faces_w);
+  return LOs();
 }
 
 #define OMEGA_H_INST(T)
