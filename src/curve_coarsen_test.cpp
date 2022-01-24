@@ -12,7 +12,12 @@ using namespace Omega_h;
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
   Mesh mesh(&lib);
-  Omega_h::vtk::read_parallel("../disc_8tri.vtk", lib.world(), &mesh);
+
+  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
+                            "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", comm);
+  calc_quad_ctrlPts_from_interpPts(&mesh);
+  elevate_curve_order_2to3(&mesh);
+
   auto opts = AdaptOpts(&mesh);
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(
