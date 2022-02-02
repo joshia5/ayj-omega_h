@@ -4,6 +4,7 @@
 #include <Omega_h_library.hpp>
 #include <Omega_h_metric.hpp>
 #include <Omega_h_file.hpp>
+#include <Omega_h_beziers.hpp>
 
 #include <cmath>
 
@@ -11,10 +12,9 @@ using namespace Omega_h;
 
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
-  Mesh mesh(&lib);
 
   auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
-                            "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", comm);
+                            "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", lib.world());
   calc_quad_ctrlPts_from_interpPts(&mesh);
   elevate_curve_order_2to3(&mesh);
 
