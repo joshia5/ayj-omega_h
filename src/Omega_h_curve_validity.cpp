@@ -268,7 +268,6 @@ OMEGA_H_INLINE LO checkMinJacDet(Reals nodes, LO order) {
     }
   }
   return -1;
-
 }
 
 LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {

@@ -23,6 +23,9 @@ LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const old_ef2f = mesh->ask_up(1, 2).ab2b;
   auto const old_e2ef = mesh->ask_up(1, 2).a2ab;
   auto const old_fv2v = mesh->ask_down(2, 0).ab2b;
+  if (!mesh->has_tag(0, "bezier_pts")) {
+    mesh->add_tag<Real>(0, "bezier_pts", mesh->dim(), mesh->coords());
+  }
   auto const old_vertCtrlPts = mesh->get_ctrlPts(0);
   auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
   auto const old_faceCtrlPts = mesh->get_ctrlPts(2);
@@ -34,12 +37,14 @@ LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const new_coords = new_mesh->coords();
   auto const nnew_edge = new_mesh->nedges();
   auto const nnew_verts = new_mesh->nverts();
+  auto const nnew_face = new_mesh->nfaces();
+  auto const n_face_pts = mesh->n_internal_ctrlPts(2);
 
   Write<Real> edge_ctrlPts(nnew_edge*n_edge_pts*dim, INT8_MAX);
   Write<Real> vert_ctrlPts(nnew_verts*1*dim, INT8_MAX);
 
-  auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
-                                                   nnew_verts);
+  //auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
+    //                                               nnew_verts);
 
   printf("curve coarsen L44, nkeys %d, old2new.size %d\n", keys2prods.size(), old2new.size());
   //copy ctrl pts for verts
@@ -52,9 +57,15 @@ LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     }
   };
   parallel_for(nold_verts, std::move(copy_sameCtrlPts), "copy same vtx ctrlPts");
+  new_mesh->add_tag<Real>(0, "bezier_pts", mesh->dim());
   new_mesh->set_tag_for_ctrlPts(0, Reals(vert_ctrlPts));
+  Write<Real> face_ctrlPts(nnew_face*n_face_pts*dim, INT8_MAX);
+  new_mesh->add_tag<Real>(2, "bezier_pts", n_face_pts*dim);
+  new_mesh->set_tag_for_ctrlPts(2, Reals(face_ctrlPts));
 
   //TODO set mid pts as ctrl pts and make edges straight sided
+  new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim, Reals(edge_ctrlPts));
+  new_mesh->set_tag_for_ctrlPts(1, Reals(edge_ctrlPts));
 
   auto valid_tris = checkValidity_2d(new_mesh, prods2new);
   //auto valid_tris = checkValidity_2d(new_mesh, new_tris);
