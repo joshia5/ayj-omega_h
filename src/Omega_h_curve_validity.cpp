@@ -204,12 +204,18 @@ OMEGA_H_INLINE Real Nijk(Reals nodes, LO d, LO I, LO J) {
 }
 
 OMEGA_H_INLINE Reals getTriJacDetNodes(LO P, Reals elemNodes) {
+  fprintf(stderr, "in pfor ok6.0\n");
   Write<Real> nodes(P*(2*P-1));
+  fprintf(stderr, "in pfor ok6.1\n");
   for (LO I = 0; I <= 2*(P-1); ++I) {
     for (LO J = 0; J <= 2*(P-1)-I; ++J) {
+        OMEGA_H_CHECK(getTriNodeIndex(2*(P-1),I,J) < nodes.size());
+        fprintf(stderr, "in pfor ok6.2\n");
         nodes[getTriNodeIndex(2*(P-1),I,J)] = Nijk(elemNodes,P,I,J);
+        fprintf(stderr, "in pfor ok6.3\n");
     }
   }
+  fprintf(stderr, "in pfor ok6.4\n");
   return Reals(nodes);
 }
 
@@ -228,7 +234,7 @@ OMEGA_H_INLINE LO checkMinJacDet(Reals nodes, LO order) {
     for (LO i = 0; i < 2*(order-1)-1; ++i) {
       if (nodes[3+edge*(2*(order-1)-1)+i] < minAcceptable) {
         minJ = -1e10;
-        // there is no poLO in doing much with edges if we dont have
+        // there is no point in doing much with edges if we dont have
         // elevation or subdivision or subdivision matrices
         if (minJ < minAcceptable){
           return 8+edge;
@@ -265,9 +271,11 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
   Write<Real> tri_pts(ntri_pts*dim);
 
   auto check_validity = OMEGA_H_LAMBDA (LO n) {
+    fprintf(stderr, "in pfor n %d ok0\n", n);
     //auto foo = b2[1][1][1];
     auto tri = new_tris[n];
 
+    fprintf(stderr, "in pfor n %d ok1\n", n);
     //query the tri's down verts's ctrl pts and store
     for (LO j = 0; j < 3; ++j) {
       auto p = get_vector<2>(vertCtrlPts, fv2v[tri*3 + j]);
@@ -286,6 +294,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
         tri_pts[index*dim + k] = p[k];
       }
     }
+    fprintf(stderr, "in pfor n %d ok2\n", n);
 
     //query the tri's down edge's ctrl pts and store
 
@@ -302,6 +311,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     auto e2v0 = ev2v[e2*2 + 0];
     auto e2v1 = ev2v[e2*2 + 1];
     auto flip = vector_3(-1, -1, -1);
+    fprintf(stderr, "in pfor n %d ok3\n", n);
     if ((e0v0 == v1) && (e0v1 == v0)) {
       flip[0] = 1;
     }
@@ -317,6 +327,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     if ((e2v0 == v0) && (e2v1 == v2)) {
       flip[2] = 1;
     }
+    fprintf(stderr, "in pfor n %d ok4\n", n);
 
     for (LO j = 0; j < 3; ++j) {
       LO index = 3;
@@ -348,16 +359,20 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
         }
       }
     }
+    fprintf(stderr, "in pfor n %d ok5\n", n);
 
     //query the face's ctrl pt and store
     for (I8 d = 0; d < dim; ++d) {
       OMEGA_H_CHECK(9 == getTriNodeIndex(order, 1, 1));
       tri_pts[9*dim + d] = faceCtrlPts[tri*dim + d];
     }
+    fprintf(stderr, "in pfor n %d ok6\n", n);
 
     auto nodes = getTriJacDetNodes(order, Reals(tri_pts));
+    fprintf(stderr, "in pfor n %d ok7\n", n);
 
     is_invalid[n] = checkMinJacDet(nodes, order);
+    fprintf(stderr, "in pfor n %d ok8\n", n);
   };
   parallel_for(new_tris.size(), std::move(check_validity));
 
