@@ -170,30 +170,8 @@ OMEGA_H_INLINE LO computeTriNodeIndex (LO P, LO i, LO j) {
   return k*(P-1)-k*(k-1)/2+j+2*P;
 }
 
-/*
-#include <stdio.h>
-LO compute (int P, int i, int j) {
-LO k = P-i-j;                      
-if(i == P) return 0;        
-if(j == P) return 1;                
-if(k == P) return 2;                
-if(k == 0) return 2+j;              
-if(i == 0) return 2+(P-1)+k;        
-if(j == 0) return 2+(P-1)*2+i;      
-return k*(P-1)-k*(k-1)/2+j+2*P;     
-}                     
-LO main()
-{
-printf("%d\n", compute(3, 1, 1));
-}
- */
-
 OMEGA_H_INLINE LO getTriNodeIndex (LO P, LO i, LO j) {
-  // use a table if its small, otherwise dynamically generate it on the fly
-  if (P <= 10)
-    return b2[P][i][j];
-  else
-    return computeTriNodeIndex(P,i,j);
+  return computeTriNodeIndex(P,i,j);
 }
 
 template <LO n>
@@ -283,13 +261,12 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
   OMEGA_H_CHECK(order == 3);
 
   Write<LO> is_invalid(new_tris.size());
+  LO const ntri_pts = 10;
+  Write<Real> tri_pts(ntri_pts*dim);
 
   auto check_validity = OMEGA_H_LAMBDA (LO n) {
     //auto foo = b2[1][1][1];
     auto tri = new_tris[n];
-    LO const ntri_pts = 10;
-
-    Write<Real> tri_pts(ntri_pts*dim);
 
     //query the tri's down verts's ctrl pts and store
     for (LO j = 0; j < 3; ++j) {
@@ -311,7 +288,6 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     }
 
     //query the tri's down edge's ctrl pts and store
-    auto flip = vector_3(-1, -1, -1);
 
     auto v0 = fv2v[tri*3 + 0];
     auto v1 = fv2v[tri*3 + 1];
@@ -325,6 +301,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     auto e1v1 = ev2v[e1*2 + 1];
     auto e2v0 = ev2v[e2*2 + 0];
     auto e2v1 = ev2v[e2*2 + 1];
+    auto flip = vector_3(-1, -1, -1);
     if ((e0v0 == v1) && (e0v1 == v0)) {
       flip[0] = 1;
     }
@@ -348,7 +325,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
         OMEGA_H_CHECK(index == 7);
       }
       if (j == 2) {
-        index = getTriNodeIndex(order, 0, 1);
+        index = getTriNodeIndex(order, 0, 2);
         OMEGA_H_CHECK(index == 5);
       }
 
@@ -394,4 +371,4 @@ OMEGA_H_INST(I64)
 OMEGA_H_INST(Real)
 #undef OMEGA_H_INST
 
-  } //namespace
+} //namespace
