@@ -203,12 +203,13 @@ OMEGA_H_INLINE Real Nijk(Reals nodes, LO d, LO I, LO J) {
   return sum*d*d/CD;
 }
 
-OMEGA_H_INLINE Reals getTriJacDetNodes(LO P, Reals elemNodes) {
+OMEGA_H_INLINE Reals getTriJacDetNodes(LO P, Reals elemNodes,
+    Write<Real> const& nodes) {
   fprintf(stderr, "in pfor ok6.0\n");
-  Write<Real> nodes(P*(2*P-1));
-  fprintf(stderr, "in pfor ok6.1\n");
   for (LO I = 0; I <= 2*(P-1); ++I) {
     for (LO J = 0; J <= 2*(P-1)-I; ++J) {
+        fprintf(stderr, "index %d size %d in pfor ok6.1\n",
+            getTriNodeIndex(2*(P-1),I,J), nodes.size());
         OMEGA_H_CHECK(getTriNodeIndex(2*(P-1),I,J) < nodes.size());
         fprintf(stderr, "in pfor ok6.2\n");
         nodes[getTriNodeIndex(2*(P-1),I,J)] = Nijk(elemNodes,P,I,J);
@@ -270,6 +271,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
   LO const ntri_pts = 10;
   Write<Real> tri_pts(ntri_pts*dim);
 
+  Write<Real> nodes(order*2*(order-1));//=12
   auto check_validity = OMEGA_H_LAMBDA (LO n) {
     fprintf(stderr, "in pfor n %d ok0\n", n);
     //auto foo = b2[1][1][1];
@@ -368,10 +370,10 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     }
     fprintf(stderr, "in pfor n %d ok6\n", n);
 
-    auto nodes = getTriJacDetNodes(order, Reals(tri_pts));
+    auto nodes_det = getTriJacDetNodes(order, Reals(tri_pts), nodes);
     fprintf(stderr, "in pfor n %d ok7\n", n);
 
-    is_invalid[n] = checkMinJacDet(nodes, order);
+    is_invalid[n] = checkMinJacDet(nodes_det, order);
     fprintf(stderr, "in pfor n %d ok8\n", n);
   };
   parallel_for(new_tris.size(), std::move(check_validity));
