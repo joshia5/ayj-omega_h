@@ -2,6 +2,7 @@
 #include "Omega_h_beziers.hpp"
 #include "Omega_h_vector.hpp"
 #include "Omega_h_for.hpp"
+#include "Omega_h_few.hpp"
 #include "Omega_h_scalar.hpp"
 
 namespace Omega_h {
@@ -174,8 +175,8 @@ OMEGA_H_INLINE LO getTriNodeIndex (LO P, LO i, LO j) {
   return computeTriNodeIndex(P,i,j);
 }
 
-template <LO n>
-OMEGA_H_INLINE Real getTriPartialJacobianDet(Reals nodes,
+template <Int n>
+OMEGA_H_INLINE Real getTriPartialJacobianDet(Few<Real, 20> nodes,
   LO P, LO i1, LO j1, LO i2, LO j2) {
   LO p00 = getTriNodeIndex(P,i1+1,j1);
   LO p01 = getTriNodeIndex(P,i1,j1+1);
@@ -189,7 +190,7 @@ OMEGA_H_INLINE Real getTriPartialJacobianDet(Reals nodes,
   */
 }
 
-OMEGA_H_INLINE Real Nijk(Reals nodes, LO d, LO I, LO J) {
+OMEGA_H_INLINE Real Nijk(Few<Real, 20> nodes, LO d, LO I, LO J) {
   Real sum = 0.;
   LO CD = trinomial(2*(d-1), I, J);
   for (LO j1 = 0; j1 <= J; ++j1) {
@@ -203,9 +204,10 @@ OMEGA_H_INLINE Real Nijk(Reals nodes, LO d, LO I, LO J) {
   return sum*d*d/CD;
 }
 
-OMEGA_H_INLINE Reals getTriJacDetNodes(LO P, Reals elemNodes,
-    Write<Real> const& nodes) {
+template <Int n>
+OMEGA_H_INLINE Few<Real, n> getTriJacDetNodes(LO P, Few<Real, 20> elemNodes) {
   fprintf(stderr, "in pfor ok6.0\n");
+  Few<Real, n> nodes;//n=15
   for (LO I = 0; I <= 2*(P-1); ++I) {
     for (LO J = 0; J <= 2*(P-1)-I; ++J) {
         fprintf(stderr, "i=%d, j=%d, index %d size %d in pfor ok6.1\n",
@@ -217,10 +219,11 @@ OMEGA_H_INLINE Reals getTriJacDetNodes(LO P, Reals elemNodes,
     }
   }
   fprintf(stderr, "in pfor ok6.4\n");
-  return Reals(nodes);
+  return nodes;
 }
 
-OMEGA_H_INLINE LO checkMinJacDet(Reals nodes, LO order) {
+template<Int n>
+OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> nodes, LO order) {
   fprintf(stderr, "in pfor ok7.0\n");
   // first 3 vertices
   Real minAcceptable = 0.0;
@@ -273,13 +276,13 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
   OMEGA_H_CHECK(order == 3);
 
   Write<LO> is_invalid(new_tris.size());
-  LO const ntri_pts = 10;
-  Write<Real> tri_pts(ntri_pts*dim);
+  //LO const ntri_pts = 10;
 
-  Write<Real> nodes(order*(2*order-1));//=15
-  auto check_validity = OMEGA_H_LAMBDA (LO n) {
+  for(LO n=0; n<new_tris.size(); ++n) {
+  //auto check_validity = OMEGA_H_LAMBDA (LO n) {
     fprintf(stderr, "in pfor n %d ok0\n", n);
     //auto foo = b2[1][1][1];
+    Few<Real, 20> tri_pts;//ntri_pts*dim=20
     auto tri = new_tris[n];
 
     fprintf(stderr, "in pfor n %d ok1\n", n);
@@ -375,14 +378,17 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     }
     fprintf(stderr, "in pfor n %d ok6\n", n);
 
-    auto nodes_det = getTriJacDetNodes(order, Reals(tri_pts), nodes);
+    auto nodes_det = getTriJacDetNodes<15>(order, tri_pts);
     fprintf(stderr, "in pfor n %d ok7\n", n);
 
-    is_invalid[n] = checkMinJacDet(nodes_det, order);
-    fprintf(stderr, "in pfor n %d ok8\n", n);
+    is_invalid[n] = checkMinJacDet<15>(nodes_det, order);
+    fprintf(stderr, "in pfor n %d size %d valid %d ok8\n"
+        , n, new_tris.size(), is_invalid[n]);
+  }
+  /*
   };
-  parallel_for(new_tris.size(), check_validity);
-  //parallel_for(new_tris.size(), std::move(check_validity));
+  parallel_for(new_tris.size(), std::move(check_validity));
+  */
 
   return LOs(is_invalid);
 }
