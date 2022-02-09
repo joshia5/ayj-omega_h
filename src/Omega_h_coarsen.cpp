@@ -155,10 +155,12 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
         ent_dim, prods2new_ents, same_ents2old_ents, same_ents2new_ents);
 
     /*curved code here*/
-    if ((ent_dim == EDGE) && (mesh->is_curved() > 0) && (mesh->dim() == 2) {
+    /*
+    if ((ent_dim == EDGE) && (mesh->is_curved() > 0) && (mesh->dim() == 2)) {
       copy_same_edges(mesh, &new_mesh, old_ents2new_ents);
     }
-    if ((ent_dim == FACE) && (mesh->is_curved() > 0) && (mesh->dim() == 2) {
+    */
+    if ((ent_dim == FACE) && (mesh->is_curved() > 0) && (mesh->dim() == 2)) {
 
       auto keys2old_faces = coarsen_curved_verts_and_edges_2d
       (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
@@ -182,7 +184,6 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
 
   *mesh = new_mesh;
   vtk::write_parallel("coarsen_itr.vtk", mesh, mesh->dim());
-  while(1);
 }
 
 static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
