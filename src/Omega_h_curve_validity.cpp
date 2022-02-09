@@ -382,7 +382,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     fprintf(stderr, "in pfor n %d ok7\n", n);
 
     is_invalid[n] = checkMinJacDet<15>(nodes_det, order);
-    fprintf(stderr, "in pfor n %d size %d valid %d ok8\n"
+    fprintf(stderr, "in pfor n %d size %d is_invalid %d ok8\n"
         , n, new_tris.size(), is_invalid[n]);
   };
   parallel_for(new_tris.size(), std::move(check_validity));

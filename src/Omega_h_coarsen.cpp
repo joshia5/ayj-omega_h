@@ -13,6 +13,7 @@
 #include "Omega_h_transfer.hpp"
 #include "Omega_h_file.hpp"
 #include "Omega_h_beziers.hpp"
+#include "Omega_h_build.hpp"
 
 namespace Omega_h {
 
@@ -154,16 +155,25 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
         ent_dim, prods2new_ents, same_ents2old_ents, same_ents2new_ents);
 
     /*curved code here*/
-    if (ent_dim == FACE) {
-      if (mesh->is_curved() > 0) {
-        if (mesh->dim() == 2) {
+    if ((ent_dim == EDGE) && (mesh->is_curved() > 0) && (mesh->dim() == 2) {
+      copy_same_edges(mesh, &new_mesh, old_ents2new_ents);
+    }
+    if ((ent_dim == FACE) && (mesh->is_curved() > 0) && (mesh->dim() == 2) {
 
-          auto keys2old_faces = coarsen_curved_verts_and_edges_2d
-          (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
-           old_verts2new_verts);
+      auto keys2old_faces = coarsen_curved_verts_and_edges_2d
+      (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
+       old_verts2new_verts);
+      auto wireframe_mesh = Mesh(mesh->comm()->library());
+      wireframe_mesh.set_comm(comm);
+      build_cubic_wireframe_2d(&new_mesh, &wireframe_mesh, 4);
+      std::string vtuPath = "/users/joshia5/Meshes/curved/discCoarsItr_cubic_wireframe.vtu";
+      vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+      auto cubic_curveVtk_mesh = Mesh(mesh->comm()->library());
+      cubic_curveVtk_mesh.set_comm(comm);
+      build_cubic_curveVtk_2d(&new_mesh, &cubic_curveVtk_mesh, 4);
+      vtuPath = "/users/joshia5/Meshes/curved/discCoarsItr_cubic_curveVtk.vtu";
+      vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
 
-        }
-      }
     }
     /**/
 
