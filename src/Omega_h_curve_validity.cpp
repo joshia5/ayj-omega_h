@@ -205,7 +205,8 @@ OMEGA_H_INLINE Real Nijk(Few<Real, 20> nodes, LO d, LO I, LO J) {
 }
 
 template <Int n>
-OMEGA_H_INLINE Few<Real, n> getTriJacDetNodes(LO P, Few<Real, 20> elemNodes) {
+OMEGA_H_INLINE Few<Real, n> getTriJacDetNodes(
+    LO P, Few<Real, 20> const& elemNodes) {
   fprintf(stderr, "in pfor ok6.0\n");
   Few<Real, n> nodes;//n=15
   for (LO I = 0; I <= 2*(P-1); ++I) {
@@ -223,7 +224,7 @@ OMEGA_H_INLINE Few<Real, n> getTriJacDetNodes(LO P, Few<Real, 20> elemNodes) {
 }
 
 template<Int n>
-OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> nodes, LO order) {
+OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes, LO order) {
   fprintf(stderr, "in pfor ok7.0\n");
   // first 3 vertices
   Real minAcceptable = 0.0;
@@ -278,8 +279,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
   Write<LO> is_invalid(new_tris.size());
   //LO const ntri_pts = 10;
 
-  for(LO n=0; n<new_tris.size(); ++n) {
-  //auto check_validity = OMEGA_H_LAMBDA (LO n) {
+  auto check_validity = OMEGA_H_LAMBDA (LO n) {
     fprintf(stderr, "in pfor n %d ok0\n", n);
     //auto foo = b2[1][1][1];
     Few<Real, 20> tri_pts;//ntri_pts*dim=20
@@ -384,11 +384,8 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     is_invalid[n] = checkMinJacDet<15>(nodes_det, order);
     fprintf(stderr, "in pfor n %d size %d valid %d ok8\n"
         , n, new_tris.size(), is_invalid[n]);
-  }
-  /*
   };
   parallel_for(new_tris.size(), std::move(check_validity));
-  */
 
   return LOs(is_invalid);
 }
