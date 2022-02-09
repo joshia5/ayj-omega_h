@@ -10,6 +10,7 @@
 
 namespace Omega_h {
 
+/*TODO old2new and edge pts cannot be set in the same routine
 void copy_same_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new) {
   auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
   auto const nold_edges = mesh->nedges();
@@ -25,6 +26,7 @@ void copy_same_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new) {
       "copy same edgectrlPts");
   return;
 }
+*/
 
 LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,
