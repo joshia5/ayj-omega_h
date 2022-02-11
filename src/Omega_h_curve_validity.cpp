@@ -230,7 +230,8 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes, LO order) {
   Real minAcceptable = 0.0;
   fprintf(stderr, "in pfor ok7.1\n");
   for (LO i = 0; i < 3; ++i) {
-    if (nodes[i] < minAcceptable) {
+    //fprintf(stderr, "i %d Nijk %d\n",i,nodes[i]);
+    if (std::abs(nodes[i] - minAcceptable) < EPSILON) {
       return i+2;
     }
   }
@@ -302,7 +303,8 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
       }
 
       for (LO k = 0; k < dim; ++k) {
-        tri_pts[index*dim + k] = p[k];
+        tri_pts[j*dim + k] = p[k];
+        //tri_pts[index*dim + k] = p[k];
       }
     }
     fprintf(stderr, "in pfor n %d ok2\n", n);
@@ -351,11 +353,14 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
         OMEGA_H_CHECK(index == 5);
       }
 
+      //TODO
+      index = j + 3;
+      printf("index %d\n", index);
       if (flip[j] == -1) {
         for (I8 d = 0; d < dim; ++d) {
-          tri_pts[index*n_edge_pts*dim + d] =
+          tri_pts[index*dim + d] =
             edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
-          tri_pts[index*n_edge_pts*dim + dim + d] = 
+          tri_pts[index*dim + dim + d] =
             edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
         }
       }
@@ -363,21 +368,28 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
         //for flipped edges
         OMEGA_H_CHECK (flip[j] == 1);
         for (I8 d = 0; d < dim; ++d) {
-          tri_pts[index*n_edge_pts*dim + d] =
+          tri_pts[index*dim + d] =
             edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
-          tri_pts[index*n_edge_pts*dim + dim + d] =
+          tri_pts[index*dim + dim + d] =
             edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
         }
       }
     }
     fprintf(stderr, "in pfor n %d ok5\n", n);
+      while(1);
 
     //query the face's ctrl pt and store
     for (I8 d = 0; d < dim; ++d) {
       OMEGA_H_CHECK(9 == getTriNodeIndex(order, 1, 1));
       tri_pts[9*dim + d] = faceCtrlPts[tri*dim + d];
     }
+
     fprintf(stderr, "in pfor n %d ok6\n", n);
+
+    for (LO d = 0; d < tri_pts.size()/dim; ++d) {
+      fprintf(stderr, "in tri_pts node %d is {%f,%f}\n"
+          ,d, tri_pts[d*dim + 0], tri_pts[d*dim + 1]);
+    }
 
     auto nodes_det = getTriJacDetNodes<15>(order, tri_pts);
     fprintf(stderr, "in pfor n %d ok7\n", n);
