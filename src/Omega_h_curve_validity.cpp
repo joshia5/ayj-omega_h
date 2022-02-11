@@ -231,12 +231,12 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes, LO order) {
   fprintf(stderr, "in pfor ok7.1\n");
   for (LO i = 0; i < 3; ++i) {
     if (nodes[i] < minAcceptable) {
-      //return -1;
       return i+2;
     }
   }
-  fprintf(stderr, "in pfor ok7.2\n");
+  fprintf(stderr, "in pfor ok7.2 order%d\n", order);
 
+  /*
   Real minJ = 0;
   for (LO edge = 0; edge < 3; ++edge) {
     for (LO i = 0; i < 2*(order-1)-1; ++i) {
@@ -260,6 +260,7 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes, LO order) {
       }
     }
   }
+  */
   fprintf(stderr, "in pfor ok7.4\n");
   return -1;
 }
@@ -276,7 +277,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
   auto order = mesh->get_max_order();
   OMEGA_H_CHECK(order == 3);
 
-  Write<LO> is_invalid(new_tris.size());
+  Write<LO> is_invalid(new_tris.size(), -1);
   //LO const ntri_pts = 10;
 
   auto check_validity = OMEGA_H_LAMBDA (LO n) {
