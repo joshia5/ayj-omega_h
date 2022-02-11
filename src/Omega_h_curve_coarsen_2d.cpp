@@ -10,32 +10,16 @@
 
 namespace Omega_h {
 
-/*TODO old2new and edge pts cannot be set in the same routine
-void copy_same_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new) {
-  auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
-  auto const nold_edges = mesh->nedges();
-  auto copy_sameedgePts = OMEGA_H_LAMBDA(LO i) {
-    if (old2new[i] != -1) {
-      LO new_face = old2new[i];
-      for (I8 d = 0; d < dim; ++d) {
-        edge_ctrlPts[new_face*dim + d] = old_edgeCtrlPts[i*dim + d];
-      }
-    }
-  };
-  parallel_for(nold_edges, std::move(copy_sameedgePts),
-      "copy same edgectrlPts");
-  return;
-}
-*/
-
 LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,
-                                     LOs old_verts2new_verts) {
+                                     LOs old_verts2new_verts,
+                                     LOs old_edges2new_edges) {
   printf("in coarsen curved edges fn\n");
   OMEGA_H_TIME_FUNCTION;
   //auto const nold_edge = old2new.size();
   auto const nold_verts = mesh->nverts();
   auto const nold_faces = mesh->nfaces();
+  auto const nold_edges = mesh->nedges();
   OMEGA_H_CHECK(nold_verts == old_verts2new_verts.size());
   auto const old_ev2v = mesh->get_adj(1, 0).ab2b;
   auto const old_fe2e = mesh->get_adj(2, 1).ab2b;
@@ -108,7 +92,19 @@ LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   new_mesh->add_tag<Real>(2, "bezier_pts", n_face_pts*dim);
   new_mesh->set_tag_for_ctrlPts(2, Reals(face_ctrlPts));
 
-  auto edge_points = OMEGA_H_LAMBDA(LO i) {
+  auto copy_sameedgePts = OMEGA_H_LAMBDA(LO i) {
+    if (old_edges2new_edges[i] != -1) {
+      LO new_edge = old_edges2new_edges[i];
+      for (I8 d = 0; d < dim; ++d) {
+        edge_ctrlPts[new_edge*dim + d] = old_edgeCtrlPts[i*dim + d];
+      }
+    }
+  };
+  parallel_for(nold_edges, std::move(copy_sameedgePts),
+      "copy same edgectrlPts");
+
+  //TODO change this to work on only prod edges
+  auto prod_edge_points = OMEGA_H_LAMBDA(LO i) {
     auto v0 = new_ev2v[i*2 + 0];
     auto v1 = new_ev2v[i*2 + 1];
     for (LO j=0; j<dim; ++j) {
@@ -118,7 +114,7 @@ LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           (new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_2_cube();
     }
   };
-  parallel_for(nnew_edge, std::move(edge_points),
+  parallel_for(nnew_edge, std::move(prod_edge_points),
       "edge_points");
   new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim, Reals(edge_ctrlPts));
   new_mesh->set_tag_for_ctrlPts(1, Reals(edge_ctrlPts));

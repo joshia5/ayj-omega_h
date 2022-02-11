@@ -1107,7 +1107,7 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
 
 LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh,
                                       LOs old_ents2new_ents, LOs prods2new_ents,
-                                      LOs keys2prods, LOs old_verts2new_verts);
+                                      LOs keys2prods, LOs old_verts2new_verts, LOs old_edges2new_edges);
 LOs checkValidity_2d(Mesh *new_mesh, LOs new_tris);
 
 // workaround CUDA compiler bug
