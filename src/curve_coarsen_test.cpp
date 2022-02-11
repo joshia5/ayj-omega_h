@@ -23,7 +23,7 @@ void test_tri_validity(Library *lib) {
   auto ev2v = mesh.ask_down(1, 0).ab2b;
 
   mesh.add_tag<Real>(0, "bezier_pts", dim, coords);
-  mesh.set_tag_for_ctrlPts(1, Reals({1.0/3.0,0.0, 2.0/3.0,0.0, 
+  mesh.set_tag_for_ctrlPts(1, Reals({1.0/3.0,0.0, 2.0/3.0,0.0,
                                      2.0/3.0,1.0/3.0, 1.0/3.0,2.0/3.0,
                                      0.0,2.0/3.0, 0.0,1.0/3.0}));
   mesh.set_tag_for_ctrlPts(2, Reals({1.0/3.0, 1.0/3.0}));
