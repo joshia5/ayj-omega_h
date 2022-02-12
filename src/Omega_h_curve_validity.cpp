@@ -354,13 +354,13 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
       }
 
       //TODO
-      index = j + 3;
+      index = 3;
       printf("index %d\n", index);
       if (flip[j] == -1) {
         for (I8 d = 0; d < dim; ++d) {
-          tri_pts[index*dim + d] =
+          tri_pts[index*dim + j*n_edge_pts*dim + d] =
             edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
-          tri_pts[index*dim + dim + d] =
+          tri_pts[index*dim + j*n_edge_pts*dim + dim + d] =
             edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
         }
       }
@@ -368,15 +368,14 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
         //for flipped edges
         OMEGA_H_CHECK (flip[j] == 1);
         for (I8 d = 0; d < dim; ++d) {
-          tri_pts[index*dim + d] =
+          tri_pts[index*dim + j*n_edge_pts*dim + d] =
             edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
-          tri_pts[index*dim + dim + d] =
+          tri_pts[index*dim + j*n_edge_pts*dim + dim + d] =
             edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
         }
       }
     }
     fprintf(stderr, "in pfor n %d ok5\n", n);
-      while(1);
 
     //query the face's ctrl pt and store
     for (I8 d = 0; d < dim; ++d) {
