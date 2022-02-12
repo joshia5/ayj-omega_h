@@ -109,7 +109,7 @@ int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
   //test_disc_collapse(&lib);
-  //test_disc_validity(&lib);
+  test_disc_validity(&lib);
   test_tri_validity(&lib);
   return 0;
 }
