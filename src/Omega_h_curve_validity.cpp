@@ -207,35 +207,25 @@ OMEGA_H_INLINE Real Nijk(Few<Real, 20> nodes, LO d, LO I, LO J) {
 template <Int n>
 OMEGA_H_INLINE Few<Real, n> getTriJacDetNodes(
     LO P, Few<Real, 20> const& elemNodes) {
-  fprintf(stderr, "in pfor ok6.0\n");
   Few<Real, n> nodes;//n=15
   for (LO I = 0; I <= 2*(P-1); ++I) {
     for (LO J = 0; J <= 2*(P-1)-I; ++J) {
-        fprintf(stderr, "i=%d, j=%d, index %d size %d in pfor ok6.1\n",
-            I, J, getTriNodeIndex(2*(P-1),I,J), nodes.size());
         OMEGA_H_CHECK(getTriNodeIndex(2*(P-1),I,J) < nodes.size());
-        fprintf(stderr, "in pfor ok6.2\n");
         nodes[getTriNodeIndex(2*(P-1),I,J)] = Nijk(elemNodes,P,I,J);
-        fprintf(stderr, "in pfor ok6.3\n");
     }
   }
-  fprintf(stderr, "in pfor ok6.4\n");
   return nodes;
 }
 
 template<Int n>
-OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes, LO order) {
-  fprintf(stderr, "in pfor ok7.0\n");
+OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
   // first 3 vertices
   Real minAcceptable = 0.0;
-  fprintf(stderr, "in pfor ok7.1\n");
   for (LO i = 0; i < 3; ++i) {
-    //fprintf(stderr, "i %d Nijk %d\n",i,nodes[i]);
     if (std::abs(nodes[i] - minAcceptable) < EPSILON) {
       return i+2;
     }
   }
-  fprintf(stderr, "in pfor ok7.2 order%d\n", order);
 
   /*
   Real minJ = 0;
@@ -251,7 +241,6 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes, LO order) {
       }
     }
   }
-  fprintf(stderr, "in pfor ok7.3\n");
 
   for (LO i = 0; i < (2*order-3)*(2*order-4)/2; ++i) {
     if (nodes[6*(order-1)+i] < minAcceptable) {
@@ -262,7 +251,6 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes, LO order) {
     }
   }
   */
-  fprintf(stderr, "in pfor ok7.4\n");
   return -1;
 }
 
@@ -282,32 +270,17 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
   //LO const ntri_pts = 10;
 
   auto check_validity = OMEGA_H_LAMBDA (LO n) {
-    fprintf(stderr, "in pfor n %d ok0\n", n);
     //auto foo = b2[1][1][1];
     Few<Real, 20> tri_pts;//ntri_pts*dim=20
     auto tri = new_tris[n];
 
-    fprintf(stderr, "in pfor n %d ok1\n", n);
     //query the tri's down verts's ctrl pts and store
     for (LO j = 0; j < 3; ++j) {
       auto p = get_vector<2>(vertCtrlPts, fv2v[tri*3 + j]);
-
-      LO index = 0;
-      if (j == 0) {
-        index = getTriNodeIndex(order, 0, 0);
-        OMEGA_H_CHECK(index == 2);
-      }
-      if (j == 2) {
-        index = getTriNodeIndex(order, 0, 3);
-        OMEGA_H_CHECK(index == 1);
-      }
-
       for (LO k = 0; k < dim; ++k) {
         tri_pts[j*dim + k] = p[k];
-        //tri_pts[index*dim + k] = p[k];
       }
     }
-    fprintf(stderr, "in pfor n %d ok2\n", n);
 
     //query the tri's down edge's ctrl pts and store
 
@@ -324,7 +297,6 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     auto e2v0 = ev2v[e2*2 + 0];
     auto e2v1 = ev2v[e2*2 + 1];
     auto flip = vector_3(-1, -1, -1);
-    fprintf(stderr, "in pfor n %d ok3\n", n);
     if ((e0v0 == v1) && (e0v1 == v0)) {
       flip[0] = 1;
     }
@@ -340,22 +312,9 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     if ((e2v0 == v0) && (e2v1 == v2)) {
       flip[2] = 1;
     }
-    fprintf(stderr, "in pfor n %d ok4\n", n);
 
     for (LO j = 0; j < 3; ++j) {
       LO index = 3;
-      if (j == 0) {
-        index = getTriNodeIndex(order, 1, 0);
-        OMEGA_H_CHECK(index == 7);
-      }
-      if (j == 2) {
-        index = getTriNodeIndex(order, 0, 2);
-        OMEGA_H_CHECK(index == 5);
-      }
-
-      //TODO
-      index = 3;
-      printf("index %d\n", index);
       if (flip[j] == -1) {
         for (I8 d = 0; d < dim; ++d) {
           tri_pts[index*dim + j*n_edge_pts*dim + d] =
@@ -375,25 +334,16 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
         }
       }
     }
-    fprintf(stderr, "in pfor n %d ok5\n", n);
 
     //query the face's ctrl pt and store
     for (I8 d = 0; d < dim; ++d) {
-      OMEGA_H_CHECK(9 == getTriNodeIndex(order, 1, 1));
-      tri_pts[9*dim + d] = faceCtrlPts[tri*dim + d];
-    }
-
-    fprintf(stderr, "in pfor n %d ok6\n", n);
-
-    for (LO d = 0; d < tri_pts.size()/dim; ++d) {
-      fprintf(stderr, "in tri_pts node %d is {%f,%f}\n"
-          ,d, tri_pts[d*dim + 0], tri_pts[d*dim + 1]);
+      LO index = 9;
+      tri_pts[index*dim + d] = faceCtrlPts[tri*dim + d];
     }
 
     auto nodes_det = getTriJacDetNodes<15>(order, tri_pts);
-    fprintf(stderr, "in pfor n %d ok7\n", n);
 
-    is_invalid[n] = checkMinJacDet<15>(nodes_det, order);
+    is_invalid[n] = checkMinJacDet<15>(nodes_det);
     fprintf(stderr, "in pfor n %d size %d is_invalid %d ok8\n"
         , n, new_tris.size(), is_invalid[n]);
   };
