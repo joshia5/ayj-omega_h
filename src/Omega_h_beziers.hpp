@@ -1108,20 +1108,15 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
 LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh,
                                       LOs old_ents2new_ents, LOs prods2new_ents,
                                       LOs keys2prods, LOs old_verts2new_verts, LOs old_edges2new_edges);
-LOs checkValidity_2d(Mesh *new_mesh, LOs new_tris);
 
-// workaround CUDA compiler bug
-#ifdef OMEGA_H_USE_CUDA
-__host__
-#endif
-    void
-    assign(Mesh& a, Mesh const& b);
+template <Int ent_dim>
+LOs checkValidity(Mesh *new_mesh, LOs new_tris);
 
-#define OMEGA_H_EXPL_INST_DECL(T)
-OMEGA_H_EXPL_INST_DECL(I8)
-OMEGA_H_EXPL_INST_DECL(I32)
-OMEGA_H_EXPL_INST_DECL(I64)
-OMEGA_H_EXPL_INST_DECL(Real)
+#define OMEGA_H_EXPL_INST_DECL(ent_dim)                                            \
+  extern template LOs checkValidity(Mesh *new_mesh, LOs new_tris);
+OMEGA_H_EXPL_INST_DECL(1)
+OMEGA_H_EXPL_INST_DECL(2)
+OMEGA_H_EXPL_INST_DECL(3)
 #undef OMEGA_H_EXPL_INST_DECL
 
 } // namespace Omega_h

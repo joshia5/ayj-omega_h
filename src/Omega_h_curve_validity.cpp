@@ -254,14 +254,14 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
   return -1;
 }
 
-LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
+template <Int ent_dim>
+LOs checkValidity(Mesh *mesh, LOs new_tris) {
   auto fv2v = mesh->ask_down(2, 0).ab2b;
   auto fe2e = mesh->get_adj(2, 1).ab2b;
   auto ev2v = mesh->get_adj(1, 0).ab2b;
   auto vertCtrlPts = mesh->get_ctrlPts(0);
   auto edgeCtrlPts = mesh->get_ctrlPts(1);
   auto faceCtrlPts = mesh->get_ctrlPts(2);
-  auto dim = mesh->dim();
   auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
   auto order = mesh->get_max_order();
   OMEGA_H_CHECK(order == 3);
@@ -276,9 +276,9 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
 
     //query the tri's down verts's ctrl pts and store
     for (LO j = 0; j < 3; ++j) {
-      auto p = get_vector<2>(vertCtrlPts, fv2v[tri*3 + j]);
-      for (LO k = 0; k < dim; ++k) {
-        tri_pts[j*dim + k] = p[k];
+      auto p = get_vector<ent_dim>(vertCtrlPts, fv2v[tri*3 + j]);
+      for (LO k = 0; k < ent_dim; ++k) {
+        tri_pts[j*ent_dim + k] = p[k];
       }
     }
 
@@ -316,29 +316,29 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
     for (LO j = 0; j < 3; ++j) {
       LO index = 3;
       if (flip[j] == -1) {
-        for (I8 d = 0; d < dim; ++d) {
-          tri_pts[index*dim + j*n_edge_pts*dim + d] =
-            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
-          tri_pts[index*dim + j*n_edge_pts*dim + dim + d] =
-            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
+        for (I8 d = 0; d < ent_dim; ++d) {
+          tri_pts[index*ent_dim + j*n_edge_pts*ent_dim + d] =
+            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*ent_dim + d];
+          tri_pts[index*ent_dim + j*n_edge_pts*ent_dim + ent_dim + d] =
+            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*ent_dim + ent_dim + d];
         }
       }
       else {
         //for flipped edges
         OMEGA_H_CHECK (flip[j] == 1);
-        for (I8 d = 0; d < dim; ++d) {
-          tri_pts[index*dim + j*n_edge_pts*dim + d] =
-            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + dim + d];
-          tri_pts[index*dim + j*n_edge_pts*dim + dim + d] =
-            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*dim + d];
+        for (I8 d = 0; d < ent_dim; ++d) {
+          tri_pts[index*ent_dim + j*n_edge_pts*ent_dim + d] =
+            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*ent_dim + ent_dim + d];
+          tri_pts[index*ent_dim + j*n_edge_pts*ent_dim + ent_dim + d] =
+            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*ent_dim + d];
         }
       }
     }
 
     //query the face's ctrl pt and store
-    for (I8 d = 0; d < dim; ++d) {
+    for (I8 d = 0; d < ent_dim; ++d) {
       LO index = 9;
-      tri_pts[index*dim + d] = faceCtrlPts[tri*dim + d];
+      tri_pts[index*ent_dim + d] = faceCtrlPts[tri*ent_dim + d];
     }
 
     auto nodes_det = getTriJacDetNodes<15>(order, tri_pts);
@@ -352,11 +352,11 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris) {
   return LOs(is_invalid);
 }
 
-#define OMEGA_H_INST(T)
-OMEGA_H_INST(I8)
-OMEGA_H_INST(I32)
-OMEGA_H_INST(I64)
-OMEGA_H_INST(Real)
-#undef OMEGA_H_INST
+#define OMEGA_H_EXPL_INST_DECL(ent_dim)                                            \
+  template LOs checkValidity(Mesh *new_mesh, LOs new_tris);
+OMEGA_H_EXPL_INST_DECL(1)
+OMEGA_H_EXPL_INST_DECL(2)
+OMEGA_H_EXPL_INST_DECL(3)
+#undef OMEGA_H_EXPL_INST_DECL
 
 } //namespace

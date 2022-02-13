@@ -27,7 +27,7 @@ void test_tri_validity(Library *lib) {
                                      2.0/3.0,1.0/3.0, 1.0/3.0,2.0/3.0,
                                      0.0,2.0/3.0, 0.0,1.0/3.0}));
   mesh.set_tag_for_ctrlPts(2, Reals({1.0/3.0, 1.0/3.0}));
-  auto valid_tris = checkValidity_2d(&mesh, LOs(mesh.nfaces(), 0, 1));
+  auto valid_tris = checkValidity<2>(&mesh, LOs(mesh.nfaces(), 0, 1));
   return;
 }
 
@@ -58,7 +58,7 @@ void test_disc_validity(Library *lib) {
   //vtuPath = "/users/joshia5/Meshes/curved/disc100_cubic_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
 
-  auto valid_tris = checkValidity_2d(&mesh, LOs(mesh.nfaces(), 0, 1));
+  auto valid_tris = checkValidity<2>(&mesh, LOs(mesh.nfaces(), 0, 1));
   return;
 }
 
