@@ -119,7 +119,7 @@ LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim, Reals(edge_ctrlPts));
   new_mesh->set_tag_for_ctrlPts(1, Reals(edge_ctrlPts));
 
-  auto valid_tris = checkValidity<2>(new_mesh, prods2new);
+  auto valid_tris = checkValidity(new_mesh, prods2new, 2);
   fprintf(stderr, "out of check validity\n");
 
   return LOs();

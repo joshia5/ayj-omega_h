@@ -1109,15 +1109,7 @@ LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh,
                                       LOs old_ents2new_ents, LOs prods2new_ents,
                                       LOs keys2prods, LOs old_verts2new_verts, LOs old_edges2new_edges);
 
-template <Int ent_dim>
-LOs checkValidity(Mesh *new_mesh, LOs new_tris);
-
-#define OMEGA_H_EXPL_INST_DECL(ent_dim)                                            \
-  extern template LOs checkValidity(Mesh *new_mesh, LOs new_tris);
-OMEGA_H_EXPL_INST_DECL(1)
-OMEGA_H_EXPL_INST_DECL(2)
-OMEGA_H_EXPL_INST_DECL(3)
-#undef OMEGA_H_EXPL_INST_DECL
+LOs checkValidity(Mesh *new_mesh, LOs new_tris, Int const ent_dim);
 
 } // namespace Omega_h
 

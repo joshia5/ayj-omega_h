@@ -222,6 +222,7 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
   // first 3 vertices
   Real minAcceptable = 0.0;
   for (LO i = 0; i < 3; ++i) {
+    fprintf(stderr, "i %d Nijk[i[ %f\n", i, nodes[i]);
     if (std::abs(nodes[i] - minAcceptable) < EPSILON) {
       return i+2;
     }
@@ -254,8 +255,7 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
   return -1;
 }
 
-template <Int ent_dim>
-LOs checkValidity(Mesh *mesh, LOs new_tris) {
+LOs checkValidity(Mesh *mesh, LOs new_tris, Int const ent_dim) {
   auto fv2v = mesh->ask_down(2, 0).ab2b;
   auto fe2e = mesh->get_adj(2, 1).ab2b;
   auto ev2v = mesh->get_adj(1, 0).ab2b;
@@ -271,14 +271,24 @@ LOs checkValidity(Mesh *mesh, LOs new_tris) {
 
   auto check_validity = OMEGA_H_LAMBDA (LO n) {
     //auto foo = b2[1][1][1];
+    //TODO change tri_pts size to 30 for 3d
     Few<Real, 20> tri_pts;//ntri_pts*dim=20
     auto tri = new_tris[n];
 
     //query the tri's down verts's ctrl pts and store
     for (LO j = 0; j < 3; ++j) {
-      auto p = get_vector<ent_dim>(vertCtrlPts, fv2v[tri*3 + j]);
-      for (LO k = 0; k < ent_dim; ++k) {
-        tri_pts[j*ent_dim + k] = p[k];
+      if (ent_dim == 2) {
+        auto p = get_vector<2>(vertCtrlPts, fv2v[tri*3 + j]);
+        for (LO k = 0; k < ent_dim; ++k) {
+          tri_pts[j*ent_dim + k] = p[k];
+        }
+      }
+      else {
+        OMEGA_H_CHECK (ent_dim == 3);
+        auto p = get_vector<3>(vertCtrlPts, fv2v[tri*3 + j]);
+        for (LO k = 0; k < ent_dim; ++k) {
+          tri_pts[j*ent_dim + k] = p[k];
+        }
       }
     }
 
@@ -351,12 +361,5 @@ LOs checkValidity(Mesh *mesh, LOs new_tris) {
 
   return LOs(is_invalid);
 }
-
-#define OMEGA_H_EXPL_INST_DECL(ent_dim)                                            \
-  template LOs checkValidity(Mesh *new_mesh, LOs new_tris);
-OMEGA_H_EXPL_INST_DECL(1)
-OMEGA_H_EXPL_INST_DECL(2)
-OMEGA_H_EXPL_INST_DECL(3)
-#undef OMEGA_H_EXPL_INST_DECL
 
 } //namespace
