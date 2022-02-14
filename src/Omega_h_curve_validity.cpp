@@ -223,7 +223,8 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
   Real minAcceptable = 0.0;
   for (LO i = 0; i < 3; ++i) {
     fprintf(stderr, "i %d Nijk[i[ %f\n", i, nodes[i]);
-    if (std::abs(nodes[i] - minAcceptable) < EPSILON) {
+    if (nodes[i] < minAcceptable) {
+    //if (std::abs(nodes[i] - minAcceptable) > EPSILON) {
       return i+2;
     }
   }
@@ -356,6 +357,7 @@ LOs checkValidity(Mesh *mesh, LOs new_tris, Int const ent_dim) {
     is_invalid[n] = checkMinJacDet<15>(nodes_det);
     fprintf(stderr, "in pfor n %d size %d is_invalid %d ok8\n"
         , n, new_tris.size(), is_invalid[n]);
+    if (is_invalid[n] > 0) Omega_h_fail("invalid tri\n");
   };
   parallel_for(new_tris.size(), std::move(check_validity));
 
