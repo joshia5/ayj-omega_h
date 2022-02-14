@@ -24,7 +24,7 @@ void test_tri_validity(Library *lib) {
   auto ev2v = mesh.ask_down(1, 0).ab2b;
 
   mesh.add_tag<Real>(0, "bezier_pts", dim, coords);
-  mesh.set_tag_for_ctrlPts(1, Reals({1.0/3.0,1.0, 2.0/3.0,1.0,
+  mesh.set_tag_for_ctrlPts(1, Reals({1.0/3.0,0.0, 2.0/3.0,0.0,
                                      2.0/3.0,1.0/3.0, 1.0/3.0,2.0/3.0,
                                      0.0,2.0/3.0, 0.0,1.0/3.0}));
   mesh.set_tag_for_ctrlPts(2, Reals({1.0/3.0, 1.0/3.0}));
@@ -33,13 +33,11 @@ void test_tri_validity(Library *lib) {
   build_cubic_wireframe_2d(&mesh, &wireframe_mesh, 4);
   std::string vtuPath =
     "/users/joshia5/Meshes/curved/1tri_cubic_wireframe.vtu";
-    //"/users/joshia5/Meshes/curved/disc100_cubic_wireframe.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
   auto cubic_curveVtk_mesh = Mesh(lib);
   cubic_curveVtk_mesh.set_comm(comm);
   build_cubic_curveVtk_2d(&mesh, &cubic_curveVtk_mesh, 4);
   vtuPath = "/users/joshia5/Meshes/curved/1tri_cubic_curveVtk.vtu";
-  //vtuPath = "/users/joshia5/Meshes/curved/disc100_cubic_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
   auto valid_tris = checkValidity(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
   return;
