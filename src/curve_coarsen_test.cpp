@@ -43,13 +43,14 @@ void test_tri_validity(Library *lib) {
   return;
 }
 
+/* comment for cuda test
 void test_disc_validity(Library *lib) {
   auto comm = lib->world();
 
-  /*
-  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
-                          "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
-  */
+  
+  //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
+    //                      "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
+  
   auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
                             "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", comm);
 
@@ -79,9 +80,9 @@ void test_disc_collapse(Library *lib) {
 
   auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
                           "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
-  /*auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
-                            "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", lib.world());
-                            */
+  //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
+    //                        "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", lib.world());
+                            
   calc_quad_ctrlPts_from_interpPts(&mesh);
   elevate_curve_order_2to3(&mesh);
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
@@ -118,12 +119,12 @@ void test_disc_collapse(Library *lib) {
   mesh.ask_qualities();
   return;
 }
-
+*/
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
   //test_disc_collapse(&lib);
-  test_disc_validity(&lib);
+  //test_disc_validity(&lib);
   test_tri_validity(&lib);
   return 0;
 }
