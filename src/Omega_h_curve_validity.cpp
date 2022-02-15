@@ -7,9 +7,9 @@
 
 namespace Omega_h {
 
-LO binomial(int n, int i) {
+OMEGA_H_INLINE LO binomial(int n, int i) {
 
-  i = std::min(n-i,i);
+  i = min2(n-i,i);
 
   if (i == 0)
     return 1;
@@ -68,7 +68,7 @@ LO binomial(int n, int i) {
   return bnTable[n][i-2];
 }
 
-LO trinomial(LO n, LO i, LO j) {
+OMEGA_H_INLINE LO trinomial(LO n, LO i, LO j) {
   return binomial(n,i)*binomial(n-i,j);
 }
 
@@ -134,9 +134,8 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
   // first 3 vertices
   Real minAcceptable = 0.0;
   for (LO i = 0; i < 3; ++i) {
-    fprintf(stderr, "i %d Nijk[i] %f\n", i, nodes[i]);
+    printf("i %d Nijk[i] %f\n", i, nodes[i]);
     if (nodes[i] < minAcceptable) {
-    //if (std::abs(nodes[i] - minAcceptable) > EPSILON) {
       return i+2;
     }
   }
@@ -266,7 +265,7 @@ LOs checkValidity(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
     auto nodes_det = getTriJacDetNodes<15>(order, tri_pts);
 
     is_invalid[n] = checkMinJacDet<15>(nodes_det);
-    if (is_invalid[n] > 0) Omega_h_fail("invalid tri %d\n", tri);
+    if (is_invalid[n] > 0) printf("invalid tri %d\n", tri);
   };
   parallel_for(new_tris.size(), std::move(check_validity));
 
