@@ -72,94 +72,6 @@ LO trinomial(LO n, LO i, LO j) {
   return binomial(n,i)*binomial(n-i,j);
 }
 
-static unsigned const b2_0_0[1] = {2};
-static unsigned const* const b2_0[1] = {b2_0_0};
-static unsigned const b2_1_0[2] = {2,1};
-static unsigned const b2_1_1[1] = {0};
-static unsigned const* const b2_1[2] = {b2_1_0,b2_1_1};
-static unsigned const b2_2_0[3] = {2,4,1};
-static unsigned const b2_2_1[2] = {5,3};
-static unsigned const b2_2_2[1] = {0};
-static unsigned const* const b2_2[3] = {b2_2_0,b2_2_1,b2_2_2};
-static unsigned const b2_3_0[4] = {2,6,5,1};
-static unsigned const b2_3_1[3] = {7,9,4};
-static unsigned const b2_3_2[2] = {8,3};
-static unsigned const b2_3_3[1] = {0};
-static unsigned const* const b2_3[4] = {b2_3_0,b2_3_1,b2_3_2,b2_3_3};
-static unsigned const b2_4_0[5] = {2,8,7,6,1};
-static unsigned const b2_4_1[4] = {9,14,13,5};
-static unsigned const b2_4_2[3] = {10,12,4};
-static unsigned const b2_4_3[2] = {11,3};
-static unsigned const b2_4_4[1] = {0};
-static unsigned const* const b2_4[5] = {b2_4_0,b2_4_1,b2_4_2,b2_4_3,b2_4_4};
-static unsigned const b2_5_0[6] = {2,10,9,8,7,1};
-static unsigned const b2_5_1[5] = {11,20,19,17,6};
-static unsigned const b2_5_2[4] = {12,18,16,5};
-static unsigned const b2_5_3[3] = {13,15,4};
-static unsigned const b2_5_4[2] = {14,3};
-static unsigned const b2_5_5[1] = {0};
-static unsigned const* const b2_5[6] =
-{b2_5_0,b2_5_1,b2_5_2,b2_5_3,b2_5_4,b2_5_5};
-static unsigned const b2_6_0[7] = {2,12,11,10,9,8,1};
-static unsigned const b2_6_1[6] = {13,27,26,24,21,7};
-static unsigned const b2_6_2[5] = {14,25,23,20,6};
-static unsigned const b2_6_3[4] = {15,22,19,5};
-static unsigned const b2_6_4[3] = {16,18,4};
-static unsigned const b2_6_5[2] = {17,3};
-static unsigned const b2_6_6[1] = {0};
-static unsigned const* const b2_6[7] =
-{b2_6_0,b2_6_1,b2_6_2,b2_6_3,b2_6_4,b2_6_5,b2_6_6};
-static unsigned const b2_7_0[8] = {2,14,13,12,11,10,9,1};
-static unsigned const b2_7_1[7] = {15,35,34,32,29,25,8};
-static unsigned const b2_7_2[6] = {16,33,31,28,24,7};
-static unsigned const b2_7_3[5] = {17,30,27,23,6};
-static unsigned const b2_7_4[4] = {18,26,22,5};
-static unsigned const b2_7_5[3] = {19,21,4};
-static unsigned const b2_7_6[2] = {20,3};
-static unsigned const b2_7_7[1] = {0};
-static unsigned const* const b2_7[8] =
-{b2_7_0,b2_7_1,b2_7_2,b2_7_3,b2_7_4,b2_7_5,b2_7_6,b2_7_7};
-static unsigned const b2_8_0[9] = {2,16,15,14,13,12,11,10,1};
-static unsigned const b2_8_1[8] = {17,44,43,41,38,34,29,9};
-static unsigned const b2_8_2[7] = {18,42,40,37,33,28,8};
-static unsigned const b2_8_3[6] = {19,39,36,32,27,7};
-static unsigned const b2_8_4[5] = {20,35,31,26,6};
-static unsigned const b2_8_5[4] = {21,30,25,5};
-static unsigned const b2_8_6[3] = {22,24,4};
-static unsigned const b2_8_7[2] = {23,3};
-static unsigned const b2_8_8[1] = {0};
-static unsigned const* const b2_8[9] =
-{b2_8_0,b2_8_1,b2_8_2,b2_8_3,b2_8_4,b2_8_5,b2_8_6,b2_8_7,b2_8_8};
-static unsigned const b2_9_0[10] = {2,18,17,16,15,14,13,12,11,1};
-static unsigned const b2_9_1[9] = {19,54,53,51,48,44,39,33,10};
-static unsigned const b2_9_2[8] = {20,52,50,47,43,38,32,9};
-static unsigned const b2_9_3[7] = {21,49,46,42,37,31,8};
-static unsigned const b2_9_4[6] = {22,45,41,36,30,7};
-static unsigned const b2_9_5[5] = {23,40,35,29,6};
-static unsigned const b2_9_6[4] = {24,34,28,5};
-static unsigned const b2_9_7[3] = {25,27,4};
-static unsigned const b2_9_8[2] = {26,3};
-static unsigned const b2_9_9[1] = {0};
-static unsigned const* const b2_9[10] =
-{b2_9_0,b2_9_1,b2_9_2,b2_9_3,b2_9_4,b2_9_5,b2_9_6,b2_9_7,b2_9_8,b2_9_9};
-static unsigned const b2_10_0[11] = {2,20,19,18,17,16,15,14,13,12,1};
-static unsigned const b2_10_1[10] = {21,65,64,62,59,55,50,44,37,11};
-static unsigned const b2_10_2[9] = {22,63,61,58,54,49,43,36,10};
-static unsigned const b2_10_3[8] = {23,60,57,53,48,42,35,9};
-static unsigned const b2_10_4[7] = {24,56,52,47,41,34,8};
-static unsigned const b2_10_5[6] = {25,51,46,40,33,7};
-static unsigned const b2_10_6[5] = {26,45,39,32,6};
-static unsigned const b2_10_7[4] = {27,38,31,5};
-static unsigned const b2_10_8[3] = {28,30,4};
-static unsigned const b2_10_9[2] = {29,3};
-static unsigned const b2_10_10[1] = {0};
-static unsigned const* const b2_10[11] =
-{b2_10_0,b2_10_1,b2_10_2,b2_10_3,b2_10_4,b2_10_5,b2_10_6,b2_10_7,b2_10_8,
-  b2_10_9,b2_10_10};
-
-unsigned const* const* const b2[11] =
-{b2_0,b2_1,b2_2,b2_3,b2_4,b2_5,b2_6,b2_7,b2_8,b2_9,b2_10};
-
 OMEGA_H_INLINE LO computeTriNodeIndex (LO P, LO i, LO j) {
   LO k = P-i-j;
   if (i == P) return 0;
@@ -256,7 +168,7 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
   return -1;
 }
 
-LOs checkValidity(Mesh *mesh, LOs new_tris, Int const ent_dim) {
+LOs checkValidity(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
   auto fv2v = mesh->ask_down(2, 0).ab2b;
   auto fe2e = mesh->get_adj(2, 1).ab2b;
   auto ev2v = mesh->get_adj(1, 0).ab2b;
@@ -271,24 +183,23 @@ LOs checkValidity(Mesh *mesh, LOs new_tris, Int const ent_dim) {
   //LO const ntri_pts = 10;
 
   auto check_validity = OMEGA_H_LAMBDA (LO n) {
-    printf("b2 %d\n", b2[1][1][1]);
     //TODO change tri_pts size to 30 for 3d
     Few<Real, 20> tri_pts;//ntri_pts*dim=20
     auto tri = new_tris[n];
 
     //query the tri's down verts's ctrl pts and store
     for (LO j = 0; j < 3; ++j) {
-      if (ent_dim == 2) {
+      if (mesh_dim == 2) {
         auto p = get_vector<2>(vertCtrlPts, fv2v[tri*3 + j]);
-        for (LO k = 0; k < ent_dim; ++k) {
-          tri_pts[j*ent_dim + k] = p[k];
+        for (LO k = 0; k < mesh_dim; ++k) {
+          tri_pts[j*mesh_dim + k] = p[k];
         }
       }
       else {
-        OMEGA_H_CHECK (ent_dim == 3);
+        OMEGA_H_CHECK (mesh_dim == 3);
         auto p = get_vector<3>(vertCtrlPts, fv2v[tri*3 + j]);
-        for (LO k = 0; k < ent_dim; ++k) {
-          tri_pts[j*ent_dim + k] = p[k];
+        for (LO k = 0; k < mesh_dim; ++k) {
+          tri_pts[j*mesh_dim + k] = p[k];
         }
       }
     }
@@ -327,29 +238,29 @@ LOs checkValidity(Mesh *mesh, LOs new_tris, Int const ent_dim) {
     for (LO j = 0; j < 3; ++j) {
       LO index = 3;
       if (flip[j] == -1) {
-        for (I8 d = 0; d < ent_dim; ++d) {
-          tri_pts[index*ent_dim + j*n_edge_pts*ent_dim + d] =
-            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*ent_dim + d];
-          tri_pts[index*ent_dim + j*n_edge_pts*ent_dim + ent_dim + d] =
-            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*ent_dim + ent_dim + d];
+        for (I8 d = 0; d < mesh_dim; ++d) {
+          tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] =
+            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*mesh_dim + d];
+          tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
+            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*mesh_dim + mesh_dim + d];
         }
       }
       else {
         //for flipped edges
         OMEGA_H_CHECK (flip[j] == 1);
-        for (I8 d = 0; d < ent_dim; ++d) {
-          tri_pts[index*ent_dim + j*n_edge_pts*ent_dim + d] =
-            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*ent_dim + ent_dim + d];
-          tri_pts[index*ent_dim + j*n_edge_pts*ent_dim + ent_dim + d] =
-            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*ent_dim + d];
+        for (I8 d = 0; d < mesh_dim; ++d) {
+          tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] =
+            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*mesh_dim + mesh_dim + d];
+          tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
+            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*mesh_dim + d];
         }
       }
     }
 
     //query the face's ctrl pt and store
-    for (I8 d = 0; d < ent_dim; ++d) {
+    for (I8 d = 0; d < mesh_dim; ++d) {
       LO index = 9;
-      tri_pts[index*ent_dim + d] = faceCtrlPts[tri*ent_dim + d];
+      tri_pts[index*mesh_dim + d] = faceCtrlPts[tri*mesh_dim + d];
     }
 
     auto nodes_det = getTriJacDetNodes<15>(order, tri_pts);
