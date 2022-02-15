@@ -222,7 +222,7 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
   // first 3 vertices
   Real minAcceptable = 0.0;
   for (LO i = 0; i < 3; ++i) {
-    fprintf(stderr, "i %d Nijk[i[ %f\n", i, nodes[i]);
+    fprintf(stderr, "i %d Nijk[i] %f\n", i, nodes[i]);
     if (nodes[i] < minAcceptable) {
     //if (std::abs(nodes[i] - minAcceptable) > EPSILON) {
       return i+2;
@@ -271,7 +271,7 @@ LOs checkValidity(Mesh *mesh, LOs new_tris, Int const ent_dim) {
   //LO const ntri_pts = 10;
 
   auto check_validity = OMEGA_H_LAMBDA (LO n) {
-    //auto foo = b2[1][1][1];
+    printf("b2 %d\n", b2[1][1][1]);
     //TODO change tri_pts size to 30 for 3d
     Few<Real, 20> tri_pts;//ntri_pts*dim=20
     auto tri = new_tris[n];
@@ -355,9 +355,7 @@ LOs checkValidity(Mesh *mesh, LOs new_tris, Int const ent_dim) {
     auto nodes_det = getTriJacDetNodes<15>(order, tri_pts);
 
     is_invalid[n] = checkMinJacDet<15>(nodes_det);
-    fprintf(stderr, "in pfor n %d size %d is_invalid %d ok8\n"
-        , n, new_tris.size(), is_invalid[n]);
-    if (is_invalid[n] > 0) Omega_h_fail("invalid tri\n");
+    if (is_invalid[n] > 0) Omega_h_fail("invalid tri %d\n", tri);
   };
   parallel_for(new_tris.size(), std::move(check_validity));
 
