@@ -43,7 +43,6 @@ void test_tri_validity(Library *lib) {
   return;
 }
 
-/* comment for cuda test
 void test_disc_validity(Library *lib) {
   auto comm = lib->world();
 
@@ -100,6 +99,10 @@ void test_disc_collapse(Library *lib) {
   //vtuPath = "/users/joshia5/Meshes/curved/disc100_cubic_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
 
+  auto coords = mesh.coords();
+  auto ev2v = mesh.get_adj(1, 0).ab2b;
+  auto fe2e = mesh.get_adj(2, 1).ab2b;
+  printf("coords %d, ev2v %d, fe2e %d\n", coords.size(), ev2v.size(), fe2e.size());
   auto opts = AdaptOpts(&mesh);
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(
@@ -119,12 +122,12 @@ void test_disc_collapse(Library *lib) {
   mesh.ask_qualities();
   return;
 }
-*/
+
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
-  //test_disc_collapse(&lib);
+  test_disc_collapse(&lib);
   //test_disc_validity(&lib);
-  test_tri_validity(&lib);
+  //test_tri_validity(&lib);
   return 0;
 }
