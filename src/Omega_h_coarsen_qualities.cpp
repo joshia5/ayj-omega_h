@@ -58,6 +58,7 @@ Reals coarsen_qualities_tmpl(
         if (will_die) continue;
         OMEGA_H_CHECK(0 <= ccv_col && ccv_col < mesh_dim + 1);
         ccv2v[ccv_col] = v_onto;  // vertices of new cell
+
         //TODO use these and interpolate edges to calculate ctrl pts and give
         //them to validity check
         //so there will be 2 functions
@@ -68,7 +69,7 @@ Reals coarsen_qualities_tmpl(
         Few<LO, 2> is_same_edge_flip = {-2, -2}; //can be max 2
         LO count_same_edge = 0;
         for (auto ee = e2ee[e]; ee < e2ee[e + 1]; ++ee) {
-          if (count_same_edge == 2) break;
+          if (count_same_edge >= 2) break;
           auto adj_e = ee2e[ee];
           printf("e %d adj_e %d\n", e , adj_e);
           auto v0 = ev2v[adj_e*2];
@@ -124,10 +125,57 @@ Reals coarsen_qualities_tmpl(
             printf("not same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
                 adj_e, v0, v1, v0_f, v1_f, v2_f, v_col, v_onto);
             for (auto ee2 = e2ee[adj_e]; ee2 < e2ee[adj_e + 1]; ++ee2) {
+              if (count_same_edge >= 2) break;
               auto adj_e2 = ee2e[ee2];
               auto v0_e2 = ev2v[adj_e2*2];
               auto v1_e2 = ev2v[adj_e2*2 + 1];
               printf("adj_e %d adj_e2 %d with verts %d %d\n", adj_e, adj_e2, v0_e2, v1_e2);
+
+              //check first edge
+              if (((v0_e2  == v0_f) && (v1_e2  == v1_f)) ||
+                  ((v0_e2  == v1_f) && (v1_e2  == v0_f))) {
+                same_edges[count_same_edge] = adj_e2;
+                if ((v0_e2  == v1_f) && (v1_e2  == v0_f)) {
+                  is_same_edge_flip[count_same_edge] = 1;
+                }
+                else {
+                  is_same_edge_flip[count_same_edge] = -1;
+                }
+                printf("found same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
+                    same_edges[count_same_edge], v0_e2 , v1_e2 , v0_f, v1_f, v2_f, v_col, v_onto);
+                ++count_same_edge;
+              }
+              //check 2nd edge
+              else if (((v0_e2 == v1_f) && (v1_e2 == v2_f)) ||
+                  ((v0_e2 == v2_f) && (v1_e2 == v1_f))) {
+                same_edges[count_same_edge] = adj_e2;
+                if ((v0_e2 == v2_f) && (v1_e2 == v1_f)) {
+                  is_same_edge_flip[count_same_edge] = 1;
+                }
+                else {
+                  is_same_edge_flip[count_same_edge] = -1;
+                }
+                printf("found same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
+                    same_edges[count_same_edge], v0_e2 , v1_e2 , v0_f, v1_f, v2_f, v_col, v_onto);
+                ++count_same_edge;
+              }
+              //check 3nd edge
+              else if (((v0_e2 == v2_f) && (v1_e2 == v0_f)) ||
+                  ((v0_e2 == v0_f) && (v1_e2 == v2_f))) {
+                same_edges[count_same_edge] = adj_e2;
+                if ((v0_e2 == v0_f) && (v1_e2 == v2_f)) {
+                  is_same_edge_flip[count_same_edge] = 1;
+                }
+                else {
+                  is_same_edge_flip[count_same_edge] = -1;
+                }
+                printf("found same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
+                    same_edges[count_same_edge], v0_e2 , v1_e2 , v0_f, v1_f, v2_f, v_col, v_onto);
+                ++count_same_edge;
+              }
+              else {
+                printf("not same edge \n");
+              }
             }
           }
 
