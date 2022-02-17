@@ -27,6 +27,13 @@ Reals coarsen_qualities_tmpl(
   auto qualities = Write<Real>(ncands * 2, -1.0);
   auto coords = mesh->coords();
   auto is_bad_w = Write<Byte>(mesh->nelems(), Byte(0));
+
+  auto e2f = mesh->ask_up(1, 2);
+  auto f2e = mesh->ask_down(2, 1);
+  auto e2e = edges_across_tris(f2e, e2f);
+  auto e2ee = e2e.a2ab;
+  auto ee2e = e2e.ab2b;
+
   auto f = OMEGA_H_LAMBDA(LO cand) {
     auto e = cands2edges[cand];
     auto code = cand_codes[cand];
@@ -51,13 +58,81 @@ Reals coarsen_qualities_tmpl(
         if (will_die) continue;
         OMEGA_H_CHECK(0 <= ccv_col && ccv_col < mesh_dim + 1);
         ccv2v[ccv_col] = v_onto;  // vertices of new cell
-        while(1);
         //TODO use these and interpolate edges to calculate ctrl pts and give
         //them to validity check
         //so there will be 2 functions
         //1. construct_elemNodes_from_adj
         //2. construct_elemNodes_from_verts
         //3. only the new edge is straight, others are same as old
+        Few<LO, 2> same_edges = {-1, -1}; //can be max 2
+        Few<LO, 2> is_same_edge_flip = {-2, -2}; //can be max 2
+        LO count_same_edge = 0;
+        for (auto ee = e2ee[e]; ee < e2ee[e + 1]; ++ee) {
+          if (count_same_edge == 2) break;
+          auto adj_e = ee2e[ee];
+          printf("e %d adj_e %d\n", e , adj_e);
+          auto v0 = ev2v[adj_e*2];
+          auto v1 = ev2v[adj_e*2 + 1];
+
+          auto v0_f = ccv2v[0];
+          auto v1_f = ccv2v[1];
+          auto v2_f = ccv2v[2];
+          //TODO this might also be a good place to check for flip
+          //check first edge
+          if (((v0 == v0_f) && (v1 == v1_f)) ||
+              ((v0 == v1_f) && (v1 == v0_f))) {
+            same_edges[count_same_edge] = adj_e;
+            if ((v0 == v1_f) && (v1 == v0_f)) {
+              is_same_edge_flip[count_same_edge] = 1;
+            }
+            else {
+              is_same_edge_flip[count_same_edge] = -1;
+            }
+          printf("cand %d, e %d, found same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
+              cand, e, same_edges[count_same_edge], v0, v1, v0_f, v1_f, v2_f, v_col, v_onto);
+            ++count_same_edge;
+          }
+          //check 2nd edge
+          else if (((v0 == v1_f) && (v1 == v2_f)) ||
+              ((v0 == v2_f) && (v1 == v1_f))) {
+            same_edges[count_same_edge] = adj_e;
+            if ((v0 == v2_f) && (v1 == v1_f)) {
+              is_same_edge_flip[count_same_edge] = 1;
+            }
+            else {
+              is_same_edge_flip[count_same_edge] = -1;
+            }
+          printf("cand %d, e %d, found same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
+              cand, e, same_edges[count_same_edge], v0, v1, v0_f, v1_f, v2_f, v_col, v_onto);
+            ++count_same_edge;
+          }
+          //check 3nd edge
+          else if (((v0 == v2_f) && (v1 == v0_f)) ||
+              ((v0 == v0_f) && (v1 == v2_f))) {
+            same_edges[count_same_edge] = adj_e;
+            if ((v0 == v0_f) && (v1 == v2_f)) {
+              is_same_edge_flip[count_same_edge] = 1;
+            }
+            else {
+              is_same_edge_flip[count_same_edge] = -1;
+            }
+          printf("cand %d, e %d, found same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
+              cand, e, same_edges[count_same_edge], v0, v1, v0_f, v1_f, v2_f, v_col, v_onto);
+            ++count_same_edge;
+          }
+          else {
+            printf("not same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
+                adj_e, v0, v1, v0_f, v1_f, v2_f, v_col, v_onto);
+            for (auto ee2 = e2ee[adj_e]; ee2 < e2ee[adj_e + 1]; ++ee2) {
+              auto adj_e2 = ee2e[ee2];
+              auto v0_e2 = ev2v[adj_e2*2];
+              auto v1_e2 = ev2v[adj_e2*2 + 1];
+              printf("adj_e %d adj_e2 %d with verts %d %d\n", adj_e, adj_e2, v0_e2, v1_e2);
+            }
+          }
+
+        }
+
         auto qual = measure.measure(ccv2v);
         minqual = min2(minqual, qual);
       }
