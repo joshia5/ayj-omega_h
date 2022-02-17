@@ -51,6 +51,13 @@ Reals coarsen_qualities_tmpl(
         if (will_die) continue;
         OMEGA_H_CHECK(0 <= ccv_col && ccv_col < mesh_dim + 1);
         ccv2v[ccv_col] = v_onto;  // vertices of new cell
+        while(1);
+        //TODO use these and interpolate edges to calculate ctrl pts and give
+        //them to validity check
+        //so there will be 2 functions
+        //1. construct_elemNodes_from_adj
+        //2. construct_elemNodes_from_verts
+        //3. only the new edge is straight, others are same as old
         auto qual = measure.measure(ccv2v);
         minqual = min2(minqual, qual);
       }

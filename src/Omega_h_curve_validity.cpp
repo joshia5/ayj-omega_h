@@ -102,6 +102,24 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
   return -1;
 }
 
+//TODO template dim, nfacePts
+/*
+template <Int n>
+OMEGA_H_INLINE LO valid_tri_by_verts(Few<LO, 3> ccv2v,
+    Reals coords, LOs ev2v, Reals edgeCtrlPts) {
+  LO is_valid = -1;
+  LO const mesh_dim = 2;
+  Few<Real, 20> tri_pts;//ntri_pts*dim=20
+  for (LO j = 0; j < 3; ++j) {
+    auto p = get_vector<2>(coords, ccv2v[j]);
+    for (LO k = 0; k < mesh_dim; ++k) {
+      tri_pts[j*mesh_dim + k] = p[k];
+    }
+  }
+
+}
+*/
+
 LOs checkValidity(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
   auto fv2v = mesh->ask_down(2, 0).ab2b;
   auto fe2e = mesh->get_adj(2, 1).ab2b;
