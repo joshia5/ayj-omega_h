@@ -24,6 +24,7 @@ set(Omega_h_SOURCES
   Omega_h_coarsen.cpp
   Omega_h_coarsen_overshoot.cpp
   Omega_h_coarsen_qualities.cpp
+  Omega_h_coarsen_invalidities.cpp
   Omega_h_coarsen_topology.cpp
   Omega_h_collapse_rail.cpp
   Omega_h_comm.cpp
