@@ -6,8 +6,8 @@
 #include "Omega_h_file.hpp"
 #include "Omega_h_for.hpp"
 #include "Omega_h_map.hpp"
-#include "Omega_h_quality.hpp"
 #include "Omega_h_beziers.hpp"
+#include "Omega_h_metric.hpp"
 
 #include <iostream>
 
@@ -311,17 +311,5 @@ Read<I8> filter_coarsen_min_qual(
   return filter_coarsen_dirs(cand_codes, keep_dirs);
 }
 
-Read<I8> filter_coarsen_improve(
-    Mesh* mesh, LOs cands2edges, Read<I8> cand_codes, Reals cand_quals) {
-  auto elem_quals = mesh->ask_qualities();
-  auto verts2elems = mesh->ask_up(VERT, mesh->dim());
-  auto vert_old_quals = graph_reduce(verts2elems, elem_quals, 1, OMEGA_H_MIN);
-  vert_old_quals = mesh->sync_array(VERT, vert_old_quals, 1);
-  auto edge_verts2verts = mesh->ask_verts_of(EDGE);
-  auto edge_old_quals = read(unmap(edge_verts2verts, vert_old_quals, 1));
-  auto cand_old_quals = read(unmap(cands2edges, edge_old_quals, 2));
-  auto keep_dirs = gt_each(cand_quals, cand_old_quals);
-  return filter_coarsen_dirs(cand_codes, keep_dirs);
-}
 */
 }  // end namespace Omega_h
