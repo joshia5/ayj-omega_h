@@ -7,6 +7,7 @@
 #include "Omega_h_for.hpp"
 #include "Omega_h_map.hpp"
 #include "Omega_h_quality.hpp"
+#include "Omega_h_beziers.hpp"
 
 #include <iostream>
 
@@ -34,8 +35,7 @@ Reals coarsen_qualities_tmpl(
   auto e2ee = e2e.a2ab;
   auto ee2e = e2e.ab2b;
 
-  //auto f = OMEGA_H_LAMBDA(LO cand) {
-  for (LO cand = 0; cand < ncands; ++cand) {
+  auto f = OMEGA_H_LAMBDA(LO cand) {
     auto e = cands2edges[cand];
     auto code = cand_codes[cand];
     for (Int eev_col = 0; eev_col < 2; ++eev_col) {
@@ -67,7 +67,8 @@ Reals coarsen_qualities_tmpl(
         //2. construct_elemNodes_from_verts
         //3. only the new edge is straight, others are same as old
         Few<LO, 2> same_edges = {-1, -1}; //can be max 2
-        Few<LO, 2> is_same_edge_flip = {-2, -2}; //can be max 2
+        Few<LO, 3> is_newTri_edge_flip = {-2, -2, -2};
+        Few<LO, 3> newTri_edge = {-1, -1, -1};
         LO count_same_edge = 0;
         auto v0_f = ccv2v[0];
         auto v1_f = ccv2v[1];
@@ -87,14 +88,13 @@ Reals coarsen_qualities_tmpl(
                 ((count_same_edge == 1) && 
                  (same_edges[count_same_edge-1] != adj_e))) {
               same_edges[count_same_edge] = adj_e;
+              newTri_edge[0] = adj_e;
               if ((v0 == v1_f) && (v1 == v0_f)) {
-                is_same_edge_flip[count_same_edge] = 1;
+                is_newTri_edge_flip[0] = 1;
               }
               else {
-                is_same_edge_flip[count_same_edge] = -1;
+                is_newTri_edge_flip[0] = -1;
               }
-              //printf("cand %d, e %d, found same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
-              // cand, e, same_edges[count_same_edge], v0, v1, v0_f, v1_f, v2_f, v_col, v_onto);
               ++count_same_edge;
             }
           }
@@ -105,14 +105,13 @@ Reals coarsen_qualities_tmpl(
                 ((count_same_edge == 1) && 
                  (same_edges[count_same_edge-1] != adj_e))) {
               same_edges[count_same_edge] = adj_e;
+              newTri_edge[1] = adj_e;
               if ((v0 == v2_f) && (v1 == v1_f)) {
-                is_same_edge_flip[count_same_edge] = 1;
+                is_newTri_edge_flip[1] = 1;
               }
               else {
-                is_same_edge_flip[count_same_edge] = -1;
+                is_newTri_edge_flip[1] = -1;
               }
-              //printf("cand %d, e %d, found same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
-              //cand, e, same_edges[count_same_edge], v0, v1, v0_f, v1_f, v2_f, v_col, v_onto);
               ++count_same_edge;
             }
           }
@@ -123,26 +122,22 @@ Reals coarsen_qualities_tmpl(
                 ((count_same_edge == 1) && 
                  (same_edges[count_same_edge-1] != adj_e))) {
               same_edges[count_same_edge] = adj_e;
+              newTri_edge[2] = adj_e;
               if ((v0 == v0_f) && (v1 == v2_f)) {
-                is_same_edge_flip[count_same_edge] = 1;
+                is_newTri_edge_flip[2] = 1;
               }
               else {
-                is_same_edge_flip[count_same_edge] = -1;
+                is_newTri_edge_flip[2] = -1;
               }
-              //printf("cand %d, e %d, found same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
-              //cand, e, same_edges[count_same_edge], v0, v1, v0_f, v1_f, v2_f, v_col, v_onto);
               ++count_same_edge;
             }
           }
           else {
-            //printf("not same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
-               // adj_e, v0, v1, v0_f, v1_f, v2_f, v_col, v_onto);
             for (auto ee2 = e2ee[adj_e]; ee2 < e2ee[adj_e + 1]; ++ee2) {
               if (count_same_edge >= 2) break;
               auto adj_e2 = ee2e[ee2];
               auto v0_e2 = ev2v[adj_e2*2];
               auto v1_e2 = ev2v[adj_e2*2 + 1];
-              //printf("adj_e %d adj_e2 %d with verts %d %d\n", adj_e, adj_e2, v0_e2, v1_e2);
 
               //check first edge
               if (((v0_e2  == v0_f) && (v1_e2  == v1_f)) ||
@@ -151,14 +146,13 @@ Reals coarsen_qualities_tmpl(
                     ((count_same_edge == 1) && 
                      (same_edges[count_same_edge-1] != adj_e2))) {
                   same_edges[count_same_edge] = adj_e2;
+                  newTri_edge[0] = adj_e2;
                   if ((v0_e2  == v1_f) && (v1_e2  == v0_f)) {
-                    is_same_edge_flip[count_same_edge] = 1;
+                    is_newTri_edge_flip[0] = 1;
                   }
                   else {
-                    is_same_edge_flip[count_same_edge] = -1;
+                    is_newTri_edge_flip[0] = -1;
                   }
-                  //printf("found same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
-                  // same_edges[count_same_edge], v0_e2 , v1_e2 , v0_f, v1_f, v2_f, v_col, v_onto);
                   ++count_same_edge;
                 }
               }
@@ -169,14 +163,13 @@ Reals coarsen_qualities_tmpl(
                     ((count_same_edge == 1) && 
                      (same_edges[count_same_edge-1] != adj_e2))) {
                   same_edges[count_same_edge] = adj_e2;
+                  newTri_edge[1] = adj_e2;
                   if ((v0_e2 == v2_f) && (v1_e2 == v1_f)) {
-                    is_same_edge_flip[count_same_edge] = 1;
+                    is_newTri_edge_flip[1] = 1;
                   }
                   else {
-                    is_same_edge_flip[count_same_edge] = -1;
+                    is_newTri_edge_flip[1] = -1;
                   }
-                  //printf("found same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
-                  //  same_edges[count_same_edge], v0_e2 , v1_e2 , v0_f, v1_f, v2_f, v_col, v_onto);
                   ++count_same_edge;
                 }
               }
@@ -187,14 +180,13 @@ Reals coarsen_qualities_tmpl(
                     ((count_same_edge == 1) && 
                      (same_edges[count_same_edge-1] != adj_e2))) {
                   same_edges[count_same_edge] = adj_e2;
+                  newTri_edge[2] = adj_e2;
                   if ((v0_e2 == v0_f) && (v1_e2 == v2_f)) {
-                    is_same_edge_flip[count_same_edge] = 1;
+                    is_newTri_edge_flip[2] = 1;
                   }
                   else {
-                    is_same_edge_flip[count_same_edge] = -1;
+                    is_newTri_edge_flip[2] = -1;
                   }
-                  //printf("found same edge %d with verts %d %d, newTri %d %d %d vcol %d vOnto %d\n",
-                  //  same_edges[count_same_edge], v0_e2 , v1_e2 , v0_f, v1_f, v2_f, v_col, v_onto);
                   ++count_same_edge;
                 }
               }
@@ -209,15 +201,74 @@ Reals coarsen_qualities_tmpl(
           printf("cand %d, e %d, found same edge %d with newTri %d %d %d vcol %d vOnto %d\n",
            cand, e, same_edges[ee], v0_f, v1_f, v2_f, v_col, v_onto);
         }
+        for (LO ee = 0; ee < 3; ++ee) {
+          printf("newtri edge %d is %d\n", ee, newTri_edge[ee]);
+        }
+        auto vertCtrlPts = mesh->get_ctrlPts(0);
+        auto edgeCtrlPts = mesh->get_ctrlPts(1);
+        auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
+        Few<Real, 20> tri_pts;//ntri_pts*dim=20
+        for (LO j = 0; j < 3; ++j) {
+          auto p = get_vector<2>(vertCtrlPts, ccv2v[j]);
+          for (LO k = 0; k < mesh_dim; ++k) {
+            tri_pts[j*mesh_dim + k] = p[k];
+          }
+        }
+        Few<Real, 3*mesh_dim> thirdOfEdge;
+        for (I8 d = 0; d < mesh_dim; ++d) {
+          thirdOfEdge[0*mesh_dim + d] = 
+            1.0/3.0*(tri_pts[1*mesh_dim + d] - tri_pts[0*mesh_dim + d]);
+          thirdOfEdge[1*mesh_dim + d] = 
+            1.0/3.0*(tri_pts[2*mesh_dim + d] - tri_pts[1*mesh_dim + d]);
+          thirdOfEdge[2*mesh_dim + d] = 
+            1.0/3.0*(tri_pts[0*mesh_dim + d] - tri_pts[2*mesh_dim + d]);
+        }
+        for (LO j = 0; j < 3; ++j) {
+          LO index = 3;
+          if (is_newTri_edge_flip[j] == -1) {
+            for (I8 d = 0; d < mesh_dim; ++d) {
+              tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] =
+                edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + d];
+              tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
+                edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + mesh_dim + d];
+            }
+          }
+          else if (is_newTri_edge_flip[j] == 1) {
+            for (I8 d = 0; d < mesh_dim; ++d) {
+              tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] =
+                edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + mesh_dim + d];
+              tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
+                edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + d];
+            }
+          }
+          else {
+            for (I8 d = 0; d < mesh_dim; ++d) {
+              assert (is_newTri_edge_flip[j] == -2);
+              tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] = 
+                tri_pts[j*mesh_dim + d] + thirdOfEdge[j*mesh_dim + d];
+              tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
+                tri_pts[j*mesh_dim + d] + 2*thirdOfEdge[j*mesh_dim + d];
+            }
+          }
+        }
+        //query the face's ctrl pt and store
+        for (I8 d = 0; d < mesh_dim; ++d) {
+          LO index = 9;
+          tri_pts[index*mesh_dim + d] = 1.0/3.0*(
+              tri_pts[0*mesh_dim + d] + tri_pts[1*mesh_dim + d] + 
+              tri_pts[2*mesh_dim + d]);
+        }
+        auto nodes_det = getTriJacDetNodes<15>(3, tri_pts);
+        auto is_invalid = checkMinJacDet<15>(nodes_det);
+        printf("is invalid %d\n", is_invalid);
 
         auto qual = measure.measure(ccv2v);
         minqual = min2(minqual, qual);
       }
       qualities[cand * 2 + eev_col] = minqual;
     }
-  }
-  //};
-  //parallel_for(ncands, f, "coarsen_qualities");
+  };
+  parallel_for(ncands, f, "coarsen_qualities");
   auto out = Reals(qualities);
   return mesh->sync_subset_array(EDGE, out, cands2edges, -1.0, 2);
 }
