@@ -26,6 +26,8 @@ Read<I8> filter_coarsen_improve(
 Read<I8> prevent_coarsen_overshoot(
     Mesh* mesh, Real max_length, LOs cands2edges, Read<I8> cand_codes);
 
+Reals coarsen_invalidities(Mesh* mesh, LOs cands2edges, Read<I8> cand_codes);
+
 #ifndef _MSC_VER
 Bytes prevent_coarsen_flip(Mesh* mesh, LOs cands2edges, Bytes cand_codes);
 #endif
