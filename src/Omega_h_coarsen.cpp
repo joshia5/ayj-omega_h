@@ -190,6 +190,11 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
   build_cubic_curveVtk_2d(mesh, &cubic_curveVtk_mesh, 4);
   std::string vtuPath = "/users/joshia5/Meshes/curved/coarsen_itr_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
+  auto cubic_wireframe = Mesh(mesh->comm()->library());
+  cubic_wireframe.set_comm(comm);
+  build_cubic_wireframe_2d(mesh, &cubic_wireframe, 4);
+  vtuPath = "/users/joshia5/Meshes/curved/coarsen_itr_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe, 1);
 }
 
 static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,

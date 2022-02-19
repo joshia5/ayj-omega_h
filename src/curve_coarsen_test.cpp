@@ -77,10 +77,10 @@ void test_disc_validity(Library *lib) {
 void test_disc_collapse(Library *lib) {
   auto comm = lib->world();
 
-  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
-                          "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
-  //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
-    //                        "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", lib.world());
+  //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
+    //                      "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
+  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
+                            "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", comm);
                             
   calc_quad_ctrlPts_from_interpPts(&mesh);
   elevate_curve_order_2to3(&mesh);
@@ -89,14 +89,14 @@ void test_disc_collapse(Library *lib) {
   wireframe_mesh.set_comm(comm);
   build_cubic_wireframe_2d(&mesh, &wireframe_mesh, 4);
   std::string vtuPath =
-    "/users/joshia5/Meshes/curved/disc2_cubic_wireframe.vtu";
-    //"/users/joshia5/Meshes/curved/disc100_cubic_wireframe.vtu";
+    //"/users/joshia5/Meshes/curved/disc2_cubic_wireframe.vtu";
+    "/users/joshia5/Meshes/curved/disc100_cubic_wireframe.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
   auto cubic_curveVtk_mesh = Mesh(lib);
   cubic_curveVtk_mesh.set_comm(comm);
   build_cubic_curveVtk_2d(&mesh, &cubic_curveVtk_mesh, 4);
-  vtuPath = "/users/joshia5/Meshes/curved/disc2_cubic_curveVtk.vtu";
-  //vtuPath = "/users/joshia5/Meshes/curved/disc100_cubic_curveVtk.vtu";
+  //vtuPath = "/users/joshia5/Meshes/curved/disc2_cubic_curveVtk.vtu";
+  vtuPath = "/users/joshia5/Meshes/curved/disc100_cubic_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
 
   auto coords = mesh.coords();
