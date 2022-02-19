@@ -89,13 +89,15 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
   }
   filter_coarsen_candidates(&cands2edges, &cand_edge_codes, &cand_edge_quals);
   /* finished cavity quality checks */
+
   /* cavity invalidity checks */
-  auto cand_edge_invalidities = coarsen_invalidities(mesh, cands2edges, cand_edge_codes);
-  //TODO
-  cand_edge_codes = filter_coarsen_min_qual(
-      cand_edge_codes, cand_edge_invalidities, 0);
+  auto cand_edge_invalidities = coarsen_invalidities
+    (mesh, cands2edges, cand_edge_codes);
+  cand_edge_codes = filter_coarsen_invalids(
+      cand_edge_codes, cand_edge_invalidities, -1);
   filter_coarsen_candidates(&cands2edges, &cand_edge_codes, &cand_edge_quals);
   /* finished cavity invalidity checks */
+
   if (comm->reduce_and(cands2edges.size() == 0)) return false;
   auto verts_are_cands = Read<I8>();
   auto vert_quals = Reals();

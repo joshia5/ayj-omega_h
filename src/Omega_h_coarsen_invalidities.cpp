@@ -14,7 +14,7 @@
 namespace Omega_h {
 
 template <Int mesh_dim, Int metric_dim>
-Reals coarsen_invalidities_tmpl(
+LOs coarsen_invalidities_tmpl(
     Mesh* mesh, LOs cands2edges, Read<I8> cand_codes) {
   OMEGA_H_CHECK(mesh->dim() == mesh_dim);
   auto ev2v = mesh->ask_verts_of(EDGE);
@@ -24,7 +24,7 @@ Reals coarsen_invalidities_tmpl(
   auto vc2c = v2c.ab2b;
   auto vc_codes = v2c.codes;
   auto ncands = cands2edges.size();
-  auto invalidities = Write<Real>(ncands * 2, -1.0);
+  auto invalidities = Write<LO>(ncands * 2, -1);
   auto coords = mesh->coords();
 
   auto e2f = mesh->ask_up(1, 2);
@@ -266,11 +266,11 @@ Reals coarsen_invalidities_tmpl(
     }
   };
   parallel_for(ncands, f, "coarsen_invalidities");
-  auto out_invalid = Reals(invalidities);
-  return mesh->sync_subset_array(EDGE, out_invalid, cands2edges, -1.0, 2);
+  auto out_invalid = LOs(invalidities);
+  return mesh->sync_subset_array(EDGE, out_invalid, cands2edges, -1, 2);
 }
 
-Reals coarsen_invalidities(Mesh* mesh, LOs cands2edges, Read<I8> cand_codes) {
+LOs coarsen_invalidities(Mesh* mesh, LOs cands2edges, Read<I8> cand_codes) {
   OMEGA_H_CHECK(mesh->parting() == OMEGA_H_GHOSTED);
   auto metrics = mesh->get_array<Real>(VERT, "metric");
   auto metric_dim = get_metrics_dim(mesh->nverts(), metrics);
@@ -286,30 +286,13 @@ Reals coarsen_invalidities(Mesh* mesh, LOs cands2edges, Read<I8> cand_codes) {
   if (mesh->dim() == 2 && metric_dim == 1) {
     return coarsen_invalidities_tmpl<2, 1>(mesh, cands2edges, cand_codes);
   }
-  OMEGA_H_NORETURN(Reals());
+  OMEGA_H_NORETURN(LOs());
 }
 
-/*
-Read<I8> filter_coarsen_dirs(Read<I8> codes, Read<I8> keep_dirs) {
-  auto codes_w = Write<I8>(codes.size());
-  auto f = OMEGA_H_LAMBDA(LO cand) {
-    auto code = codes[cand];
-    for (Int dir = 0; dir < 2; ++dir) {
-      if (!keep_dirs[cand * 2 + dir]) {
-        code = dont_collapse(code, dir);
-      }
-    }
-    codes_w[cand] = code;
-  };
-  parallel_for(codes_w.size(), f, "filter_coarsen_dirs");
-  return codes_w;
-}
-
-Read<I8> filter_coarsen_min_qual(
-    Read<I8> cand_codes, Reals cand_quals, Real min_qual) {
-  auto keep_dirs = each_geq_to(cand_quals, min_qual);
+Read<I8> filter_coarsen_invalids(
+    Read<I8> cand_codes, LOs cand_invalids, LO is_invalid) {
+  auto keep_dirs = each_eq_to(cand_invalids, is_invalid);
   return filter_coarsen_dirs(cand_codes, keep_dirs);
 }
 
-*/
 }  // end namespace Omega_h

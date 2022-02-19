@@ -26,7 +26,12 @@ Read<I8> filter_coarsen_improve(
 Read<I8> prevent_coarsen_overshoot(
     Mesh* mesh, Real max_length, LOs cands2edges, Read<I8> cand_codes);
 
-Reals coarsen_invalidities(Mesh* mesh, LOs cands2edges, Read<I8> cand_codes);
+LOs coarsen_invalidities(Mesh* mesh, LOs cands2edges, Read<I8> cand_codes);
+
+Read<I8> filter_coarsen_dirs(Read<I8> codes, Read<I8> keep_dirs);
+
+Read<I8> filter_coarsen_invalids(
+    Read<I8> cand_codes, LOs cand_invalids, LO is_invalid);
 
 #ifndef _MSC_VER
 Bytes prevent_coarsen_flip(Mesh* mesh, LOs cands2edges, Bytes cand_codes);
