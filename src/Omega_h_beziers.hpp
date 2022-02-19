@@ -1175,7 +1175,6 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
 template<Int dim>
 void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     LOs prods2new, LOs old_verts2new_verts) {
-  printf("in coarsen curved edges fn\n");
   auto const nold_verts = mesh->nverts();
   auto const nold_edges = mesh->nedges();
   auto const old_ev2v = mesh->get_adj(1, 0).ab2b;
@@ -1280,11 +1279,12 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   };
   parallel_for(prods2new.size(), std::move(face_centroids),
       "face_centroids");
-  new_mesh->add_tag<Real>(2, "bezier_pts", n_face_pts*dim);
+  new_mesh->add_tag<Real>(2, "bezier_pts", dim);
   new_mesh->set_tag_for_ctrlPts(2, Reals(face_ctrlPts));
 
   return;
 }
+
 LOs checkValidity(Mesh *new_mesh, LOs new_tris, Int const mesh_dim);
 
 OMEGA_H_INLINE LO computeTriNodeIndex (LO P, LO i, LO j) {
