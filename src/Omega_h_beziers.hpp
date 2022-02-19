@@ -1172,10 +1172,119 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
                             LOs keys2prods, LOs keys2edges, LOs keys2old_faces,
                             LOs old_verts2new_verts);
 
-LOs coarsen_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh,
-                                      LOs old_ents2new_ents, LOs prods2new_ents,
-                                      LOs keys2prods, LOs old_verts2new_verts, LOs old_edges2new_edges);
+template<Int dim>
+void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
+    LOs prods2new, LOs old_verts2new_verts) {
+  printf("in coarsen curved edges fn\n");
+  auto const nold_verts = mesh->nverts();
+  auto const nold_edges = mesh->nedges();
+  auto const old_ev2v = mesh->get_adj(1, 0).ab2b;
+  auto const old_fe2e = mesh->get_adj(2, 1).ab2b;
+  auto const old_ef2f = mesh->ask_up(1, 2).ab2b;
+  auto const old_e2ef = mesh->ask_up(1, 2).a2ab;
+  auto const old_fv2v = mesh->ask_down(2, 0).ab2b;
+  if (!mesh->has_tag(0, "bezier_pts")) {
+    mesh->add_tag<Real>(0, "bezier_pts", dim, mesh->coords());
+  }
+  auto const old_vertCtrlPts = mesh->get_ctrlPts(0);
+  auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
+  auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
 
+  auto const new_ev2v = new_mesh->get_adj(1, 0).ab2b;
+  auto const new_coords = new_mesh->coords();
+  auto const nnew_edge = new_mesh->nedges();
+  auto const nnew_verts = new_mesh->nverts();
+
+  Write<Real> edge_ctrlPts(nnew_edge*n_edge_pts*dim, INT8_MAX);
+  Write<Real> vert_ctrlPts(nnew_verts*1*dim, INT8_MAX);
+
+  //copy ctrl pts for verts
+  auto copy_sameCtrlPts = OMEGA_H_LAMBDA(LO i) {
+    if (old_verts2new_verts[i] != -1) {
+      LO new_vert = old_verts2new_verts[i];
+      for (I8 d = 0; d < dim; ++d) {
+        vert_ctrlPts[new_vert*dim + d] = old_vertCtrlPts[i*dim + d];
+      }
+    }
+  };
+  parallel_for(nold_verts, std::move(copy_sameCtrlPts),
+      "copy same vtx ctrlPts");
+  new_mesh->add_tag<Real>(0, "bezier_pts", dim);
+  new_mesh->set_tag_for_ctrlPts(0, Reals(vert_ctrlPts));
+
+  //copy ctrl pts for edges
+  auto copy_sameedgePts = OMEGA_H_LAMBDA(LO i) {
+    if (old2new[i] != -1) {
+      LO new_edge = old2new[i];
+      for (I8 d = 0; d < dim; ++d) {
+        edge_ctrlPts[new_edge*n_edge_pts*dim + d] = old_edgeCtrlPts[i*n_edge_pts*dim + d];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = old_edgeCtrlPts[i*n_edge_pts*dim + dim + d];
+      }
+    }
+  };
+  parallel_for(nold_edges, std::move(copy_sameedgePts),
+      "copy_same_edgectrlPts");
+  auto prod_edge_points = OMEGA_H_LAMBDA(LO i) {
+    LO e = prods2new[i];
+    auto v0 = new_ev2v[e*2 + 0];
+    auto v1 = new_ev2v[e*2 + 1];
+    for (LO j=0; j<dim; ++j) {
+      edge_ctrlPts[e*n_edge_pts*dim + j] = new_coords[v0*dim + j] +
+          (new_coords[v1*dim + j] - new_coords[v0*dim + j])*(1.0/3.0);
+          //TODO verify this
+          //(new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_1_cube();
+      edge_ctrlPts[e*n_edge_pts*dim + dim + j] = new_coords[v0*dim + j] +
+          (new_coords[v1*dim + j] - new_coords[v0*dim + j])*(2.0/3.0);
+          //(new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_2_cube();
+    }
+  };
+  parallel_for(prods2new.size(), std::move(prod_edge_points),
+      "prod_edge_points");
+  new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim, Reals(edge_ctrlPts));
+  new_mesh->set_tag_for_ctrlPts(1, Reals(edge_ctrlPts));
+
+  return;
+}
+
+template<Int dim>
+void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
+    LOs prods2new) {
+  auto const new_fv2v = new_mesh->ask_down(2, 0).ab2b;
+  auto const new_coords = new_mesh->coords();
+  auto const nnew_faces = new_mesh->nfaces();
+  auto const nold_faces = mesh->nfaces();
+  auto const old_faceCtrlPts = mesh->get_ctrlPts(2);
+  Write<Real> face_ctrlPts(nnew_faces*1*dim, INT8_MAX);
+
+  //copy ctrl pts for faces
+  auto copy_samefacePts = OMEGA_H_LAMBDA(LO i) {
+    if (old2new[i] != -1) {
+      LO new_face = old2new[i];
+      for (I8 d = 0; d < dim; ++d) {
+        face_ctrlPts[new_face*dim + d] = old_faceCtrlPts[i*dim + d];
+      }
+    }
+  };
+  parallel_for(nold_faces, std::move(copy_samefacePts),
+      "copy_same_facectrlPts");
+
+  auto face_centroids = OMEGA_H_LAMBDA(LO i) {
+    LO f = prods2new[i];
+    auto v0 = new_fv2v[f*3 + 0];
+    auto v1 = new_fv2v[f*3 + 1];
+    auto v2 = new_fv2v[f*3 + 2];
+    for (LO j=0; j<dim; ++j) {
+      face_ctrlPts[f*dim + j] = (new_coords[v0*dim + j] +
+          new_coords[v1*dim + j] + new_coords[v2*dim + j])/3.0;
+    }
+  };
+  parallel_for(prods2new.size(), std::move(face_centroids),
+      "face_centroids");
+  new_mesh->add_tag<Real>(2, "bezier_pts", n_face_pts*dim);
+  new_mesh->set_tag_for_ctrlPts(2, Reals(face_ctrlPts));
+
+  return;
+}
 LOs checkValidity(Mesh *new_mesh, LOs new_tris, Int const mesh_dim);
 
 OMEGA_H_INLINE LO computeTriNodeIndex (LO P, LO i, LO j) {
@@ -1273,7 +1382,13 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
   return -1;
 }
 
-//TODO template dim, nfacePts
+#define OMEGA_H_EXPL_INST_DECL(T)                                              
+OMEGA_H_EXPL_INST_DECL(I8)
+OMEGA_H_EXPL_INST_DECL(I32)
+OMEGA_H_EXPL_INST_DECL(I64)
+OMEGA_H_EXPL_INST_DECL(Real)
+#undef OMEGA_H_EXPL_INST_DECL
+
 } // namespace Omega_h
 
 #endif
