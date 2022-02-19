@@ -93,11 +93,11 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
   /* cavity invalidity checks */
   auto cand_edge_invalidities = coarsen_invalidities
     (mesh, cands2edges, cand_edge_codes);
+  //TODO test for the filtering//should be ok as its not much 
   cand_edge_codes = filter_coarsen_invalids(
       cand_edge_codes, cand_edge_invalidities, -1);
   filter_coarsen_candidates(&cands2edges, &cand_edge_codes, &cand_edge_quals);
   /* finished cavity invalidity checks */
-  //TODO test for filtering invalid collapse 
 
   if (comm->reduce_and(cands2edges.size() == 0)) return false;
   auto verts_are_cands = Read<I8>();
@@ -195,6 +195,8 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
   build_cubic_wireframe_2d(mesh, &cubic_wireframe, 4);
   vtuPath = "/users/joshia5/Meshes/curved/coarsen_itr_wireframe.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe, 1);
+  printf("after coarsen has %d elems\n", mesh->nelems());
+  while(1);
 }
 
 static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
