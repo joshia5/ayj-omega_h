@@ -184,7 +184,12 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
   }
 
   *mesh = new_mesh;
-  vtk::write_parallel("coarsen_itr.vtk", mesh, mesh->dim());
+  vtk::write_parallel("/users/joshia5/Meshes/curved/coarsen_itr.vtk", mesh, mesh->dim());
+  auto cubic_curveVtk_mesh = Mesh(mesh->comm()->library());
+  cubic_curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_2d(mesh, &cubic_curveVtk_mesh, 4);
+  std::string vtuPath = "/users/joshia5/Meshes/curved/coarsen_itr_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
 }
 
 static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
