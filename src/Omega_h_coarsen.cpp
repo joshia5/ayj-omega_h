@@ -161,17 +161,23 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
     if (ent_dim == VERT) {
       old_verts2new_verts = old_ents2new_ents;
     }
-    if ((ent_dim == EDGE) && (mesh->is_curved() > 0) && (mesh->dim() == 2)) {
-      //1. tranfer verts (same)
-      //2. transfer edges (copy same and new are straight)
-      coarsen_curved_verts_and_edges<2>(mesh, &new_mesh,
-          old_ents2new_ents, prods2new_ents, old_verts2new_verts);
-    }
     transfer_coarsen(mesh, opts.xfer_opts, &new_mesh, keys2verts, keys2doms,
         ent_dim, prods2new_ents, same_ents2old_ents, same_ents2new_ents);
+    if ((ent_dim == EDGE) && (mesh->is_curved() > 0)) {
+      if (mesh->dim() == 2) {
+        //1. tranfer verts (same)
+        //2. transfer edges (copy same and new are straight)
+        coarsen_curved_verts_and_edges<2>(mesh, &new_mesh,
+            old_ents2new_ents, prods2new_ents, old_verts2new_verts);
+      }
+    }
 
     //3. transfer faces (copy same and new at centroid
-    if ((ent_dim == FACE) && (mesh->is_curved() > 0) && (mesh->dim() == 2)) {
+    if ((ent_dim == FACE) && (mesh->is_curved() > 0)) {
+      if (mesh->dim() == 2) {
+        coarsen_curved_faces<2>(mesh, &new_mesh, old_ents2new_ents,
+            prods2new_ents);
+      }
     }
 
     old_lows2new_lows = old_ents2new_ents;
