@@ -97,6 +97,7 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
       cand_edge_codes, cand_edge_invalidities, -1);
   filter_coarsen_candidates(&cands2edges, &cand_edge_codes, &cand_edge_quals);
   /* finished cavity invalidity checks */
+  //TODO test for filtering invalid collapse 
 
   if (comm->reduce_and(cands2edges.size() == 0)) return false;
   auto verts_are_cands = Read<I8>();
@@ -136,7 +137,6 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
   auto keys2verts_onto = get_verts_onto(mesh, rails2edges, rail_col_dirs);
   auto new_mesh = mesh->copy_meta();
   auto old_verts2new_verts = LOs();
-  auto old_edges2new_edges = LOs();
   auto old_lows2new_lows = LOs();
   for (Int ent_dim = 0; ent_dim <= mesh->dim(); ++ent_dim) {
     auto keys2prods = LOs();
@@ -161,32 +161,18 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
     if (ent_dim == VERT) {
       old_verts2new_verts = old_ents2new_ents;
     }
-    if (ent_dim == EDGE) {
-      old_edges2new_edges = old_ents2new_ents;
+    if ((ent_dim == EDGE) && (mesh->is_curved() > 0) && (mesh->dim() == 2)) {
+      //1. tranfer verts (same)
+      //2. transfer edges (copy same and new are straight)
+      coarsen_curved_verts_and_edges<2>(mesh, &new_mesh,
+          old_ents2new_ents, prods2new_ents, old_verts2new_verts);
     }
     transfer_coarsen(mesh, opts.xfer_opts, &new_mesh, keys2verts, keys2doms,
         ent_dim, prods2new_ents, same_ents2old_ents, same_ents2new_ents);
 
-    /*curved code here*/
-    
+    //3. transfer faces (copy same and new at centroid
     if ((ent_dim == FACE) && (mesh->is_curved() > 0) && (mesh->dim() == 2)) {
-
-      auto keys2old_faces = coarsen_curved_verts_and_edges_2d
-      (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
-       old_verts2new_verts, old_edges2new_edges);
-      auto wireframe_mesh = Mesh(mesh->comm()->library());
-      wireframe_mesh.set_comm(comm);
-      build_cubic_wireframe_2d(&new_mesh, &wireframe_mesh, 4);
-      std::string vtuPath = "/users/joshia5/Meshes/curved/discCoarsItr_cubic_wireframe.vtu";
-      vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
-      auto cubic_curveVtk_mesh = Mesh(mesh->comm()->library());
-      cubic_curveVtk_mesh.set_comm(comm);
-      build_cubic_curveVtk_2d(&new_mesh, &cubic_curveVtk_mesh, 4);
-      vtuPath = "/users/joshia5/Meshes/curved/discCoarsItr_cubic_curveVtk.vtu";
-      vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
-
     }
-    /**/
 
     old_lows2new_lows = old_ents2new_ents;
   }
