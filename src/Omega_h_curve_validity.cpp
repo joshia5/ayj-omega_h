@@ -7,23 +7,6 @@
 
 namespace Omega_h {
 
-/*
-template <Int n>
-OMEGA_H_INLINE LO valid_tri_by_verts(Few<LO, 3> ccv2v,
-    Reals coords, LOs ev2v, Reals edgeCtrlPts) {
-  LO is_valid = -1;
-  LO const mesh_dim = 2;
-  Few<Real, 20> tri_pts;//ntri_pts*dim=20
-  for (LO j = 0; j < 3; ++j) {
-    auto p = get_vector<2>(coords, ccv2v[j]);
-    for (LO k = 0; k < mesh_dim; ++k) {
-      tri_pts[j*mesh_dim + k] = p[k];
-    }
-  }
-
-}
-*/
-
 LOs checkValidity(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
   auto fv2v = mesh->ask_down(2, 0).ab2b;
   auto fe2e = mesh->get_adj(2, 1).ab2b;
@@ -119,7 +102,8 @@ LOs checkValidity(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
       tri_pts[index*mesh_dim + d] = faceCtrlPts[tri*mesh_dim + d];
     }
 
-    auto nodes_det = getTriJacDetNodes<15>(order, tri_pts);
+    //TODO change to template for mesh_dim
+    auto nodes_det = getTriJacDetNodes<15, 2>(order, tri_pts);
 
     is_invalid[n] = checkMinJacDet<15>(nodes_det);
     if (is_invalid[n] > 0) printf("invalid tri %d\n", tri);

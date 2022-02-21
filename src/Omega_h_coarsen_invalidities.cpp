@@ -58,12 +58,6 @@ LOs coarsen_invalidities_tmpl(
         OMEGA_H_CHECK(0 <= ccv_col && ccv_col < mesh_dim + 1);
         ccv2v[ccv_col] = v_onto;  // vertices of new cell
 
-        //TODO use these and interpolate edges to calculate ctrl pts and give
-        //them to validity check
-        //so there will be 2 functions
-        //1. construct_elemNodes_from_adj
-        //2. construct_elemNodes_from_verts
-        //3. only the new edge is straight, others are same as old
         Few<LO, 2> same_edges = {-1, -1}; //can be max 2
         Few<LO, 3> is_newTri_edge_flip = {-2, -2, -2};
         Few<LO, 3> newTri_edge = {-1, -1, -1};
@@ -78,7 +72,6 @@ LOs coarsen_invalidities_tmpl(
           auto v0 = ev2v[adj_e*2];
           auto v1 = ev2v[adj_e*2 + 1];
 
-          //TODO this might also be a good place to check for flip
           //check first edge
           if (((v0 == v0_f) && (v1 == v1_f)) ||
               ((v0 == v1_f) && (v1 == v0_f))) {
@@ -205,9 +198,9 @@ LOs coarsen_invalidities_tmpl(
         auto vertCtrlPts = mesh->get_ctrlPts(0);
         auto edgeCtrlPts = mesh->get_ctrlPts(1);
         auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
-        Few<Real, 20> tri_pts;//ntri_pts*dim=20
+        Few<Real, 10*mesh_dim> tri_pts;//ntri_pts*dim=20
         for (LO j = 0; j < 3; ++j) {
-          auto p = get_vector<2>(vertCtrlPts, ccv2v[j]);
+          auto p = get_vector<mesh_dim>(vertCtrlPts, ccv2v[j]);
           for (LO k = 0; k < mesh_dim; ++k) {
             tri_pts[j*mesh_dim + k] = p[k];
           }
@@ -250,13 +243,14 @@ LOs coarsen_invalidities_tmpl(
           }
         }
         //query the face's ctrl pt and store
+        //TODO triPt using blending?
         for (I8 d = 0; d < mesh_dim; ++d) {
           LO index = 9;
           tri_pts[index*mesh_dim + d] = 1.0/3.0*(
               tri_pts[0*mesh_dim + d] + tri_pts[1*mesh_dim + d] + 
               tri_pts[2*mesh_dim + d]);
         }
-        auto nodes_det = getTriJacDetNodes<15>(3, tri_pts);
+        auto nodes_det = getTriJacDetNodes<15, mesh_dim>(3, tri_pts);
         auto is_invalid = checkMinJacDet<15>(nodes_det);
         printf("cand %d eev_col %d, vc = %d is invalid %d\n", cand, eev_col, vc, is_invalid);
 

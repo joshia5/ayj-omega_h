@@ -1302,22 +1302,29 @@ OMEGA_H_INLINE LO getTriNodeIndex (LO P, LO i, LO j) {
   return computeTriNodeIndex(P,i,j);
 }
 
-template <Int n>
-OMEGA_H_INLINE Real getTriPartialJacobianDet(Few<Real, 20> nodes,
+template <Int mesh_dim>
+OMEGA_H_INLINE Real getTriPartialJacobianDet(Few<Real, 10*mesh_dim> nodes,
   LO P, LO i1, LO j1, LO i2, LO j2) {
   LO p00 = getTriNodeIndex(P,i1+1,j1);
   LO p01 = getTriNodeIndex(P,i1,j1+1);
   LO p10 = getTriNodeIndex(P,i2+1,j2);
   LO p11 = getTriNodeIndex(P,i2,j2);
-  return cross(get_vector<n>(nodes, p01) - get_vector<n>(nodes, p00),
-               get_vector<n>(nodes, p11) - get_vector<n>(nodes, p10));
-  /*the return will be following for 3d
-  return cross(get_vector<n>(nodes, p01) - get_vector<n>(nodes, p00),
-               get_vector<n>(nodes, p11) - get_vector<n>(nodes, p10))[2];
-  */
+  Real ret;
+#if (mesh_dim == 2) 
+    ret = cross(get_vector<mesh_dim>(nodes, p01) - get_vector<mesh_dim>(nodes, p00),
+                 get_vector<mesh_dim>(nodes, p11) - get_vector<mesh_dim>(nodes, p10));
+#else
+    assert (mesh_dim == 3);
+    auto ret_cross = cross(get_vector<mesh_dim>(nodes, p01) - get_vector<mesh_dim>(nodes, p00),
+        get_vector<mesh_dim>(nodes, p11) - get_vector<mesh_dim>(nodes, p10));
+    ret = ret_cross[2];
+    //TODO check this [2].. maybe need a dot of this cross with something??
+#endif
+  return ret;
 }
 
-OMEGA_H_INLINE Real Nijk(Few<Real, 20> nodes, LO d, LO I, LO J) {
+template <Int mesh_dim>
+OMEGA_H_INLINE Real Nijk(Few<Real, 10*mesh_dim> nodes, LO d, LO I, LO J) {
   Real sum = 0.;
   LO CD = trinomial(2*(d-1), I, J);
   for (LO j1 = 0; j1 <= J; ++j1) {
@@ -1325,20 +1332,20 @@ OMEGA_H_INLINE Real Nijk(Few<Real, 20> nodes, LO d, LO I, LO J) {
     auto i1end = min2(I, d-1-j1);
     for (LO i1 = i1start; i1 <= i1end; ++i1){
       sum += trinomial(d-1, i1, j1)*trinomial(d-1, I-i1, J-j1)
-        *getTriPartialJacobianDet<2>(nodes, d, i1, j1, I-i1, J-j1);
+        *getTriPartialJacobianDet<mesh_dim>(nodes, d, i1, j1, I-i1, J-j1);
     }
   }
   return sum*d*d/CD;
 }
 
-template <Int n>
+template <Int n, Int mesh_dim>
 OMEGA_H_INLINE Few<Real, n> getTriJacDetNodes(
-    LO P, Few<Real, 20> const& elemNodes) {
+    LO P, Few<Real, 10*mesh_dim> const& elemNodes) {
   Few<Real, n> nodes;//n=15
   for (LO I = 0; I <= 2*(P-1); ++I) {
     for (LO J = 0; J <= 2*(P-1)-I; ++J) {
         OMEGA_H_CHECK(getTriNodeIndex(2*(P-1),I,J) < nodes.size());
-        nodes[getTriNodeIndex(2*(P-1),I,J)] = Nijk(elemNodes,P,I,J);
+        nodes[getTriNodeIndex(2*(P-1),I,J)] = Nijk<mesh_dim>(elemNodes,P,I,J);
     }
   }
   return nodes;
