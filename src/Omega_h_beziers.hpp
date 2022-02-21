@@ -1310,16 +1310,16 @@ OMEGA_H_INLINE Real getTriPartialJacobianDet(Few<Real, 10*mesh_dim> nodes,
   LO p10 = getTriNodeIndex(P,i2+1,j2);
   LO p11 = getTriNodeIndex(P,i2,j2);
   Real ret;
-#if (mesh_dim == 2) 
-    ret = cross(get_vector<mesh_dim>(nodes, p01) - get_vector<mesh_dim>(nodes, p00),
-                 get_vector<mesh_dim>(nodes, p11) - get_vector<mesh_dim>(nodes, p10));
-#else
-    assert (mesh_dim == 3);
+  ret = cross(get_vector<2>(nodes, p01) - get_vector<2>(nodes, p00),
+              get_vector<2>(nodes, p11) - get_vector<2>(nodes, p10));
+    /*
+  ret = cross(get_vector<mesh_dim>(nodes, p01) - get_vector<mesh_dim>(nodes, p00),
+              get_vector<mesh_dim>(nodes, p11) - get_vector<mesh_dim>(nodes, p10));
     auto ret_cross = cross(get_vector<mesh_dim>(nodes, p01) - get_vector<mesh_dim>(nodes, p00),
         get_vector<mesh_dim>(nodes, p11) - get_vector<mesh_dim>(nodes, p10));
     ret = ret_cross[2];
     //TODO check this [2].. maybe need a dot of this cross with something??
-#endif
+    */
   return ret;
 }
 
