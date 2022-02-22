@@ -38,6 +38,11 @@ Read<I8> check_collapse_class(
         }
       }
     }
+
+    if (e_cd == EDGE) {
+      code = DONT_COLLAPSE;
+    }
+
     cand_codes_w[cand] = code;
   };
   parallel_for(ncands, f, "check_collapse_class");
