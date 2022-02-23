@@ -78,7 +78,7 @@ void test_disc_collapse(Library *lib) {
   auto comm = lib->world();
 
   //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
-    //                      "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
+  //                      "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
   auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
                             "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", comm);
                             
@@ -102,6 +102,10 @@ void test_disc_collapse(Library *lib) {
   auto coords = mesh.coords();
   auto ev2v = mesh.get_adj(1, 0).ab2b;
   auto fe2e = mesh.get_adj(2, 1).ab2b;
+  auto v_class_dim = mesh.get_array<I8>(0, "class_dim");
+  auto v_class_id = mesh.get_array<LO>(0, "class_id");
+  auto e_class_dim = mesh.get_array<I8>(1, "class_dim");
+  auto e_class_id = mesh.get_array<LO>(1, "class_id");
   printf("coords %d, ev2v %d, fe2e %d\n", coords.size(), ev2v.size(), fe2e.size());
   auto opts = AdaptOpts(&mesh);
   mesh.add_tag<Real>(VERT, "metric", 1);
