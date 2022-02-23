@@ -39,6 +39,7 @@ Read<I8> check_collapse_class(
       }
     }
 
+    //TODO improve this for curved
     if (e_cd == EDGE) {
       code = DONT_COLLAPSE;
     }
