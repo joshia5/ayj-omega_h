@@ -1,7 +1,6 @@
 #include "Omega_h_mesh.hpp"
 #include "Omega_h_beziers.hpp"
 #include "Omega_h_vector.hpp"
-#include "Omega_h_for.hpp"
 #include "Omega_h_few.hpp"
 #include "Omega_h_scalar.hpp"
 
@@ -45,32 +44,51 @@ OMEGA_H_INLINE Real getTetPartialJacobianDet(Few<Real, 60> nodes, LO P, LO i1,
 }
 
 OMEGA_H_INLINE Real Nijkl(Few<Real, 60> nodes, LO d, LO I, LO J, LO k) {
+
   Real sum = 0.;
-  LO CD = trinomial(2*(d-1), I, J);
-  for (LO j1 = 0; j1 <= J; ++j1) {
-    auto i1start = max2(0, I+J-j1-(d-1));
-    auto i1end = min2(I, d-1-j1);
-    for (LO i1 = i1start; i1 <= i1end; ++i1){
-      sum += trinomial(d-1, i1, j1)*trinomial(d-1, I-i1, J-j1)
-        *getTriPartialJacobianDet<mesh_dim>(nodes, d, i1, j1, I-i1, J-j1);
+  LO CD = quadnomial(3*(d-1),I,J,K);
+
+  for(LO k1 = 0; k1 <= K; ++k1){
+    LO k2start = max2(0,K-k1-(d-1));
+    for (LO k2 = k2start; k2 <= K-k1; ++k2){
+      for (LO j1 = 0; j1 <= J; ++j1){
+        LO j2start = max2(0,J-j1-(d-1));
+        for (LO j2 = j2start; j2 <= J-j1; ++j2){
+          LO i1end = min2(I,d-1-j1-k1);
+          for (LO i1 = 0; i1 <= i1end; ++i1){
+            LO i2start = max2(0,I+J+K-i1-j1-k1-j2-k2-(d-1));
+            LO i2end = min2(I-i1,d-1-j2-k2);
+            for (LO i2 = i2start; i2 <= i2end; ++i2){
+              LO i3 = I-i1-i2;
+              LO j3 = J-j1-j2;
+              LO k3 = K-k1-k2;
+              sum += quadnomial(d-1,i1,j1,k1)*quadnomial(d-1,i2,j2,k2)
+                  *quadnomial(d-1,i3,j3,k3)
+                  *getTetPartialJacobianDet(nodes,d,i1,j1,k1,i2,j2,k2,i3,j3,k3);
+            }
+          }
+        }
+      }
     }
   }
-  return sum*d*d/CD;
+  return sum*d*d*d/CD;
 }
 
-template <Int n, Int mesh_dim>
-OMEGA_H_INLINE Few<Real, n> getTriJacDetNodes(
-    LO P, Few<Real, 10*mesh_dim> const& elemNodes) {
-  Few<Real, n> nodes;//n=15
-  for (LO I = 0; I <= 2*(P-1); ++I) {
-    for (LO J = 0; J <= 2*(P-1)-I; ++J) {
-        OMEGA_H_CHECK(getTriNodeIndex(2*(P-1),I,J) < nodes.size());
-        nodes[getTriNodeIndex(2*(P-1),I,J)] = Nijk<mesh_dim>(elemNodes,P,I,J);
+template <Int n>
+OMEGA_H_INLINE void getTetJacDetNodes(LO P, Few<Real, 60> const& elemNodes) {
+  Few<Real, n> nodes;//n=84
+  for (int I = 0; I <= 3*(P-1); ++I) {
+    for (int J = 0; J <= 3*(P-1)-I; ++J) {
+      for (int K = 0; K <= 3*(P-1)-I-J; ++K) {
+        OMEGA_H_CHECK(getTetNodeIndex(3*(P-1),I,J,K) < nodes.size());
+        nodes[getTetNodeIndex(3*(P-1),I,J,K)] = Nijkl(elemNodes,P,I,J,K);
+      }
     }
   }
   return nodes;
 }
 
+  /*
 template<Int n>
 OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
   // first 3 vertices
@@ -82,7 +100,6 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
     }
   }
 
-  /*
   Real minJ = 0;
   for (LO edge = 0; edge < 3; ++edge) {
     for (LO i = 0; i < 2*(order-1)-1; ++i) {
@@ -105,7 +122,6 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
       }
     }
   }
-  */
   return -1;
 }
 
@@ -214,5 +230,6 @@ LOs checkValidity_3d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
 
   return LOs(is_invalid);
 }
+  */
 
 } //namespace
