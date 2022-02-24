@@ -73,6 +73,10 @@ OMEGA_H_INLINE LO trinomial(LO n, LO i, LO j) {
   return binomial(n,i)*binomial(n-i,j);
 }
 
+OMEGA_H_INLINE LO quadnomial(LO n, LO i, LO j, LO k) {
+  return binomial(n,i)*binomial(n-i,j)*binomial(n-i-j,k);
+}
+
 constexpr OMEGA_H_INLINE Real const_factorial(Int N) {
   switch (N) {
     case 0:
