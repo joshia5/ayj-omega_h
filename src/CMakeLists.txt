@@ -619,6 +619,7 @@ set(Omega_h_HEADERS
   Omega_h_matrix.hpp
   Omega_h_mesh.hpp
   Omega_h_beziers.hpp
+  Omega_h_curve_validity_3d.hpp
   Omega_h_bezier_interp.hpp
   Omega_h_metric.hpp
   Omega_h_mpi.h
