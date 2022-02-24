@@ -127,11 +127,40 @@ void test_disc_collapse(Library *lib) {
   return;
 }
 
+void test_tet_validity(Library *lib) {
+  auto mesh = Mesh(lib);
+  auto comm = lib->world();
+  binary::read(
+      "/lore/joshia5/develop/mfem_omega/omega_h/meshes/Example_tet.osh",
+      lib->world(), &mesh);
+  mesh.set_curved(1);
+  mesh.set_max_order(3);
+  mesh.add_tags_for_ctrlPts();
+  auto dim = mesh.dim();
+  auto coords = mesh.coords();
+  auto edge_nCtrlPts = mesh.n_internal_ctrlPts(1);
+  auto ev2v = mesh.ask_down(1, 0).ab2b;
+  auto fe2e = mesh.ask_down(2, 1).ab2b;
+  auto rf2f = mesh.ask_down(3, 2).ab2b;
+
+  mesh.add_tag<Real>(0, "bezier_pts", dim, coords);
+  mesh.set_tag_for_ctrlPts(1, Reals({0.0, 1.0/3.0, 0.0, 
+                                        0.0, 2.0/3.0, 0.0,
+                                     2.0/3.0,1.0/3.0, 1.0/3.0,2.0/3.0,
+                                     0.0,2.0/3.0, 0.0,1.0/3.0}));
+  mesh.set_tag_for_ctrlPts(2, Reals({1.0/3.0, 1.0/3.0, 0.0,
+                                     1.0/3.0, 0.0, 1.0/3.0,
+                                     1.0/3.0, 1.0/3.0, 1.0/3.0,
+                                     0.0, 1.0/3.0, 1.0/3.0}));
+  auto valid_tet = checkValidity_3d(&mesh, LOs({0}), 3);
+}
+
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
-  test_disc_collapse(&lib);
+  //test_disc_collapse(&lib);
   //test_disc_validity(&lib);
   //test_tri_validity(&lib);
+  test_tet_validity(&lib);
   return 0;
 }
