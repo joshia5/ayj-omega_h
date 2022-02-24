@@ -329,6 +329,34 @@ void twotri_square_gen(CommPtr comm, std::string const mesh_dir) {
   }
 }
 
+void tet_gen(CommPtr comm, std::string const mesh_dir) {
+  auto mesh = Mesh(comm->library());
+  try {
+    int numVerts = 4;
+    double coords[4*3] =  {0.000, 0.000, 0.000,
+                           1.000, 0.000, 0.000,
+                           0.000, 1.000, 0.000,
+                           0.000, 0.000, 1.000
+                          };
+    int numElems = 1;
+    int elementType[1] = {10};
+    int elementData[4] = {0,1,2,3};
+    pVertex vReturn[4];
+    pEntity eReturn[1];
+    std::string mesh_path = mesh_dir + "/Example_tet.sms";
+    std::string model_path = mesh_dir + "/Example_tet.smd";
+    finalize_write(numVerts, coords, numElems, elementType, elementData,
+                   vReturn, eReturn, mesh_path.c_str(), model_path.c_str());
+  } catch (pSimError err) {
+    cerr<<"SimModSuite error caught:"<<endl;
+    cerr<<"  Error code: "<<SimError_code(err)<<endl;
+    cerr<<"  Error string: "<<SimError_toString(err)<<endl;
+    SimError_delete(err);
+  } catch (...) {
+    cerr<<"Unhandled exception caught"<<endl;
+  }
+}
+
 int main(int argc, char *argv[]) {
 
   if (argc != 2) {
@@ -345,6 +373,7 @@ int main(int argc, char *argv[]) {
   pymOnHex_gen(comm, mesh_dir);
   allType_gen(comm, mesh_dir);
   tri_gen(comm, mesh_dir);
+  tet_gen(comm, mesh_dir);
   twotri_square_gen(comm, mesh_dir);
 
   return 0;
