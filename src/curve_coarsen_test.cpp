@@ -176,11 +176,8 @@ void test_tet_validity(Library *lib) {
   auto edgeCtrlPts = HostRead<Real>(mesh.get_ctrlPts(1));
   auto faceCtrlPts = HostRead<Real>(mesh.get_ctrlPts(2));
   LO tet = 0;
-  for (LO j = 0; j < 4; ++j) {
-    auto p = get_vector<3>(vertCtrlPts, rv2v[tet*3 + j]);
-    for (LO k = 0; k < 3; ++k) {
-      tet_pts[j*3 + k] = p[k];
-    }
+  for (LO j = 0; j < vertCtrlPts.size(); ++j) {
+    tet_pts[j] = vertCtrlPts[j];
   }
   for (LO j = 0; j < edgeCtrlPts.size(); ++j) {
     tet_pts[12 + j] = edgeCtrlPts[j];
