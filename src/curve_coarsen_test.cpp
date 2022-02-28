@@ -1,11 +1,11 @@
 #include <Omega_h_build.hpp>
 #include <Omega_h_coarsen.hpp>
-#include <Omega_h_compare.hpp>
 #include <Omega_h_library.hpp>
 #include <Omega_h_metric.hpp>
 #include <Omega_h_file.hpp>
 #include <Omega_h_beziers.hpp>
 #include <Omega_h_for.hpp>
+#include <Omega_h_curve_validity_3d.hpp>
 
 using namespace Omega_h;
 
@@ -140,19 +140,57 @@ void test_tet_validity(Library *lib) {
   auto coords = mesh.coords();
   auto edge_nCtrlPts = mesh.n_internal_ctrlPts(1);
   auto ev2v = mesh.ask_down(1, 0).ab2b;
+  auto rv2v = mesh.ask_down(3, 0).ab2b;
   auto fe2e = mesh.ask_down(2, 1).ab2b;
   auto rf2f = mesh.ask_down(3, 2).ab2b;
 
   mesh.add_tag<Real>(0, "bezier_pts", dim, coords);
   mesh.set_tag_for_ctrlPts(1, Reals({0.0, 1.0/3.0, 0.0, 
-                                        0.0, 2.0/3.0, 0.0,
-                                     2.0/3.0,1.0/3.0, 1.0/3.0,2.0/3.0,
-                                     0.0,2.0/3.0, 0.0,1.0/3.0}));
+                                     0.0, 2.0/3.0, 0.0,
+                                     //0
+                                     2.0/3.0, 0.0, 0.0,
+                                     1.0/3.0, 0.0, 0.0,
+                                     //1.0/3.0, 0.0, 0.0,
+                                     //2.0/3.0, 0.0, 0.0,
+                                     //1 is flipped
+                                     0.0, 0.0, 1.0/3.0, 
+                                     0.0, 0.0, 2.0/3.0,
+                                     //2
+                                     1.0/3.0, 2.0/3.0, 0.0, 
+                                     2.0/3.0, 1.0/3.0, 0.0,
+                                     //3
+                                     0.0, 2.0/3.0, 1.0/3.0,
+                                     0.0, 1.0/3.0, 2.0/3.0,
+                                     //4
+                                     2.0/3.0, 0.0, 1.0/3.0,
+                                     1.0/3.0, 0.0, 2.0/3.0
+                                     //5
+                                     }));
   mesh.set_tag_for_ctrlPts(2, Reals({1.0/3.0, 1.0/3.0, 0.0,
                                      1.0/3.0, 0.0, 1.0/3.0,
                                      1.0/3.0, 1.0/3.0, 1.0/3.0,
                                      0.0, 1.0/3.0, 1.0/3.0}));
-  auto valid_tet = checkValidity_3d(&mesh, LOs({0}), 3);
+
+  Few<Real, 60> tet_pts;//ntet_pts*dim=20*3
+  auto vertCtrlPts = HostRead<Real>(mesh.get_ctrlPts(0));
+  auto edgeCtrlPts = HostRead<Real>(mesh.get_ctrlPts(1));
+  auto faceCtrlPts = HostRead<Real>(mesh.get_ctrlPts(2));
+  LO tet = 0;
+  for (LO j = 0; j < 4; ++j) {
+    auto p = get_vector<3>(vertCtrlPts, rv2v[tet*3 + j]);
+    for (LO k = 0; k < 3; ++k) {
+      tet_pts[j*3 + k] = p[k];
+    }
+  }
+  for (LO j = 0; j < edgeCtrlPts.size(); ++j) {
+    tet_pts[12 + j] = edgeCtrlPts[j];
+  }
+  for (LO j = 0; j < faceCtrlPts.size(); ++j) {
+    tet_pts[48 + j] = faceCtrlPts[j];
+  }
+  Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
+  auto is_invalid = checkMinJacDet_3d(nodes_det);
+  printf("tet is invalid %d\n", is_invalid);
 }
 
 int main(int argc, char** argv) {
