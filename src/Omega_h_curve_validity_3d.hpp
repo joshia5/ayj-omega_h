@@ -88,18 +88,17 @@ OMEGA_H_INLINE void getTetJacDetNodes(LO P, Few<Real, 60> const& elemNodes) {
   return nodes;
 }
 
-  /*
-template<Int n>
-OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
-  // first 3 vertices
+OMEGA_H_INLINE LO checkMinJacDet_3d(Few<Real, 60> const& nodes) {
+  // first 4 vertices
   Real minAcceptable = 0.0;
-  for (LO i = 0; i < 3; ++i) {
+  for (LO i = 0; i < 4; ++i) {
     printf("i %d Nijk[i] %f\n", i, nodes[i]);
     if (nodes[i] < minAcceptable) {
       return i+2;
     }
   }
 
+  /*
   Real minJ = 0;
   for (LO edge = 0; edge < 3; ++edge) {
     for (LO i = 0; i < 2*(order-1)-1; ++i) {
@@ -122,6 +121,7 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
       }
     }
   }
+  */
   return -1;
 }
 
