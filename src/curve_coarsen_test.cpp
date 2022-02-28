@@ -150,9 +150,7 @@ void test_tet_validity(Library *lib) {
                                      //0
                                      2.0/3.0, 0.0, 0.0,
                                      1.0/3.0, 0.0, 0.0,
-                                     //1.0/3.0, 0.0, 0.0,
-                                     //2.0/3.0, 0.0, 0.0,
-                                     //1 is flipped
+                                     //1
                                      0.0, 0.0, 1.0/3.0, 
                                      0.0, 0.0, 2.0/3.0,
                                      //2
@@ -187,7 +185,7 @@ void test_tet_validity(Library *lib) {
   }
   Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
   auto is_invalid = checkMinJacDet_3d(nodes_det);
-  printf("tet is invalid %d\n", is_invalid);
+  printf("tet is invalid %d %f %f %f %f\n", is_invalid, nodes_det[0],nodes_det[1],nodes_det[2],nodes_det[3]);
 }
 
 int main(int argc, char** argv) {
