@@ -134,6 +134,7 @@ void test_tet_validity(Library *lib) {
       "/lore/joshia5/develop/mfem_omega/omega_h/meshes/Example_tet.osh",
       lib->world(), &mesh);
   mesh.set_curved(1);
+  /*
   mesh.set_max_order(3);
   mesh.add_tags_for_ctrlPts();
   auto dim = mesh.dim();
@@ -153,13 +154,13 @@ void test_tet_validity(Library *lib) {
                                      2.0/3.0, 0.0, 0.0,
                                      1.0/3.0, 0.0, 0.0,
                                      //1
-                                     1.0/3.0, 2.0/3.0, 0.0, 
+                                     1.0/3.0, 2.0/3.0, 0.0,
                                      2.0/3.0, 1.0/3.0, 0.0,
                                      //3
-                                     0.0, 1.0/3.0, 0.0, 
+                                     0.0, 1.0/3.0, 0.0,
                                      0.0, 2.0/3.0, 0.0,
                                      //0
-                                     0.0, 0.0, 1.0/3.0, 
+                                     0.0, 0.0, 1.0/3.0,
                                      0.0, 0.0, 2.0/3.0,
                                      //2
                                      2.0/3.0, 0.0, 1.0/3.0,
@@ -176,7 +177,6 @@ void test_tet_validity(Library *lib) {
                                      0.0, 1.0/3.0, 1.0/3.0}));
 
   Few<Real, 60> tet_pts;//ntet_pts*dim=20*3
-  LO tet = 0;
   for (LO j = 0; j < vertCtrlPts.size(); ++j) {
     tet_pts[j] = vertCtrlPts[j];
   }
@@ -187,6 +187,19 @@ void test_tet_validity(Library *lib) {
     tet_pts[48 + j] = faceCtrlPts[j];
   }
   Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
+  */
+
+  mesh.set_max_order(1);
+  auto vertCtrlPts = HostRead<Real>(Reals({0.0,0.0,0.0,
+                                           1.0,0.0,0.0,
+                                           0.0,1.0,0.0,
+                                           0.0,0.0,1.0}));
+  Few<Real, 60> tet_pts;//ntet_pts*dim=20*3
+  for (LO j = 0; j < vertCtrlPts.size(); ++j) {
+    tet_pts[j] = vertCtrlPts[j];
+  }
+  Few<Real, 84> nodes_det = getTetJacDetNodes<84>(1, tet_pts);
+
   auto is_invalid = checkMinJacDet_3d(nodes_det);
   printf("tet is invalid %d %f %f %f %f\n", is_invalid, nodes_det[0],nodes_det[1],nodes_det[2],nodes_det[3]);
 }
