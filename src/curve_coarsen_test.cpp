@@ -140,12 +140,45 @@ void test_tet_validity(Library *lib) {
   auto coords = mesh.coords();
   auto edge_nCtrlPts = mesh.n_internal_ctrlPts(1);
   auto ev2v = mesh.ask_down(1, 0).ab2b;
-  auto rv2v = mesh.ask_down(3, 0).ab2b;
   auto fe2e = mesh.ask_down(2, 1).ab2b;
-  auto rf2f = mesh.ask_down(3, 2).ab2b;
+  auto rv2v = mesh.ask_down(3, 0).ab2b;//0,2,1,3
+  auto re2e = mesh.ask_down(3, 1).ab2b;//1,3,0,2,5,4
+  auto rf2f = mesh.ask_down(3, 2).ab2b;//0,1,2,3
 
-  mesh.add_tag<Real>(0, "bezier_pts", dim, coords);
-  mesh.set_tag_for_ctrlPts(1, Reals({0.0, 1.0/3.0, 0.0, 
+  //mesh.add_tag<Real>(0, "bezier_pts", dim, coords);
+  /*
+  mesh.add_tag<Real>(0, "bezier_pts", dim, Reals({0.0,0.0,0.0,
+                                                  1.0,0.0,0.0,
+                                                  0.0,1.0,0.0,
+                                                  0.0,0.0,1.0}));
+                                                  */
+  auto vertCtrlPts = HostRead<Real>(Reals({0.0,0.0,0.0,
+                                                  1.0,0.0,0.0,
+                                                  0.0,1.0,0.0,
+                                                  0.0,0.0,1.0}));
+  auto edgeCtrlPts = HostRead<Real>(Reals({
+                                     2.0/3.0, 0.0, 0.0,
+                                     1.0/3.0, 0.0, 0.0,
+                                     //1
+                                     1.0/3.0, 2.0/3.0, 0.0, 
+                                     2.0/3.0, 1.0/3.0, 0.0,
+                                     //3
+                                     0.0, 1.0/3.0, 0.0, 
+                                     0.0, 2.0/3.0, 0.0,
+                                     //0
+                                     0.0, 0.0, 1.0/3.0, 
+                                     0.0, 0.0, 2.0/3.0,
+                                     //2
+                                     2.0/3.0, 0.0, 1.0/3.0,
+                                     1.0/3.0, 0.0, 2.0/3.0,
+                                     //5
+                                     0.0, 2.0/3.0, 1.0/3.0,
+                                     0.0, 1.0/3.0, 2.0/3.0
+                                     //4
+                                     }));
+  /*
+  mesh.set_tag_for_ctrlPts(1, Reals({
+                                     0.0, 1.0/3.0, 0.0, 
                                      0.0, 2.0/3.0, 0.0,
                                      //0
                                      2.0/3.0, 0.0, 0.0,
@@ -164,15 +197,14 @@ void test_tet_validity(Library *lib) {
                                      1.0/3.0, 0.0, 2.0/3.0
                                      //5
                                      }));
-  mesh.set_tag_for_ctrlPts(2, Reals({1.0/3.0, 1.0/3.0, 0.0,
+                                     */
+  auto faceCtrlPts = HostRead<Real>(Reals({
+                                     1.0/3.0, 1.0/3.0, 0.0,
                                      1.0/3.0, 0.0, 1.0/3.0,
                                      1.0/3.0, 1.0/3.0, 1.0/3.0,
                                      0.0, 1.0/3.0, 1.0/3.0}));
 
   Few<Real, 60> tet_pts;//ntet_pts*dim=20*3
-  auto vertCtrlPts = HostRead<Real>(mesh.get_ctrlPts(0));
-  auto edgeCtrlPts = HostRead<Real>(mesh.get_ctrlPts(1));
-  auto faceCtrlPts = HostRead<Real>(mesh.get_ctrlPts(2));
   LO tet = 0;
   for (LO j = 0; j < vertCtrlPts.size(); ++j) {
     tet_pts[j] = vertCtrlPts[j];
