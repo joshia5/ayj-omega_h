@@ -127,14 +127,76 @@ void test_disc_collapse(Library *lib) {
   return;
 }
 
-void test_tet_validity(Library *lib) {
+void test_linear_tet_validity(Library *lib) {
   auto mesh = Mesh(lib);
   auto comm = lib->world();
   binary::read(
       "/lore/joshia5/develop/mfem_omega/omega_h/meshes/Example_tet.osh",
       lib->world(), &mesh);
   mesh.set_curved(1);
-  /*
+  mesh.set_max_order(1);
+  auto vertCtrlPts = HostRead<Real>(Reals({0.0,0.0,0.0,
+                                           1.0,0.0,0.0,
+                                           0.0,1.0,0.0,
+                                           0.0,0.0,1.0}));
+  Few<Real, 60> tet_pts;//ntet_pts*dim=20*3
+  for (LO j = 0; j < vertCtrlPts.size(); ++j) {
+    tet_pts[j] = vertCtrlPts[j];
+  }
+  Few<Real, 84> nodes_det = getTetJacDetNodes<84>(1, tet_pts);
+
+  auto is_invalid = checkMinJacDet_3d(nodes_det);
+  printf("linear tet is invalid %d \n", is_invalid);
+}
+
+void test_quadratic_tet_validity(Library *lib) {
+  auto mesh = Mesh(lib);
+  auto comm = lib->world();
+  binary::read(
+      "/lore/joshia5/develop/mfem_omega/omega_h/meshes/Example_tet.osh",
+      lib->world(), &mesh);
+  mesh.set_curved(1);
+  mesh.set_max_order(2);
+  auto vertCtrlPts = HostRead<Real>(Reals({0.0,0.0,0.0,
+                                           1.0,0.0,0.0,
+                                           0.0,1.0,0.0,
+                                           0.0,0.0,1.0}));
+  auto edgeCtrlPts = HostRead<Real>(Reals({
+                                     1.0/2.0, 0.0, 0.0,
+                                     //1
+                                     1.0/2.0, 1.0/2.0, 0.0,
+                                     //3
+                                     0.0, 1.0/2.0, 0.0,
+                                     //0
+                                     0.0, 0.0, 1.0/2.0,
+                                     //2
+                                     1.0/2.0, 0.0, 1.0/2.0,
+                                     //5
+                                     0.0, 1.0/2.0, 1.0/2.0
+                                     //4
+                                     }));
+  Few<Real, 60> tet_pts;//ntet_pts*dim=20*3
+  for (LO j = 0; j < vertCtrlPts.size(); ++j) {
+    tet_pts[j] = vertCtrlPts[j];
+  }
+  for (LO j = 0; j < edgeCtrlPts.size(); ++j) {
+    tet_pts[12 + j] = edgeCtrlPts[j];
+  }
+  Few<Real, 84> nodes_det = getTetJacDetNodes<84>(2, tet_pts);
+
+  auto is_invalid = checkMinJacDet_3d(nodes_det);
+  printf("quadratic tet is invalid %d \n", is_invalid);
+
+}
+
+void test_cubic_tet_validity(Library *lib) {
+  auto mesh = Mesh(lib);
+  auto comm = lib->world();
+  binary::read(
+      "/lore/joshia5/develop/mfem_omega/omega_h/meshes/Example_tet.osh",
+      lib->world(), &mesh);
+  mesh.set_curved(1);
+
   mesh.set_max_order(3);
   mesh.add_tags_for_ctrlPts();
   auto dim = mesh.dim();
@@ -187,51 +249,9 @@ void test_tet_validity(Library *lib) {
     tet_pts[48 + j] = faceCtrlPts[j];
   }
   Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
-  */
-
-  /*
-  mesh.set_max_order(1);
-  auto vertCtrlPts = HostRead<Real>(Reals({0.0,0.0,0.0,
-                                           1.0,0.0,0.0,
-                                           0.0,1.0,0.0,
-                                           0.0,0.0,1.0}));
-  Few<Real, 60> tet_pts;//ntet_pts*dim=20*3
-  for (LO j = 0; j < vertCtrlPts.size(); ++j) {
-    tet_pts[j] = vertCtrlPts[j];
-  }
-  Few<Real, 84> nodes_det = getTetJacDetNodes<84>(1, tet_pts);
-  */
-
-  mesh.set_max_order(2);
-  auto vertCtrlPts = HostRead<Real>(Reals({0.0,0.0,0.0,
-                                           1.0,0.0,0.0,
-                                           0.0,1.0,0.0,
-                                           0.0,0.0,1.0}));
-  auto edgeCtrlPts = HostRead<Real>(Reals({
-                                     1.0/2.0, 0.0, 0.0,
-                                     //1
-                                     1.0/2.0, 1.0/2.0, 0.0,
-                                     //3
-                                     0.0, 1.0/2.0, 0.0,
-                                     //0
-                                     0.0, 0.0, 1.0/2.0,
-                                     //2
-                                     1.0/2.0, 0.0, 1.0/2.0,
-                                     //5
-                                     0.0, 1.0/2.0, 1.0/2.0
-                                     //4
-                                     }));
-  Few<Real, 60> tet_pts;//ntet_pts*dim=20*3
-  for (LO j = 0; j < vertCtrlPts.size(); ++j) {
-    tet_pts[j] = vertCtrlPts[j];
-  }
-  for (LO j = 0; j < edgeCtrlPts.size(); ++j) {
-    tet_pts[12 + j] = edgeCtrlPts[j];
-  }
-  Few<Real, 84> nodes_det = getTetJacDetNodes<84>(2, tet_pts);
 
   auto is_invalid = checkMinJacDet_3d(nodes_det);
-  printf("tet is invalid %d %f %f %f %f\n", is_invalid, nodes_det[0],nodes_det[1],nodes_det[2],nodes_det[3]);
+  printf("cubic tet is invalid %d\n", is_invalid);
 }
 
 int main(int argc, char** argv) {
@@ -240,6 +260,8 @@ int main(int argc, char** argv) {
   //test_disc_collapse(&lib);
   //test_disc_validity(&lib);
   //test_tri_validity(&lib);
-  test_tet_validity(&lib);
+  test_linear_tet_validity(&lib);
+  test_quadratic_tet_validity(&lib);
+  test_cubic_tet_validity(&lib);
   return 0;
 }
