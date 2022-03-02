@@ -1393,6 +1393,170 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
   return -1;
 }
 
+OMEGA_H_INLINE Few<Real, 60> collect_tet_pts(
+    LO const order, LO const tet, LOs ev2v, LOs rv2v,
+    Reals vertCtrlPts, Reals edgeCtrlPts, Reals faceCtrlPts,
+    LOs re2e, LOs rf2f) {
+  LO const dim = 3;
+  LO const n_edge_pts = n_internal_ctrlPts(EDGE, order);
+  auto tet_v0 = rv2v[tet*4 + 0];
+  auto tet_v1 = rv2v[tet*4 + 1];
+  auto tet_v2 = rv2v[tet*4 + 2];
+  auto tet_v3 = rv2v[tet*4 + 3];
+  auto c000 = get_vector<3>(vertCtrlPts, tet_v0);
+  auto c300 = get_vector<3>(vertCtrlPts, tet_v1);
+  auto c030 = get_vector<3>(vertCtrlPts, tet_v2);
+  auto c003 = get_vector<3>(vertCtrlPts, tet_v3);
+
+  auto tet_e0 = re2e[tet*6 + 0];
+  auto tet_e1 = re2e[tet*6 + 1];
+  auto tet_e2 = re2e[tet*6 + 2];
+  auto tet_e3 = re2e[tet*6 + 3];
+  auto tet_e4 = re2e[tet*6 + 4];
+  auto tet_e5 = re2e[tet*6 + 5];
+
+  auto tet_f0 = rf2f[tet*4 + 0];
+  auto tet_f1 = rf2f[tet*4 + 1];
+  auto tet_f2 = rf2f[tet*4 + 2];
+  auto tet_f3 = rf2f[tet*4 + 3];
+  auto c110 = get_vector<3>(faceCtrlPts, tet_f0);
+  auto c101 = get_vector<3>(faceCtrlPts, tet_f1);
+  auto c111 = get_vector<3>(faceCtrlPts, tet_f2);
+  auto c011 = get_vector<3>(faceCtrlPts, tet_f3);
+
+  LO e0_flip = -1;
+  LO e1_flip = -1;
+  LO e2_flip = -1;
+  LO e3_flip = -1;
+  LO e4_flip = -1;
+  LO e5_flip = -1;
+  {
+    auto e0v0 = ev2v[tet_e0*2 + 0];
+    auto e0v1 = ev2v[tet_e0*2 + 1];
+    e0_flip = edge_is_flip(e0v0, e0v1, tet_v0, tet_v1);
+    auto e1v0 = ev2v[tet_e1*2 + 0];
+    auto e1v1 = ev2v[tet_e1*2 + 1];
+    e1_flip = edge_is_flip(e1v0, e1v1, tet_v1, tet_v2);
+    auto e2v0 = ev2v[tet_e2*2 + 0];
+    auto e2v1 = ev2v[tet_e2*2 + 1];
+    e2_flip = edge_is_flip(e2v0, e2v1, tet_v2, tet_v0);
+    auto e3v0 = ev2v[tet_e3*2 + 0];
+    auto e3v1 = ev2v[tet_e3*2 + 1];
+    e3_flip = edge_is_flip(e3v0, e3v1, tet_v0, tet_v3);
+    auto e4v0 = ev2v[tet_e4*2 + 0];
+    auto e4v1 = ev2v[tet_e4*2 + 1];
+    e4_flip = edge_is_flip(e4v0, e4v1, tet_v1, tet_v3);
+    auto e5v0 = ev2v[tet_e5*2 + 0];
+    auto e5v1 = ev2v[tet_e5*2 + 1];
+    e5_flip = edge_is_flip(e5v0, e5v1, tet_v2, tet_v3);
+  }
+
+  auto pts_per_edge = n_edge_pts;
+  Real cx100 = edgeCtrlPts[tet_e0*pts_per_edge*dim + 0];
+  Real cy100 = edgeCtrlPts[tet_e0*pts_per_edge*dim + 1];
+  Real cz100 = edgeCtrlPts[tet_e0*pts_per_edge*dim + 2];
+  Real cx200 = edgeCtrlPts[tet_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy200 = edgeCtrlPts[tet_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real cz200 = edgeCtrlPts[tet_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (e0_flip > 0) {
+    swap2(cx100, cx200);
+    swap2(cy100, cy200);
+    swap2(cz100, cz200);
+  }
+  Real cx210 = edgeCtrlPts[tet_e1*pts_per_edge*dim + 0];
+  Real cy210 = edgeCtrlPts[tet_e1*pts_per_edge*dim + 1];
+  Real cz210 = edgeCtrlPts[tet_e1*pts_per_edge*dim + 2];
+  Real cx120 = edgeCtrlPts[tet_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy120 = edgeCtrlPts[tet_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real cz120 = edgeCtrlPts[tet_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (e1_flip > 0) {
+    swap2(cx210, cx120);
+    swap2(cy210, cy120);
+    swap2(cz210, cz120);
+  }
+  Real cx020 = edgeCtrlPts[tet_e2*pts_per_edge*dim + 0];
+  Real cy020 = edgeCtrlPts[tet_e2*pts_per_edge*dim + 1];
+  Real cz020 = edgeCtrlPts[tet_e2*pts_per_edge*dim + 2];
+  Real cx010 = edgeCtrlPts[tet_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy010 = edgeCtrlPts[tet_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real cz010 = edgeCtrlPts[tet_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (e2_flip > 0) {
+    swap2(cx020, cx010);
+    swap2(cy020, cy010);
+    swap2(cz020, cz010);
+  }
+  Real cx001 = edgeCtrlPts[tet_e3*pts_per_edge*dim + 0];
+  Real cy001 = edgeCtrlPts[tet_e3*pts_per_edge*dim + 1];
+  Real cz001 = edgeCtrlPts[tet_e3*pts_per_edge*dim + 2];
+  Real cx002 = edgeCtrlPts[tet_e3*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy002 = edgeCtrlPts[tet_e3*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real cz002 = edgeCtrlPts[tet_e3*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (e3_flip > 0) {
+    swap2(cx002, cx001);
+    swap2(cy002, cy001);
+    swap2(cz002, cz001);
+  }
+  Real cx201 = edgeCtrlPts[tet_e4*pts_per_edge*dim + 0];
+  Real cy201 = edgeCtrlPts[tet_e4*pts_per_edge*dim + 1];
+  Real cz201 = edgeCtrlPts[tet_e4*pts_per_edge*dim + 2];
+  Real cx102 = edgeCtrlPts[tet_e4*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy102 = edgeCtrlPts[tet_e4*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real cz102 = edgeCtrlPts[tet_e4*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (e4_flip > 0) {
+    swap2(cx102, cx201);
+    swap2(cy102, cy201);
+    swap2(cz102, cz201);
+  }
+  Real cx021 = edgeCtrlPts[tet_e5*pts_per_edge*dim + 0];
+  Real cy021 = edgeCtrlPts[tet_e5*pts_per_edge*dim + 1];
+  Real cz021 = edgeCtrlPts[tet_e5*pts_per_edge*dim + 2];
+  Real cx012 = edgeCtrlPts[tet_e5*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy012 = edgeCtrlPts[tet_e5*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  Real cz012 = edgeCtrlPts[tet_e5*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+  if (e5_flip > 0) {
+    swap2(cx012, cx021);
+    swap2(cy012, cy021);
+    swap2(cz012, cz021);
+  }
+  auto c100 = vector_3(cx100, cy100, cz100);
+  auto c200 = vector_3(cx200, cy200, cz200);
+  auto c210 = vector_3(cx210, cy210, cz210);
+  auto c120 = vector_3(cx120, cy120, cz120);
+  auto c020 = vector_3(cx020, cy020, cz020);
+  auto c010 = vector_3(cx010, cy010, cz010);
+  auto c001 = vector_3(cx001, cy001, cz001);
+  auto c002 = vector_3(cx002, cy002, cz002);
+  auto c102 = vector_3(cx102, cy102, cz102);
+  auto c201 = vector_3(cx201, cy201, cz201);
+  auto c012 = vector_3(cx012, cy012, cz012);
+  auto c021 = vector_3(cx021, cy021, cz021);
+
+  Few<Real,60> tet_pts;
+  for (LO j = 0; j < dim; ++j) {
+    tet_pts[0*dim + j] = c000[j];
+    tet_pts[1*dim + j] = c300[j];
+    tet_pts[2*dim + j] = c030[j];
+    tet_pts[3*dim + j] = c003[j];
+    tet_pts[4*dim + j] = c100[j];
+    tet_pts[5*dim + j] = c200[j];
+    tet_pts[6*dim + j] = c210[j];
+    tet_pts[7*dim + j] = c120[j];
+    tet_pts[8*dim + j] = c020[j];
+    tet_pts[9*dim + j] = c010[j];
+    tet_pts[10*dim + j] = c001[j];
+    tet_pts[11*dim + j] = c002[j];
+    tet_pts[12*dim + j] = c201[j];
+    tet_pts[13*dim + j] = c102[j];
+    tet_pts[14*dim + j] = c012[j];
+    tet_pts[15*dim + j] = c021[j];
+    tet_pts[16*dim + j] = c110[j];
+    tet_pts[17*dim + j] = c101[j];
+    tet_pts[18*dim + j] = c111[j];
+    tet_pts[19*dim + j] = c011[j];
+  }
+  return tet_pts;
+}
+
 #define OMEGA_H_EXPL_INST_DECL(T)                                              
 OMEGA_H_EXPL_INST_DECL(I8)
 OMEGA_H_EXPL_INST_DECL(I32)
