@@ -27,12 +27,6 @@ LOs coarsen_invalidities_tmpl(
   auto invalidities = Write<LO>(ncands * 2, -1);
   auto coords = mesh->coords();
 
-  auto e2f = mesh->ask_up(1, 2);
-  auto f2e = mesh->ask_down(2, 1);
-  auto e2e = edges_across_tris(f2e, e2f);
-  auto e2ee = e2e.a2ab;
-  auto ee2e = e2e.ab2b;
-
   auto f = OMEGA_H_LAMBDA(LO cand) {
     auto e = cands2edges[cand];
     auto code = cand_codes[cand];
@@ -59,6 +53,10 @@ LOs coarsen_invalidities_tmpl(
         ccv2v[ccv_col] = v_onto;  // vertices of new cell
 
         if (mesh_dim == 2) {
+          auto e2e = edges_across_tris(mesh->ask_down(2, 1), mesh->ask_up(1, 2));
+          auto e2ee = e2e.a2ab;
+          auto ee2e = e2e.ab2b;
+
           Few<LO, mesh_dim> same_edges = {-1, -1}; //can be max 2
           Few<LO, mesh_dim+1> is_newTri_edge_flip = {-2, -2, -2};
           Few<LO, mesh_dim+1> newTri_edge = {-1, -1, -1};
@@ -258,6 +256,10 @@ LOs coarsen_invalidities_tmpl(
           max_invalid = max2(max_invalid, is_invalid);
         }
         else if (mesh_dim == 3) {
+          auto e2e = edges_across_tets(mesh->ask_down(3, 1), mesh->ask_up(1, 3));
+          auto e2ee = e2e.a2ab;
+          auto ee2e = e2e.ab2b;
+
           Few<LO, mesh_dim> same_edges = {-1, -1, -1, -1, -1}; //can be max 5
           Few<LO, mesh_dim+1> is_newTet_edge_flip = {-2, -2, -2, -2, -2, -2};
           Few<LO, mesh_dim+1> newTet_edge = {-1, -1, -1, -1, -1, -1};
