@@ -286,6 +286,29 @@ void test_cubic_tet_validity(Library *lib) {
   */
 }
 
+void test_boxCircle_validity(Library *lib) {
+  auto comm = lib->world();
+  auto mesh = binary::read("/lore/joshia5/Meshes/curved/box_circleCut-100k.osh", comm);
+  if (!mesh.has_tag(0, "bezier_pts")) 
+    mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
+  calc_quad_ctrlPts_from_interpPts(&mesh);
+
+  elevate_curve_order_2to3(&mesh);
+
+  auto wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_3d(&mesh, &wireframe_mesh);
+  std::string vtuPath = "/lore/joshia5/Meshes/curved/boxCircle_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  auto curveVtk_mesh = Mesh(comm->library());
+  curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh);
+  vtuPath = "/lore/joshia5/Meshes/curved/boxCircle_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
+
+  checkValidity_3d(&mesh, LOs(mesh.nregions(), 0, 1), 3);
+  return;
+}
 void test_Kova_validity(Library *lib) {
   auto comm = lib->world();
   auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
@@ -320,6 +343,7 @@ int main(int argc, char** argv) {
   test_quadratic_tet_validity(&lib);
   test_cubic_tet_validity(&lib);
   test_Kova_validity(&lib);
+  test_boxCircle_validity(&lib);
 
   return 0;
 }
