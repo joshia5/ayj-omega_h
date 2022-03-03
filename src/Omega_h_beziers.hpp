@@ -1430,26 +1430,24 @@ OMEGA_H_INLINE Few<Real, 60> collect_tet_pts(
   LO e3_flip = -1;
   LO e4_flip = -1;
   LO e5_flip = -1;
-  {
-    auto e0v0 = ev2v[tet_e0*2 + 0];
-    auto e0v1 = ev2v[tet_e0*2 + 1];
-    e0_flip = edge_is_flip(e0v0, e0v1, tet_v0, tet_v1);
-    auto e1v0 = ev2v[tet_e1*2 + 0];
-    auto e1v1 = ev2v[tet_e1*2 + 1];
-    e1_flip = edge_is_flip(e1v0, e1v1, tet_v1, tet_v2);
-    auto e2v0 = ev2v[tet_e2*2 + 0];
-    auto e2v1 = ev2v[tet_e2*2 + 1];
-    e2_flip = edge_is_flip(e2v0, e2v1, tet_v2, tet_v0);
-    auto e3v0 = ev2v[tet_e3*2 + 0];
-    auto e3v1 = ev2v[tet_e3*2 + 1];
-    e3_flip = edge_is_flip(e3v0, e3v1, tet_v0, tet_v3);
-    auto e4v0 = ev2v[tet_e4*2 + 0];
-    auto e4v1 = ev2v[tet_e4*2 + 1];
-    e4_flip = edge_is_flip(e4v0, e4v1, tet_v1, tet_v3);
-    auto e5v0 = ev2v[tet_e5*2 + 0];
-    auto e5v1 = ev2v[tet_e5*2 + 1];
-    e5_flip = edge_is_flip(e5v0, e5v1, tet_v2, tet_v3);
-  }
+  auto e0v0 = ev2v[tet_e0*2 + 0];
+  auto e0v1 = ev2v[tet_e0*2 + 1];
+  auto e1v0 = ev2v[tet_e1*2 + 0];
+  auto e1v1 = ev2v[tet_e1*2 + 1];
+  auto e2v0 = ev2v[tet_e2*2 + 0];
+  auto e2v1 = ev2v[tet_e2*2 + 1];
+  auto e3v0 = ev2v[tet_e3*2 + 0];
+  auto e3v1 = ev2v[tet_e3*2 + 1];
+  auto e4v0 = ev2v[tet_e4*2 + 0];
+  auto e4v1 = ev2v[tet_e4*2 + 1];
+  auto e5v0 = ev2v[tet_e5*2 + 0];
+  auto e5v1 = ev2v[tet_e5*2 + 1];
+  e0_flip = edge_is_flip(e0v0, e0v1, tet_v0, tet_v1);
+  e1_flip = edge_is_flip(e1v0, e1v1, tet_v1, tet_v2);
+  e2_flip = edge_is_flip(e2v0, e2v1, tet_v2, tet_v0);
+  e3_flip = edge_is_flip(e3v0, e3v1, tet_v0, tet_v3);
+  e4_flip = edge_is_flip(e4v0, e4v1, tet_v1, tet_v3);
+  e5_flip = edge_is_flip(e5v0, e5v1, tet_v2, tet_v3);
 
   auto pts_per_edge = n_edge_pts;
   Real cx100 = edgeCtrlPts[tet_e0*pts_per_edge*dim + 0];
