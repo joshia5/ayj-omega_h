@@ -1448,6 +1448,7 @@ OMEGA_H_INLINE Few<Real, 60> collect_tet_pts(
   e3_flip = edge_is_flip(e3v0, e3v1, tet_v0, tet_v3);
   e4_flip = edge_is_flip(e4v0, e4v1, tet_v1, tet_v3);
   e5_flip = edge_is_flip(e5v0, e5v1, tet_v2, tet_v3);
+  printf("edge flips %d %d %d %d %d %d\n", e0_flip, e1_flip, e2_flip, e3_flip, e4_flip, e5_flip);
 
   auto pts_per_edge = n_edge_pts;
   Real cx100 = edgeCtrlPts[tet_e0*pts_per_edge*dim + 0];
