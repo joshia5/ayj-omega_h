@@ -300,10 +300,10 @@ int main(int argc, char** argv) {
   //test_disc_collapse(&lib);
   //test_disc_validity(&lib);
   //test_tri_validity(&lib);
-  //test_boxCircle_validity(&lib);
-  //test_linear_tet_validity(&lib);
-  //test_quadratic_tet_validity(&lib);
-  //test_Kova_validity(&lib);
+  test_boxCircle_validity(&lib);
+  test_linear_tet_validity(&lib);
+  test_quadratic_tet_validity(&lib);
+  test_Kova_validity(&lib);
   test_cubic_tet_validity(&lib);
 
   return 0;
