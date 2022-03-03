@@ -58,203 +58,459 @@ LOs coarsen_invalidities_tmpl(
         OMEGA_H_CHECK(0 <= ccv_col && ccv_col < mesh_dim + 1);
         ccv2v[ccv_col] = v_onto;  // vertices of new cell
 
-        Few<LO, 2> same_edges = {-1, -1}; //can be max 2
-        Few<LO, 3> is_newTri_edge_flip = {-2, -2, -2};
-        Few<LO, 3> newTri_edge = {-1, -1, -1};
-        LO count_same_edge = 0;
-        auto v0_f = ccv2v[0];
-        auto v1_f = ccv2v[1];
-        auto v2_f = ccv2v[2];
-        for (auto ee = e2ee[e]; ee < e2ee[e + 1]; ++ee) {
-          if (count_same_edge >= 2) break;
-          auto adj_e = ee2e[ee];
-          //printf("e %d adj_e %d\n", e , adj_e);
-          auto v0 = ev2v[adj_e*2];
-          auto v1 = ev2v[adj_e*2 + 1];
+        if (mesh_dim == 2) {
+          Few<LO, mesh_dim> same_edges = {-1, -1}; //can be max 2
+          Few<LO, mesh_dim+1> is_newTri_edge_flip = {-2, -2, -2};
+          Few<LO, mesh_dim+1> newTri_edge = {-1, -1, -1};
+          LO count_same_edge = 0;
+          auto v0_f = ccv2v[0];
+          auto v1_f = ccv2v[1];
+          auto v2_f = ccv2v[2];
+          for (auto ee = e2ee[e]; ee < e2ee[e + 1]; ++ee) {
+            if (count_same_edge >= 5) break;
+            auto adj_e = ee2e[ee];
+            //printf("e %d adj_e %d\n", e , adj_e);
+            auto v0 = ev2v[adj_e*2];
+            auto v1 = ev2v[adj_e*2 + 1];
 
-          //check first edge
-          if (((v0 == v0_f) && (v1 == v1_f)) ||
-              ((v0 == v1_f) && (v1 == v0_f))) {
-            if ((count_same_edge == 0) || 
-                ((count_same_edge == 1) && 
-                 (same_edges[count_same_edge-1] != adj_e))) {
-              same_edges[count_same_edge] = adj_e;
-              newTri_edge[0] = adj_e;
-              if ((v0 == v1_f) && (v1 == v0_f)) {
-                is_newTri_edge_flip[0] = 1;
+            //check first edge
+            if (((v0 == v0_f) && (v1 == v1_f)) ||
+                ((v0 == v1_f) && (v1 == v0_f))) {
+              if ((count_same_edge == 0) || 
+                  ((count_same_edge == 1) && 
+                   (same_edges[count_same_edge-1] != adj_e))) {
+                same_edges[count_same_edge] = adj_e;
+                newTri_edge[0] = adj_e;
+                if ((v0 == v1_f) && (v1 == v0_f)) {
+                  is_newTri_edge_flip[0] = 1;
+                }
+                else {
+                  is_newTri_edge_flip[0] = -1;
+                }
+                ++count_same_edge;
               }
-              else {
-                is_newTri_edge_flip[0] = -1;
-              }
-              ++count_same_edge;
             }
-          }
-          //check 2nd edge
-          else if (((v0 == v1_f) && (v1 == v2_f)) ||
-              ((v0 == v2_f) && (v1 == v1_f))) {
-            if ((count_same_edge == 0) || 
-                ((count_same_edge == 1) && 
-                 (same_edges[count_same_edge-1] != adj_e))) {
-              same_edges[count_same_edge] = adj_e;
-              newTri_edge[1] = adj_e;
-              if ((v0 == v2_f) && (v1 == v1_f)) {
-                is_newTri_edge_flip[1] = 1;
+            //check 2nd edge
+            else if (((v0 == v1_f) && (v1 == v2_f)) ||
+                ((v0 == v2_f) && (v1 == v1_f))) {
+              if ((count_same_edge == 0) || 
+                  ((count_same_edge == 1) && 
+                   (same_edges[count_same_edge-1] != adj_e))) {
+                same_edges[count_same_edge] = adj_e;
+                newTri_edge[1] = adj_e;
+                if ((v0 == v2_f) && (v1 == v1_f)) {
+                  is_newTri_edge_flip[1] = 1;
+                }
+                else {
+                  is_newTri_edge_flip[1] = -1;
+                }
+                ++count_same_edge;
               }
-              else {
-                is_newTri_edge_flip[1] = -1;
-              }
-              ++count_same_edge;
             }
-          }
-          //check 3nd edge
-          else if (((v0 == v2_f) && (v1 == v0_f)) ||
-              ((v0 == v0_f) && (v1 == v2_f))) {
-            if ((count_same_edge == 0) || 
-                ((count_same_edge == 1) && 
-                 (same_edges[count_same_edge-1] != adj_e))) {
-              same_edges[count_same_edge] = adj_e;
-              newTri_edge[2] = adj_e;
-              if ((v0 == v0_f) && (v1 == v2_f)) {
-                is_newTri_edge_flip[2] = 1;
+            //check 3nd edge
+            else if (((v0 == v2_f) && (v1 == v0_f)) ||
+                ((v0 == v0_f) && (v1 == v2_f))) {
+              if ((count_same_edge == 0) || 
+                  ((count_same_edge == 1) && 
+                   (same_edges[count_same_edge-1] != adj_e))) {
+                same_edges[count_same_edge] = adj_e;
+                newTri_edge[2] = adj_e;
+                if ((v0 == v0_f) && (v1 == v2_f)) {
+                  is_newTri_edge_flip[2] = 1;
+                }
+                else {
+                  is_newTri_edge_flip[2] = -1;
+                }
+                ++count_same_edge;
               }
-              else {
-                is_newTri_edge_flip[2] = -1;
-              }
-              ++count_same_edge;
             }
-          }
-          else {
-            for (auto ee2 = e2ee[adj_e]; ee2 < e2ee[adj_e + 1]; ++ee2) {
-              if (count_same_edge >= 2) break;
-              auto adj_e2 = ee2e[ee2];
-              auto v0_e2 = ev2v[adj_e2*2];
-              auto v1_e2 = ev2v[adj_e2*2 + 1];
+            else {
+              for (auto ee2 = e2ee[adj_e]; ee2 < e2ee[adj_e + 1]; ++ee2) {
+                if (count_same_edge >= 2) break;
+                auto adj_e2 = ee2e[ee2];
+                auto v0_e2 = ev2v[adj_e2*2];
+                auto v1_e2 = ev2v[adj_e2*2 + 1];
 
-              //check first edge
-              if (((v0_e2  == v0_f) && (v1_e2  == v1_f)) ||
-                  ((v0_e2  == v1_f) && (v1_e2  == v0_f))) {
-                if ((count_same_edge == 0) || 
-                    ((count_same_edge == 1) && 
-                     (same_edges[count_same_edge-1] != adj_e2))) {
-                  same_edges[count_same_edge] = adj_e2;
-                  newTri_edge[0] = adj_e2;
-                  if ((v0_e2  == v1_f) && (v1_e2  == v0_f)) {
-                    is_newTri_edge_flip[0] = 1;
+                //check first edge
+                if (((v0_e2  == v0_f) && (v1_e2  == v1_f)) ||
+                    ((v0_e2  == v1_f) && (v1_e2  == v0_f))) {
+                  if ((count_same_edge == 0) || 
+                      ((count_same_edge == 1) && 
+                       (same_edges[count_same_edge-1] != adj_e2))) {
+                    same_edges[count_same_edge] = adj_e2;
+                    newTri_edge[0] = adj_e2;
+                    if ((v0_e2  == v1_f) && (v1_e2  == v0_f)) {
+                      is_newTri_edge_flip[0] = 1;
+                    }
+                    else {
+                      is_newTri_edge_flip[0] = -1;
+                    }
+                    ++count_same_edge;
                   }
-                  else {
-                    is_newTri_edge_flip[0] = -1;
+                }
+                //check 2nd edge
+                else if (((v0_e2 == v1_f) && (v1_e2 == v2_f)) ||
+                    ((v0_e2 == v2_f) && (v1_e2 == v1_f))) {
+                  if ((count_same_edge == 0) || 
+                      ((count_same_edge == 1) && 
+                       (same_edges[count_same_edge-1] != adj_e2))) {
+                    same_edges[count_same_edge] = adj_e2;
+                    newTri_edge[1] = adj_e2;
+                    if ((v0_e2 == v2_f) && (v1_e2 == v1_f)) {
+                      is_newTri_edge_flip[1] = 1;
+                    }
+                    else {
+                      is_newTri_edge_flip[1] = -1;
+                    }
+                    ++count_same_edge;
                   }
-                  ++count_same_edge;
+                }
+                //check 3nd edge
+                else if (((v0_e2 == v2_f) && (v1_e2 == v0_f)) ||
+                    ((v0_e2 == v0_f) && (v1_e2 == v2_f))) {
+                  if ((count_same_edge == 0) || 
+                      ((count_same_edge == 1) && 
+                       (same_edges[count_same_edge-1] != adj_e2))) {
+                    same_edges[count_same_edge] = adj_e2;
+                    newTri_edge[2] = adj_e2;
+                    if ((v0_e2 == v0_f) && (v1_e2 == v2_f)) {
+                      is_newTri_edge_flip[2] = 1;
+                    }
+                    else {
+                      is_newTri_edge_flip[2] = -1;
+                    }
+                    ++count_same_edge;
+                  }
+                }
+                else {
+                  //printf("adje2 %d not same edge \n", adj_e2);
                 }
               }
-              //check 2nd edge
-              else if (((v0_e2 == v1_f) && (v1_e2 == v2_f)) ||
-                  ((v0_e2 == v2_f) && (v1_e2 == v1_f))) {
-                if ((count_same_edge == 0) || 
-                    ((count_same_edge == 1) && 
-                     (same_edges[count_same_edge-1] != adj_e2))) {
-                  same_edges[count_same_edge] = adj_e2;
-                  newTri_edge[1] = adj_e2;
-                  if ((v0_e2 == v2_f) && (v1_e2 == v1_f)) {
-                    is_newTri_edge_flip[1] = 1;
+            }
+
+          }
+          for (LO ee = 0; ee < 2; ++ee) {
+            //printf("cand %d, e %d, found same edge %d with newTri %d %d %d vcol %d vOnto %d\n",
+            //cand, e, same_edges[ee], v0_f, v1_f, v2_f, v_col, v_onto);
+          }
+          for (LO ee = 0; ee < 3; ++ee) {
+            //printf("newtri edge %d is %d\n", ee, newTri_edge[ee]);
+          }
+          auto vertCtrlPts = mesh->get_ctrlPts(0);
+          auto edgeCtrlPts = mesh->get_ctrlPts(1);
+          auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
+          Few<Real, 10*mesh_dim> tri_pts;//ntri_pts*dim=20
+          for (LO j = 0; j < 3; ++j) {
+            auto p = get_vector<mesh_dim>(vertCtrlPts, ccv2v[j]);
+            for (LO k = 0; k < mesh_dim; ++k) {
+              tri_pts[j*mesh_dim + k] = p[k];
+            }
+          }
+          Few<Real, 3*mesh_dim> thirdOfEdge;
+          for (I8 d = 0; d < mesh_dim; ++d) {
+            thirdOfEdge[0*mesh_dim + d] = 
+              1.0/3.0*(tri_pts[1*mesh_dim + d] - tri_pts[0*mesh_dim + d]);
+            thirdOfEdge[1*mesh_dim + d] = 
+              1.0/3.0*(tri_pts[2*mesh_dim + d] - tri_pts[1*mesh_dim + d]);
+            thirdOfEdge[2*mesh_dim + d] = 
+              1.0/3.0*(tri_pts[0*mesh_dim + d] - tri_pts[2*mesh_dim + d]);
+          }
+          for (LO j = 0; j < 3; ++j) {
+            LO index = 3;
+            if (is_newTri_edge_flip[j] == -1) {
+              for (I8 d = 0; d < mesh_dim; ++d) {
+                tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] =
+                  edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + d];
+                tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
+                  edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + mesh_dim + d];
+              }
+            }
+            else if (is_newTri_edge_flip[j] == 1) {
+              for (I8 d = 0; d < mesh_dim; ++d) {
+                tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] =
+                  edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + mesh_dim + d];
+                tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
+                  edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + d];
+              }
+            }
+            else {
+              for (I8 d = 0; d < mesh_dim; ++d) {
+                assert (is_newTri_edge_flip[j] == -2);
+                tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] = 
+                  tri_pts[j*mesh_dim + d] + thirdOfEdge[j*mesh_dim + d];
+                tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
+                  tri_pts[j*mesh_dim + d] + 2*thirdOfEdge[j*mesh_dim + d];
+              }
+            }
+          }
+          //query the face's ctrl pt and store
+          //TODO triPt using blending?
+          for (I8 d = 0; d < mesh_dim; ++d) {
+            LO index = 9;
+            tri_pts[index*mesh_dim + d] = 1.0/3.0*(
+                tri_pts[0*mesh_dim + d] + tri_pts[1*mesh_dim + d] + 
+                tri_pts[2*mesh_dim + d]);
+          }
+          auto nodes_det = getTriJacDetNodes<15, mesh_dim>(3, tri_pts);
+          auto is_invalid = checkMinJacDet<15>(nodes_det);
+          printf("cand %d eev_col %d, vc = %d is invalid %d\n", cand, eev_col, vc, is_invalid);
+
+          max_invalid = max2(max_invalid, is_invalid);
+        }
+        else if (mesh_dim == 3) {
+          Few<LO, mesh_dim> same_edges = {-1, -1, -1, -1, -1}; //can be max 5
+          Few<LO, mesh_dim+1> is_newTet_edge_flip = {-2, -2, -2, -2, -2, -2};
+          Few<LO, mesh_dim+1> newTet_edge = {-1, -1, -1, -1, -1, -1};
+          LO count_same_edge = 0;
+          auto v0_r = ccv2v[0];
+          auto v1_r = ccv2v[1];
+          auto v2_r = ccv2v[2];
+          auto v3_r = ccv2v[3];
+          for (auto ee = e2ee[e]; ee < e2ee[e + 1]; ++ee) {
+            if (count_same_edge >= 2) break;
+            auto adj_e = ee2e[ee];
+            //printf("e %d adj_e %d\n", e , adj_e);
+            auto v0 = ev2v[adj_e*2];
+            auto v1 = ev2v[adj_e*2 + 1];
+
+            //check first edge
+            if (((v0 == v0_r) && (v1 == v1_r)) ||
+                ((v0 == v1_r) && (v1 == v0_r))) {
+              //if ((count_same_edge == 0) || 
+                //  ((count_same_edge == 1) && 
+                  // (same_edges[count_same_edge-1] != adj_e))) {
+                same_edges[count_same_edge] = adj_e;
+                newTet_edge[0] = adj_e;
+                if ((v0 == v1_r) && (v1 == v0_r)) {
+                  is_newTet_edge_flip[0] = 1;
+                }
+                else {
+                  is_newTet_edge_flip[0] = -1;
+                }
+                ++count_same_edge;
+              //}
+            }
+            //check 2nd edge
+            else if (((v0 == v1_r) && (v1 == v2_r)) ||
+                ((v0 == v2_r) && (v1 == v1_r))) {
+              //if ((count_same_edge == 0) || 
+                //  ((count_same_edge == 1) && 
+                  // (same_edges[count_same_edge-1] != adj_e))) {
+                same_edges[count_same_edge] = adj_e;
+                newTet_edge[1] = adj_e;
+                if ((v0 == v2_f) && (v1 == v1_f)) {
+                  is_newTet_edge_flip[1] = 1;
+                }
+                else {
+                  is_newTet_edge_flip[1] = -1;
+                }
+                ++count_same_edge;
+              //}
+            }
+            //check 3nd edge
+            else if (((v0 == v2_r) && (v1 == v0_r)) ||
+                ((v0 == v0_r) && (v1 == v2_r))) {
+              //if ((count_same_edge == 0) || 
+                //  ((count_same_edge == 1) && 
+                  // (same_edges[count_same_edge-1] != adj_e))) {
+                same_edges[count_same_edge] = adj_e;
+                newTet_edge[2] = adj_e;
+                if ((v0 == v0_r) && (v1 == v2_r)) {
+                  is_newTet_edge_flip[2] = 1;
+                }
+                else {
+                  is_newTet_edge_flip[2] = -1;
+                }
+                ++count_same_edge;
+              //}
+            }
+            //check 4th edge
+            else if (((v0 == v0_r) && (v1 == v3_r)) ||
+                ((v0 == v3_r) && (v1 == v0_r))) {
+              //if ((count_same_edge == 0) || 
+                //  ((count_same_edge == 1) && 
+                  // (same_edges[count_same_edge-1] != adj_e))) {
+                same_edges[count_same_edge] = adj_e;
+                newTet_edge[3] = adj_e;
+                if ((v0 == v3_r) && (v1 == v0_r)) {
+                  is_newTet_edge_flip[3] = 1;
+                }
+                else {
+                  is_newTet_edge_flip[3] = -1;
+                }
+                ++count_same_edge;
+              //}
+            }
+            //check 5th edge
+            else if (((v0 == v1_r) && (v1 == v3_r)) ||
+                ((v0 == v3_r) && (v1 == v1_r))) {
+              //if ((count_same_edge == 0) || 
+                //  ((count_same_edge == 1) && 
+                  // (same_edges[count_same_edge-1] != adj_e))) {
+                same_edges[count_same_edge] = adj_e;
+                newTet_edge[4] = adj_e;
+                if ((v0 == v3_r) && (v1 == v1_r)) {
+                  is_newTet_edge_flip[4] = 1;
+                }
+                else {
+                  is_newTet_edge_flip[4] = -1;
+                }
+                ++count_same_edge;
+              //}
+            }
+            //check 6th edge
+            else if (((v0 == v2_r) && (v1 == v3_r)) ||
+                ((v0 == v3_r) && (v1 == v2_r))) {
+              //if ((count_same_edge == 0) || 
+                //  ((count_same_edge == 1) && 
+                  // (same_edges[count_same_edge-1] != adj_e))) {
+                same_edges[count_same_edge] = adj_e;
+                newTet_edge[5] = adj_e;
+                if ((v0 == v3_r) && (v1 == v2_r)) {
+                  is_newTet_edge_flip[5] = 1;
+                }
+                else {
+                  is_newTet_edge_flip[5] = -1;
+                }
+                ++count_same_edge;
+              //}
+            }
+            /*
+            else {
+              for (auto ee2 = e2ee[adj_e]; ee2 < e2ee[adj_e + 1]; ++ee2) {
+                if (count_same_edge >= 2) break;
+                auto adj_e2 = ee2e[ee2];
+                auto v0_e2 = ev2v[adj_e2*2];
+                auto v1_e2 = ev2v[adj_e2*2 + 1];
+
+                //check first edge
+                if (((v0_e2  == v0_f) && (v1_e2  == v1_f)) ||
+                    ((v0_e2  == v1_f) && (v1_e2  == v0_f))) {
+                  if ((count_same_edge == 0) || 
+                      ((count_same_edge == 1) && 
+                       (same_edges[count_same_edge-1] != adj_e2))) {
+                    same_edges[count_same_edge] = adj_e2;
+                    newTri_edge[0] = adj_e2;
+                    if ((v0_e2  == v1_f) && (v1_e2  == v0_f)) {
+                      is_newTri_edge_flip[0] = 1;
+                    }
+                    else {
+                      is_newTri_edge_flip[0] = -1;
+                    }
+                    ++count_same_edge;
                   }
-                  else {
-                    is_newTri_edge_flip[1] = -1;
+                }
+                //check 2nd edge
+                else if (((v0_e2 == v1_f) && (v1_e2 == v2_f)) ||
+                    ((v0_e2 == v2_f) && (v1_e2 == v1_f))) {
+                  if ((count_same_edge == 0) || 
+                      ((count_same_edge == 1) && 
+                       (same_edges[count_same_edge-1] != adj_e2))) {
+                    same_edges[count_same_edge] = adj_e2;
+                    newTri_edge[1] = adj_e2;
+                    if ((v0_e2 == v2_f) && (v1_e2 == v1_f)) {
+                      is_newTri_edge_flip[1] = 1;
+                    }
+                    else {
+                      is_newTri_edge_flip[1] = -1;
+                    }
+                    ++count_same_edge;
                   }
-                  ++count_same_edge;
+                }
+                //check 3nd edge
+                else if (((v0_e2 == v2_f) && (v1_e2 == v0_f)) ||
+                    ((v0_e2 == v0_f) && (v1_e2 == v2_f))) {
+                  if ((count_same_edge == 0) || 
+                      ((count_same_edge == 1) && 
+                       (same_edges[count_same_edge-1] != adj_e2))) {
+                    same_edges[count_same_edge] = adj_e2;
+                    newTri_edge[2] = adj_e2;
+                    if ((v0_e2 == v0_f) && (v1_e2 == v2_f)) {
+                      is_newTri_edge_flip[2] = 1;
+                    }
+                    else {
+                      is_newTri_edge_flip[2] = -1;
+                    }
+                    ++count_same_edge;
+                  }
+                }
+                else {
+                  //printf("adje2 %d not same edge \n", adj_e2);
                 }
               }
-              //check 3nd edge
-              else if (((v0_e2 == v2_f) && (v1_e2 == v0_f)) ||
-                  ((v0_e2 == v0_f) && (v1_e2 == v2_f))) {
-                if ((count_same_edge == 0) || 
-                    ((count_same_edge == 1) && 
-                     (same_edges[count_same_edge-1] != adj_e2))) {
-                  same_edges[count_same_edge] = adj_e2;
-                  newTri_edge[2] = adj_e2;
-                  if ((v0_e2 == v0_f) && (v1_e2 == v2_f)) {
-                    is_newTri_edge_flip[2] = 1;
-                  }
-                  else {
-                    is_newTri_edge_flip[2] = -1;
-                  }
-                  ++count_same_edge;
-                }
-              }
-              else {
-                //printf("adje2 %d not same edge \n", adj_e2);
-              }
             }
-          }
+            */
 
-        }
-        for (LO ee = 0; ee < 2; ++ee) {
-          //printf("cand %d, e %d, found same edge %d with newTri %d %d %d vcol %d vOnto %d\n",
-           //cand, e, same_edges[ee], v0_f, v1_f, v2_f, v_col, v_onto);
-        }
-        for (LO ee = 0; ee < 3; ++ee) {
-          //printf("newtri edge %d is %d\n", ee, newTri_edge[ee]);
-        }
-        auto vertCtrlPts = mesh->get_ctrlPts(0);
-        auto edgeCtrlPts = mesh->get_ctrlPts(1);
-        auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
-        Few<Real, 10*mesh_dim> tri_pts;//ntri_pts*dim=20
-        for (LO j = 0; j < 3; ++j) {
-          auto p = get_vector<mesh_dim>(vertCtrlPts, ccv2v[j]);
-          for (LO k = 0; k < mesh_dim; ++k) {
-            tri_pts[j*mesh_dim + k] = p[k];
           }
-        }
-        Few<Real, 3*mesh_dim> thirdOfEdge;
-        for (I8 d = 0; d < mesh_dim; ++d) {
-          thirdOfEdge[0*mesh_dim + d] = 
-            1.0/3.0*(tri_pts[1*mesh_dim + d] - tri_pts[0*mesh_dim + d]);
-          thirdOfEdge[1*mesh_dim + d] = 
-            1.0/3.0*(tri_pts[2*mesh_dim + d] - tri_pts[1*mesh_dim + d]);
-          thirdOfEdge[2*mesh_dim + d] = 
-            1.0/3.0*(tri_pts[0*mesh_dim + d] - tri_pts[2*mesh_dim + d]);
-        }
-        for (LO j = 0; j < 3; ++j) {
-          LO index = 3;
-          if (is_newTri_edge_flip[j] == -1) {
-            for (I8 d = 0; d < mesh_dim; ++d) {
-              tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] =
-                edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + d];
-              tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
-                edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + mesh_dim + d];
+          for (LO ee = 0; ee < 2; ++ee) {
+            //printf("cand %d, e %d, found same edge %d with newTri %d %d %d vcol %d vOnto %d\n",
+            //cand, e, same_edges[ee], v0_f, v1_f, v2_f, v_col, v_onto);
+          }
+          for (LO ee = 0; ee < 3; ++ee) {
+            //printf("newtri edge %d is %d\n", ee, newTri_edge[ee]);
+          }
+          auto vertCtrlPts = mesh->get_ctrlPts(0);
+          auto edgeCtrlPts = mesh->get_ctrlPts(1);
+          auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
+          Few<Real, 10*mesh_dim> tri_pts;//ntri_pts*dim=20
+          for (LO j = 0; j < 3; ++j) {
+            auto p = get_vector<mesh_dim>(vertCtrlPts, ccv2v[j]);
+            for (LO k = 0; k < mesh_dim; ++k) {
+              tri_pts[j*mesh_dim + k] = p[k];
             }
           }
-          else if (is_newTri_edge_flip[j] == 1) {
-            for (I8 d = 0; d < mesh_dim; ++d) {
-              tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] =
-                edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + mesh_dim + d];
-              tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
-                edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + d];
+          Few<Real, 3*mesh_dim> thirdOfEdge;
+          for (I8 d = 0; d < mesh_dim; ++d) {
+            thirdOfEdge[0*mesh_dim + d] = 
+              1.0/3.0*(tri_pts[1*mesh_dim + d] - tri_pts[0*mesh_dim + d]);
+            thirdOfEdge[1*mesh_dim + d] = 
+              1.0/3.0*(tri_pts[2*mesh_dim + d] - tri_pts[1*mesh_dim + d]);
+            thirdOfEdge[2*mesh_dim + d] = 
+              1.0/3.0*(tri_pts[0*mesh_dim + d] - tri_pts[2*mesh_dim + d]);
+          }
+          for (LO j = 0; j < 3; ++j) {
+            LO index = 3;
+            if (is_newTri_edge_flip[j] == -1) {
+              for (I8 d = 0; d < mesh_dim; ++d) {
+                tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] =
+                  edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + d];
+                tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
+                  edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + mesh_dim + d];
+              }
+            }
+            else if (is_newTri_edge_flip[j] == 1) {
+              for (I8 d = 0; d < mesh_dim; ++d) {
+                tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] =
+                  edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + mesh_dim + d];
+                tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
+                  edgeCtrlPts[newTri_edge[j]*n_edge_pts*mesh_dim + d];
+              }
+            }
+            else {
+              for (I8 d = 0; d < mesh_dim; ++d) {
+                assert (is_newTri_edge_flip[j] == -2);
+                tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] = 
+                  tri_pts[j*mesh_dim + d] + thirdOfEdge[j*mesh_dim + d];
+                tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
+                  tri_pts[j*mesh_dim + d] + 2*thirdOfEdge[j*mesh_dim + d];
+              }
             }
           }
-          else {
-            for (I8 d = 0; d < mesh_dim; ++d) {
-              assert (is_newTri_edge_flip[j] == -2);
-              tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] = 
-                tri_pts[j*mesh_dim + d] + thirdOfEdge[j*mesh_dim + d];
-              tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
-                tri_pts[j*mesh_dim + d] + 2*thirdOfEdge[j*mesh_dim + d];
-            }
+          //query the face's ctrl pt and store
+          //TODO triPt using blending?
+          for (I8 d = 0; d < mesh_dim; ++d) {
+            LO index = 9;
+            tri_pts[index*mesh_dim + d] = 1.0/3.0*(
+                tri_pts[0*mesh_dim + d] + tri_pts[1*mesh_dim + d] + 
+                tri_pts[2*mesh_dim + d]);
           }
-        }
-        //query the face's ctrl pt and store
-        //TODO triPt using blending?
-        for (I8 d = 0; d < mesh_dim; ++d) {
-          LO index = 9;
-          tri_pts[index*mesh_dim + d] = 1.0/3.0*(
-              tri_pts[0*mesh_dim + d] + tri_pts[1*mesh_dim + d] + 
-              tri_pts[2*mesh_dim + d]);
-        }
-        auto nodes_det = getTriJacDetNodes<15, mesh_dim>(3, tri_pts);
-        auto is_invalid = checkMinJacDet<15>(nodes_det);
-        printf("cand %d eev_col %d, vc = %d is invalid %d\n", cand, eev_col, vc, is_invalid);
+          auto nodes_det = getTriJacDetNodes<15, mesh_dim>(3, tri_pts);
+          auto is_invalid = checkMinJacDet<15>(nodes_det);
+          printf("cand %d eev_col %d, vc = %d is invalid %d\n", cand, eev_col, vc, is_invalid);
 
-        max_invalid = max2(max_invalid, is_invalid);
+          max_invalid = max2(max_invalid, is_invalid);
+        }
+        else {}
       }
       invalidities[cand * 2 + eev_col] = max_invalid;
     }
