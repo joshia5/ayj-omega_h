@@ -92,6 +92,7 @@ OMEGA_H_INLINE LO checkMinJacDet_3d(Few<Real, 84> const& nodes) {
   Real minAcceptable = 0.0;
   for (LO i = 0; i < 84; ++i) {
   //for (LO i = 0; i < 4; ++i) {
+      printf("i %d Nijkl[i] %f\n", i, nodes[i]);
     if (nodes[i] < minAcceptable) {
       printf("i %d Nijkl[i] %f\n", i, nodes[i]);
       return i+2;

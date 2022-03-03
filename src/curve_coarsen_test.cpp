@@ -199,8 +199,8 @@ void test_cubic_tet_validity(Library *lib) {
   */
   build_from_elems2verts(&mesh, OMEGA_H_SIMPLEX, 3, LOs({0, 1, 2, 3}), 4);
   mesh.add_coords(Reals({0.0,0.0,0.0,
-                                           1.0,0.0,0.0,
                                            0.0,1.0,0.0,
+                                           1.0,0.0,0.0,
                                            0.0,0.0,1.0}));
   mesh.set_curved(1);
 
@@ -210,80 +210,48 @@ void test_cubic_tet_validity(Library *lib) {
   auto coords = mesh.coords();
   auto ev2v = mesh.ask_down(1, 0).ab2b;
   auto fe2e = mesh.ask_down(2, 1).ab2b;
-  auto rv2v = mesh.ask_down(3, 0).ab2b;//0,2,1,3
-  auto re2e = mesh.ask_down(3, 1).ab2b;//1,3,0,2,5,4
-  auto rf2f = mesh.ask_down(3, 2).ab2b;//0,1,2,3
+  auto rv2v = mesh.ask_down(3, 0).ab2b;
+  auto re2e = mesh.ask_down(3, 1).ab2b;
+  auto rf2f = mesh.ask_down(3, 2).ab2b;
 
-  /*
-  auto vertCtrlPts = HostRead<Real>(Reals({0.0,0.0,0.0,
-                                           1.0,0.0,0.0,
-                                           0.0,1.0,0.0,
-                                           0.0,0.0,1.0}));
-  auto edgeCtrlPts = HostRead<Real>(Reals({
-                                     1.0/3.0, 0.0, 0.0,
-                                     2.0/3.0, 0.0, 0.0,
-        
-                                     2.0/3.0, 1.0/3.0, 0.0,
-                                     1.0/3.0, 2.0/3.0, 0.0,
-                                     
-                                     0.0, 2.0/3.0, 0.0,
-                                     0.0, 1.0/3.0, 0.0,
-                                     
-                                     0.0, 0.0, 1.0/3.0,
-                                     0.0, 0.0, 2.0/3.0,
-                                     
-                                     2.0/3.0, 0.0, 1.0/3.0,
-                                     1.0/3.0, 0.0, 2.0/3.0,
-                                     
-                                     0.0, 2.0/3.0, 1.0/3.0,
-                                     0.0, 1.0/3.0, 2.0/3.0
-                                     }));
-  */
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
   mesh.set_tag_for_ctrlPts(1, Reals({
-                                     1.0/3.0, 0.0, 0.0,
-                                     2.0/3.0, 0.0, 0.0,
-
-                                     0.0, 2.0/3.0, 0.0,
                                      0.0, 1.0/3.0, 0.0,
+                                     0.0, 2.0/3.0, 0.0,
+
+                                     2.0/3.0, 0.0, 0.0,
+                                     1.0/3.0, 0.0, 0.0,
 
                                      0.0, 0.0, 1.0/3.0,
                                      0.0, 0.0, 2.0/3.0,
 
-                                     2.0/3.0, 1.0/3.0, 0.0,
                                      1.0/3.0, 2.0/3.0, 0.0,
-
-                                     2.0/3.0, 0.0, 1.0/3.0,
-                                     1.0/3.0, 0.0, 2.0/3.0,
+                                     2.0/3.0, 1.0/3.0, 0.0,
 
                                      0.0, 2.0/3.0, 1.0/3.0,
                                      0.0, 1.0/3.0, 2.0/3.0,
- 
+
+                                     2.0/3.0, 0.0, 1.0/3.0,
+                                     1.0/3.0, 0.0, 2.0/3.0
                                      }));
   mesh.set_tag_for_ctrlPts(2, Reals({
                                      1.0/3.0, 1.0/3.0, 0.0,
-                                     1.0/3.0, 0.0, 1.0/3.0,
                                      0.0, 1.0/3.0, 1.0/3.0,
+                                     1.0/3.0, 0.0, 1.0/3.0,
                                      1.0/3.0, 1.0/3.0, 1.0/3.0
                                      }));
+  auto wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_3d(&mesh, &wireframe_mesh);
+  std::string vtuPath = "/lore/joshia5/Meshes/curved/tet_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  auto curveVtk_mesh = Mesh(comm->library());
+  curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh);
+  vtuPath = "/lore/joshia5/Meshes/curved/tet_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
   checkValidity_3d(&mesh, LOs({0}), 3);
   
-  /*
-  Few<Real, 60> tet_pts;//ntet_pts*dim=20*3
-  for (LO j = 0; j < vertCtrlPts.size(); ++j) {
-    tet_pts[j] = vertCtrlPts[j];
-  }
-  for (LO j = 0; j < edgeCtrlPts.size(); ++j) {
-    tet_pts[12 + j] = edgeCtrlPts[j];
-  }
-  for (LO j = 0; j < faceCtrlPts.size(); ++j) {
-    tet_pts[48 + j] = faceCtrlPts[j];
-  }
-  Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
-
-  auto is_invalid = checkMinJacDet_3d(nodes_det);
-  printf("cubic tet is invalid %d\n", is_invalid);
-  */
 }
 
 void test_boxCircle_validity(Library *lib) {
@@ -339,11 +307,11 @@ int main(int argc, char** argv) {
   //test_disc_collapse(&lib);
   //test_disc_validity(&lib);
   //test_tri_validity(&lib);
-  test_linear_tet_validity(&lib);
-  test_quadratic_tet_validity(&lib);
+  //test_boxCircle_validity(&lib);
+  //test_linear_tet_validity(&lib);
+  //test_quadratic_tet_validity(&lib);
+  //test_Kova_validity(&lib);
   test_cubic_tet_validity(&lib);
-  test_Kova_validity(&lib);
-  test_boxCircle_validity(&lib);
 
   return 0;
 }
