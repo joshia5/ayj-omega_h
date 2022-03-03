@@ -192,9 +192,16 @@ void test_quadratic_tet_validity(Library *lib) {
 void test_cubic_tet_validity(Library *lib) {
   auto mesh = Mesh(lib);
   auto comm = lib->world();
+  /*
   binary::read(
       "/lore/joshia5/develop/mfem_omega/omega_h/meshes/Example_tet.osh",
       lib->world(), &mesh);
+  */
+  build_from_elems2verts(&mesh, OMEGA_H_SIMPLEX, 3, LOs({0, 1, 2, 3}), 4);
+  mesh.add_coords(Reals({0.0,0.0,0.0,
+                                           1.0,0.0,0.0,
+                                           0.0,1.0,0.0,
+                                           0.0,0.0,1.0}));
   mesh.set_curved(1);
 
   mesh.set_max_order(3);
@@ -234,31 +241,33 @@ void test_cubic_tet_validity(Library *lib) {
   */
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
   mesh.set_tag_for_ctrlPts(1, Reals({
-                                     0.0, 1.0/3.0, 0.0,
-                                     0.0, 2.0/3.0, 0.0,
-
                                      1.0/3.0, 0.0, 0.0,
                                      2.0/3.0, 0.0, 0.0,
+
+                                     0.0, 2.0/3.0, 0.0,
+                                     0.0, 1.0/3.0, 0.0,
 
                                      0.0, 0.0, 1.0/3.0,
                                      0.0, 0.0, 2.0/3.0,
 
-                                     1.0/3.0, 2.0/3.0, 0.0,
                                      2.0/3.0, 1.0/3.0, 0.0,
+                                     1.0/3.0, 2.0/3.0, 0.0,
+
+                                     2.0/3.0, 0.0, 1.0/3.0,
+                                     1.0/3.0, 0.0, 2.0/3.0,
 
                                      0.0, 1.0/3.0, 2.0/3.0,
-                                     0.0, 2.0/3.0, 1.0/3.0,
+                                     0.0, 2.0/3.0, 1.0/3.0
                                      //0.0, 2.0/3.0, 1.0/3.0,
                                      //0.0, 1.0/3.0, 2.0/3.0,
  
-                                     2.0/3.0, 0.0, 1.0/3.0,
-                                     1.0/3.0, 0.0, 2.0/3.0
                                      }));
   mesh.set_tag_for_ctrlPts(2, Reals({
                                      1.0/3.0, 1.0/3.0, 0.0,
                                      1.0/3.0, 0.0, 1.0/3.0,
-                                     1.0/3.0, 1.0/3.0, 1.0/3.0,
-                                     0.0, 1.0/3.0, 1.0/3.0}));
+                                     0.0, 1.0/3.0, 1.0/3.0,
+                                     1.0/3.0, 1.0/3.0, 1.0/3.0
+                                     }));
   checkValidity_3d(&mesh, LOs({0}), 3);
   
   /*
