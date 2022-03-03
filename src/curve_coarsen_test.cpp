@@ -205,6 +205,7 @@ void test_cubic_tet_validity(Library *lib) {
   auto fe2e = mesh.ask_down(2, 1).ab2b;
   auto rv2v = mesh.ask_down(3, 0).ab2b;
   auto re2e = mesh.ask_down(3, 1).ab2b;
+  auto r2e_codes = mesh.ask_down(3, 1).codes;
   auto rf2f = mesh.ask_down(3, 2).ab2b;
 
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
@@ -300,10 +301,10 @@ int main(int argc, char** argv) {
   //test_disc_collapse(&lib);
   //test_disc_validity(&lib);
   //test_tri_validity(&lib);
-  test_boxCircle_validity(&lib);
-  test_linear_tet_validity(&lib);
-  test_quadratic_tet_validity(&lib);
-  test_Kova_validity(&lib);
+  //test_boxCircle_validity(&lib);
+  //test_linear_tet_validity(&lib);
+  //test_quadratic_tet_validity(&lib);
+  //test_Kova_validity(&lib);
   test_cubic_tet_validity(&lib);
 
   return 0;
