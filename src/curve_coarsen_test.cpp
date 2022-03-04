@@ -334,7 +334,7 @@ void test_collapse_3d(Library *lib) {
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
-  test_disc_collapse(&lib);
+  //test_disc_collapse(&lib);
   //test_disc_validity(&lib);
   //test_tri_validity(&lib);
   //test_boxCircle_validity(&lib);
