@@ -1178,7 +1178,7 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
 
 template<Int dim>
 void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
-    LOs prods2new, LOs old_verts2new_verts) {
+    LOs prods2new, LOs old_verts2new_verts, LOs keys2verts, LOs keys2verts_onto) {
   auto const nold_verts = mesh->nverts();
   auto const nold_edges = mesh->nedges();
   auto const old_ev2v = mesh->get_adj(1, 0).ab2b;
@@ -1234,7 +1234,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     for (LO j=0; j<dim; ++j) {
       edge_ctrlPts[e*n_edge_pts*dim + j] = new_coords[v0*dim + j] +
           (new_coords[v1*dim + j] - new_coords[v0*dim + j])*(1.0/3.0);
-          //TODO verify this
+          //TODO verify that new pts should be equidistant
           //(new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_1_cube();
       edge_ctrlPts[e*n_edge_pts*dim + dim + j] = new_coords[v0*dim + j] +
           (new_coords[v1*dim + j] - new_coords[v0*dim + j])*(2.0/3.0);
@@ -1243,6 +1243,21 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   };
   parallel_for(prods2new.size(), std::move(prod_edge_points),
       "prod_edge_points");
+
+  v2v_old = mesh->ask_verts_of(0);
+  v2vv_old = v2v_old.a2ab;
+  vv2v_old = v2v_old.ab2b;
+  v2v_new = new_mesh->ask_verts_of(0);
+  v2vv_new = v2v_new.a2ab;
+  vv2v_new = v2v_new.ab2b;
+  auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
+    v_key = keys2verts[i];
+    v_onto = keys2verts_onto[i];
+    for (LO vv = v2vv_old[v_key]; vv < v2vv_old[v_key+1]; ++vv) {
+    }
+  };
+  parallel_for(keys2verts.size(), std::move(curve_bdry_edges));
+
   new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim, Reals(edge_ctrlPts));
   new_mesh->set_tag_for_ctrlPts(1, Reals(edge_ctrlPts));
 
