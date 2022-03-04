@@ -40,8 +40,10 @@ Read<I8> check_collapse_class(
     }
 
     //TODO improve this for curved
-    if (e_cd == EDGE) {
-      code = DONT_COLLAPSE;
+    if (mesh->is_curved() > 0) {
+      if (e_cd == EDGE) {
+        code = DONT_COLLAPSE;
+      }
     }
 
     cand_codes_w[cand] = code;
