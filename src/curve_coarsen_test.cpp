@@ -300,8 +300,15 @@ void test_collapse_3d(Library *lib) {
 
   auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
                             
+  for (LO i = 0; i <= mesh.dim(); ++i) {
+    if (!mesh.has_tag(i, "global")) {
+      mesh.add_tag(i, "global", 1, Omega_h::GOs(mesh.nents(i), 0, 1));
+    }
+  }
+
   calc_quad_ctrlPts_from_interpPts(&mesh);
   elevate_curve_order_2to3(&mesh);
+
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
   
   auto opts = AdaptOpts(&mesh);
