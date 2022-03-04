@@ -244,7 +244,7 @@ void test_cubic_tet_validity(Library *lib) {
   build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh);
   vtuPath = "/lore/joshia5/Meshes/curved/tet_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
-  checkValidity_3d(&mesh, LOs({0}), 3);
+  checkValidity_3d(&mesh, LOs({0}));
   
 }
 
@@ -268,7 +268,7 @@ void test_boxCircle_validity(Library *lib) {
   vtuPath = "/lore/joshia5/Meshes/curved/boxCircle_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
 
-  checkValidity_3d(&mesh, LOs(mesh.nregions(), 0, 1), 3);
+  checkValidity_3d(&mesh, LOs(mesh.nregions(), 0));
   return;
 }
 void test_Kova_validity(Library *lib) {
@@ -291,21 +291,51 @@ void test_Kova_validity(Library *lib) {
   vtuPath = "/lore/joshia5/Meshes/curved/Kova_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
 
-  checkValidity_3d(&mesh, LOs(mesh.nregions(), 0, 1), 3);
+  checkValidity_3d(&mesh, LOs(mesh.nregions(), 0));
+  return;
+}
+
+void test_collapse_3d(Library *lib) {
+  auto comm = lib->world();
+
+  auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
+                            
+  calc_quad_ctrlPts_from_interpPts(&mesh);
+  elevate_curve_order_2to3(&mesh);
+  mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
+  
+  auto opts = AdaptOpts(&mesh);
+  mesh.add_tag<Real>(VERT, "metric", 1);
+  mesh.set_tag(
+      VERT, "metric", Reals(mesh.nverts(),
+        metric_eigenvalue_from_length(0.3)));
+  while (coarsen_by_size(&mesh, opts));
+  mesh.set_tag(
+      VERT, "metric", Reals(mesh.nverts(),
+        metric_eigenvalue_from_length(0.6)));
+  while (coarsen_by_size(&mesh, opts))
+    ;
+  mesh.set_tag(
+      VERT, "metric", Reals(mesh.nverts(),
+        metric_eigenvalue_from_length(1.0)));
+  while (coarsen_by_size(&mesh, opts))
+    ;
+  mesh.ask_qualities();
   return;
 }
 
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
-  //test_disc_collapse(&lib);
+  test_disc_collapse(&lib);
   //test_disc_validity(&lib);
   //test_tri_validity(&lib);
   //test_boxCircle_validity(&lib);
   //test_linear_tet_validity(&lib);
   //test_quadratic_tet_validity(&lib);
   //test_Kova_validity(&lib);
-  test_cubic_tet_validity(&lib);
+  //test_cubic_tet_validity(&lib);
+  test_collapse_3d(&lib);
 
   return 0;
 }
