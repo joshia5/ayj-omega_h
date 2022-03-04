@@ -125,7 +125,7 @@ OMEGA_H_INLINE LO checkMinJacDet_3d(Few<Real, 84> const& nodes) {
   return -1;
 }
 
-LOs checkValidity_3d(Mesh *mesh, LOs new_tets, Int const mesh_dim) {
+LOs checkValidity_3d(Mesh *mesh, LOs new_tets) {
   auto rv2v = mesh->ask_down(3, 0).ab2b;
   auto re2e = mesh->ask_down(3, 1).ab2b;
   auto rf2f = mesh->get_adj(3, 2).ab2b;
@@ -134,7 +134,6 @@ LOs checkValidity_3d(Mesh *mesh, LOs new_tets, Int const mesh_dim) {
   auto vertCtrlPts = mesh->get_ctrlPts(0);
   auto edgeCtrlPts = mesh->get_ctrlPts(1);
   auto faceCtrlPts = mesh->get_ctrlPts(2);
-  auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
   auto order = mesh->get_max_order();
   OMEGA_H_CHECK(order <= 3);
 
