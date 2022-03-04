@@ -79,6 +79,16 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
     if (comm->reduce_and(cands2edges.size() == 0)) return false;
   }
   #endif
+  if (mesh->is_curved()) {
+    /* cavity invalidity checks */
+    auto cand_edge_invalidities = coarsen_invalidities
+      (mesh, cands2edges, cand_edge_codes);
+    //TODO test for the filtering//should be ok as its not much 
+    cand_edge_codes = filter_coarsen_invalids(
+        cand_edge_codes, cand_edge_invalidities, -1);
+    filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
+    /* finished cavity invalidity checks */
+  }
   /* cavity quality checks */
   auto cand_edge_quals = coarsen_qualities(mesh, cands2edges, cand_edge_codes);
   cand_edge_codes = filter_coarsen_min_qual(
@@ -89,15 +99,6 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
   }
   filter_coarsen_candidates(&cands2edges, &cand_edge_codes, &cand_edge_quals);
   /* finished cavity quality checks */
-
-  /* cavity invalidity checks */
-  auto cand_edge_invalidities = coarsen_invalidities
-    (mesh, cands2edges, cand_edge_codes);
-  //TODO test for the filtering//should be ok as its not much 
-  cand_edge_codes = filter_coarsen_invalids(
-      cand_edge_codes, cand_edge_invalidities, -1);
-  filter_coarsen_candidates(&cands2edges, &cand_edge_codes, &cand_edge_quals);
-  /* finished cavity invalidity checks */
 
   if (comm->reduce_and(cands2edges.size() == 0)) return false;
   auto verts_are_cands = Read<I8>();
@@ -168,6 +169,11 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
         //1. tranfer verts (same)
         //2. transfer edges (copy same and new are straight)
         coarsen_curved_verts_and_edges<2>(mesh, &new_mesh,
+            old_ents2new_ents, prods2new_ents, old_verts2new_verts,
+            keys2verts, keys2verts_onto);
+      }
+      if (mesh->dim() == 3) {
+        coarsen_curved_verts_and_edges<3>(mesh, &new_mesh,
             old_ents2new_ents, prods2new_ents, old_verts2new_verts);
       }
     }
@@ -178,21 +184,26 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
         coarsen_curved_faces<2>(mesh, &new_mesh, old_ents2new_ents,
             prods2new_ents);
       }
+      if (mesh->dim() == 3) {
+        coarsen_curved_faces<3>(mesh, &new_mesh, old_ents2new_ents,
+            prods2new_ents);
+      }
     }
 
     old_lows2new_lows = old_ents2new_ents;
   }
 
   *mesh = new_mesh;
+
   vtk::write_parallel("/lore/joshia5/Meshes/curved/coarsen_itr.vtk", mesh, mesh->dim());
   auto cubic_curveVtk_mesh = Mesh(mesh->comm()->library());
   cubic_curveVtk_mesh.set_comm(comm);
-  build_cubic_curveVtk_2d(mesh, &cubic_curveVtk_mesh, 4);
+  build_cubic_curveVtk_3d(mesh, &cubic_curveVtk_mesh, 10);
   std::string vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
   auto cubic_wireframe = Mesh(mesh->comm()->library());
   cubic_wireframe.set_comm(comm);
-  build_cubic_wireframe_2d(mesh, &cubic_wireframe, 4);
+  build_cubic_wireframe_3d(mesh, &cubic_wireframe, 10);
   vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_wireframe.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe, 1);
   printf("after coarsen has %d elems\n", mesh->nelems());
