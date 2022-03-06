@@ -85,8 +85,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto oldvert_gid =  mesh->get_array<LO>(0, "class_id");
   auto oldedge_gid =  mesh->get_array<LO>(1, "class_id");
 
-  Write<LO> new_edge2keys(new_mesh->nedges(), -1);
-  Write<LO> new_edge2old_edges(new_mesh->nedges()*2, -1.0);
+  //Write<LO> new_edge2keys(new_mesh->nedges(), -1);
+  //Write<LO> new_edge2old_edges(new_mesh->nedges()*2, -1.0);
 
   auto v2v_old = mesh->ask_star(0);
   auto v2vv_old = v2v_old.a2ab;
@@ -108,12 +108,15 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto find_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO v_key = keys2verts[i];
     LO v_onto = keys2verts_onto[i];
-    if ((oldvert_gdim[v_key] == 1) && (oldvert_gdim[v_onto] == 1) && 
-        (oldvert_gid[v_key] == oldvert_gid[v_onto])) {
+    if ((oldvert_gdim[v_key] <= (dim-1)) && (oldvert_gdim[v_onto] <= (dim-1))) {
+    //if ((oldvert_gdim[v_key] <= (dim-1)) && (oldvert_gdim[v_onto] == oldvert_gdim[v_key]) && 
+      //  (oldvert_gid[v_key] == oldvert_gid[v_onto])) {
       for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
         LO new_edge = prods2new[prod];
-        if ((newedge_gdim[new_edge] == 1) && (newedge_gid[new_edge] == oldvert_gid[v_key])) {
-          new_edge2keys[new_edge] = v_key;
+        if ((newedge_gdim[new_edge] <= (dim-1))) {
+        //if ((newedge_gdim[new_edge] <= (dim-1)) && (newedge_gdim[new_edge] == oldvert_gdim[v_key])
+          //  && (newedge_gid[new_edge] == oldvert_gid[v_key])) {
+          //new_edge2keys[new_edge] = v_key;
           auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
           auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
           LO new_edge_old_edge0 = -1;

@@ -111,18 +111,8 @@ void test_disc_collapse(Library *lib) {
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
-        metric_eigenvalue_from_length(0.3)));
-  while (coarsen_by_size(&mesh, opts));
-  mesh.set_tag(
-      VERT, "metric", Reals(mesh.nverts(),
-        metric_eigenvalue_from_length(0.6)));
-  while (coarsen_by_size(&mesh, opts))
-    ;
-  mesh.set_tag(
-      VERT, "metric", Reals(mesh.nverts(),
-        metric_eigenvalue_from_length(1.0)));
-  while (coarsen_by_size(&mesh, opts))
-    ;
+        metric_eigenvalue_from_length(0.5)));
+  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 0));
   mesh.ask_qualities();
   coords = mesh.coords();
   ev2v = mesh.get_adj(1, 0).ab2b;
@@ -318,18 +308,8 @@ void test_collapse_3d(Library *lib) {
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
-        metric_eigenvalue_from_length(0.3)));
-  while (coarsen_by_size(&mesh, opts));
-  mesh.set_tag(
-      VERT, "metric", Reals(mesh.nverts(),
-        metric_eigenvalue_from_length(0.6)));
-  while (coarsen_by_size(&mesh, opts))
-    ;
-  mesh.set_tag(
-      VERT, "metric", Reals(mesh.nverts(),
-        metric_eigenvalue_from_length(1.0)));
-  while (coarsen_by_size(&mesh, opts))
-    ;
+        metric_eigenvalue_from_length(0.5)));
+  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 80));
   mesh.ask_qualities();
   return;
 }
@@ -337,7 +317,7 @@ void test_collapse_3d(Library *lib) {
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
-  test_disc_collapse(&lib);
+  //test_disc_collapse(&lib);
   //test_disc_validity(&lib);
   //test_tri_validity(&lib);
   //test_boxCircle_validity(&lib);
@@ -345,7 +325,7 @@ int main(int argc, char** argv) {
   //test_quadratic_tet_validity(&lib);
   //test_Kova_validity(&lib);
   //test_cubic_tet_validity(&lib);
-  //test_collapse_3d(&lib);
+  test_collapse_3d(&lib);
 
   return 0;
 }
