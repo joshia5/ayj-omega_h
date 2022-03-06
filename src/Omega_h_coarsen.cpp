@@ -12,7 +12,7 @@
 #include "Omega_h_modify.hpp"
 #include "Omega_h_transfer.hpp"
 #include "Omega_h_file.hpp"
-#include "Omega_h_beziers.hpp"
+#include "Omega_h_curve_coarsen.hpp"
 #include "Omega_h_build.hpp"
 
 namespace Omega_h {
@@ -170,11 +170,12 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
         //2. transfer edges (copy same and new are straight)
         coarsen_curved_verts_and_edges<2>(mesh, &new_mesh,
             old_ents2new_ents, prods2new_ents, old_verts2new_verts,
-            keys2verts, keys2verts_onto);
+            keys2verts, keys2verts_onto, keys2prods);
       }
       if (mesh->dim() == 3) {
         coarsen_curved_verts_and_edges<3>(mesh, &new_mesh,
-            old_ents2new_ents, prods2new_ents, old_verts2new_verts);
+            old_ents2new_ents, prods2new_ents, old_verts2new_verts,
+            keys2verts, keys2verts_onto, keys2prods);
       }
     }
 
