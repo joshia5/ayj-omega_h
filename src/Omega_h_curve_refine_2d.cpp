@@ -55,7 +55,7 @@ LOs create_curved_verts_and_edges_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     parallel_for(nold_edge, std::move(count_oldfaces));
     max_degree_key2oldface = get_max(LOs(keyedges_noldfaces_w));
   }
-  printf("max key2oldface degree = %d\n",max_degree_key2oldface);
+  printf("max key2oldface degree = %d\n", max_degree_key2oldface);
 
   Write<LO> count_key(1, 0);
   auto nkeys = keys2midverts.size();
