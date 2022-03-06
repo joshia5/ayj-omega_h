@@ -175,8 +175,6 @@ void calc_quad_ctrlPts_from_interpPts(Mesh *mesh) {
       auto p1 = get_vector<2>(interpPts, i);
       auto c2 = get_vector<2>(coords, v1);
       for (Int j = 0; j < dim; ++j) {
-        //c1[j] = (p1[j] - Bi(order, 0, xi_1)*c0[j] - Bi(order, 2, xi_1)*c2[j])/
-          //Bi(order, 1, xi_1);
         c1[j] = (p1[j] - B0_quad(xi_1)*c0[j] - B2_quad(xi_1)*c2[j])/B1_quad(xi_1);
       }
       set_vector(new_pts, i, c1);
@@ -188,8 +186,6 @@ void calc_quad_ctrlPts_from_interpPts(Mesh *mesh) {
       auto p1 = get_vector<3>(interpPts, i);
       auto c2 = get_vector<3>(coords, v1);
       for (Int j = 0; j < dim; ++j) {
-//        c1[j] = (p1[j] - Bi(order, 0, xi_1)*c0[j] - Bi(order, 2, xi_1)*c2[j])/
-  //        Bi(order, 1, xi_1);
         c1[j] = (p1[j] - B0_quad(xi_1)*c0[j] - B2_quad(xi_1)*c2[j])/B1_quad(xi_1);
       }
       set_vector(new_pts, i, c1);
