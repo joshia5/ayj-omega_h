@@ -85,7 +85,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto oldedge_gid =  mesh->get_array<LO>(1, "class_id");
 
   Write<LO> new_edge2keys(new_mesh->nedges(), -1);
-  Write<LO> new_edge_midpt(new_mesh->nedges()*dim, -1.0);
+  Write<LO> new_edge2old_edges(new_mesh->nedges()*2, -1.0);
 
   auto v2v_old = mesh->ask_star(0);
   auto v2vv_old = v2v_old.a2ab;
@@ -93,12 +93,17 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto v2v_new = new_mesh->ask_star(0);
   auto v2vv_new = v2v_new.a2ab;
   auto vv2v_new = v2v_new.ab2b;
+  auto const old_v2e = mesh->ask_up(0, 1);
+  auto const old_v2ve = old_v2e.a2ab;
+  auto const old_ve2e = old_v2e.ab2b;
+  
   /*
   auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
                                                    new_mesh->nverts());
   auto nv2ov_ab2b = new_verts2old_verts.ab2b;
   auto nv2ov_a2ab = new_verts2old_verts.a2ab;
   */
+  
   auto find_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO v_key = keys2verts[i];
     LO v_onto = keys2verts_onto[i];
@@ -110,9 +115,20 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           new_edge2keys[new_edge] = v_key;
           auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
           auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
+          /*
+          for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key+1]; ++ve) {
+            auto old_edge = old_ve2e[ve];
+            assert(old_edge >0);
+          }
+          */
           auto c0 = get_vector<dim>(Reals(vert_ctrlPts), new_edge_v0);
           auto c3 = get_vector<dim>(Reals(vert_ctrlPts), new_edge_v1);
-          auto old_c1 = get_vector<dim>(old_vertCtrlPts, v_key);
+          auto old_p1 = get_vector<dim>(old_vertCtrlPts, v_key);
+          Vector<dim> old_c1;
+          Real xi_1 = 0.5;
+          for (Int j = 0; j < dim; ++j) {
+            old_c1[j] = (old_p1[j] - B0_quad(xi_1)*c0[j] - B2_quad(xi_1)*c3[j])/B1_quad(xi_1);
+          }
           Vector<dim> c1;
           Vector<dim> c2;
           for (LO d = 0; d < dim; ++d) {
@@ -125,9 +141,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
              new_coords[new_edge_v0*dim + 0],new_coords[new_ev2v[new_edge*2 + 0]*dim + 1], 
              new_coords[new_ev2v[new_edge*2 + 1]*dim + 0],new_coords[new_ev2v[new_edge*2 + 1]*dim + 1], 
               old_vertCtrlPts[v_key*dim + 0], old_vertCtrlPts[v_key*dim + 1]);
-          for (I8 d = 0; d < dim; ++d) {
-            new_edge_midpt[new_edge*dim + d] = old_vertCtrlPts[v_key*dim + d];
-          }
           break;
         }
       }
