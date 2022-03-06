@@ -308,8 +308,8 @@ void test_collapse_3d(Library *lib) {
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
-        metric_eigenvalue_from_length(0.5)));
-  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 80));
+        metric_eigenvalue_from_length(0.9)));
+  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 90));
   mesh.ask_qualities();
   return;
 }
