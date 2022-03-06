@@ -1239,8 +1239,8 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
   // first 3 vertices
   Real minAcceptable = 0.0;
   for (LO i = 0; i < 3; ++i) {
-    printf("i %d Nijk[i] %f\n", i, nodes[i]);
-    if (nodes[i] < minAcceptable) {
+    if ((std::abs(nodes[i]) > 0) && (nodes[i] < minAcceptable)) {
+      printf("i %d Nijk[i] %f\n", i, nodes[i]);
       return i+2;
     }
   }
