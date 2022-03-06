@@ -25,6 +25,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const old_vertCtrlPts = mesh->get_ctrlPts(0);
   auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
   auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
+  auto const old_coords = mesh->coords();
 
   auto const new_ev2v = new_mesh->get_adj(1, 0).ab2b;
   auto const new_coords = new_mesh->coords();
@@ -115,12 +116,42 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           new_edge2keys[new_edge] = v_key;
           auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
           auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
-          /*
+          LO new_edge_old_edge0 = -1;
+          LO new_edge_old_edge1 = -1;
           for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key+1]; ++ve) {
             auto old_edge = old_ve2e[ve];
-            assert(old_edge >0);
+            auto old_edge_v0 = old_ev2v[old_edge*2 + 0];
+            auto old_edge_v1 = old_ev2v[old_edge*2 + 1];
+            LO use_v_old = -1;
+            assert((old_edge_v0 == v_key) || (old_edge_v1 == v_key)); 
+            if (old_edge_v1 == v_key) {
+              use_v_old = old_edge_v0;
+            }
+            else {
+              assert (old_edge_v0 == v_key);
+              use_v_old = old_edge_v1;
+            }
+
+            if (old_verts2new_verts[use_v_old] == new_edge_v0) {
+              new_edge_old_edge0 = old_edge;
+            }
+            else if (old_verts2new_verts[use_v_old] == new_edge_v1) {
+              new_edge_old_edge1 = old_edge;
+            }
+            else {}
           }
-          */
+          auto new_old_e0_v0 = old_ev2v[new_edge_old_edge0*2 + 0];
+          auto new_old_e0_v1 = old_ev2v[new_edge_old_edge0*2 + 1];
+          auto new_old_e1_v0 = old_ev2v[new_edge_old_edge1*2 + 0];
+          auto new_old_e1_v1 = old_ev2v[new_edge_old_edge1*2 + 1];
+          printf("prob edge %d\n", new_edge_old_edge1);
+          printf("newEv {%f %f},{%f %f} made from old {%f %f}, {%f %f}, {%f %f}, {%f %f}\n",
+             new_coords[new_edge_v0*dim + 0],new_coords[new_edge_v0*dim + 1], 
+             new_coords[new_edge_v1*dim + 0],new_coords[new_edge_v1*dim + 1], 
+             old_coords[new_old_e0_v0*dim + 0],old_coords[new_old_e0_v0*dim + 1], 
+             old_coords[new_old_e0_v1*dim + 0],old_coords[new_old_e0_v1*dim + 1], 
+             old_coords[new_old_e1_v0*dim + 0],old_coords[new_old_e1_v0*dim + 1], 
+             old_coords[new_old_e1_v1*dim + 0],old_coords[new_old_e1_v1*dim + 1]); 
           auto c0 = get_vector<dim>(Reals(vert_ctrlPts), new_edge_v0);
           auto c3 = get_vector<dim>(Reals(vert_ctrlPts), new_edge_v1);
           auto old_p1 = get_vector<dim>(old_vertCtrlPts, v_key);
@@ -137,10 +168,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c1[d];
             edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c2[d];
           }
-          printf("new bdry edge with verts {%f %f},{%f %f} old key ctrlpt {%f %f}\n",
-             new_coords[new_edge_v0*dim + 0],new_coords[new_ev2v[new_edge*2 + 0]*dim + 1], 
-             new_coords[new_ev2v[new_edge*2 + 1]*dim + 0],new_coords[new_ev2v[new_edge*2 + 1]*dim + 1], 
-              old_vertCtrlPts[v_key*dim + 0], old_vertCtrlPts[v_key*dim + 1]);
           break;
         }
       }
@@ -150,7 +177,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       LO adj_v = vv2v_old[vv];
       for (LO vv2 = v2vv_new[v_onto_new]; vv2 < v2vv_new[v_onto_new+1]; ++vv2) {
         LO adj_v2_new = vv2v_new[vv2];
-        OMEGA_H_CHECK((nv2ov_a2ab[adj_v2_new+1] - nv2ov_a2ab[adj_v2_new]) == 1);
+        assert((nv2ov_a2ab[adj_v2_new+1] - nv2ov_a2ab[adj_v2_new]) == 1);
         LO adj_v2 = nv2ov_ab2b[nv2ov_a2ab[adj_v2_new]];
         if (adj_v2 == adj_v) break;
       }
