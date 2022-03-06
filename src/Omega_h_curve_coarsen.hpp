@@ -154,14 +154,28 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
              old_coords[new_old_e1_v1*dim + 0],old_coords[new_old_e1_v1*dim + 1]); 
           auto c0 = get_vector<dim>(Reals(vert_ctrlPts), new_edge_v0);
           auto c3 = get_vector<dim>(Reals(vert_ctrlPts), new_edge_v1);
+          Vector<dim> c1;
+          Vector<dim> c2;
+          Vector<dim> p1;
+          Vector<dim> p2;
+          //TODO use a better measure to interpolate instead of v_key at 0.5
+          //TODO maybe use ratio of edge lengths
           auto old_p1 = get_vector<dim>(old_vertCtrlPts, v_key);
-          Vector<dim> old_c1;
           Real xi_1 = 0.5;
+          Real sum_dist1 = 0.0;
+          Real sum_dist2 = 0.0;
+          for (Int j = 0; j < dim; ++j) {
+            sum_dist1 += (old_p1[j] - c0[j])*(old_p1[j] - c0[j]);
+            sum_dist2 += (old_p1[j] - c3[j])*(old_p1[j] - c3[j]);
+          }
+          sum_dist1 = std::sqrt(sum_dist1/(dim*1.0));
+          sum_dist2 = std::sqrt(sum_dist2/(dim*1.0));
+          xi_1 = sum_dist1/(sum_dist1+sum_dist2);
+          printf("calc midpt %f\n", xi_1);
+          Vector<dim> old_c1;
           for (Int j = 0; j < dim; ++j) {
             old_c1[j] = (old_p1[j] - B0_quad(xi_1)*c0[j] - B2_quad(xi_1)*c3[j])/B1_quad(xi_1);
           }
-          Vector<dim> c1;
-          Vector<dim> c2;
           for (LO d = 0; d < dim; ++d) {
             c1[d] = (1.0/3.0)*c0[d] + (2.0/3.0)*old_c1[d];
             c2[d] = (2.0/3.0)*old_c1[d] + (1.0/3.0)*c3[d];
