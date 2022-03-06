@@ -90,9 +90,8 @@ OMEGA_H_INLINE Few<Real, n> getTetJacDetNodes(LO P, Few<Real, 60> const& elemNod
 OMEGA_H_INLINE LO checkMinJacDet_3d(Few<Real, 84> const& nodes) {
   // first 4 vertices
   Real minAcceptable = 0.0;
-  for (LO i = 0; i < 84; ++i) {
-  //for (LO i = 0; i < 4; ++i) {
-    if (nodes[i] < minAcceptable) {
+  for (LO i = 0; i < 4; ++i) {
+    if ((std::abs(nodes[i]) > 0) && (nodes[i] < minAcceptable)) {
       printf("i %d Nijkl[i] %f\n", i, nodes[i]);
       return i+2;
     }
