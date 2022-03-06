@@ -77,10 +77,10 @@ void test_disc_validity(Library *lib) {
 void test_disc_collapse(Library *lib) {
   auto comm = lib->world();
 
-  //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
-  //                      "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
-  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
-                            "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", comm);
+  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
+                        "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
+  //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
+    //                        "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", comm);
                             
   calc_quad_ctrlPts_from_interpPts(&mesh);
   elevate_curve_order_2to3(&mesh);
@@ -124,6 +124,9 @@ void test_disc_collapse(Library *lib) {
   while (coarsen_by_size(&mesh, opts))
     ;
   mesh.ask_qualities();
+  coords = mesh.coords();
+  ev2v = mesh.get_adj(1, 0).ab2b;
+  fe2e = mesh.get_adj(2, 1).ab2b;
   return;
 }
 
@@ -334,7 +337,7 @@ void test_collapse_3d(Library *lib) {
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
-  //test_disc_collapse(&lib);
+  test_disc_collapse(&lib);
   //test_disc_validity(&lib);
   //test_tri_validity(&lib);
   //test_boxCircle_validity(&lib);
@@ -342,7 +345,7 @@ int main(int argc, char** argv) {
   //test_quadratic_tet_validity(&lib);
   //test_Kova_validity(&lib);
   //test_cubic_tet_validity(&lib);
-  test_collapse_3d(&lib);
+  //test_collapse_3d(&lib);
 
   return 0;
 }
