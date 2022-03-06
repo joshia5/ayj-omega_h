@@ -77,10 +77,10 @@ void test_disc_validity(Library *lib) {
 void test_disc_collapse(Library *lib) {
   auto comm = lib->world();
 
-  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
-                        "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
-  //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
-    //                        "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", comm);
+  //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
+    //                    "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
+  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
+                            "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", comm);
                             
   calc_quad_ctrlPts_from_interpPts(&mesh);
   elevate_curve_order_2to3(&mesh);

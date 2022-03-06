@@ -85,7 +85,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto oldedge_gid =  mesh->get_array<LO>(1, "class_id");
 
   Write<LO> new_edge2keys(new_mesh->nedges(), -1);
-  Write<LO> new_edge2mid_pt(new_mesh->nedges()*dim, -1.0);
+  Write<LO> new_edge_midpt(new_mesh->nedges()*dim, -1.0);
 
   auto v2v_old = mesh->ask_star(0);
   auto v2vv_old = v2v_old.a2ab;
@@ -108,10 +108,29 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         LO new_edge = prods2new[prod];
         if ((newedge_gdim[new_edge] == 1) && (newedge_gid[new_edge] == oldvert_gid[v_key])) {
           new_edge2keys[new_edge] = v_key;
+          auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
+          auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
+          auto c0 = get_vector<dim>(Reals(vert_ctrlPts), new_edge_v0);
+          auto c3 = get_vector<dim>(Reals(vert_ctrlPts), new_edge_v1);
+          auto old_c1 = get_vector<dim>(old_vertCtrlPts, v_key);
+          Vector<dim> c1;
+          Vector<dim> c2;
+          for (LO d = 0; d < dim; ++d) {
+            c1[d] = (1.0/3.0)*c0[d] + (2.0/3.0)*old_c1[d];
+            c2[d] = (2.0/3.0)*old_c1[d] + (1.0/3.0)*c3[d];
+            edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c1[d];
+            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c2[d];
+          }
+          printf("new bdry edge with verts {%f %f},{%f %f} old key ctrlpt {%f %f}\n",
+             new_coords[new_edge_v0*dim + 0],new_coords[new_ev2v[new_edge*2 + 0]*dim + 1], 
+             new_coords[new_ev2v[new_edge*2 + 1]*dim + 0],new_coords[new_ev2v[new_edge*2 + 1]*dim + 1], 
+              old_vertCtrlPts[v_key*dim + 0], old_vertCtrlPts[v_key*dim + 1]);
+          for (I8 d = 0; d < dim; ++d) {
+            new_edge_midpt[new_edge*dim + d] = old_vertCtrlPts[v_key*dim + d];
+          }
           break;
-        } 
+        }
       }
-
     }
       /*
     for (LO vv = v2vv_old[v_key]; vv < v2vv_old[v_key+1]; ++vv) {
