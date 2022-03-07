@@ -85,8 +85,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto oldvert_gid =  mesh->get_array<LO>(0, "class_id");
   auto oldedge_gid =  mesh->get_array<LO>(1, "class_id");
 
-  //Write<LO> new_edge2keys(new_mesh->nedges(), -1);
-  //Write<LO> new_edge2old_edges(new_mesh->nedges()*2, -1.0);
 
   auto v2v_old = mesh->ask_star(0);
   auto v2vv_old = v2v_old.a2ab;
@@ -116,7 +114,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         if ((newedge_gdim[new_edge] <= (dim-1))) {
         //if ((newedge_gdim[new_edge] <= (dim-1)) && (newedge_gdim[new_edge] == oldvert_gdim[v_key])
           //  && (newedge_gid[new_edge] == oldvert_gid[v_key])) {
-          //new_edge2keys[new_edge] = v_key;
           auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
           auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
           LO new_edge_old_edge0 = -1;
@@ -161,8 +158,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           Vector<dim> c2;
           Vector<dim> p1;
           Vector<dim> p2;
-          //TODO use a better measure to interpolate instead of v_key at 0.5
-          //TODO maybe use ratio of edge lengths
+          //TODO use 2 pts on 2 collapsing for better curvature
           auto old_p1 = get_vector<dim>(old_vertCtrlPts, v_key);
           Real xi_1 = 0.5;
           Real sum_dist1 = 0.0;
@@ -189,17 +185,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         }
       }
     }
-      /*
-    for (LO vv = v2vv_old[v_key]; vv < v2vv_old[v_key+1]; ++vv) {
-      LO adj_v = vv2v_old[vv];
-      for (LO vv2 = v2vv_new[v_onto_new]; vv2 < v2vv_new[v_onto_new+1]; ++vv2) {
-        LO adj_v2_new = vv2v_new[vv2];
-        assert((nv2ov_a2ab[adj_v2_new+1] - nv2ov_a2ab[adj_v2_new]) == 1);
-        LO adj_v2 = nv2ov_ab2b[nv2ov_a2ab[adj_v2_new]];
-        if (adj_v2 == adj_v) break;
-      }
-    }
-    */
   };
   parallel_for(keys2verts.size(), std::move(find_bdry_edges));
 
