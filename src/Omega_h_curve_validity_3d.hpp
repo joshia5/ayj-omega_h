@@ -97,30 +97,6 @@ OMEGA_H_INLINE LO checkMinJacDet_3d(Few<Real, 84> const& nodes) {
     }
   }
 
-  /*
-  Real minJ = 0;
-  for (LO edge = 0; edge < 3; ++edge) {
-    for (LO i = 0; i < 2*(order-1)-1; ++i) {
-      if (nodes[3+edge*(2*(order-1)-1)+i] < minAcceptable) {
-        minJ = -1e10;
-        // there is no point in doing much with edges if we dont have
-        // elevation or subdivision or subdivision matrices
-        if (minJ < minAcceptable){
-          return 8+edge;
-        }
-      }
-    }
-  }
-
-  for (LO i = 0; i < (2*order-3)*(2*order-4)/2; ++i) {
-    if (nodes[6*(order-1)+i] < minAcceptable) {
-      minJ = -1e10;
-      if (minJ < minAcceptable) {
-        return 14;
-      }
-    }
-  }
-  */
   return -1;
 }
 
