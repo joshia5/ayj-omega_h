@@ -598,7 +598,6 @@ LOs coarsen_invalidities_3d(
         }
         auto nodes_det = getTetJacDetNodes<84>(3, tet_pts);
         auto is_invalid = checkMinJacDet_3d(nodes_det);
-        printf("cand %d eev_col %d, vc = %d is invalid %d\n", cand, eev_col, vc, is_invalid);
 
         max_invalid = max2(max_invalid, is_invalid);
       }
@@ -607,7 +606,6 @@ LOs coarsen_invalidities_3d(
   };
   parallel_for(ncands, f, "coarsen_invalidities");
   auto out_invalid = LOs(invalidities);
-  printf("3d collapse runs\n");
   return mesh->sync_subset_array(EDGE, out_invalid, cands2edges, -1, 2);
 }
 
