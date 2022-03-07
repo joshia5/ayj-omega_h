@@ -213,11 +213,15 @@ template <Int dim>
 void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     LOs prods2new) {
   auto const new_fv2v = new_mesh->ask_down(2, 0).ab2b;
+  auto const new_fe2e = new_mesh->get_adj(2, 1).ab2b;
   auto const new_coords = new_mesh->coords();
   auto const nnew_faces = new_mesh->nfaces();
   auto const nold_faces = mesh->nfaces();
   auto const old_faceCtrlPts = mesh->get_ctrlPts(2);
   Write<Real> face_ctrlPts(nnew_faces*1*dim, INT8_MAX);
+
+  auto const vertCtrlPts = mesh->get_ctrlPts(0);
+  auto const edgeCtrlPts = mesh->get_ctrlPts(1);
 
   //copy ctrl pts for faces
   auto copy_samefacePts = OMEGA_H_LAMBDA(LO i) {
@@ -231,18 +235,34 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   parallel_for(nold_faces, std::move(copy_samefacePts),
       "copy_same_facectrlPts");
 
-  auto face_centroids = OMEGA_H_LAMBDA(LO i) {
+  auto face_blends = OMEGA_H_LAMBDA(LO i) {
     LO f = prods2new[i];
     auto v0 = new_fv2v[f*3 + 0];
     auto v1 = new_fv2v[f*3 + 1];
     auto v2 = new_fv2v[f*3 + 2];
     for (LO j=0; j<dim; ++j) {
-      face_ctrlPts[f*dim + j] = (new_coords[v0*dim + j] +
-          new_coords[v1*dim + j] + new_coords[v2*dim + j])/3.0;
+      face_ctrlPts[f*dim + j] = (
+         new_coords[v0*dim + j] +
+         new_coords[v1*dim + j] + new_coords[v2*dim + j])/3.0;
+      
+    /*
+    auto e0 = new_fe2e[f*3 + 0];
+    auto e1 = new_fe2e[f*3 + 1];
+    auto e2 = new_fe2e[f*3 + 2];
+    for (LO j=0; j<dim; ++j) {
+      face_ctrlPts[f*dim + j] = (
+         new_coords[v0*dim + j] +
+         new_coords[v1*dim + j] + new_coords[v2*dim + j] +
+         edgeCtrlPts[e0*2*dim + j] + 
+         edgeCtrlPts[e0*2*dim + dim +j] +
+         edgeCtrlPts[e1*2*dim + j] + 
+         edgeCtrlPts[e1*2*dim + dim +j] +
+         edgeCtrlPts[e2*2*dim + j] + 
+         edgeCtrlPts[e2*2*dim + dim +j])/9.0;
+         */
     }
   };
-  parallel_for(prods2new.size(), std::move(face_centroids),
-      "face_centroids");
+  parallel_for(prods2new.size(), std::move(face_blends), "face_blends");
   new_mesh->add_tag<Real>(2, "bezier_pts", dim);
   new_mesh->set_tag_for_ctrlPts(2, Reals(face_ctrlPts));
 
