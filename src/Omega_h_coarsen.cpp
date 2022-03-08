@@ -12,8 +12,8 @@
 #include "Omega_h_modify.hpp"
 #include "Omega_h_transfer.hpp"
 #include "Omega_h_file.hpp"
-#include "Omega_h_curve_coarsen.hpp"
 #include "Omega_h_build.hpp"
+#include "Omega_h_curve_coarsen.hpp"
 
 namespace Omega_h {
 
@@ -83,7 +83,6 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
     /* cavity invalidity checks */
     auto cand_edge_invalidities = coarsen_invalidities
       (mesh, cands2edges, cand_edge_codes);
-    //TODO test for the filtering//should be ok as its not much 
     cand_edge_codes = filter_coarsen_invalids(
         cand_edge_codes, cand_edge_invalidities, -1);
     filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
@@ -189,6 +188,9 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
         coarsen_curved_faces<3>(mesh, &new_mesh, old_ents2new_ents,
             prods2new_ents);
       }
+    }
+    if ((ent_dim == 3) && (mesh->is_curved() > 0)) {
+      correct_curved_edges(&new_mesh);
     }
 
     old_lows2new_lows = old_ents2new_ents;

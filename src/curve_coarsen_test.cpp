@@ -112,7 +112,7 @@ void test_disc_collapse(Library *lib) {
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(0.5)));
-  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 0));
+  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 10));
   mesh.ask_qualities();
   coords = mesh.coords();
   ev2v = mesh.get_adj(1, 0).ab2b;
@@ -288,7 +288,7 @@ void test_Kova_validity(Library *lib) {
   return;
 }
 
-void test_collapse_3d(Library *lib) {
+void test_collapse_kova(Library *lib) {
   auto comm = lib->world();
 
   auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
@@ -309,7 +309,41 @@ void test_collapse_3d(Library *lib) {
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(0.9)));
-  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 90));
+  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 80));
+  mesh.ask_qualities();
+  vtk::write_parallel("/lore/joshia5/Meshes/curved/kovaCoarsen.vtk", &mesh);
+  return;
+}
+
+void test_collapse_boxCircle(Library *lib) {
+  auto comm = lib->world();
+
+  auto mesh = binary::read("/lore/joshia5/Meshes/curved/box_circleCut_4k.osh", comm);
+                            
+  for (LO i = 0; i <= mesh.dim(); ++i) {
+    if (!mesh.has_tag(i, "global")) {
+      mesh.add_tag(i, "global", 1, Omega_h::GOs(mesh.nents(i), 0, 1));
+    }
+  }
+
+  calc_quad_ctrlPts_from_interpPts(&mesh);
+  elevate_curve_order_2to3(&mesh);
+
+  mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
+  
+  auto opts = AdaptOpts(&mesh);
+  mesh.add_tag<Real>(VERT, "metric", 1);
+  mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
+        metric_eigenvalue_from_length(0.4)));
+  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 1000));
+  /*
+  mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
+        metric_eigenvalue_from_length(0.6)));
+  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 1000));
+  mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
+        metric_eigenvalue_from_length(1.0)));
+  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 1000));
+  */
   mesh.ask_qualities();
   return;
 }
@@ -325,7 +359,8 @@ int main(int argc, char** argv) {
   //test_quadratic_tet_validity(&lib);
   //test_Kova_validity(&lib);
   //test_cubic_tet_validity(&lib);
-  test_collapse_3d(&lib);
+  test_collapse_kova(&lib);
+  //test_collapse_boxCircle(&lib);
 
   return 0;
 }
