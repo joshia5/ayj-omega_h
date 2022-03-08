@@ -1,14 +1,14 @@
+#include "Omega_h_for.hpp"
+#include "Omega_h_curve_validity_3d.hpp"
 #include "Omega_h_coarsen.hpp"
-
 #include "Omega_h_align.hpp"
 #include "Omega_h_array_ops.hpp"
 #include "Omega_h_collapse.hpp"
 #include "Omega_h_file.hpp"
-#include "Omega_h_for.hpp"
 #include "Omega_h_map.hpp"
 #include "Omega_h_beziers.hpp"
 #include "Omega_h_metric.hpp"
-#include "Omega_h_curve_validity_3d.hpp"
+#include "Omega_h_coarsen_invalidities.hpp"
 
 #include <iostream>
 
