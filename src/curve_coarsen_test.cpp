@@ -335,7 +335,7 @@ void test_collapse_boxCircle(Library *lib) {
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(0.4)));
-  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 1000));
+  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 2000));
   /*
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(0.6)));
