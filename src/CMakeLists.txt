@@ -4,6 +4,13 @@ set(Omega_h_SOURCES
   Omega_h_align.cpp
   Omega_h_amr.cpp
   Omega_h_amr_topology.cpp
+  Omega_h_beziers.cpp
+  Omega_h_curve_validity.cpp
+  Omega_h_curve_validity_3d.cpp
+  Omega_h_curve_refine_2d.cpp
+  Omega_h_curve_refine_3d.cpp
+  Omega_h_coarsen_invalidities.cpp
+  Omega_h_curve_coarsen.cpp
   Omega_h_amr_transfer.cpp
   Omega_h_any.cpp
   Omega_h_approach.cpp
@@ -24,7 +31,6 @@ set(Omega_h_SOURCES
   Omega_h_coarsen.cpp
   Omega_h_coarsen_overshoot.cpp
   Omega_h_coarsen_qualities.cpp
-  Omega_h_coarsen_invalidities.cpp
   Omega_h_coarsen_topology.cpp
   Omega_h_collapse_rail.cpp
   Omega_h_comm.cpp
@@ -63,10 +69,6 @@ set(Omega_h_SOURCES
   Omega_h_math_lang.cpp
   Omega_h_matrix.cpp
   Omega_h_mesh.cpp
-  Omega_h_beziers.cpp
-  Omega_h_curve_refine_2d.cpp
-  Omega_h_curve_refine_3d.cpp
-  Omega_h_curve_validity.cpp
   Omega_h_rcFields.cpp
   Omega_h_metric.cpp
   Omega_h_metric_input.cpp
@@ -565,6 +567,11 @@ endif()
 bob_config_header("${CMAKE_CURRENT_BINARY_DIR}/Omega_h_config.h")
 set(Omega_h_HEADERS
   "${CMAKE_CURRENT_BINARY_DIR}/Omega_h_config.h"
+  Omega_h_beziers.hpp
+  Omega_h_bezier_interp.hpp
+  Omega_h_curve_validity_3d.hpp
+  Omega_h_coarsen_invalidities.hpp
+  Omega_h_curve_coarsen.hpp
   Omega_h_adapt.hpp
   Omega_h_adj.hpp
   Omega_h_affine.hpp
@@ -617,10 +624,6 @@ set(Omega_h_HEADERS
   Omega_h_math_lang.hpp
   Omega_h_matrix.hpp
   Omega_h_mesh.hpp
-  Omega_h_beziers.hpp
-  Omega_h_curve_coarsen.hpp
-  Omega_h_curve_validity_3d.hpp
-  Omega_h_bezier_interp.hpp
   Omega_h_metric.hpp
   Omega_h_mpi.h
   Omega_h_owners.hpp
