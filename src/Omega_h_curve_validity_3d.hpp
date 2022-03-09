@@ -9,7 +9,7 @@
 
 namespace Omega_h {
 
-OMEGA_H_INLINE LO computeTetNodeIndex (LO P, LO i, LO j, LO k) {
+OMEGA_H_DEVICE LO computeTetNodeIndex (LO P, LO i, LO j, LO k) {
   LO l = P-i-j-k;
   if(i == P) return 0;
   if(j == P) return 1;
@@ -28,11 +28,11 @@ OMEGA_H_INLINE LO computeTetNodeIndex (LO P, LO i, LO j, LO k) {
   return i-P-((i-P+1)*(i-P+2)*(i-P+3))/6+l*(P-1-i)-l*(l-1)/2+k+2*P*P+2;
 }
 
-OMEGA_H_INLINE LO getTetNodeIndex (LO P, LO i, LO j, LO k) {
+OMEGA_H_DEVICE LO getTetNodeIndex (LO P, LO i, LO j, LO k) {
   return computeTetNodeIndex(P, i, j, k);
 }
 
-OMEGA_H_INLINE Real getTetPartialJacobianDet(Few<Real, 60> nodes, LO P, LO i1,
+OMEGA_H_DEVICE Real getTetPartialJacobianDet(Few<Real, 60> nodes, LO P, LO i1,
     LO j1, LO k1, LO i2, LO j2, LO k2, LO i3, LO j3, LO k3) {
   LO p00 = getTetNodeIndex(P,i1+1,j1,k1);
   LO p01 = getTetNodeIndex(P,i1,j1+1,k1);
@@ -45,7 +45,7 @@ OMEGA_H_INLINE Real getTetPartialJacobianDet(Few<Real, 60> nodes, LO P, LO i1,
          *(get_vector<3>(nodes, p21) - get_vector<3>(nodes, p20));
 }
 
-OMEGA_H_INLINE Real Nijkl(Few<Real, 60> nodes, LO d, LO I, LO J, LO K) {
+OMEGA_H_DEVICE Real Nijkl(Few<Real, 60> nodes, LO d, LO I, LO J, LO K) {
 
   Real sum = 0.;
   LO CD = quadnomial(3*(d-1),I,J,K);
@@ -77,7 +77,7 @@ OMEGA_H_INLINE Real Nijkl(Few<Real, 60> nodes, LO d, LO I, LO J, LO K) {
 }
 
 template <Int n>
-OMEGA_H_INLINE Few<Real, n> getTetJacDetNodes(LO P, Few<Real, 60> const& elemNodes) {
+OMEGA_H_DEVICE Few<Real, n> getTetJacDetNodes(LO P, Few<Real, 60> const& elemNodes) {
   Few<Real, n> nodes;//n=84
   for (int I = 0; I <= 3*(P-1); ++I) {
     for (int J = 0; J <= 3*(P-1)-I; ++J) {

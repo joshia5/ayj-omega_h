@@ -27,6 +27,12 @@ LOs coarsen_invalidities_2d(
   auto ncands = cands2edges.size();
   auto invalidities = Write<LO>(ncands * 2, -1);
   auto coords = mesh->coords();
+  auto e2e = edges_across_tris(mesh->ask_down(2, 1), mesh->ask_up(1, 2));
+  auto e2ee = e2e.a2ab;
+  auto ee2e = e2e.ab2b;
+  auto vertCtrlPts = mesh->get_ctrlPts(0);
+  auto edgeCtrlPts = mesh->get_ctrlPts(1);
+  auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
 
   auto f = OMEGA_H_LAMBDA(LO cand) {
     auto e = cands2edges[cand];
@@ -53,13 +59,18 @@ LOs coarsen_invalidities_2d(
         OMEGA_H_CHECK(0 <= ccv_col && ccv_col < mesh_dim + 1);
         ccv2v[ccv_col] = v_onto;  // vertices of new cell
 
-        auto e2e = edges_across_tris(mesh->ask_down(2, 1), mesh->ask_up(1, 2));
-        auto e2ee = e2e.a2ab;
-        auto ee2e = e2e.ab2b;
-
-        Few<LO, 2> same_edges = {-1, -1}; //can be max 2
-        Few<LO, 2+1> is_newTri_edge_flip = {-2, -2, -2};
-        Few<LO, 2+1> newTri_edge = {-1, -1, -1};
+        Few<LO, 2> same_edges;
+        for (LO init = 0; init < 2; ++init) {
+          same_edges[init] = -1; //can be max 2
+        }
+        Few<LO, 2+1> is_newTri_edge_flip;
+        for (LO init = 0; init < 3; ++init) {
+          is_newTri_edge_flip[init] = -2;
+        }
+        Few<LO, 2+1> newTri_edge;
+        for (LO init = 0; init < 3; ++init) {
+          newTri_edge[init] = -1;
+        }
         LO count_same_edge = 0;
         auto v0_f = ccv2v[0];
         auto v1_f = ccv2v[1];
@@ -194,9 +205,6 @@ LOs coarsen_invalidities_2d(
         for (LO ee = 0; ee < 3; ++ee) {
           //printf("newtri edge %d is %d\n", ee, newTri_edge[ee]);
         }
-        auto vertCtrlPts = mesh->get_ctrlPts(0);
-        auto edgeCtrlPts = mesh->get_ctrlPts(1);
-        auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
         Few<Real, 10*2> tri_pts;//ntri_pts*dim=20
         for (LO j = 0; j < 3; ++j) {
           auto p = get_vector<2>(vertCtrlPts, ccv2v[j]);
@@ -276,6 +284,12 @@ LOs coarsen_invalidities_3d(
   auto ncands = cands2edges.size();
   auto invalidities = Write<LO>(ncands * 2, -1);
   auto coords = mesh->coords();
+  auto e2e = edges_across_tets(mesh->ask_down(3, 1), mesh->ask_up(1, 3));
+  auto e2ee = e2e.a2ab;
+  auto ee2e = e2e.ab2b;
+  auto vertCtrlPts = mesh->get_ctrlPts(0);
+  auto edgeCtrlPts = mesh->get_ctrlPts(1);
+  auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
 
   auto f = OMEGA_H_LAMBDA(LO cand) {
     auto e = cands2edges[cand];
@@ -302,13 +316,18 @@ LOs coarsen_invalidities_3d(
         OMEGA_H_CHECK(0 <= ccv_col && ccv_col < mesh_dim + 1);
         ccv2v[ccv_col] = v_onto;  // vertices of new cell
 
-        auto e2e = edges_across_tets(mesh->ask_down(3, 1), mesh->ask_up(1, 3));
-        auto e2ee = e2e.a2ab;
-        auto ee2e = e2e.ab2b;
-
-        Few<LO, 5> same_edges = {-1, -1, -1, -1, -1}; //can be max 5
-        Few<LO, 6> is_newTet_edge_flip = {-2, -2, -2, -2, -2, -2};
-        Few<LO, 6> newTet_edge = {-1, -1, -1, -1, -1, -1};
+        Few<LO, 5> same_edges; //can be max 5
+        for (LO init = 0; init < 5; ++init) {
+          same_edges[init] = -1;
+        }
+        Few<LO, 6> is_newTet_edge_flip;
+        for (LO init = 0; init < 6; ++init) {
+          is_newTet_edge_flip[init] = -2;
+        }
+        Few<LO, 6> newTet_edge;
+        for (LO init = 0; init < 6; ++init) {
+          newTet_edge[init] = -1;
+        }
         LO count_same_edge = 0;
         auto v0_r = ccv2v[0];
         auto v1_r = ccv2v[1];
@@ -521,9 +540,6 @@ LOs coarsen_invalidities_3d(
         for (LO ee = 0; ee < 3; ++ee) {
           //printf("newtri edge %d is %d\n", ee, newTri_edge[ee]);
         }
-        auto vertCtrlPts = mesh->get_ctrlPts(0);
-        auto edgeCtrlPts = mesh->get_ctrlPts(1);
-        auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
         Few<Real, 20*3> tet_pts;//ntri_pts*dim=20
         for (LO j = 0; j < 4; ++j) {
           auto p = get_vector<3>(vertCtrlPts, ccv2v[j]);

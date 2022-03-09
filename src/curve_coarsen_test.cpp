@@ -43,6 +43,7 @@ void test_tri_validity(Library *lib) {
   return;
 }
 
+/*
 void test_disc_validity(Library *lib) {
   auto comm = lib->world();
 
@@ -119,7 +120,7 @@ void test_disc_collapse(Library *lib) {
   fe2e = mesh.get_adj(2, 1).ab2b;
   return;
 }
-
+*/
 void test_linear_tet_validity(Library *lib) {
   auto mesh = Mesh(lib);
   auto comm = lib->world();
@@ -136,10 +137,12 @@ void test_linear_tet_validity(Library *lib) {
   for (LO j = 0; j < vertCtrlPts.size(); ++j) {
     tet_pts[j] = vertCtrlPts[j];
   }
+  /*
   Few<Real, 84> nodes_det = getTetJacDetNodes<84>(1, tet_pts);
 
   auto is_invalid = checkMinJacDet_3d(nodes_det);
   printf("linear tet is invalid %d \n", is_invalid);
+  */
 }
 
 void test_quadratic_tet_validity(Library *lib) {
@@ -175,11 +178,13 @@ void test_quadratic_tet_validity(Library *lib) {
   for (LO j = 0; j < edgeCtrlPts.size(); ++j) {
     tet_pts[12 + j] = edgeCtrlPts[j];
   }
+  /*
   Few<Real, 84> nodes_det = getTetJacDetNodes<84>(2, tet_pts);
 
   auto is_invalid = checkMinJacDet_3d(nodes_det);
   printf("quadratic tet is invalid %d \n", is_invalid);
-
+  */
+  return;
 }
 
 void test_cubic_tet_validity(Library *lib) {
