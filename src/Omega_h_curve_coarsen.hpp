@@ -71,12 +71,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     auto v1 = new_ev2v[e*2 + 1];
     for (LO j=0; j<dim; ++j) {
       edge_ctrlPts[e*n_edge_pts*dim + j] = new_coords[v0*dim + j] +
-          (new_coords[v1*dim + j] - new_coords[v0*dim + j])*(1.0/3.0);
+          (new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_1_cube();
       edge_ctrlPts[e*n_edge_pts*dim + dim + j] = new_coords[v0*dim + j] +
-          (new_coords[v1*dim + j] - new_coords[v0*dim + j])*(2.0/3.0);
-          //TODO verify that new pts should be equidistant
-          //(new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_1_cube();
-          //(new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_2_cube();
+          (new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_2_cube();
     }
   };
   parallel_for(prods2new.size(), std::move(prod_edge_points),
@@ -131,6 +128,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           sum_dist1 = std::sqrt(sum_dist1/(dim*1.0));
           sum_dist2 = std::sqrt(sum_dist2/(dim*1.0));
           xi_1 = sum_dist1/(sum_dist1+sum_dist2);
+          //TODO use length of curve not euclidean dist?
           Vector<dim> old_c1;
           for (Int j = 0; j < dim; ++j) {
             old_c1[j] = (old_p1[j] - B0_quad(xi_1)*c0[j] - B2_quad(xi_1)*c3[j])/B1_quad(xi_1);
