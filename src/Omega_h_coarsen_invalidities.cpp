@@ -571,10 +571,10 @@ LOs coarsen_invalidities_3d(
             for (I8 d = 0; d < mesh_dim; ++d) {
               assert (is_newTet_edge_flip[j] == -2);
               tet_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] = 
-                tet_pts[(j%3)*mesh_dim + d] + thirdOfEdge[j*mesh_dim + d];
+                tet_pts[(j%3)*mesh_dim + d] + 3*thirdOfEdge[j*mesh_dim + d]*xi_1_cube();
               //start from start of edge so j%2
               tet_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
-                tet_pts[(j%3)*mesh_dim + d] + 2*thirdOfEdge[j*mesh_dim + d];
+                tet_pts[(j%3)*mesh_dim + d] + 3*thirdOfEdge[j*mesh_dim + d]*xi_2_cube();
             }
           }
         }
