@@ -93,6 +93,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const old_v2e = mesh->ask_up(0, 1);
   auto const old_v2ve = old_v2e.a2ab;
   auto const old_ve2e = old_v2e.ab2b;
+  auto vert_ctrlPts_r = Reals(vert_ctrlPts);
   
   auto find_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO v_key = keys2verts[i];
@@ -111,12 +112,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
           auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
 
-          auto c0 = get_vector<dim>(Reals(vert_ctrlPts), new_edge_v0);
-          auto c3 = get_vector<dim>(Reals(vert_ctrlPts), new_edge_v1);
+          auto c0 = get_vector<dim>(vert_ctrlPts_r, new_edge_v0);
+          auto c3 = get_vector<dim>(vert_ctrlPts_r, new_edge_v1);
           Vector<dim> c1;
           Vector<dim> c2;
-          Vector<dim> p1;
-          Vector<dim> p2;
+          //Vector<dim> p1;
+          //Vector<dim> p2;
           auto old_p1 = get_vector<dim>(old_vertCtrlPts, v_key);
           Real xi_1 = 0.5;
           Real sum_dist1 = 0.0;

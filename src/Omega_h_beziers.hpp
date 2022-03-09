@@ -1248,7 +1248,7 @@ OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
   return -1;
 }
 
-OMEGA_H_INLINE Few<Real, 60> collect_tet_pts(
+OMEGA_H_DEVICE Few<Real, 60> collect_tet_pts(
     LO const order, LO const tet, LOs ev2v, LOs rv2v,
     Reals vertCtrlPts, Reals edgeCtrlPts, Reals faceCtrlPts,
     LOs re2e, LOs rf2f) {
