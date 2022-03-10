@@ -90,7 +90,7 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
   filter_coarsen_candidates(&cands2edges, &cand_edge_codes, &cand_edge_quals);
   /* finished cavity quality checks */
 
-  if (mesh->is_curved()) {
+  if (mesh->is_curved() > 0) {
     /* cavity invalidity checks */
     auto cand_edge_invalidities = coarsen_invalidities
       (mesh, cands2edges, cand_edge_codes);
