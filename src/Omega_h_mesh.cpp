@@ -98,7 +98,7 @@ void Mesh::change_max_order(Int max_order) {
 
 Int Mesh::n_internal_ctrlPts(Int edim) {
   check_dim2(edim);
-  OMEGA_H_CHECK(is_curved());
+  OMEGA_H_CHECK(is_curved() > 0);
   auto max_order = get_max_order();
   OMEGA_H_CHECK(max_order > 0);
   OMEGA_H_CHECK(edim >= 0);
@@ -1450,6 +1450,36 @@ Reals average_field(Mesh* mesh, Int ent_dim, Int ncomps, Reals v2x) {
   auto a2e = LOs(mesh->nents(ent_dim), 0, 1);
   return average_field(mesh, ent_dim, a2e, ncomps, v2x);
 }
+
+void ProjectFieldtoVertex(Mesh* o_mesh, std::string const &name, Int edim) {
+
+  auto e_field = o_mesh->get_array<Real>(edim, name);
+  auto vtx2e = o_mesh->ask_up(0, edim);
+  auto ve2e = vtx2e.ab2b;
+  auto v2ve = vtx2e.a2ab;
+  Write<Real> vtx_field(o_mesh->nverts(), 0);
+
+  auto get_vtx_field = OMEGA_H_LAMBDA(LO v) {
+    auto start_index = v2ve[v];
+    auto end_index = v2ve[v+1];
+    //get index where adjacent elem id is stored
+    for (LO index = start_index; index < end_index; ++index) {
+      auto elem = ve2e[index];
+      vtx_field[v] += e_field[elem];
+    }
+    //average field value
+    vtx_field[v] = vtx_field[v]/(end_index - start_index);
+  };
+  parallel_for(o_mesh->nverts(), get_vtx_field, "get_vtx_field");
+
+  //add tag
+  Read<Real> vtx_field_r(vtx_field);
+  o_mesh->add_tag<Real>(0, name, 1, vtx_field_r);
+  o_mesh->sync_tag(0, name);
+
+  return;
+}
+
 
 void get_all_dim_tags(Mesh* mesh, Int dim, TagSet* tags) {
   for (Int j = 0; j < mesh->ntags(dim); ++j) {
