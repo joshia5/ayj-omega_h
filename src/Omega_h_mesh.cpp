@@ -1387,6 +1387,110 @@ void ProjectFieldtoVertex(Mesh* o_mesh, std::string const &name, Int edim) {
   return;
 }
 
+// Transfer tag from omega_h element to omega_h vertex by averaging
+void ProjectFieldElementtoVertex (Mesh* o_mesh,
+                std::string const &name) {
+
+  auto elem_field = o_mesh->get_array<oh::Real>(o_mesh->dim(), name);
+  auto vtx2elem = o_mesh->ask_up(0, o_mesh->dim());
+  auto ve2e = vtx2elem.ab2b;
+  auto v2ve = vtx2elem.a2ab;
+  oh::Write<oh::Real> vtx_field(o_mesh->nverts(), 0.0);
+
+  auto get_vtx_field = OMEGA_H_LAMBDA(oh::LO v) {
+    auto start_index = v2ve[v];
+    auto end_index = v2ve[v+1];
+    //get index where adjacent elem id is stored
+    for (oh::LO index = start_index; index < end_index; ++index) {
+      //get the adjacent elem id
+      auto elem = ve2e[index];
+      //add field of adjacent elem
+      //vtx_field[v] += elem_field[elem];
+      if (elem_field[elem] > vtx_field[v]) vtx_field[v] = elem_field[elem];
+    }
+    //average field value
+    //vtx_field[v] = vtx_field[v]/(end_index - start_index);
+  };
+  oh::parallel_for(o_mesh->nverts(), get_vtx_field, "get_vtx_field");
+
+  //add tag
+  oh::Read<oh::Real> vtx_field_r(vtx_field);
+  o_mesh->add_tag<oh::Real>(0, name, 1, vtx_field_r);
+  o_mesh->sync_tag(0, name);
+
+  return;
+}
+
+// Transfer tag from omega_h element to omega_h edge by averaging
+void ProjectFieldElementtoEdge (Mesh* o_mesh,
+                std::string const &name) {
+
+  auto elem_field = o_mesh->get_array<oh::Real>(o_mesh->dim(), name);
+  auto edg2elem = o_mesh->ask_up(1, o_mesh->dim());
+  auto ee2e = edg2elem.ab2b;
+  auto e2ee = edg2elem.a2ab;
+  oh::Write<oh::Real> edg_field(o_mesh->nedges(), 0);
+
+  auto get_edg_field = OMEGA_H_LAMBDA(oh::LO e) {
+    auto start_index = e2ee[e];
+    auto end_index = e2ee[e+1];
+    //get index where adjacent elem id is stored
+    for (oh::LO index = start_index; index < end_index; ++index) {
+      //get the adjacent elem id
+      auto elem = ee2e[index];
+      //get field of adjacent elem
+      edg_field[e] += elem_field[elem];
+    }
+    //average field value
+    edg_field[e] = edg_field[e]/(end_index - start_index);
+  };
+  oh::parallel_for(o_mesh->nedges(), get_edg_field, "get_edg_field");
+
+  //add tag
+  oh::Read<oh::Real> edg_field_r(edg_field);
+  o_mesh->add_tag<oh::Real>(1, name, 1, edg_field_r);
+  o_mesh->sync_tag(1, name);
+
+  return;
+}
+
+// Average element fields using neighbouring elements across faces
+void SmoothElementField (Mesh* o_mesh,
+                std::string const &name) {
+
+  auto elem_field = o_mesh->get_array<oh::Real>(o_mesh->dim(), name);
+  auto elem2elem = o_mesh->ask_dual();// get elem2elem second order adj
+  auto ab2b = elem2elem.ab2b;
+  auto a2ab = elem2elem.a2ab;
+  oh::Write<oh::Real> smooth_field(o_mesh->nelems(), 0.0);
+
+  auto get_smooth_field = OMEGA_H_LAMBDA(oh::LO e) {
+    auto start_index = a2ab[e];
+    auto end_index = a2ab[e+1];
+    //get range of index where adjacent elem id is stored
+    //iterate over adjacent elements
+    for (oh::LO index = start_index; index < end_index; ++index) {
+      //get the adjacent elem id
+      auto adj_elem = ab2b[index];
+      //get field of adjacent elem
+      smooth_field[e] += elem_field[adj_elem];
+    }
+    // add values of self
+    smooth_field[e] += elem_field[e];
+    //average field value
+    smooth_field[e] = smooth_field[e]/(end_index - start_index + 1);
+  };
+  oh::parallel_for(o_mesh->nelems(), get_smooth_field, "get_smooth_field");
+
+  //delete tag
+  o_mesh->remove_tag(o_mesh->dim(), name);
+  //add smoothed tag
+  oh::Read<oh::Real> smooth_field_r(smooth_field);
+  o_mesh->add_tag<oh::Real>(o_mesh->dim(), name, 1, smooth_field_r);
+  o_mesh->sync_tag(o_mesh->dim(), name);
+
+  return;
+}
 
 void get_all_dim_tags(Mesh* mesh, Int dim, TagSet* tags) {
   for (Int j = 0; j < mesh->ntags(dim); ++j) {

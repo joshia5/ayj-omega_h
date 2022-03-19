@@ -363,6 +363,9 @@ Reals average_field(Mesh* mesh, Int dim, LOs a2e, Int ncomps, Reals v2x);
 Reals average_field(Mesh* mesh, Int dim, Int ncomps, Reals v2x);
 
 void ProjectFieldtoVertex(Mesh* mesh, std::string const &name, Int edim);
+void ProjectFieldElementtoVertex (Mesh* mesh, std::string const &name);
+void ProjectFieldElementtoEdge (Mesh* mesh, std::string const &name);
+void SmoothElementField (Mesh* mesh, std::string const &name);
 
 using TagSet = std::array<std::set<std::string>, DIMS>;
 
