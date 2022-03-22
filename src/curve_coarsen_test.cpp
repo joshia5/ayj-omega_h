@@ -140,7 +140,7 @@ void test_linear_tet_validity(Library *lib) {
   /*
   Few<Real, 84> nodes_det = getTetJacDetNodes<84>(1, tet_pts);
 
-  auto is_invalid = checkMinJacDet_3d(nodes_det);
+  auto is_invalid = checkMinJacDet_3d(nodes_det, 3);
   printf("linear tet is invalid %d \n", is_invalid);
   */
 }
@@ -181,7 +181,7 @@ void test_quadratic_tet_validity(Library *lib) {
   /*
   Few<Real, 84> nodes_det = getTetJacDetNodes<84>(2, tet_pts);
 
-  auto is_invalid = checkMinJacDet_3d(nodes_det);
+  auto is_invalid = checkMinJacDet_3d(nodes_det, 3);
   printf("quadratic tet is invalid %d \n", is_invalid);
   */
   return;
