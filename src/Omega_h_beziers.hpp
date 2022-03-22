@@ -1235,13 +1235,26 @@ OMEGA_H_INLINE Few<Real, n> getTriJacDetNodes(
 }
 
 template<Int n>
-OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes) {
+OMEGA_H_INLINE LO checkMinJacDet(Few<Real, n> const& nodes, LO order) {
   // first 3 vertices
   Real minAcceptable = 0.0;
   for (LO i = 0; i < 3; ++i) {
-    if ((std::abs(nodes[i]) > 0) && (nodes[i] < minAcceptable)) {
-      printf("i %d Nijk[i] %f\n", i, nodes[i]);
+    if (nodes[i] < minAcceptable) {
       return i+2;
+    }
+  }
+
+  for (int edge = 0; edge < 3; ++edge) {
+    for (int i = 0; i < 2*(order-1)-1; ++i) {
+      if (nodes[3+edge*(2*(order-1)-1)+i] < minAcceptable) {
+        return 8+edge;
+      }
+    }
+  }
+
+  for (int i = 0; i < (2*order-3)*(2*order-4)/2; ++i) {
+    if (nodes[6*(order-1)+i] < minAcceptable) {
+      return 14;
     }
   }
 

@@ -105,7 +105,7 @@ LOs checkValidity(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
     //TODO change to template for mesh_dim
     auto nodes_det = getTriJacDetNodes<15, 2>(order, tri_pts);
 
-    is_invalid[n] = checkMinJacDet<15>(nodes_det);
+    is_invalid[n] = checkMinJacDet<15>(nodes_det, order);
     if (is_invalid[n] > 0) printf("invalid tri %d\n", tri);
   };
   parallel_for(new_tris.size(), std::move(check_validity));

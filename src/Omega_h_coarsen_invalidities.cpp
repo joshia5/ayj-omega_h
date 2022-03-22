@@ -258,7 +258,7 @@ LOs coarsen_invalidities_2d(
               tri_pts[2*mesh_dim + d]);
         }
         auto nodes_det = getTriJacDetNodes<15, mesh_dim>(3, tri_pts);
-        auto is_invalid = checkMinJacDet<15>(nodes_det);
+        auto is_invalid = checkMinJacDet<15>(nodes_det, 3);
         //printf("cand %d eev_col %d, vc = %d is invalid %d\n", cand, eev_col, vc, is_invalid);
 
         max_invalid = max2(max_invalid, is_invalid);
