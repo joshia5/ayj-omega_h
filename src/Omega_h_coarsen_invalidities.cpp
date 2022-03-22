@@ -613,7 +613,7 @@ LOs coarsen_invalidities_3d(
               tet_pts[3*mesh_dim + d]);
         }
         auto nodes_det = getTetJacDetNodes<84>(3, tet_pts);
-        auto is_invalid = checkMinJacDet_3d(nodes_det);
+        auto is_invalid = checkMinJacDet_3d(nodes_det, 3);
 
         max_invalid = max2(max_invalid, is_invalid);
       }
