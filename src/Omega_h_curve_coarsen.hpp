@@ -79,10 +79,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   parallel_for(prods2new.size(), std::move(prod_edge_points),
       "prod_edge_points");
 
-  auto newedge_gdim =  new_mesh->get_array<I8>(1, "class_dim");
-  auto newedge_gid =  new_mesh->get_array<LO>(1, "class_id");
-  auto oldvert_gdim =  mesh->get_array<I8>(0, "class_dim");
-  auto oldvert_gid =  mesh->get_array<LO>(0, "class_id");
+  auto newedge_gdim = new_mesh->get_array<I8>(1, "class_dim");
+  auto newedge_gid = new_mesh->get_array<LO>(1, "class_id");
+  auto oldvert_gdim = mesh->get_array<I8>(0, "class_dim");
+  auto oldvert_gid = mesh->get_array<LO>(0, "class_id");
 
   auto v2v_old = mesh->ask_star(0);
   auto v2vv_old = v2v_old.a2ab;
@@ -99,13 +99,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     LO v_key = keys2verts[i];
     LO v_onto = keys2verts_onto[i];
     if ((oldvert_gdim[v_key] <= (dim-1)) && (oldvert_gdim[v_onto] <= (dim-1))) {
-    //if ((oldvert_gdim[v_key] <= (dim-1)) && (oldvert_gdim[v_onto] == oldvert_gdim[v_key]) && 
-      //  (oldvert_gid[v_key] == oldvert_gid[v_onto])) {
       for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
         LO new_edge = prods2new[prod];
         if ((newedge_gdim[new_edge] <= (dim-1))) {
-        //if ((newedge_gdim[new_edge] <= (dim-1)) && (newedge_gdim[new_edge] == oldvert_gdim[v_key])
-          //  && (newedge_gid[new_edge] == oldvert_gid[v_key])) {
           if (newedge_gdim[new_edge] == 2) {
             edge_crvtoBdryFace[new_edge] = 1;
           }
@@ -129,7 +125,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           sum_dist1 = std::sqrt(sum_dist1/(dim*1.0));
           sum_dist2 = std::sqrt(sum_dist2/(dim*1.0));
           xi_1 = sum_dist1/(sum_dist1+sum_dist2);
-          //TODO use length of curve not euclidean dist?
           Vector<dim> old_c1;
           for (Int j = 0; j < dim; ++j) {
             old_c1[j] = (old_p1[j] - B0_quad(xi_1)*c0[j] - B2_quad(xi_1)*c3[j])/B1_quad(xi_1);
@@ -203,7 +198,9 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
          edgeCtrlPts[e1*2*dim + dim +j] +
          edgeCtrlPts[e2*2*dim + j] + 
          edgeCtrlPts[e2*2*dim + dim +j])/9.0;
-         */
+    }
+    */
+
     }
   };
   parallel_for(prods2new.size(), std::move(face_blends), "face_blends");
