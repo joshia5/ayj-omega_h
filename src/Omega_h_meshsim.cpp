@@ -11,6 +11,8 @@
 #include "SimUtil.h"
 #include "SimDiscrete.h"
 
+#include "string.h"
+
 namespace {
   int classId(pEntity e) {
     pGEntity g = EN_whatIn(e);
@@ -617,9 +619,13 @@ Mesh read(filesystem::path const& mesh_fname, filesystem::path const& mdl_fname,
   SimModel_start();
   Sim_readLicenseFile(NULL);
   SimDiscrete_start(0);
-  pNativeModel nm = NULL;
   pProgress p = NULL;
-  pGModel g = GM_load(mdl_fname.c_str(), nm, p);
+  pGModel g = NULL;
+  pNativeModel nm = NULL;
+  if (0) {
+  //if (mdl_fname.c_str(), "NULL") != 0) {
+    g = GM_load(mdl_fname.c_str(), nm, p);
+  }
   pMesh m = M_load(mesh_fname.c_str(), g, p);
   auto mesh = Mesh(comm->library());
   mesh.set_comm(comm);
