@@ -670,7 +670,8 @@ Mesh read(filesystem::path const& mesh_fname, filesystem::path const& mdl_fname,
   SimDiscrete_start(0);
   pNativeModel nm = NULL;
   pProgress p = NULL;
-  pGModel g = GM_load(mdl_fname.c_str(), nm, p);
+  pGModel g = NULL;
+  if (0) GM_load(mdl_fname.c_str(), nm, p);
   pMesh m = M_load(mesh_fname.c_str(), g, p);
   auto mesh = Mesh(comm->library());
   mesh.set_comm(comm);
