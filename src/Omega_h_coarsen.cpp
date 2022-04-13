@@ -34,6 +34,8 @@ static bool coarsen_element_based1(Mesh* mesh) {
   auto edge_cand_codes = get_edge_codes(mesh);
   auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
   auto cands2edges = collect_marked(edges_are_cands);
+  auto ncands = cands2edges.size();
+  std::cout << "in element based before class check" << ncands <<"\n";
   auto cand_codes = read(unmap(cands2edges, edge_cand_codes, 1));
   cand_codes = check_collapse_class(mesh, cands2edges, cand_codes);
   /* edge and endpoints classification check */
@@ -61,16 +63,22 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
   auto edge_cand_codes = get_edge_codes(mesh);
   auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
   auto cands2edges = collect_marked(edges_are_cands);
+  auto ncands = cands2edges.size();
+  std::cout <<"ghosted; before class" <<ncands <<"\n";
   auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
   /* surface exposure (classification) checks */
   cand_edge_codes = check_collapse_exposure(mesh, cands2edges, cand_edge_codes);
   filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
+  ncands = cands2edges.size();
+  std::cout <<"ghosted; after class" <<ncands <<"\n";
   /* edge length overshoot check */
   auto max_length = (overshoot == DESIRED) ? opts.max_length_desired
                                            : opts.max_length_allowed;
   cand_edge_codes =
       prevent_coarsen_overshoot(mesh, max_length, cands2edges, cand_edge_codes);
   filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
+  ncands = cands2edges.size();
+  std::cout <<"ghosted; after length overshoot" <<ncands <<"\n";
   if (comm->reduce_and(cands2edges.size() == 0)) return false;
   #ifndef _MSC_VER
   if (opts.should_prevent_coarsen_flip) {
@@ -79,6 +87,8 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
     if (comm->reduce_and(cands2edges.size() == 0)) return false;
   }
   #endif
+  ncands = cands2edges.size();
+  std::cout <<"ghosted; after flip" <<ncands <<"\n";
   /* cavity quality checks */
   auto cand_edge_quals = coarsen_qualities(mesh, cands2edges, cand_edge_codes);
   cand_edge_codes = filter_coarsen_min_qual(
@@ -88,6 +98,8 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
         mesh, cands2edges, cand_edge_codes, cand_edge_quals);
   }
   filter_coarsen_candidates(&cands2edges, &cand_edge_codes, &cand_edge_quals);
+  ncands = cands2edges.size();
+  std::cout <<"ghosted; after quality" <<ncands <<"\n";
   /* finished cavity quality checks */
 
   if (mesh->is_curved() > 0) {
@@ -99,6 +111,8 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
     filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
     /* finished cavity invalidity checks */
   }
+  ncands = cands2edges.size();
+  std::cout <<"ghosted; after validity" <<ncands <<"\n";
 
   if (comm->reduce_and(cands2edges.size() == 0)) return false;
   auto verts_are_cands = Read<I8>();
@@ -211,6 +225,7 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
     build_cubic_wireframe_3d(mesh, &cubic_wireframe, 10);
     vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_wireframe.vtu";
     vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe, 1);
+    vtk::write_parallel("/lore/joshia5/Meshes/curved/coarsen_itr_linear.vtk", mesh);
     printf("after coarsen has %d elems\n", mesh->nelems());
   }
 }
