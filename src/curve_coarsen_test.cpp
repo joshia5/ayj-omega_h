@@ -350,8 +350,8 @@ void test_collapse_boxCircle(Library *lib) {
   auto opts = AdaptOpts(&mesh);
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
-        metric_eigenvalue_from_length(0.4)));
-  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 2000));
+        metric_eigenvalue_from_length(100)));
+  coarsen_by_size(&mesh, opts);
   /*
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(0.6)));
@@ -412,8 +412,8 @@ int main(int argc, char** argv) {
   //test_Kova_validity(&lib);
   //test_cubic_tet_validity(&lib);
   //test_collapse_kova(&lib);
-  //test_collapse_boxCircle(&lib);
-  test_collapse_cubicSlab(&lib);
+  test_collapse_boxCircle(&lib);
+  //test_collapse_cubicSlab(&lib);
 
   return 0;
 }
