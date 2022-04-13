@@ -8,6 +8,7 @@
 #include "Omega_h_map.hpp"
 #include "Omega_h_array_ops.hpp"
 #include "Omega_h_vector.hpp"
+#include "Omega_h_atomics.hpp"
 
 namespace Omega_h {
 
@@ -141,6 +142,17 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     }
   };
   //parallel_for(keys2verts.size(), std::move(curve_bdry_edges));
+
+  Write<LO> count_dualCone_cavities(1, 0);
+  auto count_dualCone_cav = OMEGA_H_LAMBDA(LO i) {
+    printf("key %d nprods %d\n",
+        i, keys2prods[i+1] - keys2prods[i]);
+    if ((keys2prods[i+1] - keys2prods[i]) == 1) {
+      atomic_increment(&count_dualCone_cavities[0]);
+    }
+  };
+  parallel_for(keys2prods.size()-1, std::move(count_dualCone_cav));
+  printf("dual cone cavities %d\n", count_dualCone_cavities[0]);
 
   new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim, Reals(edge_ctrlPts));
   new_mesh->add_tag<I8>(1, "edge_crvtoBdryFace", 1, Read<I8>(edge_crvtoBdryFace));
