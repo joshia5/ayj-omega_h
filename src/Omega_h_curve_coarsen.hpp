@@ -95,7 +95,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const old_ve2e = old_v2e.ab2b;
   auto vert_ctrlPts_r = Reals(vert_ctrlPts);
   
-  auto find_bdry_edges = OMEGA_H_LAMBDA(LO i) {
+  auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO v_key = keys2verts[i];
     LO v_onto = keys2verts_onto[i];
     if ((oldvert_gdim[v_key] <= (dim-1)) && (oldvert_gdim[v_onto] <= (dim-1))) {
@@ -140,7 +140,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       }
     }
   };
-  parallel_for(keys2verts.size(), std::move(find_bdry_edges));
+  //parallel_for(keys2verts.size(), std::move(curve_bdry_edges));
 
   new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim, Reals(edge_ctrlPts));
   new_mesh->add_tag<I8>(1, "edge_crvtoBdryFace", 1, Read<I8>(edge_crvtoBdryFace));
