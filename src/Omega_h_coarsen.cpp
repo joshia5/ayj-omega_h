@@ -102,15 +102,17 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
   std::cout <<"ghosted; after quality" <<ncands <<"\n";
   /* finished cavity quality checks */
 
+  /* cavity invalidity checks */
+  /*
   if (mesh->is_curved() > 0) {
-    /* cavity invalidity checks */
     auto cand_edge_invalidities = coarsen_invalidities
       (mesh, cands2edges, cand_edge_codes);
     cand_edge_codes = filter_coarsen_invalids(
         cand_edge_codes, cand_edge_invalidities, -1);
     filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
-    /* finished cavity invalidity checks */
   }
+  */
+  /* finished cavity invalidity checks */
   ncands = cands2edges.size();
   std::cout <<"ghosted; after validity" <<ncands <<"\n";
 

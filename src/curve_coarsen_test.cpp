@@ -413,7 +413,7 @@ int main(int argc, char** argv) {
   //test_cubic_tet_validity(&lib);
   //test_collapse_kova(&lib);
   test_collapse_boxCircle(&lib);
-  //test_collapse_cubicSlab(&lib);
+  test_collapse_cubicSlab(&lib);
 
   return 0;
 }
