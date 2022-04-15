@@ -152,7 +152,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     }
   };
   parallel_for(keys2prods.size()-1, std::move(count_dualCone_cav));
-  printf("dual cone cavities %d\n", count_dualCone_cavities[0]);
+  printf("total nkeys %d, nkeys with dual cone cavities %d\n", keys2prods.size()-1, 
+      count_dualCone_cavities[0]);
 
   new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim, Reals(edge_ctrlPts));
   new_mesh->add_tag<I8>(1, "edge_crvtoBdryFace", 1, Read<I8>(edge_crvtoBdryFace));
