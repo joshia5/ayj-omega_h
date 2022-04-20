@@ -165,32 +165,26 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     auto te2e = mesh->ask_down(3, 1).ab2b;
     auto ev2v = mesh->get_adj(1, 0).ab2b;
  
-    Write<Real> tangents(ve2e.size()*dim, 0);
-    auto calc_tangents = OMEGA_H_LAMBDA (LO v) {
-      for (LO ve = v2ve[v]; ve < v2ve[v + 1]; ++ve) {
-        LO e = ve2e[ve];
-        LO v_is_first = -1;
-        LO e_v0 = ev2v[e*2 + 0];
-        if (e_v0 == v) v_is_first = 1;
-        Real length = 0.0;
-        if (v_is_first == 1) {
-          for (LO d = 0; d < 3; ++d) {
-            tangents[ve*dim + d] = old_edgeCtrlPts[e*2*dim + d] - old_vertCtrlPts[v*dim + d];
-            length += tangents[ve*dim + d] * tangents[ve*dim + d];
-          }
-        }
-        else {
-          for (LO d = 0; d < 3; ++d) {
-            tangents[ve*dim + d] = old_edgeCtrlPts[e*2*dim + dim + d] - old_vertCtrlPts[v*dim + d];
-            length += tangents[ve*dim + d] * tangents[ve*dim + d];
-          }
-        }
-        for (LO d = 0; d < 3; ++d) {
-          tangents[ve*dim + d] = tangents[ve*dim + d]/std::sqrt(length);
-        }
+    Write<Real> tangents(nold_edges*2*dim, 0);
+    auto calc_tangents = OMEGA_H_LAMBDA (LO e) {
+      LO e_v0 = ev2v[e*2 + 0];
+      LO e_v1 = ev2v[e*2 + 1];
+      Real length1 = 0.0;
+      Real length2 = 0.0;
+      for (LO d = 0; d < dim; ++d) {
+        tangents[e*2*dim + d] = old_edgeCtrlPts[e*2*dim + d] - old_vertCtrlPts[e_v0*dim + d];
+        tangents[e*2*dim + dim + d] = old_edgeCtrlPts[e*2*dim + dim + d] - old_vertCtrlPts[e_v1*dim + d];
+        length1 += tangents[e*2*dim + d] * tangents[e*2*dim + d];
+        length2 += tangents[e*2*dim + dim + d] * tangents[e*2*dim + dim + d];
+      }
+      for (LO d = 0; d < 3; ++d) {
+        tangents[e*2*dim + d] = tangents[e*2*dim + d]/std::sqrt(length1);
+        tangents[e*2*dim + dim + d] = tangents[e*2*dim + dim + d]/std::sqrt(length2);
       }
     };
-    parallel_for(nold_verts, std::move(calc_tangents));
+    parallel_for(nold_edges, std::move(calc_tangents));
+
+// for every edge, store tangents from either vertex
 
     Write<LO> count_upper_edge(1, 0);
     Write<LO> count_lower_edge(1, 0);
@@ -205,6 +199,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           LO adj_t = vt2t[vt];
           for (LO te = 0; te < 6; ++te) {
             LO adj_t_e = te2e[adj_t*6 + te];
+          Vector<dim> old_c1;
             for (LO ev = 0; ev < 2; ++ev) {
               LO adj_t_e_v = ev2v[adj_t_e*2 + ev];
               if (adj_t_e_v == v_onto) {
