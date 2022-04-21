@@ -23,6 +23,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const old_ef2f = mesh->ask_up(1, 2).ab2b;
   auto const old_e2ef = mesh->ask_up(1, 2).a2ab;
   auto const old_fv2v = mesh->ask_down(2, 0).ab2b;
+  auto const nkeys = keys2verts.size();
   if (!mesh->has_tag(0, "bezier_pts")) {
     mesh->add_tag<Real>(0, "bezier_pts", dim, mesh->coords());
   }
@@ -95,7 +96,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const old_v2ve = old_v2e.a2ab;
   auto const old_ve2e = old_v2e.ab2b;
   auto vert_ctrlPts_r = Reals(vert_ctrlPts);
-  
+  //auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
+    //                                               nnew_verts);
+
   auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO v_key = keys2verts[i];
     LO v_onto = keys2verts_onto[i];
@@ -145,8 +148,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
   Write<LO> count_dualCone_cavities(1, 0);
   auto count_dualCone_cav = OMEGA_H_LAMBDA(LO i) {
-    printf("key %d nprods %d\n",
-        i, keys2prods[i+1] - keys2prods[i]);
+    //printf("key %d nprods %d\n",
+      //  i, keys2prods[i+1] - keys2prods[i]);
     if ((keys2prods[i+1] - keys2prods[i]) == 1) {
       atomic_increment(&count_dualCone_cavities[0]);
     }
@@ -165,6 +168,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     auto te2e = mesh->ask_down(3, 1).ab2b;
     auto ev2v = mesh->get_adj(1, 0).ab2b;
  
+    // for every edge, calc and store tangents from either vertex
     Write<Real> tangents(nold_edges*2*dim, 0);
     auto calc_tangents = OMEGA_H_LAMBDA (LO e) {
       LO e_v0 = ev2v[e*2 + 0];
@@ -184,35 +188,80 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     };
     parallel_for(nold_edges, std::move(calc_tangents));
 
-// for every edge, store tangents from either vertex
-
-    Write<LO> count_upper_edge(1, 0);
-    Write<LO> count_lower_edge(1, 0);
-
     auto curve_dualCone_cav = OMEGA_H_LAMBDA (LO i) {
       if ((keys2prods[i+1] - keys2prods[i]) == 1) {
         LO v_onto = keys2verts_onto[i];
-        //LO v_key = keys2verts[i];
+        LO v_key = keys2verts[i];
         //LO new_edge = prods2new[keys2prods[i]];
+            //Vector<dim> old_c1;
         //count upper edges
-        for (LO vt = v2vt[v_onto]; vt < v2vt[v_onto + 1]; ++vt) {
+        Few<LO, 256> upper_edges;
+        Few<I8, 256> from_first_vtx;
+        LO count_upper_edge = 0;
+        for (LO vt = v2vt[v_key]; vt < v2vt[v_key + 1]; ++vt) {
+          //adj tets of vkey
           LO adj_t = vt2t[vt];
           for (LO te = 0; te < 6; ++te) {
             LO adj_t_e = te2e[adj_t*6 + te];
-          Vector<dim> old_c1;
-            for (LO ev = 0; ev < 2; ++ev) {
-              LO adj_t_e_v = ev2v[adj_t_e*2 + ev];
-              if (adj_t_e_v == v_onto) {
-                // find a way to store adj_t_e; may need to count first
-                atomic_increment(&count_upper_edge[0]);
-              }
+            //adj edges of tet
+            LO adj_t_e_v0 = ev2v[adj_t_e*2 + 0];
+            LO adj_t_e_v1 = ev2v[adj_t_e*2 + 1];
+            //adj verts of edge
+            if ((adj_t_e_v0 == v_onto) && (adj_t_e_v1 != v_key)) {
+              upper_edges[count_upper_edge] = adj_t_e;
+              from_first_vtx[count_upper_edge] = 1;
+              ++count_upper_edge;
+            }
+            if ((adj_t_e_v1 == v_onto) && (adj_t_e_v0 != v_key)) {
+              upper_edges[count_upper_edge] = adj_t_e;
+              from_first_vtx[count_upper_edge] = -1;
+              ++count_upper_edge;
             }
           }
         }
+        Few<Real, dim> t_avg;
+        for (LO d = 0; d < dim; ++d) t_avg[d] = 0.0; 
+        for (LO d = 0; d < dim; ++d) {
+          for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+            if (from_first_vtx[upper_e] == 1) {
+              t_avg[d] += tangents[upper_edges[upper_e]*2*dim + d];
+            }
+            if (from_first_vtx[upper_e] == -1) {
+              t_avg[d] += tangents[upper_edges[upper_e]*2*dim + dim + d];
+            }
+          }
+        }
+        for (LO d = 0; d < dim; ++d) t_avg[d] = t_avg[d]/count_upper_edge;; 
+        printf("vkey {%f,%f,%f}, v_onto {%f,%f,%f} count upper edges %d tavg {%f,%f,%f} \n", 
+            old_vertCtrlPts[v_key*dim + 0], old_vertCtrlPts[v_key*dim + 1], old_vertCtrlPts[v_key*dim + 2], 
+            old_vertCtrlPts[v_onto*dim + 0], old_vertCtrlPts[v_onto*dim + 1], old_vertCtrlPts[v_onto*dim + 2], 
+            count_upper_edge,
+            t_avg[0], t_avg[1], t_avg[2]);
 
+        Few<LO, 256> lower_edges;
+        LO count_lower_edge = 0;
+            /*
+        for (LO vt = v2vt[v_key]; vt < v2vt[v_key + 1]; ++vt) {
+          //adj tets of vkey
+          LO adj_t = vt2t[vt];
+          for (LO te = 0; te < 6; ++te) {
+            LO adj_t_e = te2e[adj_t*6 + te];
+            //adj edges of tet
+            LO adj_t_e_v0 = ev2v[adj_t_e*2 + 0];
+            LO adj_t_e_v1 = ev2v[adj_t_e*2 + 1];
+            //adj verts of edge
+            if (((adj_t_e_v0 == v_onto) && (adj_t_e_v1 != v_key)) ||
+                ((adj_t_e_v1 == v_onto) && (adj_t_e_v0 != v_key))) {
+              lower_edges[count_lower_edge] = adj_t_e;
+              ++count_lower_edge;
+            }
+          }
+        }
+            */
+       printf("count lower edges %d\n", count_lower_edge);
       }
     };
-    parallel_for(keys2prods.size()-1, std::move(count_dualCone_cav));
+    parallel_for(nkeys, std::move(curve_dualCone_cav));
   }
 
   new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim, Reals(edge_ctrlPts));
