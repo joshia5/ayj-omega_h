@@ -99,8 +99,8 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
   }
   filter_coarsen_candidates(&cands2edges, &cand_edge_codes, &cand_edge_quals);
   ncands = cands2edges.size();
-  std::cout <<"ghosted; after quality" <<ncands <<"\n";
   /* finished cavity quality checks */
+  std::cout <<"ghosted; after quality" <<ncands <<"\n";
 
   /* cavity invalidity checks */
   /*
@@ -111,7 +111,7 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
         cand_edge_codes, cand_edge_invalidities, -1);
     filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
   }
-  */
+  */ 
   /* finished cavity invalidity checks */
   ncands = cands2edges.size();
   std::cout <<"ghosted; after validity" <<ncands <<"\n";
@@ -206,9 +206,12 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
             prods2new_ents);
       }
     }
+    //correction of curve if edges were attempted to curve to bdry
+    /*
     if ((ent_dim == 3) && (mesh->is_curved() > 0)) {
       correct_curved_edges(&new_mesh);
     }
+    */
 
     old_lows2new_lows = old_ents2new_ents;
   }
@@ -230,6 +233,7 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
     vtk::write_parallel("/lore/joshia5/Meshes/curved/coarsen_itr_linear.vtk", mesh);
     printf("after coarsen has %d elems\n", mesh->nelems());
   }
+  while(1);
 }
 
 static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,

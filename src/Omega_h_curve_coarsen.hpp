@@ -192,12 +192,17 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       if ((keys2prods[i+1] - keys2prods[i]) == 1) {
         LO const v_onto = keys2verts_onto[i];
         LO const v_key = keys2verts[i];
-        printf("vkey {%f,%f,%f}, v_onto {%f,%f,%f} \n",
+        LO const new_edge = prods2new[keys2prods[i]];
+        auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
+        auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
+        auto new_edge_v0_c = get_vector<dim>(new_coords, new_edge_v0);
+        auto new_edge_v1_c = get_vector<dim>(new_coords, new_edge_v1);
+        printf("vkey {%f,%f,%f}, v_onto {%f,%f,%f} new_edge_v0 {%f,%f,%f}, v1 {%f,%f,%f}\n",
             old_coords[v_key*dim + 0], old_coords[v_key*dim + 1], old_coords[v_key*dim + 2],
-            old_coords[v_onto*dim + 0], old_coords[v_onto*dim + 1], old_coords[v_onto*dim + 2]);
+            old_coords[v_onto*dim + 0], old_coords[v_onto*dim + 1], old_coords[v_onto*dim + 2],
+            new_edge_v0_c[0], new_edge_v0_c[1],new_edge_v0_c[2],
+            new_edge_v1_c[0], new_edge_v1_c[1],new_edge_v1_c[2]);
 
-        //LO new_edge = prods2new[keys2prods[i]];
-            //Vector<dim> old_c1;
         //count upper edges
         Few<LO, 256> upper_edges;
         Few<I8, 256> from_first_vtx;
@@ -241,12 +246,14 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         }
         Few<Real, dim> t_avg;
         for (LO d = 0; d < dim; ++d) t_avg[d] = 0.0; 
-        for (LO d = 0; d < dim; ++d) {
-          for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
-            if (from_first_vtx[upper_e] == 1) {
+        for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+          if (from_first_vtx[upper_e] == 1) {
+            for (LO d = 0; d < dim; ++d) {
               t_avg[d] += tangents[upper_edges[upper_e]*2*dim + d];
             }
-            if (from_first_vtx[upper_e] == -1) {
+          }
+          if (from_first_vtx[upper_e] == -1) {
+            for (LO d = 0; d < dim; ++d) {
               t_avg[d] += tangents[upper_edges[upper_e]*2*dim + dim + d];
             }
           }
