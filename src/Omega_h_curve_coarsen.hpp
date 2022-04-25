@@ -168,7 +168,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     auto te2e = mesh->ask_down(3, 1).ab2b;
     auto ev2v = mesh->get_adj(1, 0).ab2b;
  
-    // for every edge, calc and store tangents from either vertex
+    // for every edge, calc and store 2 tangents from either vertex
     Write<Real> tangents(nold_edges*2*dim, 0);
     auto calc_tangents = OMEGA_H_LAMBDA (LO e) {
       LO e_v0 = ev2v[e*2 + 0];
@@ -190,8 +190,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
     auto curve_dualCone_cav = OMEGA_H_LAMBDA (LO i) {
       if ((keys2prods[i+1] - keys2prods[i]) == 1) {
-        LO v_onto = keys2verts_onto[i];
-        LO v_key = keys2verts[i];
+        LO const v_onto = keys2verts_onto[i];
+        LO const v_key = keys2verts[i];
+        printf("vkey {%f,%f,%f}, v_onto {%f,%f,%f} \n",
+            old_coords[v_key*dim + 0], old_coords[v_key*dim + 1], old_coords[v_key*dim + 2],
+            old_coords[v_onto*dim + 0], old_coords[v_onto*dim + 1], old_coords[v_onto*dim + 2]);
+
         //LO new_edge = prods2new[keys2prods[i]];
             //Vector<dim> old_c1;
         //count upper edges
@@ -208,14 +212,30 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             LO adj_t_e_v1 = ev2v[adj_t_e*2 + 1];
             //adj verts of edge
             if ((adj_t_e_v0 == v_onto) && (adj_t_e_v1 != v_key)) {
-              upper_edges[count_upper_edge] = adj_t_e;
-              from_first_vtx[count_upper_edge] = 1;
-              ++count_upper_edge;
+              LO is_duplicate = -1;
+              for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+                if (adj_t_e == upper_edges[upper_e]) is_duplicate = 1;
+              }
+              if (is_duplicate == -1) {
+                upper_edges[count_upper_edge] = adj_t_e;
+                from_first_vtx[count_upper_edge] = 1;
+                ++count_upper_edge;
+                printf(" adj_edg %d\n", adj_t_e);
+                printf("v0 {%f,%f,%f}, v1 {%f,%f,%f} \n",
+                    old_coords[adj_t_e_v0*dim + 0], old_coords[adj_t_e_v0*dim + 1], old_coords[adj_t_e_v0*dim + 2],
+                    old_coords[adj_t_e_v1*dim + 0], old_coords[adj_t_e_v1*dim + 1], old_coords[adj_t_e_v1*dim + 2]);
+              }
             }
             if ((adj_t_e_v1 == v_onto) && (adj_t_e_v0 != v_key)) {
-              upper_edges[count_upper_edge] = adj_t_e;
-              from_first_vtx[count_upper_edge] = -1;
-              ++count_upper_edge;
+              LO is_duplicate = -1;
+              for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+                if (adj_t_e == upper_edges[upper_e]) is_duplicate = 1;
+              }
+              if (is_duplicate == -1) {
+                upper_edges[count_upper_edge] = adj_t_e;
+                from_first_vtx[count_upper_edge] = -1;
+                ++count_upper_edge;
+              }
             }
           }
         }
@@ -231,12 +251,13 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             }
           }
         }
-        for (LO d = 0; d < dim; ++d) t_avg[d] = t_avg[d]/count_upper_edge;; 
-        printf("vkey {%f,%f,%f}, v_onto {%f,%f,%f} count upper edges %d tavg {%f,%f,%f} \n", 
+        for (LO d = 0; d < dim; ++d) t_avg[d] = t_avg[d]/count_upper_edge;
+        printf("vkey {%f,%f,%f}, v_onto {%f,%f,%f} count upper edges %d tavg {%f,%f,%f} Mag %f \n", 
             old_vertCtrlPts[v_key*dim + 0], old_vertCtrlPts[v_key*dim + 1], old_vertCtrlPts[v_key*dim + 2], 
             old_vertCtrlPts[v_onto*dim + 0], old_vertCtrlPts[v_onto*dim + 1], old_vertCtrlPts[v_onto*dim + 2], 
             count_upper_edge,
-            t_avg[0], t_avg[1], t_avg[2]);
+            t_avg[0], t_avg[1], t_avg[2],
+            std::sqrt(t_avg[0]*t_avg[0] + t_avg[1]*t_avg[1] + t_avg[2]*t_avg[2]));
 
         Few<LO, 256> lower_edges;
         LO count_lower_edge = 0;
