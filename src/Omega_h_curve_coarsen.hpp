@@ -268,6 +268,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             }
           }
           for (LO d = 0; d < dim; ++d) t_avg[d] = t_avg[d]/count_upper_edge;
+          Real length_t = 0.0;
+          for (LO d = 0; d < dim; ++d) length_t += t_avg[d]*t_avg[d]; 
+          for (LO d = 0; d < dim; ++d) t_avg[d] = t_avg[d]/std::sqrt(length_t);
           printf("vkey {%f,%f,%f}, v_onto {%f,%f,%f} count upper edges %d tavg {%f,%f,%f} Mag %f \n", 
               old_vertCtrlPts[v_key*dim + 0], old_vertCtrlPts[v_key*dim + 1], old_vertCtrlPts[v_key*dim + 2], 
               old_vertCtrlPts[v_onto*dim + 0], old_vertCtrlPts[v_onto*dim + 1], old_vertCtrlPts[v_onto*dim + 2], 
@@ -354,6 +357,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             }
           }
           for (LO d = 0; d < dim; ++d) t_avg_l[d] = t_avg_l[d]/count_lower_edge;
+          Real length_t_l = 0.0;
+          for (LO d = 0; d < dim; ++d) length_t_l += t_avg_l[d]*t_avg_l[d]; 
+          for (LO d = 0; d < dim; ++d) t_avg_l[d] = t_avg_l[d]/std::sqrt(length_t_l);
           printf("count lower edges %d tavg {%f,%f,%f} Mag %f \n", 
               count_lower_edge,
               t_avg_l[0], t_avg_l[1], t_avg_l[2],
