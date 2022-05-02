@@ -206,12 +206,11 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
             prods2new_ents);
       }
     }
-    //correction of curve if edges were attempted to curve to bdry
-    /*
+    //correction of curve if edges were attempted to curve after newmesh created
     if ((ent_dim == 3) && (mesh->is_curved() > 0)) {
-      correct_curved_edges(&new_mesh);
+      //correct_curved_edges(&new_mesh);
+      check_validity_new_curved_edges(&new_mesh);
     }
-    */
 
     old_lows2new_lows = old_ents2new_ents;
   }
