@@ -463,7 +463,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 }
 
 OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
-    Mesh* m, LO e, Vector<3> const& xi, LO b) {
+    Mesh* m, LO tri, Vector<3> const& xi, LO b) {
   Few<Real, 10> values;
   double xii[3] = {1.-xi[0]-xi[1],xi[0],xi[1]};
 
