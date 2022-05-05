@@ -462,6 +462,46 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   return;
 }
 
+OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
+    Mesh* m, LO e, Vector<3> const& xi, LO b) {
+  Few<Real, 10> values;
+  double xii[3] = {1.-xi[0]-xi[1],xi[0],xi[1]};
+
+  for (int i = 0; i < 3; ++i)
+    values[i] = -std::pow(xii[i], b);
+  // zero the rest, the face node weight is always zero
+  int n = 10;//10 nodes per tri
+  for(int i = 3; i < n; ++i)
+    values[i] = 0.0;
+
+  double x, xiix;
+  Vector<3> xv;
+  apf::NewArray<double> v;
+
+  int const (*tev)[2] = apf::tri_edge_verts;
+  int nE = 2;//2 nodes per edge
+
+  apf::MeshEntity* edges[3];
+  m->getDownward(e,1,edges);
+  for(int i = 0; i < 3; ++i){
+    x = xii[tev[i][0]]+xii[tev[i][1]];
+
+    if(x < blendingTol)
+      xiix = 0.5;
+    else
+      xiix = xii[tev[i][1]]/x;
+
+    xv[0] = 2.0*xiix-1.0;
+    m->getShape()->getEntityShape(apf::Mesh::EDGE)
+            ->getValues(m,edges[i],xv,v);
+
+    for(int j = 0; j < 2; ++j)
+      values[tev[i][j]]   += v[j]*std::pow(x, b);
+    for(int j = 0; j < nE; ++j)
+      values[3+i*nE+j] = v[2+j]*std::pow(x, b);
+  }
+}
+
 template <Int dim>
 void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     LOs prods2new) {
@@ -498,6 +538,7 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
          new_coords[v0*dim + j] +
          new_coords[v1*dim + j] + new_coords[v2*dim + j])/3.0;
       
+
     /* TODO for blending
     auto e0 = new_fe2e[f*3 + 0];
     auto e1 = new_fe2e[f*3 + 1];
