@@ -470,21 +470,46 @@ OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
   for (int i = 0; i < 3; ++i)
     values[i] = -std::pow(xii[i], b);
   // zero the rest, the face node weight is always zero
-  int n = 10;//10 nodes per tri
+  const LO n = 10;//10 nodes per tri
   for(int i = 3; i < n; ++i)
     values[i] = 0.0;
 
   double x, xiix;
   Vector<3> xv;
-  apf::NewArray<double> v;
+  Few<Real, 4> v;
 
-  int const (*tev)[2] = apf::tri_edge_verts;
-  int nE = 2;//2 nodes per edge
+  auto const te2e = mesh->get_adj(2,1).ab2b;
+  auto const ev2v = mesh->get_adj(1,0).ab2b;
+  auto const tv2v = mesh->ask_down(2,0).ab2b;
+  const LO nE = 2;//2 nodes per edge
+  Few<LO, 6> tev;
+  {
+    LO const t_v0 = tv2v[3*tri + 0];
+    LO const t_v1 = tv2v[3*tri + 1];
+    LO const t_v2 = tv2v[3*tri + 2];
+    for (LO i = 0; i < 3; ++i) {
+      LO const e_v0 = ev2v[te2e[tri*3 + i] + 0];
+      LO const e_v1 = ev2v[te2e[tri*3 + i] + 1];
+      if (e_v0 == t_v0) {
+        tev[i*2 + 0] = 0;
+        if (e_v1 == t_v1) tev[i*2 + 1] = 1;
+        if (e_v1 == t_v2) tev[i*2 + 1] = 2;
+      }
+      if (e_v0 == t_v1) {
+        tev[i*2 + 0] = 1;
+        if (e_v1 == t_v0) tev[i*2 + 1] = 0;
+        if (e_v1 == t_v2) tev[i*2 + 1] = 2;
+      }
+      if (e_v0 == t_v2) {
+        tev[i*2 + 0] = 2;
+        if (e_v1 == t_v0) tev[i*2 + 1] = 0;
+        if (e_v1 == t_v1) tev[i*2 + 1] = 1;
+      }
+    }
+  }
 
-  apf::MeshEntity* edges[3];
-  m->getDownward(e,1,edges);
-  for(int i = 0; i < 3; ++i){
-    x = xii[tev[i][0]]+xii[tev[i][1]];
+  for(int i = 0; i < 3; ++i) {
+    x = xii[] + xii[ev2v[te2e[tri*3 + i] + 1]];
 
     if(x < blendingTol)
       xiix = 0.5;
@@ -496,7 +521,7 @@ OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
             ->getValues(m,edges[i],xv,v);
 
     for(int j = 0; j < 2; ++j)
-      values[tev[i][j]]   += v[j]*std::pow(x, b);
+      values[tev[i][j]] += v[j]*std::pow(x, b);
     for(int j = 0; j < nE; ++j)
       values[3+i*nE+j] = v[2+j]*std::pow(x, b);
   }
