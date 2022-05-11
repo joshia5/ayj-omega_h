@@ -463,7 +463,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 }
 
 OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
-    Mesh* m, LO tri, Vector<3> const& xi, LO b) {
+    Mesh* m, LO const tri, Vector<3> const xi, LO b) {
   Few<Real, 10> values;
   double xii[3] = {1.-xi[0]-xi[1],xi[0],xi[1]};
 
@@ -508,21 +508,22 @@ OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
     }
   }
 
-  for(int i = 0; i < 3; ++i) {
-    x = xii[] + xii[ev2v[te2e[tri*3 + i] + 1]];
+  for(LO i = 0; i < 3; ++i) {
+    x = xii[tev[i*2 + 0]] + xii[tev[i*2 + 1]];
 
     if(x < blendingTol)
       xiix = 0.5;
     else
-      xiix = xii[tev[i][1]]/x;
+      xiix = xii[tev[i*2 +1]]/x;
 
     xv[0] = 2.0*xiix-1.0;
-    m->getShape()->getEntityShape(apf::Mesh::EDGE)
-            ->getValues(m,edges[i],xv,v);
+    for (LO j = 0; j < 4; ++j) {
+      v[j] = Bi(3, j, xv[0]);
+    }
 
-    for(int j = 0; j < 2; ++j)
-      values[tev[i][j]] += v[j]*std::pow(x, b);
-    for(int j = 0; j < nE; ++j)
+    for(LO j = 0; j < 2; ++j)
+      values[tev[i*2 + j]] += v[j]*std::pow(x, b);
+    for(LO j = 0; j < nE; ++j)
       values[3+i*nE+j] = v[2+j]*std::pow(x, b);
   }
 }
