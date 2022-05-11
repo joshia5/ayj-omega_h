@@ -71,14 +71,6 @@ OMEGA_H_DEVICE Few<Real, 9> curve_split_e0_3d(
   Real const new_xi_1 = new_xi_start + xi_1_cube()/2.0;
   auto new_p1 = curve_paramToParent_3d(new_xi_1, c0, c1, c2, c3, order);
 
-  /*
-  printf("oldedge %d e0 with v0 %d v1 %d; oldc0 %f %f %f; c1 %f %f %f c2 %f %f %f c3 %f %f %f \n",
-      old_edge, v0_old, v1_old, cx0,cy0,cz0, cx1,cy1,cz1, cx2,cy2,cz2, cx3,cy3,cz3);
-  printf(" new mid interp pt oldedge %d e0 with v0 %d v1 %d is %f %f %f\n",
-      old_edge, v0_old, v1_old, new_cx3, new_cy3, new_cz3);
-  printf("oldedge %d edge 0 p2 %f, %f %f , xi2 %f\n", old_edge, new_px2, new_py2, new_pz2, new_xi_2);
-  printf("oldedge %d edge 0 p1 %f, %f %f , xi1 %f\n", old_edge, new_px1, new_py1, new_pz1, new_xi_1);
-  */
   auto c1_c2 = curve_interpToCtrl_pts_3d(order, c0, new_c3, new_p1, new_p2);
   Few<Real, 9> c1_c2_c3;
   for (LO k = 0; k < dim*2; ++k) {
