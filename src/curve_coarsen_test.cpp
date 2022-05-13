@@ -203,7 +203,6 @@ void test_cubic_tet_validity(Library *lib) {
   auto fe2e = mesh.ask_down(2, 1).ab2b;
   auto rv2v = mesh.ask_down(3, 0).ab2b;
   auto re2e = mesh.ask_down(3, 1).ab2b;
-  auto r2e_codes = mesh.ask_down(3, 1).codes;
   auto rf2f = mesh.ask_down(3, 2).ab2b;
 
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
