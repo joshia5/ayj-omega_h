@@ -463,8 +463,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 }
 
 OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
-    Mesh* m, LO const tri, Vector<3> const xi, LO b) {
+    Mesh* mesh, LO const tri, Vector<3> const xi, LO b) {
   Few<Real, 10> values;
+  Real const blendingTol = 1.e-12;
   double xii[3] = {1.-xi[0]-xi[1],xi[0],xi[1]};
 
   for (int i = 0; i < 3; ++i)
@@ -488,8 +489,9 @@ OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
     LO const t_v1 = tv2v[3*tri + 1];
     LO const t_v2 = tv2v[3*tri + 2];
     for (LO i = 0; i < 3; ++i) {
-      LO const e_v0 = ev2v[te2e[tri*3 + i] + 0];
-      LO const e_v1 = ev2v[te2e[tri*3 + i] + 1];
+      LO const e = te2e[tri*3 + i];
+      LO const e_v0 = ev2v[e*2 + 0];
+      LO const e_v1 = ev2v[e*2 + 1];
       if (e_v0 == t_v0) {
         tev[i*2 + 0] = 0;
         if (e_v1 == t_v1) tev[i*2 + 1] = 1;
@@ -508,10 +510,11 @@ OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
     }
   }
 
-  for(LO i = 0; i < 3; ++i) {
+  for (LO i = 0; i < 3; ++i) {
+    //printf("i %d tev0 %d tev1 %d\n", i, tev[i*2 + 0], tev[i*2 + 1]);
     x = xii[tev[i*2 + 0]] + xii[tev[i*2 + 1]];
 
-    if(x < blendingTol)
+    if (x < blendingTol)
       xiix = 0.5;
     else
       xiix = xii[tev[i*2 +1]]/x;
@@ -521,11 +524,12 @@ OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
       v[j] = Bi(3, j, xv[0]);
     }
 
-    for(LO j = 0; j < 2; ++j)
+    for (LO j = 0; j < 2; ++j)
       values[tev[i*2 + j]] += v[j]*std::pow(x, b);
-    for(LO j = 0; j < nE; ++j)
+    for (LO j = 0; j < nE; ++j)
       values[3+i*nE+j] = v[2+j]*std::pow(x, b);
   }
+  return values;
 }
 
 template <Int dim>
@@ -535,8 +539,11 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const new_fe2e = new_mesh->get_adj(2, 1).ab2b;
   auto const new_coords = new_mesh->coords();
   auto const nnew_faces = new_mesh->nfaces();
+  auto const nnew_edges = new_mesh->nedges();
   auto const nold_faces = mesh->nfaces();
   auto const old_faceCtrlPts = mesh->get_ctrlPts(2);
+  auto const vertCtrlPts = new_mesh->get_ctrlPts(0);
+  auto const edgeCtrlPts = new_mesh->get_ctrlPts(1);
   Write<Real> face_ctrlPts(nnew_faces*1*dim, INT8_MAX);
 
   auto const vertCtrlPts = mesh->get_ctrlPts(0);
@@ -553,43 +560,68 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   };
   parallel_for(nold_faces, std::move(copy_samefacePts),
       "copy_same_facectrlPts");
+  Vector<3> face_xi;
+  face_xi[0] = 1.0/3.0;
+  face_xi[1] = 1.0/3.0;
+  face_xi[2] = 1.0/3.0;
 
-  auto face_blends = OMEGA_H_LAMBDA(LO i) {
-    LO f = prods2new[i];
-    auto v0 = new_fv2v[f*3 + 0];
-    auto v1 = new_fv2v[f*3 + 1];
-    auto v2 = new_fv2v[f*3 + 2];
-    for (LO j=0; j<dim; ++j) {
-      face_ctrlPts[f*dim + j] = (
-         new_coords[v0*dim + j] +
-         new_coords[v1*dim + j] + new_coords[v2*dim + j])/3.0;
-      
-
-    /* TODO for blending
-    auto e0 = new_fe2e[f*3 + 0];
-    auto e1 = new_fe2e[f*3 + 1];
-    auto e2 = new_fe2e[f*3 + 2];
-    for (LO j=0; j<dim; ++j) {
-      face_ctrlPts[f*dim + j] = (
-         new_coords[v0*dim + j] +
-         new_coords[v1*dim + j] + new_coords[v2*dim + j] +
-         edgeCtrlPts[e0*2*dim + j] + 
-         edgeCtrlPts[e0*2*dim + dim +j] +
-         edgeCtrlPts[e1*2*dim + j] + 
-         edgeCtrlPts[e1*2*dim + dim +j] +
-         edgeCtrlPts[e2*2*dim + j] + 
-         edgeCtrlPts[e2*2*dim + dim +j])/9.0;
+  auto face_centroids = OMEGA_H_LAMBDA(LO i) {
+    LO const tri = prods2new[i];
+    for (LO j = 0; j < weights.size(); ++j) {
+      printf("weights[%d] = %f\n", j, weights[j]);
     }
-    */
-
+    LO const v0 = new_fv2v[tri*3 + 0];
+    LO const v1 = new_fv2v[tri*3 + 1];
+    LO const v2 = new_fv2v[tri*3 + 2];
+    for (LO j = 0; j < dim; ++j) {
+      face_ctrlPts[tri*dim + j] = (new_coords[v0*dim + j] +
+         new_coords[v1*dim + j] + new_coords[v2*dim + j])/3.0;
     }
   };
-  parallel_for(prods2new.size(), std::move(face_blends), "face_blends");
+  parallel_for(prods2new.size(), std::move(face_centroids), "face_centroids");
+
+  //loop over new edges
+  //if new edge dual cone
+  //  find adjacent faces in a for loop
+  //  pass face ids as input to blended tri fn 
+  //  then take first 9 values and mult them with all ctrl pts of face
+  //  that gives the interp pt
+  //  face interp to ctrl pt
+  auto edge_dualCone = new_mesh->get_array<I8>(1, "edge_dualCone");
+  auto const e2et = new_mesh->ask_up(1, 2).a2ab;
+  auto const et2t = new_mesh->ask_up(1, 2).ab2b;
+  auto face_blends = OMEGA_H_LAMBDA(LO e) {
+    if (edge_dualCone[e] == 1) {
+      for (LO et = e2et[e]; et < e2et[e + 1]; ++et) {
+        LO const tri = et2t[et];
+        auto const weights = BlendedTriangleGetValues(
+            new_mesh, tri, face_xi, 2);
+        LO const v0 = new_fv2v[tri*3 + 0];
+        LO const v1 = new_fv2v[tri*3 + 1];
+        LO const v2 = new_fv2v[tri*3 + 2];
+        LO const e0 = new_fe2e[tri*3 + 0];
+        LO const e1 = new_fe2e[tri*3 + 1];
+        LO const e2 = new_fe2e[tri*3 + 2];
+
+        auto p11 = face_blend_interp_3d(3, tri, new_ev2v, new_fe2e,
+          vertCtrlPts, edgeCtrlPts, fv2v, weights);
+        auto newface_c11 = face_interpToCtrlPt_3d(order, new_f0, new_ev2v, new_fe2e,
+          new_vertCtrlPts, new_edgeCtrlPts, p11, new_fv2v);
+        for (LO k = 0; k < 3; ++k) {
+          face_ctrlPts[tri*dim + k] = newface_c11[k];
+        }
+
+      }
+    }
+  };
+  parallel_for(nnew_edges, std::move(face_blends), "face_blends");
+
   new_mesh->add_tag<Real>(2, "bezier_pts", dim);
   new_mesh->set_tag_for_ctrlPts(2, Reals(face_ctrlPts));
 
   return;
 }
+
 void correct_curved_edges(Mesh *new_mesh);
 void check_validity_new_curved_edges(Mesh *new_mesh);
 
