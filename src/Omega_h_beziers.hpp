@@ -973,11 +973,10 @@ OMEGA_H_DEVICE Vector<3> face_parametricToParent_3d(
   return p11_w;
 }
 
-OMEGA_H_DEVICE Vector<3> face_blend_3d(
+OMEGA_H_DEVICE Vector<3> face_blend_interp_3d(
     LO const order, LO const old_face, LOs old_ev2v, LOs old_fe2e,
-    Reals old_vertCtrlPts, Reals old_edgeCtrlPts, Reals old_faceCtrlPts,
-    Real nodePts_0, Real nodePts_1, LOs old_fv2v,
-    Few<LO, 10> weights) {
+    Reals old_vertCtrlPts, Reals old_edgeCtrlPts,
+    LOs old_fv2v, Few<LO, 10> weights) {
   LO const dim = 3;
   LO const n_edge_pts = n_internal_ctrlPts(EDGE, order);
   LO const v0_old_face = old_fv2v[old_face*3 + 0];
