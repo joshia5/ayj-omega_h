@@ -518,6 +518,7 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     LOs prods2new) {
   auto const new_fv2v = new_mesh->ask_down(2, 0).ab2b;
   auto const new_fe2e = new_mesh->get_adj(2, 1).ab2b;
+  auto const new_ev2v = new_mesh->get_adj(1, 0).ab2b;
   auto const new_coords = new_mesh->coords();
   auto const nnew_faces = new_mesh->nfaces();
   auto const nnew_edges = new_mesh->nedges();
@@ -538,10 +539,6 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   };
   parallel_for(nold_faces, std::move(copy_samefacePts),
       "copy_same_facectrlPts");
-  Vector<3> face_xi;
-  face_xi[0] = 1.0/3.0;
-  face_xi[1] = 1.0/3.0;
-  face_xi[2] = 1.0/3.0;
 
   auto face_centroids = OMEGA_H_LAMBDA(LO i) {
     LO const tri = prods2new[i];
@@ -562,35 +559,30 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   //  then take first 9 values and mult them with all ctrl pts of face
   //  that gives the interp pt
   //  face interp to ctrl pt
+  Vector<3> face_xi;
+  face_xi[0] = 1.0/3.0;
+  face_xi[1] = 1.0/3.0;
+  face_xi[2] = 1.0/3.0;
+  auto const weights = BlendedTriangleGetValues(face_xi, 1);
+  for (LO j = 0; j < weights.size(); ++j) {
+    printf("weights[%d] = %f\n", j, weights[j]);
+  }
+  std::cout<<"\n";
   auto edge_dualCone = new_mesh->get_array<I8>(1, "edge_dualCone");
   auto const e2et = new_mesh->ask_up(1, 2).a2ab;
   auto const et2t = new_mesh->ask_up(1, 2).ab2b;
   auto face_blends = OMEGA_H_LAMBDA(LO e) {
     if (edge_dualCone[e] == 1) {
       for (LO et = e2et[e]; et < e2et[e + 1]; ++et) {
-        auto const weights = BlendedTriangleGetValues(
-            face_xi, 1);
-        for (LO j = 0; j < weights.size(); ++j) {
-          printf("weights[%d] = %f\n", j, weights[j]);
-        }
-        std::cout<<"\n";
-        /*
         LO const tri = et2t[et];
-        LO const v0 = new_fv2v[tri*3 + 0];
-        LO const v1 = new_fv2v[tri*3 + 1];
-        LO const v2 = new_fv2v[tri*3 + 2];
-        LO const e0 = new_fe2e[tri*3 + 0];
-        LO const e1 = new_fe2e[tri*3 + 1];
-        LO const e2 = new_fe2e[tri*3 + 2];
 
         auto p11 = face_blend_interp_3d(3, tri, new_ev2v, new_fe2e,
-          vertCtrlPts, edgeCtrlPts, fv2v, weights);
-        auto newface_c11 = face_interpToCtrlPt_3d(order, new_f0, new_ev2v, new_fe2e,
-          new_vertCtrlPts, new_edgeCtrlPts, p11, new_fv2v);
+          vertCtrlPts, edgeCtrlPts, new_fv2v, weights);
+        auto newface_c11 = face_interpToCtrlPt_3d(3, tri, new_ev2v, new_fe2e,
+          vertCtrlPts, edgeCtrlPts, p11, new_fv2v);
         for (LO k = 0; k < 3; ++k) {
           face_ctrlPts[tri*dim + k] = newface_c11[k];
         }
-        */
 
       }
     }
