@@ -1054,22 +1054,9 @@ void build_cubic_curveVtk_2d(Mesh* mesh, Mesh* curveVtk_mesh,
                         cy02*B02_cube(xi[i][j][0], xi[i][j][1]) +
                         cy01*B01_cube(xi[i][j][0], xi[i][j][1]) +
                         cy11*B11_cube(xi[i][j][0], xi[i][j][1]);
-        /*
-        auto z_bezier = cz00*B00_cube(xi[i][j][0], xi[i][j][1]) +
-                        cz10*B10_cube(xi[i][j][0], xi[i][j][1]) +
-                        cz20*B20_cube(xi[i][j][0], xi[i][j][1]) +
-                        cz30*B30_cube(xi[i][j][0], xi[i][j][1]) +
-                        cz21*B21_cube(xi[i][j][0], xi[i][j][1]) +
-                        cz12*B12_cube(xi[i][j][0], xi[i][j][1]) +
-                        cz03*B03_cube(xi[i][j][0], xi[i][j][1]) +
-                        cz02*B02_cube(xi[i][j][0], xi[i][j][1]) +
-                        cz01*B01_cube(xi[i][j][0], xi[i][j][1]) +
-                        cz11*B11_cube(xi[i][j][0], xi[i][j][1]);
-                        */
 
         host_coords[count_curveVtk_mesh_vtx*dim + 0] = x_bezier;
         host_coords[count_curveVtk_mesh_vtx*dim + 1] = y_bezier;
-        //host_coords[count_curveVtk_mesh_vtx*dim + 2] = z_bezier;
 
         if ((i < n_sample_pts - 1) && (j < n_sample_pts - i - 1)) {
           face_vertices[0].push_back(count_curveVtk_mesh_vtx);

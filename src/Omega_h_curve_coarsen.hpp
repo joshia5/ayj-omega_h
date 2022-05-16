@@ -540,6 +540,7 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   parallel_for(nold_faces, std::move(copy_samefacePts),
       "copy_same_facectrlPts");
 
+  /*
   auto face_centroids = OMEGA_H_LAMBDA(LO i) {
     LO const tri = prods2new[i];
     LO const v0 = new_fv2v[tri*3 + 0];
@@ -551,6 +552,7 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     }
   };
   parallel_for(prods2new.size(), std::move(face_centroids), "face_centroids");
+  */
 
   //loop over new edges
   //if new edge dual cone
