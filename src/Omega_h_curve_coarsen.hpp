@@ -201,8 +201,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     };
     parallel_for(nold_edges, std::move(calc_tangents));
 
-    for (LO i=0; i<nkeys; ++i) {
     //auto curve_dualCone_cav = OMEGA_H_LAMBDA (LO i) {
+    for (LO i = 0; i < nkeys; ++i) {
       if ((keys2prods[i+1] - keys2prods[i]) == 1) {
         LO const v_onto = keys2verts_onto[i];
         LO const v_key = keys2verts[i];
@@ -451,7 +451,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       }
     }
     //};
-    //parallel_for(nkeys, std::move(curve_dualCone_cav));
+    //parallel_for(nkeys, std::move(curve_dualCone_cav), "curve_dualCone_cav");
     edge_file.close();
   }
 
@@ -466,7 +466,6 @@ OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
     Vector<3> const xi, LO b) {
   Few<Real, 10> values;
   Real const blendingTol = 1.e-12;
-  //TODO eval by hand for u=0,v=0
   double xii[3] = {1.-xi[0]-xi[1],xi[0],xi[1]};
 
   for (LO i = 0; i < 3; ++i)
@@ -540,7 +539,6 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   parallel_for(nold_faces, std::move(copy_samefacePts),
       "copy_same_facectrlPts");
 
-  /*
   auto face_centroids = OMEGA_H_LAMBDA(LO i) {
     LO const tri = prods2new[i];
     LO const v0 = new_fv2v[tri*3 + 0];
@@ -552,7 +550,6 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     }
   };
   parallel_for(prods2new.size(), std::move(face_centroids), "face_centroids");
-  */
 
   //loop over new edges
   //if new edge dual cone
@@ -561,35 +558,41 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   //  then take first 9 values and mult them with all ctrl pts of face
   //  that gives the interp pt
   //  face interp to ctrl pt
-  Vector<3> face_xi;
-  face_xi[0] = 1.0/3.0;
-  face_xi[1] = 1.0/3.0;
-  face_xi[2] = 1.0/3.0;
-  auto const weights = BlendedTriangleGetValues(face_xi, 1);
-  for (LO j = 0; j < weights.size(); ++j) {
-    printf("weights[%d] = %f\n", j, weights[j]);
-  }
-  std::cout<<"\n";
-  auto edge_dualCone = new_mesh->get_array<I8>(1, "edge_dualCone");
-  auto const e2et = new_mesh->ask_up(1, 2).a2ab;
-  auto const et2t = new_mesh->ask_up(1, 2).ab2b;
-  auto face_blends = OMEGA_H_LAMBDA(LO e) {
-    if (edge_dualCone[e] == 1) {
-      for (LO et = e2et[e]; et < e2et[e + 1]; ++et) {
-        LO const tri = et2t[et];
-
-        auto p11 = face_blend_interp_3d(3, tri, new_ev2v, new_fe2e,
-          vertCtrlPts, edgeCtrlPts, new_fv2v, weights);
-        auto newface_c11 = face_interpToCtrlPt_3d(3, tri, new_ev2v, new_fe2e,
-          vertCtrlPts, edgeCtrlPts, p11, new_fv2v);
-        for (LO k = 0; k < 3; ++k) {
-          face_ctrlPts[tri*dim + k] = newface_c11[k];
-        }
-
-      }
+  if (dim == 3) {
+    Vector<3> face_xi;
+    face_xi[0] = 1.0/3.0;
+    face_xi[1] = 1.0/3.0;
+    face_xi[2] = 1.0/3.0;
+    auto const weights = BlendedTriangleGetValues(face_xi, 1);
+    for (LO j = 0; j < weights.size(); ++j) {
+      printf("weights[%d] = %f\n", j, weights[j]);
     }
-  };
-  parallel_for(nnew_edges, std::move(face_blends), "face_blends");
+    std::cout<<"\n";
+    auto edge_dualCone = new_mesh->get_array<I8>(1, "edge_dualCone");
+    auto const e2et = new_mesh->ask_up(1, 2).a2ab;
+    auto const et2t = new_mesh->ask_up(1, 2).ab2b;
+
+    Write<I8> face_dualCone(nnew_faces, -1);
+    auto face_blends = OMEGA_H_LAMBDA(LO e) {
+      if (edge_dualCone[e] == 1) {
+        for (LO et = e2et[e]; et < e2et[e + 1]; ++et) {
+          LO const tri = et2t[et];
+          face_dualCone[tri] = 1;
+
+          auto p11 = face_blend_interp_3d(3, tri, new_ev2v, new_fe2e,
+              vertCtrlPts, edgeCtrlPts, new_fv2v, weights);
+          auto newface_c11 = face_interpToCtrlPt_3d(3, tri, new_ev2v, new_fe2e,
+              vertCtrlPts, edgeCtrlPts, p11, new_fv2v);
+          for (LO k = 0; k < 3; ++k) {
+            face_ctrlPts[tri*dim + k] = newface_c11[k];
+          }
+
+        }
+      }
+    };
+    parallel_for(nnew_edges, std::move(face_blends), "face_blends");
+    new_mesh->add_tag<I8>(2, "face_dualCone", 1, Read<I8>(face_dualCone));
+  }
 
   new_mesh->add_tag<Real>(2, "bezier_pts", dim);
   new_mesh->set_tag_for_ctrlPts(2, Reals(face_ctrlPts));

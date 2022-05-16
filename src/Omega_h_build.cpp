@@ -1298,6 +1298,223 @@ void build_cubic_curveVtk_3d(Mesh* mesh, Mesh* curveVtk_mesh,
   return;
 }
 
+void build_cubic_cavities_3d(Mesh* mesh, Mesh* curveVtk_mesh,
+                          LO n_sample_pts) {
+  auto coords_h = HostRead<Real>(mesh->coords());
+  auto vert_ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(0));
+  auto face_dualCone_h = HostRead<I8>(mesh->get_array<I8>(2, "face_dualCone"));
+  LO nface = 0;
+  for (LO i = 0; i < face_dualCone_h.size(); ++i) {
+    if (face_dualCone_h[i] == 1) ++nface;
+  }
+
+  auto vert_ctrlPts = mesh->get_ctrlPts(0);
+  if (vert_ctrlPts.exists()) {
+    coords_h = vert_ctrlPts_h;
+  }
+  auto ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(1));
+  auto face_ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(2));
+  auto fv2v_h = HostRead<LO>(mesh->ask_down(2, 0).ab2b);
+  auto fe2e_h = HostRead<LO>(mesh->get_adj(2, 1).ab2b);
+  auto ev2v_h = HostRead<LO>(mesh->get_adj(1, 0).ab2b);
+  auto pts_per_edge = mesh->n_internal_ctrlPts(1);
+
+  I8 dim = mesh->dim();
+  Real xi_start = 0.0;
+  Real xi_end = 1.0;
+  Real delta_xi = (xi_end - xi_start)/(n_sample_pts - 1);
+  double xi[n_sample_pts][n_sample_pts][FACE] = {0.0};
+  LO count_curveVtk_mesh_vtx_perTri = 0;
+
+  for (LO i = 0; i < n_sample_pts; ++i) {
+    for (LO j = 0; j < n_sample_pts - i; ++j) {
+      xi[i][j][0] = i*delta_xi;
+      xi[i][j][1] = j*delta_xi;
+      ++count_curveVtk_mesh_vtx_perTri;
+    }
+  }
+
+  HostWrite<Real> host_coords(count_curveVtk_mesh_vtx_perTri*nface*dim);
+  LO faces_perTri = (n_sample_pts - 1)*(n_sample_pts - 1);
+  LO curveVtk_mesh_nface = faces_perTri*nface;
+  HostWrite<LO> host_fv2v(curveVtk_mesh_nface*3);
+  std::vector<int> face_vertices[1];
+  face_vertices[0].reserve(curveVtk_mesh_nface*3);
+  
+  LO count_curveVtk_mesh_vtx = 0;
+  for (LO face = 0; face < mesh->nfaces(); ++face) {
+    if (face_dualCone_h[face] == 1) {
+      auto v0 = fv2v_h[face*3];
+      auto v1 = fv2v_h[face*3 + 1];
+      auto v2 = fv2v_h[face*3 + 2];
+      auto e0 = fe2e_h[face*3];
+      auto e1 = fe2e_h[face*3 + 1];
+      auto e2 = fe2e_h[face*3 + 2];
+
+      I8 e0_flip = -1;
+      I8 e1_flip = -1;
+      I8 e2_flip = -1;
+      auto e0v0 = ev2v_h[e0*2 + 0];
+      auto e0v1 = ev2v_h[e0*2 + 1];
+      auto e1v0 = ev2v_h[e1*2 + 0];
+      auto e1v1 = ev2v_h[e1*2 + 1];
+      auto e2v0 = ev2v_h[e2*2 + 0];
+      auto e2v1 = ev2v_h[e2*2 + 1];
+      if ((e0v0 == v1) && (e0v1 == v0)) {
+        e0_flip = 1;
+      }
+      else {
+        OMEGA_H_CHECK((e0v0 == v0) && (e0v1 == v1));
+      }
+      if ((e1v0 == v2) && (e1v1 == v1)) {
+        e1_flip = 1;
+      }
+      else {
+        OMEGA_H_CHECK((e1v0 == v1) && (e1v1 == v2));
+      }
+      if ((e2v0 == v0) && (e2v1 == v2)) {
+        e2_flip = 1;
+      }
+      else {
+        OMEGA_H_CHECK((e2v0 == v2) && (e2v1 == v0));
+      }
+
+      Real cx00 = coords_h[v0*dim + 0];
+      Real cy00 = coords_h[v0*dim + 1];
+      Real cz00 = coords_h[v0*dim + 2];
+      Real cx30 = coords_h[v1*dim + 0];
+      Real cy30 = coords_h[v1*dim + 1];
+      Real cz30 = coords_h[v1*dim + 2];
+      Real cx03 = coords_h[v2*dim + 0];
+      Real cy03 = coords_h[v2*dim + 1];
+      Real cz03 = coords_h[v2*dim + 2];
+
+      Real cx10 = ctrlPts_h[e0*pts_per_edge*dim + 0];
+      Real cy10 = ctrlPts_h[e0*pts_per_edge*dim + 1];
+      Real cz10 = ctrlPts_h[e0*pts_per_edge*dim + 2];
+      Real cx20 = ctrlPts_h[e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+      Real cy20 = ctrlPts_h[e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+      Real cz20 = ctrlPts_h[e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+      if (e0_flip > 0) {
+        auto tempx = cx10;
+        auto tempy = cy10;
+        auto tempz = cz10;
+        cx10 = cx20;
+        cy10 = cy20;
+        cz10 = cz20;
+        cx20 = tempx;
+        cy20 = tempy;
+        cz20 = tempz;
+      }
+
+      Real cx21 = ctrlPts_h[e1*pts_per_edge*dim + 0];
+      Real cy21 = ctrlPts_h[e1*pts_per_edge*dim + 1];
+      Real cz21 = ctrlPts_h[e1*pts_per_edge*dim + 2];
+      Real cx12 = ctrlPts_h[e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+      Real cy12 = ctrlPts_h[e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+      Real cz12 = ctrlPts_h[e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+      if (e1_flip > 0) {
+        auto tempx = cx21;
+        auto tempy = cy21;
+        auto tempz = cz21;
+        cx21 = cx12;
+        cy21 = cy12;
+        cz21 = cz12;
+        cx12 = tempx;
+        cy12 = tempy;
+        cz12 = tempz;
+      }
+
+      Real cx02 = ctrlPts_h[e2*pts_per_edge*dim + 0];
+      Real cy02 = ctrlPts_h[e2*pts_per_edge*dim + 1];
+      Real cz02 = ctrlPts_h[e2*pts_per_edge*dim + 2];
+      Real cx01 = ctrlPts_h[e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+      Real cy01 = ctrlPts_h[e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+      Real cz01 = ctrlPts_h[e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 2];
+      if (e2_flip > 0) {
+        auto tempx = cx02;
+        auto tempy = cy02;
+        auto tempz = cz02;
+        cx02 = cx01;
+        cy02 = cy01;
+        cz02 = cz01;
+        cx01 = tempx;
+        cy01 = tempy;
+        cz01 = tempz;
+      }
+
+      Real cx11 = face_ctrlPts_h[face*dim + 0];
+      Real cy11 = face_ctrlPts_h[face*dim + 1];
+      Real cz11 = face_ctrlPts_h[face*dim + 2];
+
+      for (LO i = 0; i < n_sample_pts; ++i) {
+        for (LO j = 0; j < n_sample_pts - i; ++j) {
+          auto x_bezier = cx00*B00_cube(xi[i][j][0], xi[i][j][1]) +
+            cx10*B10_cube(xi[i][j][0], xi[i][j][1]) +
+            cx20*B20_cube(xi[i][j][0], xi[i][j][1]) +
+            cx30*B30_cube(xi[i][j][0], xi[i][j][1]) +
+            cx21*B21_cube(xi[i][j][0], xi[i][j][1]) +
+            cx12*B12_cube(xi[i][j][0], xi[i][j][1]) +
+            cx03*B03_cube(xi[i][j][0], xi[i][j][1]) +
+            cx02*B02_cube(xi[i][j][0], xi[i][j][1]) +
+            cx01*B01_cube(xi[i][j][0], xi[i][j][1]) +
+            cx11*B11_cube(xi[i][j][0], xi[i][j][1]);
+          auto y_bezier = cy00*B00_cube(xi[i][j][0], xi[i][j][1]) +
+            cy10*B10_cube(xi[i][j][0], xi[i][j][1]) +
+            cy20*B20_cube(xi[i][j][0], xi[i][j][1]) +
+            cy30*B30_cube(xi[i][j][0], xi[i][j][1]) +
+            cy21*B21_cube(xi[i][j][0], xi[i][j][1]) +
+            cy12*B12_cube(xi[i][j][0], xi[i][j][1]) +
+            cy03*B03_cube(xi[i][j][0], xi[i][j][1]) +
+            cy02*B02_cube(xi[i][j][0], xi[i][j][1]) +
+            cy01*B01_cube(xi[i][j][0], xi[i][j][1]) +
+            cy11*B11_cube(xi[i][j][0], xi[i][j][1]);
+          auto z_bezier = cz00*B00_cube(xi[i][j][0], xi[i][j][1]) +
+            cz10*B10_cube(xi[i][j][0], xi[i][j][1]) +
+            cz20*B20_cube(xi[i][j][0], xi[i][j][1]) +
+            cz30*B30_cube(xi[i][j][0], xi[i][j][1]) +
+            cz21*B21_cube(xi[i][j][0], xi[i][j][1]) +
+            cz12*B12_cube(xi[i][j][0], xi[i][j][1]) +
+            cz03*B03_cube(xi[i][j][0], xi[i][j][1]) +
+            cz02*B02_cube(xi[i][j][0], xi[i][j][1]) +
+            cz01*B01_cube(xi[i][j][0], xi[i][j][1]) +
+            cz11*B11_cube(xi[i][j][0], xi[i][j][1]);
+
+          host_coords[count_curveVtk_mesh_vtx*dim + 0] = x_bezier;
+          host_coords[count_curveVtk_mesh_vtx*dim + 1] = y_bezier;
+          host_coords[count_curveVtk_mesh_vtx*dim + 2] = z_bezier;
+
+          if ((i < n_sample_pts - 1) && (j < n_sample_pts - i - 1)) {
+            face_vertices[0].push_back(count_curveVtk_mesh_vtx);
+            face_vertices[0].push_back(count_curveVtk_mesh_vtx + n_sample_pts-i);
+            face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1);
+            if (i > 0) {
+              face_vertices[0].push_back(count_curveVtk_mesh_vtx);
+              face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1);
+              face_vertices[0].push_back(count_curveVtk_mesh_vtx + 1 - (n_sample_pts-(i-1)));
+            }
+          }
+
+          ++count_curveVtk_mesh_vtx;
+        }
+      }
+    }
+  }
+
+  for (int i = 0; i < curveVtk_mesh_nface*3; ++i) {
+    host_fv2v[i] = face_vertices[0][static_cast<std::size_t>(i)];
+  }
+
+  curveVtk_mesh->set_parting(OMEGA_H_ELEM_BASED);
+  curveVtk_mesh->set_dim(dim);
+  curveVtk_mesh->set_family(OMEGA_H_SIMPLEX);
+  curveVtk_mesh->set_verts(count_curveVtk_mesh_vtx_perTri*nface);
+  curveVtk_mesh->add_coords(Reals(host_coords.write()));
+  curveVtk_mesh->set_down(2, 0, LOs(host_fv2v.write()));
+
+  return;
+}
+
 void build_quartic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
                             LO n_sample_pts) {
   auto nface = mesh->nfaces();
