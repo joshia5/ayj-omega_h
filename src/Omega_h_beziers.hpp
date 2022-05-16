@@ -976,7 +976,8 @@ OMEGA_H_DEVICE Vector<3> face_parametricToParent_3d(
 OMEGA_H_DEVICE Vector<3> face_blend_interp_3d(
     LO const order, LO const old_face, LOs old_ev2v, LOs old_fe2e,
     Reals old_vertCtrlPts, Reals old_edgeCtrlPts,
-    LOs old_fv2v, Few<LO, 10> weights) {
+    LOs old_fv2v, Few<Real, 10> weights) {
+  OMEGA_H_CHECK(std::abs(weights[9] - 0.0) < EPSILON);
   LO const dim = 3;
   LO const n_edge_pts = n_internal_ctrlPts(EDGE, order);
   LO const v0_old_face = old_fv2v[old_face*3 + 0];
@@ -1093,12 +1094,12 @@ OMEGA_H_DEVICE Vector<3> face_blend_interp_3d(
   Vector<3> p11_w;
   for (LO k = 0; k < 3; ++k) {
     p11_w[k] = c00[k]*weights[0] +
-      c10[k]*weights[1] +
-      c20[k]*weights[2] +
-      c30[k]*weights[3] +
-      c21[k]*weights[4] +
-      c12[k]*weights[5] +
-      c03[k]*weights[6] +
+      c30[k]*weights[1] +
+      c03[k]*weights[2] +
+      c10[k]*weights[3] +
+      c20[k]*weights[4] +
+      c21[k]*weights[5] +
+      c12[k]*weights[6] +
       c02[k]*weights[7] +
       c01[k]*weights[8];
   }
