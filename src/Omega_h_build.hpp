@@ -54,6 +54,8 @@ void build_cubic_curveVtk_2d(Mesh* mesh, Mesh* curveVtk_mesh,
                           LO n_sample_pts = 10);
 void build_cubic_curveVtk_3d(Mesh* mesh, Mesh* curveVtk_mesh,
                           LO n_sample_pts = 10);
+void build_cubic_cavities_3d(Mesh* mesh, Mesh* curveVtk_mesh,
+                          LO n_sample_pts = 10);
 void build_quartic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
                             LO n_sample_pts = 10);
 
