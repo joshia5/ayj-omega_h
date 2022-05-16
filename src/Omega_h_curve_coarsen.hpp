@@ -463,25 +463,19 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 }
 
 OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
-    Mesh* mesh, LO const tri, Vector<3> const xi, LO b) {
+    Vector<3> const xi, LO b) {
   Few<Real, 10> values;
   Real const blendingTol = 1.e-12;
+  //TODO eval by hand for u=0,v=0
   double xii[3] = {1.-xi[0]-xi[1],xi[0],xi[1]};
 
-  for (int i = 0; i < 3; ++i)
+  for (LO i = 0; i < 3; ++i)
     values[i] = -std::pow(xii[i], b);
-  // zero the rest, the face node weight is always zero
-  const LO n = 10;//10 nodes per tri
-  for(int i = 3; i < n; ++i)
+  LO const n = 10;//10 nodes per tri
+  for (LO i = 3; i < n; ++i)
     values[i] = 0.0;
 
-  double x, xiix;
-  Real xv;
-  Few<Real, 4> v;
 
-  auto const te2e = mesh->get_adj(2,1).ab2b;
-  auto const ev2v = mesh->get_adj(1,0).ab2b;
-  auto const tv2v = mesh->ask_down(2,0).ab2b;
   const LO nE = 2;//2 nodes per edge
   Few<LO, 6> tev;
   tev[0] = 0;
@@ -492,7 +486,8 @@ OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
   tev[5] = 0;
 
   for (LO i = 0; i < 3; ++i) {
-    //printf("i %d tev0 %d tev1 %d\n", i, tev[i*2 + 0], tev[i*2 + 1]);
+    Real x, xiix, xv;
+    Few<Real, 4> v;
     x = xii[tev[i*2 + 0]] + xii[tev[i*2 + 1]];
 
     if (x < blendingTol)
@@ -501,11 +496,14 @@ OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
       xiix = xii[tev[i*2 +1]]/x;
 
     xv = xiix;
-    //xv[0] = 2.0*xiix-1.0;
-    printf("xv %f\n", xv);
+    v[0] = Bi(3, 0, xv);
+    v[1] = Bi(3, 3, xv);
+    v[2] = Bi(3, 1, xv);
+    v[3] = Bi(3, 2, xv);
     for (LO j = 0; j < 4; ++j) {
-      v[j] = Bi(3, j, xv);
+      printf("i %d, j %d, xv %f, v %f\n", i, j, xv, v[j]);
     }
+    printf("\n");
 
     for (LO j = 0; j < 2; ++j)
       values[tev[i*2 + j]] += v[j]*std::pow(x, b);
@@ -541,8 +539,9 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   parallel_for(nold_faces, std::move(copy_samefacePts),
       "copy_same_facectrlPts");
   Vector<3> face_xi;
-  face_xi[0] = 0.0/3.0;
-  face_xi[1] = 0.0/3.0;
+  face_xi[0] = 1.0/3.0;
+  face_xi[1] = 1.0/3.0;
+  face_xi[2] = 1.0/3.0;
 
   auto face_centroids = OMEGA_H_LAMBDA(LO i) {
     LO const tri = prods2new[i];
@@ -569,14 +568,14 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto face_blends = OMEGA_H_LAMBDA(LO e) {
     if (edge_dualCone[e] == 1) {
       for (LO et = e2et[e]; et < e2et[e + 1]; ++et) {
-        LO const tri = et2t[et];
         auto const weights = BlendedTriangleGetValues(
-            new_mesh, tri, face_xi, 1);
+            face_xi, 1);
         for (LO j = 0; j < weights.size(); ++j) {
           printf("weights[%d] = %f\n", j, weights[j]);
         }
         std::cout<<"\n";
         /*
+        LO const tri = et2t[et];
         LO const v0 = new_fv2v[tri*3 + 0];
         LO const v1 = new_fv2v[tri*3 + 1];
         LO const v2 = new_fv2v[tri*3 + 2];
