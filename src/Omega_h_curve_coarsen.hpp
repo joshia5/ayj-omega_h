@@ -20,6 +20,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     LOs keys2prods) {
   auto const nold_verts = mesh->nverts();
   auto const nold_edges = mesh->nedges();
+  auto const nold_faces = mesh->nfaces();
   auto const old_ev2v = mesh->get_adj(1, 0).ab2b;
   auto const old_fe2e = mesh->get_adj(2, 1).ab2b;
   auto const old_ef2f = mesh->ask_up(1, 2).ab2b;
@@ -152,6 +153,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   Write<LO> count_dualCone_cavities(1, 0);
   Write<LO> count_interior_dualCone_cavities(1, 0);
   Write<LO> count_interior_cavities(1, 0);
+  auto const old_v2vf = mesh->ask_up(0,2).a2ab;
+  auto const old_vf2f = mesh->ask_up(0,2).ab2b;
+  Write<I8> face_dualCone(nold_faces, -1);
   auto count_dualCone_cav = OMEGA_H_LAMBDA(LO i) {
     LO const v_onto = keys2verts_onto[i];
     LO const v_key = keys2verts[i];
@@ -163,12 +167,17 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
       if ((oldvert_gdim[v_key] == dim) && (oldvert_gdim[v_onto] == dim)) {
         atomic_increment(&count_interior_dualCone_cavities[0]);
+        for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
+          LO const f = old_vf2f[vf];
+          face_dualCone[f] = 1;
+        }
       }
     }
   };
   parallel_for(keys2prods.size()-1, std::move(count_dualCone_cav));
   printf("total nkeys %d, nkeys in interior %d nkeys with dual cone cavities %d, %d in interior\n", keys2prods.size()-1, 
       count_interior_cavities[0], count_dualCone_cavities[0], count_interior_dualCone_cavities[0]);
+  mesh->add_tag<I8>(2, "face_dualCone", 1, Read<I8>(face_dualCone));
 
   if (dim == 3) {
     auto v2t = mesh->ask_up(0, 3);

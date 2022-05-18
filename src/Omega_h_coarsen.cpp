@@ -193,6 +193,11 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
             old_ents2new_ents, prods2new_ents, old_verts2new_verts,
             keys2verts, keys2verts_onto, keys2prods);
       }
+      auto cubic_cavityMesh = Mesh(mesh->comm()->library());
+      cubic_cavityMesh.set_comm(comm);
+      build_cubic_cavities_3d(mesh, &cubic_cavityMesh, 10);
+      std::string vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_old_cavities.vtu";
+      vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_cavityMesh, 2);
     }
 
     //3. transfer faces (copy same and new at centroid
