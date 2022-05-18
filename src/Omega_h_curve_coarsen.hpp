@@ -159,18 +159,17 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto count_dualCone_cav = OMEGA_H_LAMBDA(LO i) {
     LO const v_onto = keys2verts_onto[i];
     LO const v_key = keys2verts[i];
+    for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
+      LO const f = old_vf2f[vf];
+      face_dualCone[f] = 1;
+    }
     if ((oldvert_gdim[v_key] == dim) && (oldvert_gdim[v_onto] == dim)) {
       atomic_increment(&count_interior_cavities[0]);
     }
     if ((keys2prods[i+1] - keys2prods[i]) == 1) {
       atomic_increment(&count_dualCone_cavities[0]);
-
       if ((oldvert_gdim[v_key] == dim) && (oldvert_gdim[v_onto] == dim)) {
         atomic_increment(&count_interior_dualCone_cavities[0]);
-        for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
-          LO const f = old_vf2f[vf];
-          face_dualCone[f] = 1;
-        }
       }
     }
   };
@@ -510,10 +509,6 @@ OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
     v[1] = Bi(3, 3, xv);
     v[2] = Bi(3, 1, xv);
     v[3] = Bi(3, 2, xv);
-    for (LO j = 0; j < 4; ++j) {
-      printf("i %d, j %d, xv %f, v %f\n", i, j, xv, v[j]);
-    }
-    printf("\n");
 
     for (LO j = 0; j < 2; ++j)
       values[tev[i*2 + j]] += v[j]*std::pow(x, b);
@@ -575,10 +570,6 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     face_xi[1] = 1.0/3.0;
     face_xi[2] = 1.0/3.0;
     auto const weights = BlendedTriangleGetValues(face_xi, 1);
-    for (LO j = 0; j < weights.size(); ++j) {
-      printf("weights[%d] = %f\n", j, weights[j]);
-    }
-    std::cout<<"\n";
     auto edge_dualCone = new_mesh->get_array<I8>(1, "edge_dualCone");
     auto const e2et = new_mesh->ask_up(1, 2).a2ab;
     auto const et2t = new_mesh->ask_up(1, 2).ab2b;
