@@ -412,7 +412,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   return;
 }
 
-OMEGA_H_INLINE Few<Real, 10> BlendedTriangleGetValues(
+static Few<Real, 10> const BlendedTriangleGetValues(
     Vector<3> const xi, LO b) {
   Few<Real, 10> values;
   Real const blendingTol = 1.e-12;
