@@ -100,8 +100,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const old_v2ve = old_v2e.a2ab;
   auto const old_ve2e = old_v2e.ab2b;
   auto vert_ctrlPts_r = Reals(vert_ctrlPts);
-  //auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
-    //                                               nnew_verts);
 
   auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO v_key = keys2verts[i];
@@ -120,8 +118,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           auto c3 = get_vector<dim>(vert_ctrlPts_r, new_edge_v1);
           Vector<dim> c1;
           Vector<dim> c2;
-          //Vector<dim> p1;
-          //Vector<dim> p2;
           auto old_p1 = get_vector<dim>(old_vertCtrlPts, v_key);
           Real xi_1 = 0.5;
           Real sum_dist1 = 0.0;
@@ -209,7 +205,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     parallel_for(nold_edges, std::move(calc_tangents));
 
     auto curve_dualCone_cav = OMEGA_H_LAMBDA (LO i) {
-    //for (LO i = 0; i < nkeys; ++i) 
       if ((keys2prods[i+1] - keys2prods[i]) == 1) {
         LO const v_onto = keys2verts_onto[i];
         LO const v_key = keys2verts[i];
@@ -281,24 +276,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           Real length_t = 0.0;
           for (LO d = 0; d < dim; ++d) length_t += t_avg[d]*t_avg[d]; 
           for (LO d = 0; d < dim; ++d) t_avg[d] = t_avg[d]/std::sqrt(length_t);
-          /*
-          for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
-            if (from_first_vtx[upper_e] == 1) {
-              printf("upper_e %d cosTheta %f\n",
-                  upper_edges[upper_e], 
-                  tangents[upper_edges[upper_e]*2*dim + 0]*t_avg[0] +
-                  tangents[upper_edges[upper_e]*2*dim + 1]*t_avg[1] +
-                  tangents[upper_edges[upper_e]*2*dim + 2]*t_avg[2]);
-            }
-            if (from_first_vtx[upper_e] == -1) {
-              printf("upper_e %d cosTheta %f\n",
-                  upper_edges[upper_e], 
-                  tangents[upper_edges[upper_e]*2*dim + 0]*t_avg[0] +
-                  tangents[upper_edges[upper_e]*2*dim + 1]*t_avg[1] +
-                  tangents[upper_edges[upper_e]*2*dim + 2]*t_avg[2]);
-            }
-          }
-          */
 
           //find lower vtx
           LO v_lower = -1;
@@ -326,9 +303,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               }
             }
           }
-
-          //printf("v_lower {%f,%f,%f}\n",
-           // old_coords[v_lower*dim + 0], old_coords[v_lower*dim + 1], old_coords[v_lower*dim + 2]);
 
           Few<LO, 128> lower_edges;
           Few<I8, 128> from_first_vtx_low;
@@ -398,25 +372,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             c_upper[d] = old_coords[v_onto*dim + d] + t_avg[d]*new_length/3.0;
             c_lower[d] = old_coords[v_lower*dim + d] + t_avg_l[d]*new_length/3.0;
           }
-
-          /*
-          for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
-            if (from_first_vtx_low[lower_e] == 1) {
-              printf("lower_e %d cosTheta %f\n",
-                  lower_edges[lower_e], 
-                  tangents[lower_edges[lower_e]*2*dim + 0]*t_avg_l[0] +
-                  tangents[lower_edges[lower_e]*2*dim + 1]*t_avg_l[1] +
-                  tangents[lower_edges[lower_e]*2*dim + 2]*t_avg_l[2]);
-            }
-            if (from_first_vtx_low[lower_e] == -1) {
-              printf("lower_e %d cosTheta %f\n",
-                  lower_edges[lower_e], 
-                  tangents[lower_edges[lower_e]*2*dim + 0]*t_avg_l[0] +
-                  tangents[lower_edges[lower_e]*2*dim + 1]*t_avg_l[1] +
-                  tangents[lower_edges[lower_e]*2*dim + 2]*t_avg_l[2]);
-            }
-          }
-          */
 
           //check for new edge, first vertex is vlower or vupper
           LO v_onto_is_first = -1;
