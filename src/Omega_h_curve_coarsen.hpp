@@ -187,9 +187,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     auto ve2e = v2e.ab2b;
     auto te2e = mesh->ask_down(3, 1).ab2b;
     auto ev2v = mesh->get_adj(1, 0).ab2b;
-    std::ofstream edge_file;
-    edge_file.open("edges.csv");
-    edge_file << "x,y,z\n";
  
     // for every edge, calc and store 2 tangents from either vertex
     Write<Real> tangents(nold_edges*2*dim, 0);
@@ -211,8 +208,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     };
     parallel_for(nold_edges, std::move(calc_tangents));
 
-    //auto curve_dualCone_cav = OMEGA_H_LAMBDA (LO i) {
-    for (LO i = 0; i < nkeys; ++i) {
+    auto curve_dualCone_cav = OMEGA_H_LAMBDA (LO i) {
+    //for (LO i = 0; i < nkeys; ++i) 
       if ((keys2prods[i+1] - keys2prods[i]) == 1) {
         LO const v_onto = keys2verts_onto[i];
         LO const v_key = keys2verts[i];
@@ -447,22 +444,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_upper[d];
             }
           }
-          edge_file << new_edge_v0_c[0] << ", " << new_edge_v0_c[1] << ", " << new_edge_v0_c[2] << "\n";
-          edge_file << new_edge_v1_c[0] << ", " << new_edge_v1_c[1] << ", " << new_edge_v1_c[2] << "\n";
-          edge_file << edge_ctrlPts[new_edge*n_edge_pts*dim + 0] << ", " << 
-                       edge_ctrlPts[new_edge*n_edge_pts*dim + 1] << ", " <<
-                       edge_ctrlPts[new_edge*n_edge_pts*dim + 2] << "\n";
-          edge_file << edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] << ", " <<
-                       edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] << ", " <<
-                       edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] << "\n";
-                //);
-          //printf("new_edge_v0 {%f,%f,%f}, v1 {%f,%f,%f}, c0{%f, %f, %f}, c1{%f, %f, %f}\n",
         }
       }
-    }
-    //};
-    //parallel_for(nkeys, std::move(curve_dualCone_cav), "curve_dualCone_cav");
-    edge_file.close();
+    };
+    parallel_for(nkeys, std::move(curve_dualCone_cav), "curve_dualCone_cav");
   }
 
   new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim, Reals(edge_ctrlPts));
