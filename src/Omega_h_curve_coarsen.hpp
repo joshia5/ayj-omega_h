@@ -108,9 +108,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
         LO new_edge = prods2new[prod];
         if ((newedge_gdim[new_edge] <= 1)) {
-          if (newedge_gdim[new_edge] == 2) {
+          //if (newedge_gdim[new_edge] == 2) {
             edge_crvtoBdryFace[new_edge] = 1;
-          }
+          //}
           auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
           auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
 
