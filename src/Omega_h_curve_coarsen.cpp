@@ -41,10 +41,9 @@ void correct_curved_edges(Mesh *new_mesh) {
     }
   };
   parallel_for(nnew_edge, std::move(edge_correct), "edge_correct");
-  //pfor over all edges
+  //pfor over all edges using curved to bdry algo
   //if it was curved before, check validity of all its adjacent tets
-  //  if any adjacent tet is invalid, straighten this edge
-  //else keep pts as is
+  //if any adjacent tet is invalid, print out error
   return;
 }
 void check_validity_new_curved_edges(Mesh *new_mesh) {
@@ -84,7 +83,7 @@ void check_validity_new_curved_edges(Mesh *new_mesh) {
     }
   };
   parallel_for(nnew_edge, std::move(edge_correct), "edge_correct");
-  //pfor over all edges
+  //pfor over all edges of dual cone cav
   //check validity of all its adjacent tets
   return;
 }
