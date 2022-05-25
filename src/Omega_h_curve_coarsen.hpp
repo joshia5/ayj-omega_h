@@ -104,10 +104,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO v_key = keys2verts[i];
     LO v_onto = keys2verts_onto[i];
-    if ((oldvert_gdim[v_key] <= (dim-1)) && (oldvert_gdim[v_onto] <= (dim-1))) {
+    if ((oldvert_gdim[v_key] <= 1) && (oldvert_gdim[v_onto] <= 1)) {
       for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
         LO new_edge = prods2new[prod];
-        if ((newedge_gdim[new_edge] <= (dim-1))) {
+        if ((newedge_gdim[new_edge] <= 1)) {
           if (newedge_gdim[new_edge] == 2) {
             edge_crvtoBdryFace[new_edge] = 1;
           }
@@ -144,7 +144,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       }
     }
   };
-  //parallel_for(keys2verts.size(), std::move(curve_bdry_edges));
+  parallel_for(keys2verts.size(), std::move(curve_bdry_edges));
 
   Write<LO> count_dualCone_cavities(1, 0);
   Write<LO> count_interior_dualCone_cavities(1, 0);
