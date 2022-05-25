@@ -201,7 +201,7 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
     }
     //correction of curve if edges were attempted to curve after newmesh created
     if ((ent_dim == 3) && (mesh->is_curved() > 0)) {
-      //correct_curved_edges(&new_mesh);
+      correct_curved_edges(&new_mesh);
       check_validity_new_curved_edges(&new_mesh);
     }
 

@@ -37,7 +37,7 @@ void correct_curved_edges(Mesh *new_mesh) {
 
         has_invalid_tet = checkMinJacDet_3d(nodes_det, n_edge_pts+1);
         if (has_invalid_tet > 0) {
-          printf(" correcting invalid tet %d\n", adj_tet);
+          printf(" correcting invalid tet %d for bdry edge %d\n", adj_tet, i);
           auto v0 = new_ev2v[i*2 + 0];
           auto v1 = new_ev2v[i*2 + 1];
           for (LO j=0; j<dim; ++j) {
