@@ -41,7 +41,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const nnew_verts = new_mesh->nverts();
 
   Write<Real> edge_ctrlPts(nnew_edge*n_edge_pts*dim, INT8_MAX);
-  Write<I8> edge_crvtoBdryFace(nnew_edge, -1);
+  Write<I8> edge_crvto_bdry_edge(nnew_edge, -1);
   Write<I8> edge_dualCone(nnew_edge, -1);
   Write<Real> vert_ctrlPts(nnew_verts*1*dim, INT8_MAX);
 
@@ -108,9 +108,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
         LO new_edge = prods2new[prod];
         if ((newedge_gdim[new_edge] <= 1)) {
-          //if (newedge_gdim[new_edge] == 2) {
-            edge_crvtoBdryFace[new_edge] = 1;
-          //}
+          edge_crvto_bdry_edge[new_edge] = 1;
           auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
           auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
 
@@ -406,7 +404,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   }
 
   new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim, Reals(edge_ctrlPts));
-  new_mesh->add_tag<I8>(1, "edge_crvtoBdryFace", 1, Read<I8>(edge_crvtoBdryFace));
+  new_mesh->add_tag<I8>(1, "edge_crvto_bdry_edge", 1, Read<I8>(edge_crvto_bdry_edge));
   new_mesh->add_tag<I8>(1, "edge_dualCone", 1, Read<I8>(edge_dualCone));
 
   return;
