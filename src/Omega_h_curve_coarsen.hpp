@@ -105,9 +105,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
   auto new_verts2same_verts = invert_map_by_atomics(same_verts2new_verts,
 						    nnew_verts);
-//test inversion by printing out coords
-//to get new_verts2old_verts, invert same2new to get new2same, query same id for
-//new_v, then query same2oldv[same];
+  auto const a2ab = new_verts2same_verts.a2ab;
+  auto const ab2b = new_verts2same_verts.ab2b;
   printf("nsame nnew verts %d, %d\n", same_verts2old_verts.size(), nnew_verts);
 
   auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
@@ -147,9 +146,13 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 	}
       }
 
-      if (newedge_gdim[new_edge] == 2) {
+      if ((dim == 3) && (newedge_gdim[new_edge] == 2)) {
         LO const g_face = newedge_gid[new_edge]; 
-        LO const new_edge_v0_old = same_verts2old_verts[new_verts2same_verts[new_edge_v0]];
+        LO const new_edge_v0_old = ab2b[a2ab[new_edge_v0]];
+        LO const new_edge_v1_old = ab2b[a2ab[new_edge_v1]];
+        //TODO test inversion by printing out coords
+        //to get new_verts2old_verts, invert same2new to get new2same, query same id for
+        //new_v, then query same2oldv[same];
         for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
           LO const f = old_vf2f[vf];
           face_dualCone[f] = 1;
