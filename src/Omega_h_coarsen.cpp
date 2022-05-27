@@ -172,6 +172,7 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
     }
     transfer_coarsen(mesh, opts.xfer_opts, &new_mesh, keys2verts, keys2doms,
         ent_dim, prods2new_ents, same_ents2old_ents, same_ents2new_ents);
+
     if (mesh->is_curved() > 0) {
       if (mesh->dim() == 2) {
         if (ent_dim == EDGE) {

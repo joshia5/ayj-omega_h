@@ -17,7 +17,7 @@ namespace Omega_h {
 template <Int dim>
 void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     LOs prods2new, LOs old_verts2new_verts, LOs keys2verts, LOs keys2verts_onto,
-    LOs keys2prods) {
+    LOs keys2prods, LOs same_verts2new_verts, LOs same_verts2old_verts) {
   auto const nold_verts = mesh->nverts();
   auto const nold_edges = mesh->nedges();
   auto const nold_faces = mesh->nfaces();
@@ -26,6 +26,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const old_ef2f = mesh->ask_up(1, 2).ab2b;
   auto const old_e2ef = mesh->ask_up(1, 2).a2ab;
   auto const old_fv2v = mesh->ask_down(2, 0).ab2b;
+  auto const old_v2vf = mesh->ask_up(0,2).a2ab;
+  auto const old_vf2f = mesh->ask_up(0,2).ab2b;
   auto const nkeys = keys2verts.size();
   if (!mesh->has_tag(0, "bezier_pts")) {
     mesh->add_tag<Real>(0, "bezier_pts", dim, mesh->coords());
@@ -73,8 +75,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       "copy_same_edgectrlPts");
   auto prod_edge_points = OMEGA_H_LAMBDA(LO i) {
     LO e = prods2new[i];
-    auto v0 = new_ev2v[e*2 + 0];
-    auto v1 = new_ev2v[e*2 + 1];
+    auto const v0 = new_ev2v[e*2 + 0];
+    auto const v1 = new_ev2v[e*2 + 1];
     for (LO j=0; j<dim; ++j) {
       edge_ctrlPts[e*n_edge_pts*dim + j] = new_coords[v0*dim + j] +
           (new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_1_cube();
@@ -85,17 +87,17 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   parallel_for(prods2new.size(), std::move(prod_edge_points),
       "prod_edge_points");
 
-  auto newedge_gdim = new_mesh->get_array<I8>(1, "class_dim");
-  auto newedge_gid = new_mesh->get_array<LO>(1, "class_id");
-  auto oldvert_gdim = mesh->get_array<I8>(0, "class_dim");
-  auto oldvert_gid = mesh->get_array<LO>(0, "class_id");
+  auto const newedge_gdim = new_mesh->get_array<I8>(1, "class_dim");
+  auto const newedge_gid = new_mesh->get_array<LO>(1, "class_id");
+  auto const oldvert_gdim = mesh->get_array<I8>(0, "class_dim");
+  auto const oldvert_gid = mesh->get_array<LO>(0, "class_id");
 
-  auto v2v_old = mesh->ask_star(0);
-  auto v2vv_old = v2v_old.a2ab;
-  auto vv2v_old = v2v_old.ab2b;
-  auto v2v_new = new_mesh->ask_star(0);
-  auto v2vv_new = v2v_new.a2ab;
-  auto vv2v_new = v2v_new.ab2b;
+  auto const v2v_old = mesh->ask_star(0);
+  auto const v2vv_old = v2v_old.a2ab;
+  auto const vv2v_old = v2v_old.ab2b;
+  auto const v2v_new = new_mesh->ask_star(0);
+  auto const v2vv_new = v2v_new.a2ab;
+  auto const vv2v_new = v2v_new.ab2b;
   auto const old_v2e = mesh->ask_up(0, 1);
   auto const old_v2ve = old_v2e.a2ab;
   auto const old_ve2e = old_v2e.ab2b;
@@ -106,16 +108,17 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 //test inversion by printing out coords
 //to get new_verts2old_verts, invert same2new to get new2same, query same id for
 //new_v, then query same2oldv[same];
+  printf("nsame nnew verts %d, %d\n", same_verts2old_verts.size(), nnew_verts);
 
   auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
-    LO v_key = keys2verts[i];
-    LO v_onto = keys2verts_onto[i];
+    LO const v_key = keys2verts[i];
+    LO const v_onto = keys2verts_onto[i];
     for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
       LO new_edge = prods2new[prod];
-      auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
-      auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
-      auto c0 = get_vector<dim>(vert_ctrlPts_r, new_edge_v0);
-      auto c3 = get_vector<dim>(vert_ctrlPts_r, new_edge_v1);
+      LO const new_edge_v0 = new_ev2v[new_edge*2 + 0];
+      LO const new_edge_v1 = new_ev2v[new_edge*2 + 1];
+      auto const c0 = get_vector<dim>(vert_ctrlPts_r, new_edge_v0);
+      auto const c3 = get_vector<dim>(vert_ctrlPts_r, new_edge_v1);
 
       if ((oldvert_gdim[v_key] <= 1) && (oldvert_gdim[v_onto] <= 1) && (newedge_gdim[new_edge] == 1)) {
 	edge_crv2bdry_dim[new_edge] = 1;
@@ -131,7 +134,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 	}
 	sum_dist1 = std::sqrt(sum_dist1/(dim*1.0));
 	sum_dist2 = std::sqrt(sum_dist2/(dim*1.0));
-	xi_1 = sum_dist1/(sum_dist1+sum_dist2);
+	xi_1 = sum_dist1/(sum_dist1 + sum_dist2);
 	Vector<dim> old_c1;
 	for (Int j = 0; j < dim; ++j) {
 	  old_c1[j] = (old_p1[j] - B0_quad(xi_1)*c0[j] - B2_quad(xi_1)*c3[j])/B1_quad(xi_1);
@@ -145,6 +148,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       }
 
       if (newedge_gdim[new_edge] == 2) {
+        LO const g_face = newedge_gid[new_edge]; 
+        LO const new_edge_v0_old = same_verts2old_verts[new_verts2same_verts[new_edge_v0]];
+        for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
+          LO const f = old_vf2f[vf];
+          face_dualCone[f] = 1;
+        }
       }
     }
   };
@@ -153,8 +162,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   Write<LO> count_dualCone_cavities(1, 0);
   Write<LO> count_interior_dualCone_cavities(1, 0);
   Write<LO> count_interior_cavities(1, 0);
-  auto const old_v2vf = mesh->ask_up(0,2).a2ab;
-  auto const old_vf2f = mesh->ask_up(0,2).ab2b;
   Write<I8> face_dualCone(nold_faces, -1);
   auto count_dualCone_cav = OMEGA_H_LAMBDA(LO i) {
     LO const v_onto = keys2verts_onto[i];
