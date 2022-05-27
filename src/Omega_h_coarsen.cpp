@@ -142,6 +142,8 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
   auto keys2verts_onto = get_verts_onto(mesh, rails2edges, rail_col_dirs);
   auto new_mesh = mesh->copy_meta();
   auto old_verts2new_verts = LOs();
+  auto same_verts2new_verts = LOs();
+  auto same_verts2old_verts = LOs();
   auto old_lows2new_lows = LOs();
   for (Int ent_dim = 0; ent_dim <= mesh->dim(); ++ent_dim) {
     auto keys2prods = LOs();
@@ -165,44 +167,46 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
         &same_ents2old_ents, &same_ents2new_ents, &old_ents2new_ents);
     if (ent_dim == VERT) {
       old_verts2new_verts = old_ents2new_ents;
+      same_verts2new_verts = same_ents2new_ents;
+      same_verts2old_verts = same_ents2old_ents;
     }
     transfer_coarsen(mesh, opts.xfer_opts, &new_mesh, keys2verts, keys2doms,
         ent_dim, prods2new_ents, same_ents2old_ents, same_ents2new_ents);
-    if ((ent_dim == EDGE) && (mesh->is_curved() > 0)) {
+    if (mesh->is_curved() > 0) {
       if (mesh->dim() == 2) {
-        //1. tranfer verts (same)
-        //2. transfer edges (copy same and new are straight)
+        if (ent_dim == EDGE) {
         coarsen_curved_verts_and_edges<2>(mesh, &new_mesh,
             old_ents2new_ents, prods2new_ents, old_verts2new_verts,
-            keys2verts, keys2verts_onto, keys2prods);
+            keys2verts, keys2verts_onto, keys2prods, same_verts2new_verts,
+            same_verts2old_verts);
+        }
+        if (ent_dim == FACE) {
+          coarsen_curved_faces<2>(mesh, &new_mesh, old_ents2new_ents,
+                                  prods2new_ents);
+        }
       }
       if (mesh->dim() == 3) {
-        coarsen_curved_verts_and_edges<3>(mesh, &new_mesh,
+        if (ent_dim == EDGE) {
+          coarsen_curved_verts_and_edges<3>(mesh, &new_mesh,
             old_ents2new_ents, prods2new_ents, old_verts2new_verts,
-            keys2verts, keys2verts_onto, keys2prods);
+            keys2verts, keys2verts_onto, keys2prods, same_verts2new_verts,
+            same_verts2old_verts);
+        }
+        if (ent_dim == FACE) {
+          coarsen_curved_faces<3>(mesh, &new_mesh, old_ents2new_ents,
+                                  prods2new_ents);
+        }
+        //correction of invalid edges that were attempted to curve after newmesh created
+        if (ent_dim == REGION) {
+          correct_curved_edges(&new_mesh);
+          check_validity_new_curved_edges(&new_mesh);
+        }
       }
       auto cubic_cavityMesh = Mesh(mesh->comm()->library());
       cubic_cavityMesh.set_comm(comm);
       build_cubic_cavities_3d(mesh, &cubic_cavityMesh, 10);
       std::string vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_old_cavities.vtu";
       vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_cavityMesh, 2);
-    }
-
-    //3. transfer faces (copy same and new at centroid
-    if ((ent_dim == FACE) && (mesh->is_curved() > 0)) {
-      if (mesh->dim() == 2) {
-        coarsen_curved_faces<2>(mesh, &new_mesh, old_ents2new_ents,
-            prods2new_ents);
-      }
-      if (mesh->dim() == 3) {
-        coarsen_curved_faces<3>(mesh, &new_mesh, old_ents2new_ents,
-            prods2new_ents);
-      }
-    }
-    //correction of curve if edges were attempted to curve after newmesh created
-    if ((ent_dim == 3) && (mesh->is_curved() > 0)) {
-      correct_curved_edges(&new_mesh);
-      check_validity_new_curved_edges(&new_mesh);
     }
 
     old_lows2new_lows = old_ents2new_ents;
