@@ -6,7 +6,7 @@ namespace Omega_h {
 
 void correct_curved_edges(Mesh *new_mesh) {
 
-  auto const edge_crvto_bdry_edge = new_mesh->get_array<I8>(1, "edge_crvto_bdry_edge");
+  auto const edge_crv2bdry_dim = new_mesh->get_array<I8>(1, "edge_crv2bdry_dim");
   auto const new_rv2v = new_mesh->ask_down(3, 0).ab2b;
   auto const new_re2e = new_mesh->ask_down(3, 1).ab2b;
   auto const new_rf2f = new_mesh->ask_down(3, 2).ab2b;
@@ -24,7 +24,7 @@ void correct_curved_edges(Mesh *new_mesh) {
 
   auto edge_correct = OMEGA_H_LAMBDA(LO i) {
     LO has_invalid_tet = -1;
-    if (edge_crvto_bdry_edge[i] == 1) {
+    if (edge_crv2bdry_dim[i] == 1) {
       for (LO er = new_e2er[i]; er < new_e2er[i+1]; ++er) {
         if (has_invalid_tet > 0) break;
         LO adj_tet = new_er2r[er];

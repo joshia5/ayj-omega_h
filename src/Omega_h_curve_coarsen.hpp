@@ -41,7 +41,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const nnew_verts = new_mesh->nverts();
 
   Write<Real> edge_ctrlPts(nnew_edge*n_edge_pts*dim, INT8_MAX);
-  Write<I8> edge_crvto_bdry_edge(nnew_edge, -1);
+  Write<I8> edge_crv2bdry_dim(nnew_edge, -1);
   Write<I8> edge_dualCone(nnew_edge, -1);
   Write<Real> vert_ctrlPts(nnew_verts*1*dim, INT8_MAX);
 
@@ -104,41 +104,38 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO v_key = keys2verts[i];
     LO v_onto = keys2verts_onto[i];
-    if ((oldvert_gdim[v_key] <= 1) && (oldvert_gdim[v_onto] <= 1)) {
-      for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
-        LO new_edge = prods2new[prod];
-        if ((newedge_gdim[new_edge] <= 1)) {
-          edge_crvto_bdry_edge[new_edge] = 1;
-          auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
-          auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
+    for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
+      LO new_edge = prods2new[prod];
 
-          auto c0 = get_vector<dim>(vert_ctrlPts_r, new_edge_v0);
-          auto c3 = get_vector<dim>(vert_ctrlPts_r, new_edge_v1);
-          Vector<dim> c1;
-          Vector<dim> c2;
-          auto old_p1 = get_vector<dim>(old_vertCtrlPts, v_key);
-          Real xi_1 = 0.5;
-          Real sum_dist1 = 0.0;
-          Real sum_dist2 = 0.0;
-          for (Int j = 0; j < dim; ++j) {
-            sum_dist1 += (old_p1[j] - c0[j])*(old_p1[j] - c0[j]);
-            sum_dist2 += (old_p1[j] - c3[j])*(old_p1[j] - c3[j]);
-          }
-          sum_dist1 = std::sqrt(sum_dist1/(dim*1.0));
-          sum_dist2 = std::sqrt(sum_dist2/(dim*1.0));
-          xi_1 = sum_dist1/(sum_dist1+sum_dist2);
-          Vector<dim> old_c1;
-          for (Int j = 0; j < dim; ++j) {
-            old_c1[j] = (old_p1[j] - B0_quad(xi_1)*c0[j] - B2_quad(xi_1)*c3[j])/B1_quad(xi_1);
-          }
-          for (LO d = 0; d < dim; ++d) {
-            c1[d] = (1.0/3.0)*c0[d] + (2.0/3.0)*old_c1[d];
-            c2[d] = (2.0/3.0)*old_c1[d] + (1.0/3.0)*c3[d];
-            edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c1[d];
-            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c2[d];
-          }
-          break;
-        }
+      if ((oldvert_gdim[v_key] <= 1) && (oldvert_gdim[v_onto] <= 1) && (newedge_gdim[new_edge] == 1)) {
+	edge_crv2bdry_dim[new_edge] = 1;
+	auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
+	auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
+	auto c0 = get_vector<dim>(vert_ctrlPts_r, new_edge_v0);
+	auto c3 = get_vector<dim>(vert_ctrlPts_r, new_edge_v1);
+	Vector<dim> c1;
+	Vector<dim> c2;
+	auto old_p1 = get_vector<dim>(old_vertCtrlPts, v_key);
+	Real xi_1 = 0.5;
+	Real sum_dist1 = 0.0;
+	Real sum_dist2 = 0.0;
+	for (Int j = 0; j < dim; ++j) {
+	  sum_dist1 += (old_p1[j] - c0[j])*(old_p1[j] - c0[j]);
+	  sum_dist2 += (old_p1[j] - c3[j])*(old_p1[j] - c3[j]);
+	}
+	sum_dist1 = std::sqrt(sum_dist1/(dim*1.0));
+	sum_dist2 = std::sqrt(sum_dist2/(dim*1.0));
+	xi_1 = sum_dist1/(sum_dist1+sum_dist2);
+	Vector<dim> old_c1;
+	for (Int j = 0; j < dim; ++j) {
+	  old_c1[j] = (old_p1[j] - B0_quad(xi_1)*c0[j] - B2_quad(xi_1)*c3[j])/B1_quad(xi_1);
+	}
+	for (LO d = 0; d < dim; ++d) {
+	  c1[d] = (1.0/3.0)*c0[d] + (2.0/3.0)*old_c1[d];
+	  c2[d] = (2.0/3.0)*old_c1[d] + (1.0/3.0)*c3[d];
+	  edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c1[d];
+	  edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c2[d];
+	}
       }
     }
   };
@@ -404,7 +401,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   }
 
   new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim, Reals(edge_ctrlPts));
-  new_mesh->add_tag<I8>(1, "edge_crvto_bdry_edge", 1, Read<I8>(edge_crvto_bdry_edge));
+  new_mesh->add_tag<I8>(1, "edge_crv2bdry_dim", 1, Read<I8>(edge_crv2bdry_dim));
   new_mesh->add_tag<I8>(1, "edge_dualCone", 1, Read<I8>(edge_dualCone));
 
   return;
