@@ -101,6 +101,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const old_ve2e = old_v2e.ab2b;
   auto vert_ctrlPts_r = Reals(vert_ctrlPts);
 
+  auto new_verts2same_verts = invert_map_by_atomics(same_verts2new_verts,
+						    nnew_verts);
+//test inversion by printing out coords
+//to get new_verts2old_verts, invert same2new to get new2same, query same id for
+//new_v, then query same2oldv[same];
+
   auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO v_key = keys2verts[i];
     LO v_onto = keys2verts_onto[i];
