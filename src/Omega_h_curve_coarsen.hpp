@@ -106,13 +106,13 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     LO v_onto = keys2verts_onto[i];
     for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
       LO new_edge = prods2new[prod];
+      auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
+      auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
+      auto c0 = get_vector<dim>(vert_ctrlPts_r, new_edge_v0);
+      auto c3 = get_vector<dim>(vert_ctrlPts_r, new_edge_v1);
 
       if ((oldvert_gdim[v_key] <= 1) && (oldvert_gdim[v_onto] <= 1) && (newedge_gdim[new_edge] == 1)) {
 	edge_crv2bdry_dim[new_edge] = 1;
-	auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
-	auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
-	auto c0 = get_vector<dim>(vert_ctrlPts_r, new_edge_v0);
-	auto c3 = get_vector<dim>(vert_ctrlPts_r, new_edge_v1);
 	Vector<dim> c1;
 	Vector<dim> c2;
 	auto old_p1 = get_vector<dim>(old_vertCtrlPts, v_key);
@@ -136,6 +136,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 	  edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c1[d];
 	  edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c2[d];
 	}
+      }
+
+      if (newedge_gdim[new_edge] == 2) {
       }
     }
   };
