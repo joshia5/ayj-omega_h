@@ -436,8 +436,8 @@ int main(int argc, char** argv) {
   //test_quadratic_tet_validity(&lib);
   //test_Kova_validity(&lib);
   //test_cubic_tet_validity(&lib);
-  //test_collapse_kova(&lib);
-  test_collapse_boxCircle(&lib);
+  test_collapse_kova(&lib);
+  //test_collapse_boxCircle(&lib);
   //test_collapse_cubicSlab(&lib);
   //test_antenna(&lib);
 
