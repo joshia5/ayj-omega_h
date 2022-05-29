@@ -120,11 +120,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       LO const new_edge_v1 = new_ev2v[new_edge*2 + 1];
       auto const c0 = get_vector<dim>(vert_ctrlPts_r, new_edge_v0);
       auto const c3 = get_vector<dim>(vert_ctrlPts_r, new_edge_v1);
+      Vector<dim> c1;
+      Vector<dim> c2;
 
-      if ((oldvert_gdim[v_key] <= 1) && (oldvert_gdim[v_onto] <= 1) && (newedge_gdim[new_edge] == 1)) {
+      if ((oldvert_gdim[v_key] <= 1) && (oldvert_gdim[v_onto] <= 1) &&
+          (newedge_gdim[new_edge] == 1)) {
 	edge_crv2bdry_dim[new_edge] = 1;
-	Vector<dim> c1;
-	Vector<dim> c2;
 	auto old_p1 = get_vector<dim>(old_vertCtrlPts, v_key);
 	Real xi_1 = 0.5;
 	Real sum_dist1 = 0.0;
@@ -138,32 +139,44 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 	xi_1 = sum_dist1/(sum_dist1 + sum_dist2);
 	Vector<dim> old_c1;
 	for (Int j = 0; j < dim; ++j) {
-	  old_c1[j] = (old_p1[j] - B0_quad(xi_1)*c0[j] - B2_quad(xi_1)*c3[j])/B1_quad(xi_1);
+	  old_c1[j] = (old_p1[j] - B0_quad(xi_1)*c0[j] - 
+                       B2_quad(xi_1)*c3[j])/B1_quad(xi_1);
 	}
 	for (LO d = 0; d < dim; ++d) {
 	  c1[d] = (1.0/3.0)*c0[d] + (2.0/3.0)*old_c1[d];
 	  c2[d] = (2.0/3.0)*old_c1[d] + (1.0/3.0)*c3[d];
-	  edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c1[d];
-	  edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c2[d];
 	}
       }
 
       if ((dim == 3) && (newedge_gdim[new_edge] == 2)) {
         LO const e_g_face = newedge_gid[new_edge]; 
-        LO const new_edge_v0_old = ab2b[a2ab[new_edge_v0]];
-        LO const new_edge_v1_old = ab2b[a2ab[new_edge_v1]];
+        LO const new_edge_v0_old = same_verts2old_verts[ab2b[a2ab[new_edge_v0]]];
+        LO const new_edge_v1_old = same_verts2old_verts[ab2b[a2ab[new_edge_v1]]];
+        LO c1_face, c2_face = -1;
+	auto c0_old = get_vector<dim>(old_vertCtrlPts, new_edge_v0_old);
+	auto c3_old = get_vector<dim>(old_vertCtrlPts, new_edge_v1_old);
         printf("new v0 coords {%f,%f,%f}\n", c0[0], c0[1], c0[2]);
-        auto const c0_old = get_vector<dim>(old_vertCtrlPts, new_edge_v0_old);
-        printf("old v0 coords {%f,%f,%f} oldv1 %d\n", c0_old[0], c0_old[1], c0_old[2], new_edge_v1_old);
-        //TODO test inversion by printing out coords
-        //to get new_verts2old_verts, invert same2new to get new2same, query same id for
-        //new_v, then query same2oldv[same];
+        printf("old v0 coords {%f,%f,%f}\n", c0_old[0], c0_old[1], c0_old[2]);
+        printf("new v1 coords {%f,%f,%f}\n", c3[0], c3[1], c3[2]);
+        printf("old v1 coords {%f,%f,%f}\n", c3_old[0], c3_old[1], c3_old[2]);
+
         for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
           LO const f = old_vf2f[vf];
           if ((oldface_gdim[f] == 2) && (oldface_gid[f] == e_g_face)) {
-            //this face is class on same model face as collapsing edge
+            //this face is class. on same model face as collapsing edge
+            //now one of the verts is v0 then c1 face or v1 then c2 face
+            for (LO k = 0; k < 2; ++k) {
+              if (old_fv2v[f*3 + k] == new_edge_v0_old) c1_face = f;
+              else if (old_fv2v[f*3 + k] == new_edge_v1_old) c2_face = f;
+              else {}
+            }
+            printf("%d %d \n", c1_face, c2_face);
           }
         }
+      }
+      for (LO d = 0; d < dim; ++d) {
+        edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c1[d];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c2[d];
       }
     }
   };
