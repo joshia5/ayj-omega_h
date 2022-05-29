@@ -91,6 +91,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const newedge_gid = new_mesh->get_array<LO>(1, "class_id");
   auto const oldvert_gdim = mesh->get_array<I8>(0, "class_dim");
   auto const oldvert_gid = mesh->get_array<LO>(0, "class_id");
+  auto const oldface_gdim = mesh->get_array<I8>(2, "class_dim");
+  auto const oldface_gid = mesh->get_array<LO>(2, "class_id");
 
   auto const v2v_old = mesh->ask_star(0);
   auto const v2vv_old = v2v_old.a2ab;
@@ -147,15 +149,20 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       }
 
       if ((dim == 3) && (newedge_gdim[new_edge] == 2)) {
-        LO const g_face = newedge_gid[new_edge]; 
+        LO const e_g_face = newedge_gid[new_edge]; 
         LO const new_edge_v0_old = ab2b[a2ab[new_edge_v0]];
         LO const new_edge_v1_old = ab2b[a2ab[new_edge_v1]];
+        printf("new v0 coords {%f,%f,%f}\n", c0[0], c0[1], c0[2]);
+        auto const c0_old = get_vector<dim>(old_vertCtrlPts, new_edge_v0_old);
+        printf("old v0 coords {%f,%f,%f} oldv1 %d\n", c0_old[0], c0_old[1], c0_old[2], new_edge_v1_old);
         //TODO test inversion by printing out coords
         //to get new_verts2old_verts, invert same2new to get new2same, query same id for
         //new_v, then query same2oldv[same];
         for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
           LO const f = old_vf2f[vf];
-          face_dualCone[f] = 1;
+          if ((oldface_gdim[f] == 2) && (oldface_gid[f] == e_g_face)) {
+            //this face is class on same model face as collapsing edge
+          }
         }
       }
     }
