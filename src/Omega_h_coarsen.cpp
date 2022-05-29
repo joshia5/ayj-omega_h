@@ -201,13 +201,13 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
         if (ent_dim == REGION) {
           correct_curved_edges(&new_mesh);
           check_validity_new_curved_edges(&new_mesh);
+          auto cubic_cavityMesh = Mesh(mesh->comm()->library());
+          cubic_cavityMesh.set_comm(comm);
+          build_cubic_cavities_3d(mesh, &cubic_cavityMesh, 10);
+          std::string vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_old_cavities.vtu";
+          vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_cavityMesh, 2);
         }
       }
-      auto cubic_cavityMesh = Mesh(mesh->comm()->library());
-      cubic_cavityMesh.set_comm(comm);
-      build_cubic_cavities_3d(mesh, &cubic_cavityMesh, 10);
-      std::string vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_old_cavities.vtu";
-      vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_cavityMesh, 2);
     }
 
     old_lows2new_lows = old_ents2new_ents;
