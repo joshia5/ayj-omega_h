@@ -160,6 +160,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         printf("new v1 coords {%f,%f,%f}\n", c3[0], c3[1], c3[2]);
         printf("old v1 coords {%f,%f,%f}\n", c3_old[0], c3_old[1], c3_old[2]);
 
+        LO count_faces = 0;
         for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
           LO const f = old_vf2f[vf];
           if ((oldface_gdim[f] == 2) && (oldface_gid[f] == e_g_face)) {
@@ -167,11 +168,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             //now one of the verts is v0 then c1 face or v1 then c2 face
             for (LO k = 0; k < 2; ++k) {
               if (old_fv2v[f*3 + k] == new_edge_v0_old) c1_face = f;
-              else if (old_fv2v[f*3 + k] == new_edge_v1_old) c2_face = f;
-              else {}
+              if (old_fv2v[f*3 + k] == new_edge_v1_old) c2_face = f;
             }
-            printf("%d %d \n", c1_face, c2_face);
           }
+        printf("%d %d \n", c1_face, c2_face);
         }
       }
       for (LO d = 0; d < dim; ++d) {
