@@ -14,6 +14,52 @@
 #include <fstream>
 namespace Omega_h {
 
+static Few<Real, 10> const BlendedTriangleGetValues(
+    Vector<3> const xi, LO b) {
+  Few<Real, 10> values;
+  Real const blendingTol = 1.e-12;
+  double xii[3] = {1.-xi[0]-xi[1],xi[0],xi[1]};
+
+  for (LO i = 0; i < 3; ++i)
+    values[i] = -std::pow(xii[i], b);
+  LO const n = 10;//10 nodes per tri
+  for (LO i = 3; i < n; ++i)
+    values[i] = 0.0;
+
+
+  const LO nE = 2;//2 nodes per edge
+  Few<LO, 6> tev;
+  tev[0] = 0;
+  tev[1] = 1;
+  tev[2] = 1;
+  tev[3] = 2;
+  tev[4] = 2;
+  tev[5] = 0;
+
+  for (LO i = 0; i < 3; ++i) {
+    Real x, xiix, xv;
+    Few<Real, 4> v;
+    x = xii[tev[i*2 + 0]] + xii[tev[i*2 + 1]];
+
+    if (x < blendingTol)
+      xiix = 0.5;
+    else
+      xiix = xii[tev[i*2 +1]]/x;
+
+    xv = xiix;
+    v[0] = Bi(3, 0, xv);
+    v[1] = Bi(3, 3, xv);
+    v[2] = Bi(3, 1, xv);
+    v[3] = Bi(3, 2, xv);
+
+    for (LO j = 0; j < 2; ++j)
+      values[tev[i*2 + j]] += v[j]*std::pow(x, b);
+    for (LO j = 0; j < nE; ++j)
+      values[3+i*nE+j] = v[2+j]*std::pow(x, b);
+  }
+  return values;
+}
+
 template <Int dim>
 void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     LOs prods2new, LOs old_verts2new_verts, LOs keys2verts, LOs keys2verts_onto,
@@ -121,6 +167,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       LO const new_edge_v1 = new_ev2v[new_edge*2 + 1];
       auto const c0 = get_vector<dim>(vert_ctrlPts_r, new_edge_v0);
       auto const c3 = get_vector<dim>(vert_ctrlPts_r, new_edge_v1);
+      auto const c_vkey = get_vector<dim>(old_vertCtrlPts, v_key);
+      printf("v_key {%f,%f,%f}\n", c_vkey[0], c_vkey[1], c_vkey[2]);
       Vector<dim> c1;
       Vector<dim> c2;
 
@@ -152,20 +200,28 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       }
 
       if ((dim == 3) && (newedge_gdim[new_edge] == 2)) {
+	edge_crv2bdry_dim[new_edge] = 2;
         LO const e_g_face = newedge_gid[new_edge]; 
         LO const new_edge_v0_old = same_verts2old_verts[ab2b[a2ab[new_edge_v0]]];
         LO const new_edge_v1_old = same_verts2old_verts[ab2b[a2ab[new_edge_v1]]];
-	auto c0_old = get_vector<dim>(old_vertCtrlPts, new_edge_v0_old);
-	auto c3_old = get_vector<dim>(old_vertCtrlPts, new_edge_v1_old);
         printf("new v0 coords {%f,%f,%f}\n", c0[0], c0[1], c0[2]);
-        printf("old v0 coords {%f,%f,%f}\n", c0_old[0], c0_old[1], c0_old[2]);
         printf("new v1 coords {%f,%f,%f}\n", c3[0], c3[1], c3[2]);
-        printf("old v1 coords {%f,%f,%f}\n", c3_old[0], c3_old[1], c3_old[2]);
+        Vector<3> c1, c2;
+        for (LO d = 0; d < dim; ++d) {
+          c1[d] = edge_ctrlPts[new_edge*n_edge_pts*dim + d];
+          c2[d] = edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d];
+	}
 
         LO count_c1_faces = 0;
         Few<LO, 2> c1_faces;
+        Few<Real, 2> c1_dists;
+        c1_dists[0] = 0.0;
+        c1_dists[1] = 0.0;
         LO count_c2_faces = 0;
         Few<LO, 2> c2_faces;
+        Few<Real, 2> c2_dists;
+        c2_dists[0] = 0.0;
+        c2_dists[1] = 0.0;
         for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
           LO const f = old_vf2f[vf];
           if ((oldface_gdim[f] == 2) && (oldface_gid[f] == e_g_face)) {
@@ -174,46 +230,78 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             for (LO k = 0; k < 2; ++k) {
               if (old_fv2v[f*3 + k] == new_edge_v0_old) {
                 c1_faces[count_c1_faces] = f;
+                auto p1 = face_parametricToParent_3d(3, f, old_ev2v,
+                    old_fe2e, old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts,
+                    1.0/3.0, 1.0/3.0, old_fv2v);
+                c1_dists[count_c1_faces] = std::pow(p1[0]-c1[0], 2) +
+                  std::pow(p1[1]-c1[1], 2) + std::pow(p1[2]-c1[2], 2); 
                 ++count_c1_faces;
               }
               if (old_fv2v[f*3 + k] == new_edge_v1_old) {
                 c2_faces[count_c2_faces] = f;
+                auto p2 = face_parametricToParent_3d(3, f, old_ev2v,
+                    old_fe2e, old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts,
+                    1.0/3.0, 1.0/3.0, old_fv2v);
+                c2_dists[count_c2_faces] = std::pow(p2[0]-c2[0], 2) +
+                  std::pow(p2[1]-c2[1], 2) + std::pow(p2[2]-c2[2], 2); 
                 ++count_c2_faces;
               }
             }
           }
         }
-        printf("%d %d \n", count_c1_faces, count_c2_faces);
-        if ((count_c1_faces == 1) && (count_c2_faces == 1)) {
-          auto p1 = face_parametricToParent_3d(3, c1_faces[0], old_ev2v,
-              old_fe2e, old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts,
-              1.0/3.0, 1.0/3.0, old_fv2v);
-          auto p2 = face_parametricToParent_3d(3, c2_faces[0], old_ev2v,
-              old_fe2e, old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts,
-              1.0/3.0, 1.0/3.0, old_fv2v);
-  
-          //use these as interp pts to find ctrl pts for new edge
-          auto fx = vector_2(p1[0], p2[0]);
-          auto fy = vector_2(p1[1], p2[1]);
-          auto fz = vector_2(p1[2], p2[2]);
-          auto M1_inv = matrix_2x2(Bi(3, 1, xi_1_cube()), Bi(3, 2, xi_1_cube()),
-              Bi(3, 1, xi_2_cube()), Bi(3, 2, xi_2_cube()));
-          auto M2 = matrix_2x2(Bi(3, 0, xi_1_cube()), Bi(3, 3, xi_1_cube()),
-              Bi(3, 0, xi_2_cube()), Bi(3, 3, xi_2_cube()));
-          auto M1 = invert(M1_inv);
-          auto cx = vector_2(c0[0], c3[0]);
-          auto cy = vector_2(c0[1], c3[1]);
-          auto cz = vector_2(c0[2], c3[2]);
-          auto Cx = M1*fx - M1*M2*cx;
-          auto Cy = M1*fy - M1*M2*cy;
-          auto Cz = M1*fz - M1*M2*cz;
-          edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = Cx[0];
-          edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = Cy[0];
-          edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = Cz[0];
-          edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = Cx[1];
-          edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = Cy[1];
-          edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = Cz[1];
+        LO c1_face, c2_face = -1;
+        c1_face = c1_faces[0];
+        c2_face = c2_faces[0];
+        if (count_c1_faces > 1) {
+          if (c1_dists[1] < c1_dists[0]) {
+            OMEGA_H_CHECK(c1_dists[1] > 0.0);
+            c1_face = c1_faces[1];
+          }
         }
+        if (count_c2_faces > 1) {
+          if (c2_dists[1] < c2_dists[0]) {
+            OMEGA_H_CHECK(c2_dists[1] > 0.0);
+            c2_face = c2_faces[1];
+          }
+        }
+        printf("face gid %d, new edge %d, countc1 %d, countc2 %d, c1 oldface %d c2 oldface %d \n", e_g_face, new_edge,
+            count_c1_faces, count_c2_faces, c1_face, c2_face);
+
+        /*
+        auto p1 = face_parametricToParent_3d(3, c1_face, old_ev2v,
+            old_fe2e, old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts,
+            1.0/3.0, 1.0/3.0, old_fv2v);
+        auto p2 = face_parametricToParent_3d(3, c2_face, old_ev2v,
+            old_fe2e, old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts,
+            1.0/3.0, 1.0/3.0, old_fv2v);
+        //use these as interp pts to find ctrl pts for new edge
+        auto fx = vector_2(p1[0], p2[0]);
+        auto fy = vector_2(p1[1], p2[1]);
+        auto fz = vector_2(p1[2], p2[2]);
+        auto M1_inv = matrix_2x2(Bi(3, 1, xi_1_cube()), Bi(3, 2, xi_1_cube()),
+            Bi(3, 1, xi_2_cube()), Bi(3, 2, xi_2_cube()));
+        auto M2 = matrix_2x2(Bi(3, 0, xi_1_cube()), Bi(3, 3, xi_1_cube()),
+            Bi(3, 0, xi_2_cube()), Bi(3, 3, xi_2_cube()));
+        auto M1 = invert(M1_inv);
+        auto cx = vector_2(c0[0], c3[0]);
+        auto cy = vector_2(c0[1], c3[1]);
+        auto cz = vector_2(c0[2], c3[2]);
+        auto Cx = M1*fx - M1*M2*cx;
+        auto Cy = M1*fy - M1*M2*cy;
+        auto Cz = M1*fz - M1*M2*cz;
+        edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = Cx[0];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = Cy[0];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = Cz[0];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = Cx[1];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = Cy[1];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = Cz[1];
+        */
+        edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = old_faceCtrlPts[c1_face*dim + 0];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = old_faceCtrlPts[c1_face*dim + 1];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = old_faceCtrlPts[c1_face*dim + 2];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = old_faceCtrlPts[c2_face*dim + 0];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = old_faceCtrlPts[c2_face*dim + 1];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = old_faceCtrlPts[c2_face*dim + 2];
       }
 
     }
@@ -484,52 +572,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   return;
 }
 
-static Few<Real, 10> const BlendedTriangleGetValues(
-    Vector<3> const xi, LO b) {
-  Few<Real, 10> values;
-  Real const blendingTol = 1.e-12;
-  double xii[3] = {1.-xi[0]-xi[1],xi[0],xi[1]};
-
-  for (LO i = 0; i < 3; ++i)
-    values[i] = -std::pow(xii[i], b);
-  LO const n = 10;//10 nodes per tri
-  for (LO i = 3; i < n; ++i)
-    values[i] = 0.0;
-
-
-  const LO nE = 2;//2 nodes per edge
-  Few<LO, 6> tev;
-  tev[0] = 0;
-  tev[1] = 1;
-  tev[2] = 1;
-  tev[3] = 2;
-  tev[4] = 2;
-  tev[5] = 0;
-
-  for (LO i = 0; i < 3; ++i) {
-    Real x, xiix, xv;
-    Few<Real, 4> v;
-    x = xii[tev[i*2 + 0]] + xii[tev[i*2 + 1]];
-
-    if (x < blendingTol)
-      xiix = 0.5;
-    else
-      xiix = xii[tev[i*2 +1]]/x;
-
-    xv = xiix;
-    v[0] = Bi(3, 0, xv);
-    v[1] = Bi(3, 3, xv);
-    v[2] = Bi(3, 1, xv);
-    v[3] = Bi(3, 2, xv);
-
-    for (LO j = 0; j < 2; ++j)
-      values[tev[i*2 + j]] += v[j]*std::pow(x, b);
-    for (LO j = 0; j < nE; ++j)
-      values[3+i*nE+j] = v[2+j]*std::pow(x, b);
-  }
-  return values;
-}
-
 template <Int dim>
 void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     LOs prods2new) {
@@ -581,10 +623,15 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     face_xi[0] = 1.0/3.0;
     face_xi[1] = 1.0/3.0;
     face_xi[2] = 1.0/3.0;
-    auto const weights = BlendedTriangleGetValues(face_xi, 1);
+    auto const weights = BlendedTriangleGetValues(face_xi, 2);
     auto edge_dualCone = new_mesh->get_array<I8>(1, "edge_dualCone");
+    auto edge_crv2bdry_dim = new_mesh->get_array<I8>(1, "edge_crv2bdry_dim");
     auto const e2et = new_mesh->ask_up(1, 2).a2ab;
     auto const et2t = new_mesh->ask_up(1, 2).ab2b;
+    auto const newedge_gdim = new_mesh->get_array<I8>(1, "class_dim");
+    auto const newedge_gid = new_mesh->get_array<LO>(1, "class_id");
+    auto const newface_gdim = new_mesh->get_array<I8>(2, "class_dim");
+    auto const newface_gid = new_mesh->get_array<LO>(2, "class_id");
 
     Write<I8> face_dualCone(nnew_faces, -1);
     auto face_blends = OMEGA_H_LAMBDA(LO e) {
@@ -601,6 +648,20 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             face_ctrlPts[tri*dim + k] = newface_c11[k];
           }
 
+        }
+      }
+      if (edge_crv2bdry_dim[e] == 2) {
+        for (LO et = e2et[e]; et < e2et[e + 1]; ++et) {
+          LO const tri = et2t[et];
+          if ((newedge_gid[e] == newface_gid[tri]) && (newface_gdim[tri == 2])) {
+            auto p11 = face_blend_interp_3d(3, tri, new_ev2v, new_fe2e,
+                vertCtrlPts, edgeCtrlPts, new_fv2v, weights);
+            auto newface_c11 = face_interpToCtrlPt_3d(3, tri, new_ev2v, new_fe2e,
+                vertCtrlPts, edgeCtrlPts, p11, new_fv2v);
+            for (LO k = 0; k < 3; ++k) {
+              face_ctrlPts[tri*dim + k] = newface_c11[k];
+            }
+          }
         }
       }
     };
