@@ -142,7 +142,7 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         auto p2 = face_parametricToParent_3d(order, old_face, old_ev2v, old_fe2e,
             old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts, nodePts[2], nodePts[3], old_fv2v);
 
-        //use these as interp pts to find ctrl pts in new mesh
+        //use these as interp pts to find ctrl pts for new edge
         {
           Real cx0 = old_vertCtrlPts[old_vert_noKey*dim + 0];
           Real cy0 = old_vertCtrlPts[old_vert_noKey*dim + 1];
