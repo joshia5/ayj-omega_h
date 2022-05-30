@@ -303,19 +303,24 @@ void test_collapse_kova(Library *lib) {
     }
   }
 
+  vtk::FullWriter writer;
+  writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/kovaCoarsen_bef.vtk", &mesh);
+  writer.write();
   calc_quad_ctrlPts_from_interpPts(&mesh);
   elevate_curve_order_2to3(&mesh);
 
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
-  
+ 
   auto opts = AdaptOpts(&mesh);
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(0.9)));
-  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 80));
+  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 99));
   mesh.ask_qualities();
-  vtk::write_parallel("/lore/joshia5/Meshes/curved/kovaCoarsen.vtk", &mesh);
+  writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/kovaCoarsen_aft.vtk", &mesh);
+  writer.write();
+  
   return;
 }
 
