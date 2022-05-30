@@ -145,6 +145,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 	for (LO d = 0; d < dim; ++d) {
 	  c1[d] = (1.0/3.0)*c0[d] + (2.0/3.0)*old_c1[d];
 	  c2[d] = (2.0/3.0)*old_c1[d] + (1.0/3.0)*c3[d];
+          edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c1[d];
+          edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c2[d];
 	}
       }
 
@@ -152,7 +154,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         LO const e_g_face = newedge_gid[new_edge]; 
         LO const new_edge_v0_old = same_verts2old_verts[ab2b[a2ab[new_edge_v0]]];
         LO const new_edge_v1_old = same_verts2old_verts[ab2b[a2ab[new_edge_v1]]];
-        LO c1_face, c2_face = -1;
 	auto c0_old = get_vector<dim>(old_vertCtrlPts, new_edge_v0_old);
 	auto c3_old = get_vector<dim>(old_vertCtrlPts, new_edge_v1_old);
         printf("new v0 coords {%f,%f,%f}\n", c0[0], c0[1], c0[2]);
@@ -160,24 +161,38 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         printf("new v1 coords {%f,%f,%f}\n", c3[0], c3[1], c3[2]);
         printf("old v1 coords {%f,%f,%f}\n", c3_old[0], c3_old[1], c3_old[2]);
 
-        LO count_faces = 0;
+        LO count_c1_faces = 0;
+        Few<LO, 2> c1_faces;
+        LO count_c2_faces = 0;
+        Few<LO, 2> c2_faces;
         for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
           LO const f = old_vf2f[vf];
           if ((oldface_gdim[f] == 2) && (oldface_gid[f] == e_g_face)) {
             //this face is class. on same model face as collapsing edge
             //now one of the verts is v0 then c1 face or v1 then c2 face
             for (LO k = 0; k < 2; ++k) {
-              if (old_fv2v[f*3 + k] == new_edge_v0_old) c1_face = f;
-              if (old_fv2v[f*3 + k] == new_edge_v1_old) c2_face = f;
+              if (old_fv2v[f*3 + k] == new_edge_v0_old) {
+                c1_faces[count_c1_faces] = f;
+                ++count_c1_faces;
+              }
+              if (old_fv2v[f*3 + k] == new_edge_v1_old) {
+                c2_faces[count_c2_faces] = f;
+                ++count_c2_faces;
+              }
             }
           }
-        printf("%d %d \n", c1_face, c2_face);
+        }
+        printf("%d %d \n", count_c1_faces, count_c2_faces);
+        if ((count_c1_faces == 1) && (count_c2_faces == 1)) {
+          auto p1 = face_parametricToParent_3d(3, c1_faces[0], old_ev2v,
+              old_fe2e, old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts,
+              1.0/3.0, 1.0/3.0, old_fv2v);
+          auto p2 = face_parametricToParent_3d(3, c2_faces[0], old_ev2v,
+              old_fe2e, old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts,
+              1.0/3.0, 1.0/3.0, old_fv2v);
         }
       }
-      for (LO d = 0; d < dim; ++d) {
-        edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c1[d];
-        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c2[d];
-      }
+
     }
   };
   parallel_for(keys2verts.size(), std::move(curve_bdry_edges));
