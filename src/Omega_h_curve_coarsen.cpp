@@ -16,12 +16,14 @@ void correct_curved_edges(Mesh *new_mesh) {
   auto const new_er2r = new_e2r.ab2b;
   auto const nnew_edge = new_mesh->nedges();
   auto const n_edge_pts = new_mesh->n_internal_ctrlPts(1);
-  auto const new_coords = new_mesh->coords();
 
   auto const vertCtrlPts = new_mesh->get_ctrlPts(0);
   auto const edgeCtrlPts = new_mesh->get_ctrlPts(1);
   auto const faceCtrlPts = new_mesh->get_ctrlPts(2);
 
+  //pfor over all edges using curved to bdry algo
+  //if it was curved before, check validity of all its adjacent tets
+  //if any adjacent tet is invalid, print out error
   auto edge_correct = OMEGA_H_LAMBDA(LO i) {
     LO has_invalid_tet = -1;
     if (edge_crv2bdry_dim[i] == 1) {
@@ -35,17 +37,15 @@ void correct_curved_edges(Mesh *new_mesh) {
 
         has_invalid_tet = checkMinJacDet_3d(nodes_det, n_edge_pts+1);
         if (has_invalid_tet > 0) {
-          printf(" invalid tet %d for bdry edge %d\n", adj_tet, i);
+          printf(" invalid tet %d for edge %d curved to g_edge\n", adj_tet, i);
         }
       }
     }
   };
   parallel_for(nnew_edge, std::move(edge_correct), "edge_correct");
-  //pfor over all edges using curved to bdry algo
-  //if it was curved before, check validity of all its adjacent tets
-  //if any adjacent tet is invalid, print out error
   return;
 }
+
 void check_validity_new_curved_edges(Mesh *new_mesh) {
 
   auto const new_rv2v = new_mesh->ask_down(3, 0).ab2b;
@@ -57,13 +57,14 @@ void check_validity_new_curved_edges(Mesh *new_mesh) {
   auto const new_er2r = new_e2r.ab2b;
   auto const nnew_edge = new_mesh->nedges();
   auto const n_edge_pts = new_mesh->n_internal_ctrlPts(1);
-  auto const new_coords = new_mesh->coords();
 
   auto const vertCtrlPts = new_mesh->get_ctrlPts(0);
   auto const edgeCtrlPts = new_mesh->get_ctrlPts(1);
   auto const faceCtrlPts = new_mesh->get_ctrlPts(2);
   auto const edge_dualCone = new_mesh->get_array<I8>(1, "edge_dualCone");
 
+  //pfor over all edges of dual cone cav
+  //check validity of all its adjacent tets
   auto edge_correct = OMEGA_H_LAMBDA(LO i) {
     LO has_invalid_tet = -1;
     if (edge_dualCone[i] == 1) {
@@ -76,15 +77,14 @@ void check_validity_new_curved_edges(Mesh *new_mesh) {
 
         has_invalid_tet = checkMinJacDet_3d(nodes_det, n_edge_pts+1);
         if (has_invalid_tet > 0) {
-          printf(" edge %d creates invalid tet with code %d\n", i, has_invalid_tet);
+          printf("dualCone edge %d in interior creates invalid tet with code %d\n",
+              i, has_invalid_tet);
           break;
         }
       }
     }
   };
   parallel_for(nnew_edge, std::move(edge_correct), "edge_correct");
-  //pfor over all edges of dual cone cav
-  //check validity of all its adjacent tets
   return;
 }
 
