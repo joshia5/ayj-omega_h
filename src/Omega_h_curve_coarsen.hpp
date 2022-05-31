@@ -228,10 +228,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             //this face is class. on same model face as collapsing edge
             //now one of the verts is v0 then c1 face or v1 then c2 face
             //but can be mult faces so then find closest point
-            if (e_g_face == 112) printf("f %d \n", f);
             for (LO k = 0; k < 3; ++k) {
-              if (e_g_face == 112) printf("fv0,v1,v2 %d,%d,%d ev0,ev1 %d,%d, v_key %d\n",
-                  old_fv2v[f*3+0], old_fv2v[f*3+1], old_fv2v[f*3+2], new_edge_v0_old, new_edge_v1_old, v_key);
               if (old_fv2v[f*3 + k] == new_edge_v0_old) {
                 c1_faces[count_c1_faces] = f;
                 auto p1 = face_parametricToParent_3d(3, f, old_ev2v,
@@ -240,10 +237,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                 c1_dists[count_c1_faces] = std::pow(p1[0]-c1[0], 2) +
                   std::pow(p1[1]-c1[1], 2) + std::pow(p1[2]-c1[2], 2); 
                 ++count_c1_faces;
-                if (e_g_face == 112) printf("found c1 face %d\n", f);
-                //if (e_g_face == 112)
-                //printf("face gid %d, new edge %d, countc1 %d, countc2 %d\n", e_g_face, new_edge,
-                  //  count_c1_faces, count_c2_faces);
               }
               if (old_fv2v[f*3 + k] == new_edge_v1_old) {
                 c2_faces[count_c2_faces] = f;
@@ -253,7 +246,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                 c2_dists[count_c2_faces] = std::pow(p2[0]-c2[0], 2) +
                   std::pow(p2[1]-c2[1], 2) + std::pow(p2[2]-c2[2], 2); 
                 ++count_c2_faces;
-                if (e_g_face == 112) printf("found c2 face %d\n", f);
               }
             }
           }
@@ -273,9 +265,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             c2_face = c2_faces[1];
           }
         }
-        if (e_g_face == 112)
-        printf("face gid %d, new edge %d, countc1 %d, countc2 %d, c1 oldface %d c2 oldface %d \n", e_g_face, new_edge,
-            count_c1_faces, count_c2_faces, c1_face, c2_face);
 
         edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = old_faceCtrlPts[c1_face*dim + 0];
         edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = old_faceCtrlPts[c1_face*dim + 1];
@@ -527,7 +516,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               (std::abs(new_edge_v0_c[1] - old_coords[v_lower*dim + 1]) < EPSILON) &&
               (std::abs(new_edge_v0_c[2] - old_coords[v_lower*dim + 2]) < EPSILON));
           }
-          printf("edge %d voif %d\n", new_edge, v_onto_is_first);
           
           for (LO d = 0; d < dim; ++d) {
             if (v_onto_is_first == 1) {

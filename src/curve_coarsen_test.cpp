@@ -296,6 +296,7 @@ void test_collapse_kova(Library *lib) {
   auto comm = lib->world();
 
   auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
+  printf("initial ntets %d\n", mesh.nregions());
                             
   for (LO i = 0; i <= mesh.dim(); ++i) {
     if (!mesh.has_tag(i, "global")) {
@@ -316,7 +317,7 @@ void test_collapse_kova(Library *lib) {
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(0.9)));
-  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 79));
+  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 52));
   mesh.ask_qualities();
   writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/kovaCoarsen_aft.vtk", &mesh);
   writer.write();
@@ -354,7 +355,7 @@ void test_collapse_boxCircle(Library *lib) {
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(100)));
-  coarsen_by_size(&mesh, opts);
+  while (mesh.nregions() > 1000) coarsen_by_size(&mesh, opts);
   mesh.ask_qualities();
   return;
 }
@@ -441,8 +442,8 @@ int main(int argc, char** argv) {
   //test_quadratic_tet_validity(&lib);
   //test_Kova_validity(&lib);
   //test_cubic_tet_validity(&lib);
-  //test_collapse_kova(&lib);
-  test_collapse_boxCircle(&lib);
+  test_collapse_kova(&lib);
+  //test_collapse_boxCircle(&lib);
   //test_collapse_cubicSlab(&lib);
   //test_antenna(&lib);
 
