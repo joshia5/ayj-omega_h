@@ -316,7 +316,7 @@ void test_collapse_kova(Library *lib) {
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(0.9)));
-  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 99));
+  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 79));
   mesh.ask_qualities();
   writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/kovaCoarsen_aft.vtk", &mesh);
   writer.write();
