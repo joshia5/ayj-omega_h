@@ -177,6 +177,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 	edge_crv2bdry_dim[new_edge] = 1;
 	auto old_p1 = get_vector<dim>(old_vertCtrlPts, v_key);
 	Real xi_1 = 0.5;
+        
 	Real sum_dist1 = 0.0;
 	Real sum_dist2 = 0.0;
 	for (Int j = 0; j < dim; ++j) {
@@ -186,6 +187,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 	sum_dist1 = std::sqrt(sum_dist1/(dim*1.0));
 	sum_dist2 = std::sqrt(sum_dist2/(dim*1.0));
 	xi_1 = sum_dist1/(sum_dist1 + sum_dist2);
+        
 	Vector<dim> old_c1;
 	for (Int j = 0; j < dim; ++j) {
 	  old_c1[j] = (old_p1[j] - B0_quad(xi_1)*c0[j] - 
