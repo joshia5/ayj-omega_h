@@ -312,12 +312,23 @@ void test_collapse_kova(Library *lib) {
 
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
  
+  auto wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_3d(&mesh, &wireframe_mesh, 20);
+  std::string vtuPath = "/lore/joshia5/Meshes/curved/Kova_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  auto curveVtk_mesh = Mesh(comm->library());
+  curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh, 20);
+  vtuPath = "/lore/joshia5/Meshes/curved/Kova_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
+
   auto opts = AdaptOpts(&mesh);
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(0.9)));
-  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 52));
+  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 80));
   mesh.ask_qualities();
   writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/kovaCoarsen_aft.vtk", &mesh);
   writer.write();
@@ -355,7 +366,7 @@ void test_collapse_boxCircle(Library *lib) {
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(100)));
-  while (mesh.nregions() > 1000) coarsen_by_size(&mesh, opts);
+  while (mesh.nregions() > 3000) coarsen_by_size(&mesh, opts);
   mesh.ask_qualities();
   return;
 }
@@ -442,8 +453,8 @@ int main(int argc, char** argv) {
   //test_quadratic_tet_validity(&lib);
   //test_Kova_validity(&lib);
   //test_cubic_tet_validity(&lib);
-  test_collapse_kova(&lib);
-  //test_collapse_boxCircle(&lib);
+  //test_collapse_kova(&lib);
+  test_collapse_boxCircle(&lib);
   //test_collapse_cubicSlab(&lib);
   //test_antenna(&lib);
 

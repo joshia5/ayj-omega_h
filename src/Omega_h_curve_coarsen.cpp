@@ -14,8 +14,7 @@ void correct_curved_edges(Mesh *new_mesh) {
   auto const new_e2r = new_mesh->ask_up(1, 3);
   auto const new_e2er = new_e2r.a2ab;
   auto const new_er2r = new_e2r.ab2b;
-  //auto const nnew_edge = new_mesh->nedges();
-  auto const nnew_rgn = new_mesh->nregions();
+  auto const nnew_edge = new_mesh->nedges();
   auto const n_edge_pts = new_mesh->n_internal_ctrlPts(1);
 
   auto const vertCtrlPts = new_mesh->get_ctrlPts(0);
@@ -27,11 +26,10 @@ void correct_curved_edges(Mesh *new_mesh) {
   //if any adjacent tet is invalid, print out error
   auto edge_correct = OMEGA_H_LAMBDA(LO i) {
     LO has_invalid_tet = -1;
-    //if (edge_crv2bdry_dim[i] == 1) {
-      //for (LO er = new_e2er[i]; er < new_e2er[i+1]; ++er) {
-        //if (has_invalid_tet > 0) break;
-        LO adj_tet = i;
-        //LO adj_tet = new_er2r[er];
+    if (edge_crv2bdry_dim[i] >= 1) {
+      for (LO er = new_e2er[i]; er < new_e2er[i+1]; ++er) {
+        if (has_invalid_tet > 0) break;
+        LO adj_tet = new_er2r[er];
         Few<Real, 60> tet_pts = collect_tet_pts(3, adj_tet, new_ev2v, new_rv2v, vertCtrlPts
             , edgeCtrlPts, faceCtrlPts, new_re2e, new_rf2f);
 
@@ -39,13 +37,13 @@ void correct_curved_edges(Mesh *new_mesh) {
 
         has_invalid_tet = checkMinJacDet_3d(nodes_det, n_edge_pts+1);
         if (has_invalid_tet > 0) {
-          printf(" invalid tet %d for edge %d curved to g_edge\n", adj_tet, i);
+          printf(" invalid tet %d for edge %d curved to g_dim %d with code %d\n"
+              , adj_tet, i, edge_crv2bdry_dim[i], has_invalid_tet);
         }
-      //}
-    //}
+      }
+    }
   };
-  parallel_for(nnew_rgn, std::move(edge_correct), "edge_correct");
-  //parallel_for(nnew_edge, std::move(edge_correct), "edge_correct");
+  parallel_for(nnew_edge, std::move(edge_correct), "edge_correct");
   return;
 }
 
