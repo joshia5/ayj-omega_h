@@ -156,7 +156,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 						    nnew_verts);
   auto const a2ab = new_verts2same_verts.a2ab;
   auto const ab2b = new_verts2same_verts.ab2b;
-  printf("nsame nnew verts %d, %d\n", same_verts2old_verts.size(), nnew_verts);
 
   auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO const v_key = keys2verts[i];
@@ -167,8 +166,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       LO const new_edge_v1 = new_ev2v[new_edge*2 + 1];
       auto const c0 = get_vector<dim>(vert_ctrlPts_r, new_edge_v0);
       auto const c3 = get_vector<dim>(vert_ctrlPts_r, new_edge_v1);
-      //auto const c_vkey = get_vector<dim>(old_vertCtrlPts, v_key);
-      //printf("v_key {%f,%f,%f}\n", c_vkey[0], c_vkey[1], c_vkey[2]);
       Vector<dim> c1;
       Vector<dim> c2;
 
@@ -206,8 +203,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         LO const e_g_face = newedge_gid[new_edge]; 
         LO const new_edge_v0_old = same_verts2old_verts[ab2b[a2ab[new_edge_v0]]];
         LO const new_edge_v1_old = same_verts2old_verts[ab2b[a2ab[new_edge_v1]]];
-        //printf("new v0 coords {%f,%f,%f}\n", c0[0], c0[1], c0[2]);
-        //printf("new v1 coords {%f,%f,%f}\n", c3[0], c3[1], c3[2]);
         Vector<3> c1, c2;
         for (LO d = 0; d < dim; ++d) {
           c1[d] = edge_ctrlPts[new_edge*n_edge_pts*dim + d];
@@ -473,7 +468,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               }
             }
           }
-          printf("upper edge %d lower %d\n", count_upper_edge ,count_lower_edge);
 
           Few<Real, dim> t_avg_l;
           for (LO d = 0; d < dim; ++d) t_avg_l[d] = 0.0; 
