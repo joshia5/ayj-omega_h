@@ -126,9 +126,11 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     auto const v1 = new_ev2v[e*2 + 1];
     for (LO j=0; j<dim; ++j) {
       edge_ctrlPts[e*n_edge_pts*dim + j] = new_coords[v0*dim + j] +
-          (new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_1_cube();
+          (new_coords[v1*dim + j] - new_coords[v0*dim + j])*1.0/3.0;
+          //(new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_1_cube();
       edge_ctrlPts[e*n_edge_pts*dim + dim + j] = new_coords[v0*dim + j] +
-          (new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_2_cube();
+          (new_coords[v1*dim + j] - new_coords[v0*dim + j])*2.0/3.0;
+          //(new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_2_cube();
     }
   };
   parallel_for(prods2new.size(), std::move(prod_edge_points),
@@ -262,6 +264,35 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             c2_face = c2_faces[1];
           }
         }
+
+        /*
+        auto p1 = face_parametricToParent_3d(3, c1_face, old_ev2v,
+            old_fe2e, old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts,
+            1.0/3.0, 1.0/3.0, old_fv2v);
+        auto p2 = face_parametricToParent_3d(3, c2_face, old_ev2v,
+            old_fe2e, old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts,
+            1.0/3.0, 1.0/3.0, old_fv2v);
+        auto fx = vector_2(p1[0], p2[0]);
+        auto fy = vector_2(p1[1], p2[1]);
+        auto fz = vector_2(p1[2], p2[2]);
+        auto M1_inv = matrix_2x2(Bi(3, 1, xi_1_cube()), Bi(3, 2, xi_1_cube()),
+            Bi(3, 1, xi_2_cube()), Bi(3, 2, xi_2_cube()));
+        auto M2 = matrix_2x2(Bi(3, 0, xi_1_cube()), Bi(3, 3, xi_1_cube()),
+            Bi(3, 0, xi_2_cube()), Bi(3, 3, xi_2_cube()));
+        auto M1 = invert(M1_inv);
+        auto cx = vector_2(c0[0], c3[0]);
+        auto cy = vector_2(c0[1], c3[1]);
+        auto cz = vector_2(c0[2], c3[2]);
+        auto Cx = M1*fx - M1*M2*cx;
+        auto Cy = M1*fy - M1*M2*cy;
+        auto Cz = M1*fz - M1*M2*cz;
+        edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = Cx[0];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = Cy[0];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = Cz[0];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = Cx[1];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = Cy[1];
+        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = Cz[1];
+        */
 
         edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = old_faceCtrlPts[c1_face*dim + 0];
         edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = old_faceCtrlPts[c1_face*dim + 1];
