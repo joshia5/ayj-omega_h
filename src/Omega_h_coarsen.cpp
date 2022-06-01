@@ -197,7 +197,7 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
           coarsen_curved_faces<3>(mesh, &new_mesh, old_ents2new_ents,
                                   prods2new_ents);
         }
-        //correction of invalid edges that were attempted to curve after newmesh created
+        //validity of edges that were attempted to curve after newmesh created
         if (ent_dim == REGION) {
           correct_curved_edges(&new_mesh);
           check_validity_new_curved_edges(&new_mesh);
@@ -235,7 +235,6 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
     vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_cavities.vtu";
     vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_cavityMesh, 2);
   }
-  //while(1);
 }
 
 static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
