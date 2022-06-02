@@ -201,6 +201,7 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
         if (ent_dim == REGION) {
           correct_curved_edges(&new_mesh);
           check_validity_new_curved_edges(&new_mesh);
+          check_validity_all_tet(&new_mesh);
           auto cubic_cavityMesh = Mesh(mesh->comm()->library());
           cubic_cavityMesh.set_comm(comm);
           build_cubic_cavities_3d(mesh, &cubic_cavityMesh, 10);

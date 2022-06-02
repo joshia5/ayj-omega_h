@@ -4,6 +4,35 @@
 
 namespace Omega_h {
 
+void check_validity_all_tet(Mesh *new_mesh) {
+
+  auto const new_rv2v = new_mesh->ask_down(3, 0).ab2b;
+  auto const new_re2e = new_mesh->ask_down(3, 1).ab2b;
+  auto const new_rf2f = new_mesh->ask_down(3, 2).ab2b;
+  auto const new_ev2v = new_mesh->ask_down(1, 0).ab2b;
+  auto const new_e2r = new_mesh->ask_up(1, 3);
+  auto const new_e2er = new_e2r.a2ab;
+  auto const new_er2r = new_e2r.ab2b;
+  auto const nnew_tet = new_mesh->nregions();
+
+  auto const vertCtrlPts = new_mesh->get_ctrlPts(0);
+  auto const edgeCtrlPts = new_mesh->get_ctrlPts(1);
+  auto const faceCtrlPts = new_mesh->get_ctrlPts(2);
+
+  auto check_tet = OMEGA_H_LAMBDA(LO i) {
+    LO has_invalid_tet = -1;
+    Few<Real, 60> tet_pts = collect_tet_pts(3, i, new_ev2v, new_rv2v, vertCtrlPts
+        , edgeCtrlPts, faceCtrlPts, new_re2e, new_rf2f);
+
+    Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
+
+    has_invalid_tet = checkMinJacDet_3d(nodes_det, 3);
+    printf("tet %d invalid code %d\n", i, has_invalid_tet);
+  };
+  parallel_for(nnew_tet, std::move(check_tet), "check_tet");
+  return;
+}
+
 void correct_curved_edges(Mesh *new_mesh) {
 
   auto const edge_crv2bdry_dim = new_mesh->get_array<I8>(1, "edge_crv2bdry_dim");
@@ -88,6 +117,5 @@ void check_validity_new_curved_edges(Mesh *new_mesh) {
   parallel_for(nnew_edge, std::move(edge_correct), "edge_correct");
   return;
 }
-
 
 } // namespace Omega_h
