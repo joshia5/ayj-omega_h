@@ -74,6 +74,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const old_fv2v = mesh->ask_down(2, 0).ab2b;
   auto const old_v2vf = mesh->ask_up(0,2).a2ab;
   auto const old_vf2f = mesh->ask_up(0,2).ab2b;
+  //auto const old_e2e = mesh->edges_across_tris(
+    //  mesh->get_adj(2,1), mesh->ask_up(1,2));
+  //auto const old_e2ee = old_e2e.a2ab;
+  //auto const old_ee2e = old_e2e.ab2b;
   auto const nkeys = keys2verts.size();
   if (!mesh->has_tag(0, "bezier_pts")) {
     mesh->add_tag<Real>(0, "bezier_pts", dim, mesh->coords());
@@ -126,11 +130,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     auto const v1 = new_ev2v[e*2 + 1];
     for (LO j=0; j<dim; ++j) {
       edge_ctrlPts[e*n_edge_pts*dim + j] = new_coords[v0*dim + j] +
-          (new_coords[v1*dim + j] - new_coords[v0*dim + j])*1.0/3.0;
-          //(new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_1_cube();
+          (new_coords[v1*dim + j] - new_coords[v0*dim + j])*0.35;
       edge_ctrlPts[e*n_edge_pts*dim + dim + j] = new_coords[v0*dim + j] +
-          (new_coords[v1*dim + j] - new_coords[v0*dim + j])*2.0/3.0;
-          //(new_coords[v1*dim + j] - new_coords[v0*dim + j])*xi_2_cube();
+          (new_coords[v1*dim + j] - new_coords[v0*dim + j])*0.65;
     }
   };
   parallel_for(prods2new.size(), std::move(prod_edge_points),
@@ -171,6 +173,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       Vector<dim> c1;
       Vector<dim> c2;
 
+      //edges classified on g_edges
       if ((oldvert_gdim[v_key] <= 1) && (oldvert_gdim[v_onto] <= 1) &&
           (newedge_gdim[new_edge] == 1)) {
 	edge_crv2bdry_dim[new_edge] = 1;
@@ -207,9 +210,55 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         LO const new_edge_v1_old = same_verts2old_verts[ab2b[a2ab[new_edge_v1]]];
         Vector<3> c1, c2;
         for (LO d = 0; d < dim; ++d) {
+          //c1[d] = (old_coords[new_edge_v0_old*dim + d] + 
+            //       old_coords[new_edge_v1_old*dim + d])/2.0;
+          //c2[d] = c1[d];
           c1[d] = edge_ctrlPts[new_edge*n_edge_pts*dim + d];
           c2[d] = edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d];
 	}
+
+        //find old edges
+        LO old_e0 = -1;
+        LO old_e1 = -1;
+        for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
+          LO const e = old_ve2e[ve];
+          if ((new_edge_v0_old == old_ev2v[e*2+0]) || 
+              (new_edge_v0_old == old_ev2v[e*2+1])) old_e0 = e;
+          if ((new_edge_v1_old == old_ev2v[e*2+0]) || 
+              (new_edge_v1_old == old_ev2v[e*2+1])) old_e1 = e;
+        }
+        printf("olde0, e1 %d, %d\n", old_e0, old_e1);
+        //now count num tris bet e0 and e1 (ntri = nedge + 1)
+        LO total_tris = 0;
+        Few<LO, 32> polygon_tris;
+        for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
+          LO const adj_f = old_vf2f[vf];
+          if (oldface_gdim[adj_f] == FACE) {
+            polygon_tris[total_tris] = adj_f;
+            ++total_tris;
+          }
+        }
+        printf("total tris %d\n", total_tris);
+
+        /*
+        LO count_inter_tri_0_0 = 0;
+        LO count_inter_tri_0_1 = 0;
+        OMEGA_H_CHECK((old_e2ef[old_e0 + 1] - old_e2ef[old_e0]) == 2);
+        //maybe use a while loop till ntris found are < total tris
+        for (LO ef = old_e2ef[old_e0]; ef < old_e2ef[old_e0 + 1]; ++ef) {
+          LO const adj_f = old_ef2f[ef];
+          LO const adj_f_e0 = old_fe2e[f*3 + 0];
+          LO const adj_f_e1 = old_fe2e[f*3 + 1];
+          LO const adj_f_e2 = old_fe2e[f*3 + 2];
+          //if one of the down adj vertices matches with v_key and it is not
+          //the old_e0 then mark that edge and note that tri id
+            //now for this edge, again start from a loop over adj tris, find
+            //up adj tris, if that tri is not same as the earlier tri then
+            //repeat
+            //
+            for (LO ef = old_e2ef[old_e0]; ef < old_e2ef[old_e0 + 1]; ++ef) {
+        }
+        */
 
         LO count_c1_faces = 0;
         Few<LO, 2> c1_faces;
