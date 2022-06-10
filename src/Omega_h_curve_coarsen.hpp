@@ -233,18 +233,26 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         Few<LO, 32> polygon_tris;
         for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
           LO const adj_f = old_vf2f[vf];
-          if (oldface_gdim[adj_f] == FACE) {
+          if ((oldface_gdim[adj_f] == FACE) &&
+              (newedge_gid[new_edge] == oldface_gid[adj_f])) {
             polygon_tris[total_tris] = adj_f;
             ++total_tris;
           }
         }
         printf("total tris %d\n", total_tris);
 
-        /*
+        OMEGA_H_CHECK((old_e2ef[old_e0 + 1] - old_e2ef[old_e0]) == 2);
+        Few<LO, 32> tris_from_0;
+        LO const e0_adj_tri0 = old_ef2f[old_e2ef[old_e0]];
+        LO const e0_adj_tri1 = old_ef2f[old_e2ef[old_e0] + 1];
         LO count_inter_tri_0_0 = 0;
         LO count_inter_tri_0_1 = 0;
-        OMEGA_H_CHECK((old_e2ef[old_e0 + 1] - old_e2ef[old_e0]) == 2);
-        //maybe use a while loop till ntris found are < total tris
+        // use a while loop till ntris arranged are < total tris
+        for (LO k = 0; k < total_tris; ++k) {
+          LO const tri = polygon_tris[k];
+          for (LO m = 0; m < 3; ++m) LO const tri_e = old_fv2v[tri*3 + m];
+        }
+        /*
         for (LO ef = old_e2ef[old_e0]; ef < old_e2ef[old_e0 + 1]; ++ef) {
           LO const adj_f = old_ef2f[ef];
           LO const adj_f_e0 = old_fe2e[f*3 + 0];
