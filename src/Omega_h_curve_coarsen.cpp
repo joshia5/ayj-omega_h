@@ -19,6 +19,7 @@ void check_validity_all_tet(Mesh *new_mesh) {
   auto const edgeCtrlPts = new_mesh->get_ctrlPts(1);
   auto const faceCtrlPts = new_mesh->get_ctrlPts(2);
 
+  printf("mesh size %d tets\n", nnew_tet);
   auto check_tet = OMEGA_H_LAMBDA(LO i) {
     LO has_invalid_tet = -1;
     Few<Real, 60> tet_pts = collect_tet_pts(3, i, new_ev2v, new_rv2v, vertCtrlPts
@@ -27,7 +28,7 @@ void check_validity_all_tet(Mesh *new_mesh) {
     Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
 
     has_invalid_tet = checkMinJacDet_3d(nodes_det, 3);
-    printf("tet %d invalid code %d\n", i, has_invalid_tet);
+    if (has_invalid_tet > 0) printf("tet %d invalid code %d\n", i, has_invalid_tet);
   };
   parallel_for(nnew_tet, std::move(check_tet), "check_tet");
   return;
