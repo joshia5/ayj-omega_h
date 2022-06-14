@@ -217,6 +217,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           c2[d] = edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d];
 	}
 
+        /*
         //find old edges
         LO old_e0 = -1;
         LO old_e1 = -1;
@@ -242,30 +243,47 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         printf("total tris %d\n", total_tris);
 
         OMEGA_H_CHECK((old_e2ef[old_e0 + 1] - old_e2ef[old_e0]) == 2);
-        Few<LO, 32> tris_from_0;
         LO const e0_adj_tri0 = old_ef2f[old_e2ef[old_e0]];
         LO const e0_adj_tri1 = old_ef2f[old_e2ef[old_e0] + 1];
-        LO count_inter_tri_0_0 = 0;
-        LO count_inter_tri_0_1 = 0;
+        LO count_tri_0 = -1;
+        LO count_edge_0 = -1;
+        Few<LO, 32> tris_from_0;
+        Few<LO, 32> edges_from_0;
+        tris_from_0[0] = e0_adj_tri0;
+        edges_from_0[0] = old_e0;
+        ++count_tri_0;
+        ++count_edge_0;
         // use a while loop till ntris arranged are < total tris
-        for (LO k = 0; k < total_tris; ++k) {
-          LO const tri = polygon_tris[k];
-          for (LO m = 0; m < 3; ++m) LO const tri_e = old_fv2v[tri*3 + m];
+        while (count_tri_0 < total_tris) {
+          LO const tri = tris_from_0[count_tri_0];
+          for (LO n_e = 0; n_e < 3; ++n_e) {
+            LO const tri_e = old_fe2e[tri*3 + n_e];
+            LO const tri_e_v0 = old_ev2v[tri_e*2 + 0];
+            LO const tri_e_v1 = old_ev2v[tri_e*2 + 1];
+            LO is_counted = -1;
+            if ((tri_e_v0 == v_key) || (tri_e_v1 == v_key)) {
+              for (LO count_e = 0; count_e < count_edge_0; ++count_e) {
+                if (tri_e == edges_from_0[count_e]) is_counted = 1;
+              }
+            }
+            if (is_counted == -1) {
+              for (LO ef = old_e2ef[tri_e]; ef < old_e2ef[tri_e + 1]; ++ef) {
+                LO const adj_f = old_ef2f[ef];
+                LO const adj_f_e0 = old_fe2e[f*3 + 0];
+                LO const adj_f_e1 = old_fe2e[f*3 + 1];
+                LO const adj_f_e2 = old_fe2e[f*3 + 2];
+                //if one of the down adj vertices matches with v_key and it is not
+                //the old_e0 then mark that edge and note that tri id
+                //now for this edge, again start from a loop over adj tris, find
+                //up adj tris, if that tri is not same as the earlier tri then
+                //repeat
+                //
+                for (LO ef = old_e2ef[old_e0]; ef < old_e2ef[old_e0 + 1]; ++ef)
+              }
+            }
+          }
         }
-        /*
-        for (LO ef = old_e2ef[old_e0]; ef < old_e2ef[old_e0 + 1]; ++ef) {
-          LO const adj_f = old_ef2f[ef];
-          LO const adj_f_e0 = old_fe2e[f*3 + 0];
-          LO const adj_f_e1 = old_fe2e[f*3 + 1];
-          LO const adj_f_e2 = old_fe2e[f*3 + 2];
-          //if one of the down adj vertices matches with v_key and it is not
-          //the old_e0 then mark that edge and note that tri id
-            //now for this edge, again start from a loop over adj tris, find
-            //up adj tris, if that tri is not same as the earlier tri then
-            //repeat
-            //
-            for (LO ef = old_e2ef[old_e0]; ef < old_e2ef[old_e0 + 1]; ++ef) {
-        }
+
         */
 
         LO count_c1_faces = 0;
@@ -706,7 +724,7 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       if (edge_crv2bdry_dim[e] == 2) {
         for (LO et = e2et[e]; et < e2et[e + 1]; ++et) {
           LO const tri = et2t[et];
-          if ((newedge_gid[e] == newface_gid[tri]) && (newface_gdim[tri == 2])) {
+          //if ((newedge_gid[e] == newface_gid[tri]) && (newface_gdim[tri == 2])) {
             auto p11 = face_blend_interp_3d(3, tri, new_ev2v, new_fe2e,
                 vertCtrlPts, edgeCtrlPts, new_fv2v, weights);
             auto newface_c11 = face_interpToCtrlPt_3d(3, tri, new_ev2v, new_fe2e,
@@ -714,7 +732,7 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             for (LO k = 0; k < 3; ++k) {
               face_ctrlPts[tri*dim + k] = newface_c11[k];
             }
-          }
+          //}
         }
       }
     };
