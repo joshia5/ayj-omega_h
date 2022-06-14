@@ -268,6 +268,7 @@ void test_boxCircle_validity(Library *lib) {
   checkValidity_3d(&mesh, LOs(mesh.nregions(), 0));
   return;
 }
+
 void test_Kova_validity(Library *lib) {
   auto comm = lib->world();
   auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
@@ -327,9 +328,9 @@ void test_collapse_kova(Library *lib) {
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
-        metric_eigenvalue_from_length(0.9)));
-  //coarsen_by_size(&mesh, opts);
-  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 50));
+        metric_eigenvalue_from_length(100)));
+  coarsen_by_size(&mesh, opts);
+  //while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 50));
   mesh.ask_qualities();
   writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/kovaCoarsen_aft.vtk", &mesh);
   writer.write();
@@ -367,7 +368,7 @@ void test_collapse_boxCircle(Library *lib) {
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(100)));
-  while (mesh.nregions() > 3500) coarsen_by_size(&mesh, opts);
+  coarsen_by_size(&mesh, opts);
   mesh.ask_qualities();
   return;
 }
