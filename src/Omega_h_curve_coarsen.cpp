@@ -44,13 +44,18 @@ void correct_curved_edges(Mesh *new_mesh) {
   auto const new_e2r = new_mesh->ask_up(1, 3);
   auto const new_e2er = new_e2r.a2ab;
   auto const new_er2r = new_e2r.ab2b;
+  auto const new_e2f = new_mesh->ask_up(1, 2);
+  auto const new_e2ef = new_e2f.a2ab;
+  auto const new_ef2f = new_e2f.ab2b;
   auto const nnew_edge = new_mesh->nedges();
+  auto const nnew_face = new_mesh->nfaces();
   auto const n_edge_pts = new_mesh->n_internal_ctrlPts(1);
 
   auto const vertCtrlPts = new_mesh->get_ctrlPts(0);
   auto const edgeCtrlPts = new_mesh->get_ctrlPts(1);
   auto const faceCtrlPts = new_mesh->get_ctrlPts(2);
 
+  Write<I8> face_vis (nnew_face, -1);
   //pfor over all edges using curved to bdry algo
   //if it was curved before, check validity of all its adjacent tets
   //if any adjacent tet is invalid, print out error
@@ -69,11 +74,19 @@ void correct_curved_edges(Mesh *new_mesh) {
         if (has_invalid_tet > 0) {
           printf(" invalid tet %d for edge %d curved to g_dim %d with code %d\n"
               , adj_tet, i, edge_crv2bdry_dim[i], has_invalid_tet);
+          for (LO k=0; k<4; ++k) face_vis[new_rf2f[adj_tet*4 + k]] = 1;
+        }
+      }
+      if (has_invalid_tet > 0) {
+        for (LO ef = new_e2ef[i]; ef < new_e2ef[i+1]; ++ef) {
+          //LO adj_f = new_ef2f[ef];
+          //face_vis[adj_f] = 1;
         }
       }
     }
   };
   parallel_for(nnew_edge, std::move(edge_correct), "edge_correct");
+  new_mesh->set_tag<I8>(2, "face_dualCone", Read<I8>(face_vis));
   return;
 }
 
