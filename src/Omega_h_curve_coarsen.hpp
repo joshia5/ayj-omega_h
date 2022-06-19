@@ -230,15 +230,43 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         //printf("olde0, e1 %d, %d\n", old_e0, old_e1);
 
         LO e0_adj_tri0 = -1;
+        Few<LO, 2> adj_tris;
+        Few<LO, 2> has_bdry_edge;
+        adj_tris[0] = -1; adj_tris[1] = -1;
+        has_bdry_edge[0] = -1; has_bdry_edge[1] = -1;
+        LO counter = 0;
         for (LO ef = old_e2ef[old_e0]; ef < old_e2ef[old_e0 + 1]; ++ef) {
           LO const adj_f = old_ef2f[ef];
           if ((oldface_gdim[adj_f] == FACE) &&
               (newedge_gid[new_edge] == oldface_gid[adj_f])) {
-            e0_adj_tri0 = adj_f;
-            break;
+            adj_tris[counter] = adj_f;
+            for (LO f_e = 0; f_e < 3; ++f_e) {
+              LO const adj_f_e = old_fe2e[adj_f*3 + f_e];
+              if (oldedge_gdim[adj_f_e] == 1) has_bdry_edge[counter] = 1;
+            }
+            ++counter;
           }
         }
+        printf("counter %d\n", counter);
+        if (counter == 2) {
+          printf("2 tris %d %d\n", adj_tris[0], adj_tris[1]);
+          if (has_bdry_edge[0] == 1) {
+            e0_adj_tri0 = adj_tris[0];
+          }
+          else if (has_bdry_edge[1] == 1) {
+            e0_adj_tri0 = adj_tris[1];
+          }
+          else {
+            e0_adj_tri0 = adj_tris[0];
+          }
+        }
+        else {
+          OMEGA_H_CHECK(counter == 1);
+          e0_adj_tri0 = adj_tris[0];
+        }
+
         printf("e0_adj_tri0 %d\n", e0_adj_tri0);
+
         //now count num tris bet e0 and e1 (ntri = nedge + 1)
         LO total_tris = 0;
         //collect tris on cavity surface
