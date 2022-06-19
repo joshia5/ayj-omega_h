@@ -143,6 +143,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const oldvert_gdim = mesh->get_array<I8>(0, "class_dim");
   auto const oldvert_gid = mesh->get_array<LO>(0, "class_id");
   auto const oldface_gdim = mesh->get_array<I8>(2, "class_dim");
+  auto const oldedge_gdim = mesh->get_array<I8>(1, "class_dim");
   auto const oldface_gid = mesh->get_array<LO>(2, "class_id");
 
   auto const v2v_old = mesh->ask_star(0);
@@ -210,24 +211,23 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         LO const new_edge_v1_old = same_verts2old_verts[ab2b[a2ab[new_edge_v1]]];
         Vector<3> c1, c2;
         for (LO d = 0; d < dim; ++d) {
-          //c1[d] = (old_coords[new_edge_v0_old*dim + d] + 
-            //       old_coords[new_edge_v1_old*dim + d])/2.0;
-          //c2[d] = c1[d];
           c1[d] = edge_ctrlPts[new_edge*n_edge_pts*dim + d];
           c2[d] = edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d];
 	}
 
+//###############################
+        //begin new algorithm
         //find old edges
         LO old_e0 = -1;
-        LO old_e1 = -1;
+        //LO old_e1 = -1;
         for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
           LO const e = old_ve2e[ve];
           if ((new_edge_v0_old == old_ev2v[e*2+0]) || 
               (new_edge_v0_old == old_ev2v[e*2+1])) old_e0 = e;
-          if ((new_edge_v1_old == old_ev2v[e*2+0]) || 
-              (new_edge_v1_old == old_ev2v[e*2+1])) old_e1 = e;
+          //if ((new_edge_v1_old == old_ev2v[e*2+0]) || 
+            //  (new_edge_v1_old == old_ev2v[e*2+1])) old_e1 = e;
         }
-        printf("olde0, e1 %d, %d\n", old_e0, old_e1);
+        //printf("olde0, e1 %d, %d\n", old_e0, old_e1);
 
         LO e0_adj_tri0 = -1;
         for (LO ef = old_e2ef[old_e0]; ef < old_e2ef[old_e0 + 1]; ++ef) {
@@ -238,7 +238,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             break;
           }
         }
-        printf("e0 adj tri0 %d\n", e0_adj_tri0);
+        printf("e0_adj_tri0 %d\n", e0_adj_tri0);
         //now count num tris bet e0 and e1 (ntri = nedge + 1)
         LO total_tris = 0;
         //collect tris on cavity surface
@@ -250,6 +250,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             polygon_tris[total_tris] = adj_f;
             ++total_tris;
           }
+        }
+        if (total_tris == 4) {
+          printf("4 tris {%d,%d,%d,%d}\n", polygon_tris[0], polygon_tris[1], 
+              polygon_tris[2], polygon_tris[3]);
         }
         Few<LO, 32*2> polygon_tris_edges;
         LO total_tris_edges = 0;
@@ -269,8 +273,16 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           }
           OMEGA_H_CHECK(edges_per_tri == 2);
         }
-        printf("total tris %d edges %d\n", total_tris, total_tris_edges);
+        //printf("total tris %d edges %d\n", total_tris, total_tris_edges);
         OMEGA_H_CHECK(total_tris_edges == total_tris*2);
+        if (total_tris == 4) {
+          printf("4 tris_edges {%d,%d, %d,%d, %d,%d, %d,%d}\n",
+              polygon_tris_edges[0], polygon_tris_edges[1], 
+              polygon_tris_edges[2], polygon_tris_edges[3],
+              polygon_tris_edges[4], polygon_tris_edges[5], 
+              polygon_tris_edges[6], polygon_tris_edges[7]
+              );
+        }
 
         //OMEGA_H_CHECK((old_e2ef[old_e0 + 1] - old_e2ef[old_e0]) == 2); will
         //contain faces in interior
@@ -288,24 +300,39 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         //find and replace index of first tri
         for (LO n_t = 0; n_t < total_tris; ++n_t) {
           LO const tri_r = polygon_tris[n_t];
-          printf("total tris %d n_t %d tri %d\n", total_tris, n_t, tri_r);
+          //printf("n_t %d tri %d\n", n_t, tri_r);
           if (tri_r == e0_adj_tri0) {
             first_tri_index = n_t;
-            if (polygon_tris_edges[n_t*2 + 1] == old_e0) {
-              first_edge_index = 0;
+            if ((oldedge_gdim[polygon_tris_edges[n_t*2 + 0]] == 2) &&
+                (oldedge_gdim[polygon_tris_edges[n_t*2 + 1]] == 2)) {
+              if (polygon_tris_edges[n_t*2 + 1] == old_e0) {
+                //choose the edge thats next and not the e0 itself
+                first_edge_index = 0;
+              }
+              else {
+                OMEGA_H_CHECK(polygon_tris_edges[n_t*2 + 0] == old_e0);
+                first_edge_index = 1;
+              }
+              polygon_tris[n_t] = -1;
             }
-            else {
-              OMEGA_H_CHECK(polygon_tris_edges[n_t*2 + 0] == old_e0);
+            if ((oldedge_gdim[polygon_tris_edges[n_t*2 + 0]] == 1) &&
+                (oldedge_gdim[polygon_tris_edges[n_t*2 + 1]] == 2)) {
               first_edge_index = 1;
+              polygon_tris[n_t] = -1;
             }
-            polygon_tris[n_t] = -1;
+            if ((oldedge_gdim[polygon_tris_edges[n_t*2 + 0]] == 2) &&
+                (oldedge_gdim[polygon_tris_edges[n_t*2 + 1]] == 1)) {
+              first_edge_index = 0;
+              polygon_tris[n_t] = -1;
+            }
           }
         }
-        printf("ok 1 first tri ind %d first edg ind %d\n", first_tri_index, first_edge_index);
+        printf("first edg ind %d\n", first_edge_index);
         // use a while loop till ntris arranged are < total tris
         LO next_edge = polygon_tris_edges[first_tri_index*2 + first_edge_index];
-        //while (count_tri_0 < total_tris) {
-        for (LO n = 0; n < total_tris; ++n) {
+        printf("next_edge %d\n", next_edge);
+        //while (count_tri_0 < total_tris-1)
+        for (LO n = 0; n < total_tris*total_tris; ++n) {
           //printf("count_tri_0 %d\n", count_tri_0);
           for (LO n_t = 0; n_t < total_tris; ++n_t) {
             if (polygon_tris[n_t] == -1) continue;
@@ -314,26 +341,29 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             LO const tri_next_e0 = polygon_tris_edges[n_t*2 + 0];
             LO const tri_next_e1 = polygon_tris_edges[n_t*2 + 1];
             if (tri_next_e0 == next_edge) {
-              printf("found next edge 1\n");
+              printf("found next edge 0\n");
               next_edge = tri_next_e1;
               ++count_tri_0;
               tris_from_0[count_tri_0] = tri_next;
+              polygon_tris[n_t] = -1;
             }
             else if (tri_next_e1 == next_edge) {
-              printf("found next edge 2\n");
+              printf("found next edge 1\n");
               next_edge = tri_next_e0;
               ++count_tri_0;
               tris_from_0[count_tri_0] = tri_next;
+              polygon_tris[n_t] = -1;
             }
             else {
-              //printf("not next tri\n");
+              printf("not next tri\n");
             }
           }
         }
         printf("total %d count %d\n", total_tris, count_tri_0);
-        //for (LO n_t = 0; n_t < total_tris; ++n_t) {
-          //printf("arranged %d tri is %d\n", n_t, tris_from_0[n_t]);
-        //}
+        for (LO n_t = 0; n_t < total_tris; ++n_t) {
+          printf("arranged %d tri is %d\n", n_t, tris_from_0[n_t]);
+        }
+        //end new algorithm
 
         /*
         */
