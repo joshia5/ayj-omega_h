@@ -229,56 +229,32 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         }
         //printf("olde0, e1 %d, %d\n", old_e0, old_e1);
 
-        LO e0_adj_tri0 = -1;
-        Few<LO, 2> adj_tris;
-        Few<LO, 2> has_bdry_edge;
-        adj_tris[0] = -1; adj_tris[1] = -1;
-        has_bdry_edge[0] = -1; has_bdry_edge[1] = -1;
-        LO counter = 0;
-        for (LO ef = old_e2ef[old_e0]; ef < old_e2ef[old_e0 + 1]; ++ef) {
-          LO const adj_f = old_ef2f[ef];
-          if ((oldface_gdim[adj_f] == FACE) &&
-              (newedge_gid[new_edge] == oldface_gid[adj_f])) {
-            adj_tris[counter] = adj_f;
-            for (LO f_e = 0; f_e < 3; ++f_e) {
-              LO const adj_f_e = old_fe2e[adj_f*3 + f_e];
-              if (oldedge_gdim[adj_f_e] == 1) has_bdry_edge[counter] = 1;
-            }
-            ++counter;
-          }
-        }
-        printf("counter %d\n", counter);
-        if (counter == 2) {
-          printf("2 tris %d %d\n", adj_tris[0], adj_tris[1]);
-          if (has_bdry_edge[0] == 1) {
-            e0_adj_tri0 = adj_tris[0];
-          }
-          else if (has_bdry_edge[1] == 1) {
-            e0_adj_tri0 = adj_tris[1];
-          }
-          else {
-            e0_adj_tri0 = adj_tris[0];
-          }
-        }
-        else {
-          OMEGA_H_CHECK(counter == 1);
-          e0_adj_tri0 = adj_tris[0];
-        }
-
-        printf("e0_adj_tri0 %d\n", e0_adj_tri0);
-
         //now count num tris bet e0 and e1 (ntri = nedge + 1)
         LO total_tris = 0;
         //collect tris on cavity surface
         Few<LO, 32> polygon_tris;
+        Few<LO, 32> has_bdry_edge;
+        for (LO count = 0; count < 32; ++count) has_bdry_edge[count] = -1;
         for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
           LO const adj_f = old_vf2f[vf];
           if ((oldface_gdim[adj_f] == FACE) &&
               (newedge_gid[new_edge] == oldface_gid[adj_f])) {
             polygon_tris[total_tris] = adj_f;
+            for (LO f_e = 0; f_e < 3; ++f_e) {
+              LO const adj_f_e = old_fe2e[adj_f*3 + f_e];
+              if (oldedge_gdim[adj_f_e] == 1) {
+                has_bdry_edge[total_tris] = 1;
+                printf("tri %d has bdry edge\n", adj_f);
+              }
+            }
             ++total_tris;
           }
         }
+        LO e0_adj_tri0 = -1;
+        for (LO count = 0; count < total_tris; ++count) {
+          if (has_bdry_edge[count] == 1) e0_adj_tri0 = polygon_tris[count];
+        }
+        printf("e0_adj_tri0 %d\n", e0_adj_tri0);
         if (total_tris == 4) {
           printf("4 tris {%d,%d,%d,%d}\n", polygon_tris[0], polygon_tris[1], 
               polygon_tris[2], polygon_tris[3]);
@@ -359,8 +335,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         // use a while loop till ntris arranged are < total tris
         LO next_edge = polygon_tris_edges[first_tri_index*2 + first_edge_index];
         printf("next_edge %d\n", next_edge);
-        //while (count_tri_0 < total_tris-1)
-        for (LO n = 0; n < total_tris*total_tris; ++n) {
+        while (count_tri_0 < total_tris-1) {
+        //for (LO n = 0; n < total_tris*total_tris; ++n) 
           //printf("count_tri_0 %d\n", count_tri_0);
           for (LO n_t = 0; n_t < total_tris; ++n_t) {
             if (polygon_tris[n_t] == -1) continue;
@@ -387,7 +363,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             }
           }
         }
-        printf("total %d count %d\n", total_tris, count_tri_0);
+        OMEGA_H_CHECK(total_tris == count_tri_0+1);
         for (LO n_t = 0; n_t < total_tris; ++n_t) {
           printf("arranged %d tri is %d\n", n_t, tris_from_0[n_t]);
         }
