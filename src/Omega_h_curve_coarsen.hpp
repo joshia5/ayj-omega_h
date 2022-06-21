@@ -219,13 +219,13 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         //begin new algorithm
         //find old edges
         LO old_e0 = -1;
-        //LO old_e1 = -1;
+        LO old_e1 = -1;
         for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
           LO const e = old_ve2e[ve];
           if ((new_edge_v0_old == old_ev2v[e*2+0]) || 
               (new_edge_v0_old == old_ev2v[e*2+1])) old_e0 = e;
-          //if ((new_edge_v1_old == old_ev2v[e*2+0]) || 
-            //  (new_edge_v1_old == old_ev2v[e*2+1])) old_e1 = e;
+          if ((new_edge_v1_old == old_ev2v[e*2+0]) || 
+              (new_edge_v1_old == old_ev2v[e*2+1])) old_e1 = e;
         }
         //printf("olde0, e1 %d, %d\n", old_e0, old_e1);
 
@@ -251,9 +251,19 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           }
         }
         LO e0_adj_tri0 = -1;
-        for (LO count = 0; count < total_tris; ++count) {
-          if (has_bdry_edge[count] == 1) e0_adj_tri0 = polygon_tris[count];
+        for (LO ef = old_e2ef[old_e0]; ef < old_e2ef[old_e0 + 1]; ++ef) {
+          LO const adj_f = old_ef2f[ef];
+          if ((oldface_gdim[adj_f] == FACE) &&
+              (newedge_gid[new_edge] == oldface_gid[adj_f])) {
+            e0_adj_tri0 = adj_f;
+            break;
+          }
         }
+        printf("e0_adj_tri0 %d\n", e0_adj_tri0);
+
+        //for (LO count = 0; count < total_tris; ++count) {
+          //if (has_bdry_edge[count] == 1) e0_adj_tri0 = polygon_tris[count];
+        //}
         printf("e0_adj_tri0 %d\n", e0_adj_tri0);
         if (total_tris == 4) {
           printf("4 tris {%d,%d,%d,%d}\n", polygon_tris[0], polygon_tris[1], 
@@ -288,7 +298,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               );
         }
 
-        //LO const e0_adj_tri1 = old_ef2f[old_e2ef[old_e0] + 1];
         LO count_tri_0 = -1;
         LO count_edge_0 = -1;
         Few<LO, 32> cyclic_tris;
@@ -333,9 +342,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         // use a while loop till ntris arranged are < total tris
         LO next_edge = polygon_tris_edges[first_tri_index*2 + first_edge_index];
         printf("next_edge %d\n", next_edge);
-        while (count_tri_0 < total_tris-1) {
-        //for (LO n = 0; n < total_tris*total_tris; ++n) 
-          //printf("count_tri_0 %d\n", count_tri_0);
+        LO used_tris = 1;
+        while (next_edge != old_e1) {
+        //while (count_tri_0 < total_tris-1)
+          printf("next edge %d olde1 %d\n", next_edge, old_e1);
           for (LO n_t = 0; n_t < total_tris; ++n_t) {
             if (polygon_tris[n_t] == -1) continue;
             printf("n_t %d\n", n_t);
@@ -348,6 +358,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               ++count_tri_0;
               cyclic_tris[count_tri_0] = tri_next;
               polygon_tris[n_t] = -1;
+              ++used_tris;
+              printf("next edge %d olde1 %d\n", next_edge, old_e1);
+              if (next_edge == old_e1) break;
             }
             else if (tri_next_e1 == next_edge) {
               printf("found next edge 1\n");
@@ -355,14 +368,17 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               ++count_tri_0;
               cyclic_tris[count_tri_0] = tri_next;
               polygon_tris[n_t] = -1;
+              ++used_tris;
+              printf("next edge %d olde1 %d\n", next_edge, old_e1);
+              if (next_edge == old_e1) break;
             }
             else {
               printf("not next tri\n");
             }
           }
         }
-        OMEGA_H_CHECK(total_tris == count_tri_0+1);
-        for (LO n_t = 0; n_t < total_tris; ++n_t) {
+        //OMEGA_H_CHECK(total_tris == count_tri_0+1);
+        for (LO n_t = 0; n_t < used_tris; ++n_t) {
           printf("arranged %d tri is %d\n", n_t, cyclic_tris[n_t]);
         }
 
