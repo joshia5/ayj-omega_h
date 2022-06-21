@@ -288,17 +288,15 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               );
         }
 
-        //OMEGA_H_CHECK((old_e2ef[old_e0 + 1] - old_e2ef[old_e0]) == 2); will
-        //contain faces in interior
         //LO const e0_adj_tri1 = old_ef2f[old_e2ef[old_e0] + 1];
         LO count_tri_0 = -1;
         LO count_edge_0 = -1;
-        Few<LO, 32> tris_from_0;
-        Few<LO, 32> edges_from_0;
+        Few<LO, 32> cyclic_tris;
+        Few<LO, 32> cyclic_edges;
         ++count_tri_0;
-        tris_from_0[count_tri_0] = e0_adj_tri0;
+        cyclic_tris[count_tri_0] = e0_adj_tri0;
         ++count_edge_0;
-        edges_from_0[count_edge_0] = old_e0;
+        cyclic_edges[count_edge_0] = old_e0;
         LO first_tri_index = -1;
         LO first_edge_index = 0;
         //find and replace index of first tri
@@ -348,14 +346,14 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               printf("found next edge 0\n");
               next_edge = tri_next_e1;
               ++count_tri_0;
-              tris_from_0[count_tri_0] = tri_next;
+              cyclic_tris[count_tri_0] = tri_next;
               polygon_tris[n_t] = -1;
             }
             else if (tri_next_e1 == next_edge) {
               printf("found next edge 1\n");
               next_edge = tri_next_e0;
               ++count_tri_0;
-              tris_from_0[count_tri_0] = tri_next;
+              cyclic_tris[count_tri_0] = tri_next;
               polygon_tris[n_t] = -1;
             }
             else {
@@ -365,8 +363,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         }
         OMEGA_H_CHECK(total_tris == count_tri_0+1);
         for (LO n_t = 0; n_t < total_tris; ++n_t) {
-          printf("arranged %d tri is %d\n", n_t, tris_from_0[n_t]);
+          printf("arranged %d tri is %d\n", n_t, cyclic_tris[n_t]);
         }
+
+        //now use this cyclic_tris
+        //in that list, find the tri which is adj to olde0
+        //iterate till we find the tri that is adj to olde1
         //end new algorithm
 
         /*
