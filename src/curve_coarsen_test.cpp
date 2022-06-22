@@ -363,6 +363,9 @@ void test_collapse_boxCircle(Library *lib) {
   build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh);
   vtuPath = "/lore/joshia5/Meshes/curved/box_circleCut_4k_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
+  vtk::FullWriter writer;
+  writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/boxCircle_bef.vtk", &mesh);
+  writer.write();
   
   auto opts = AdaptOpts(&mesh);
   mesh.add_tag<Real>(VERT, "metric", 1);
