@@ -220,12 +220,17 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         //find old edges
         LO old_e0 = -1;
         LO old_e1 = -1;
+        Vector<dim> e1_mid;
         for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
           LO const e = old_ve2e[ve];
           if ((new_edge_v0_old == old_ev2v[e*2+0]) || 
-              (new_edge_v0_old == old_ev2v[e*2+1])) old_e0 = e;
+              (new_edge_v0_old == old_ev2v[e*2+1])) {
+            old_e0 = e;
+          }
           if ((new_edge_v1_old == old_ev2v[e*2+0]) || 
-              (new_edge_v1_old == old_ev2v[e*2+1])) old_e1 = e;
+              (new_edge_v1_old == old_ev2v[e*2+1])) {
+            old_e1 = e;
+          }
         }
         //printf("olde0, e1 %d, %d\n", old_e0, old_e1);
 
@@ -251,12 +256,30 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           }
         }
         LO e0_adj_tri0 = -1;
+        //OMEGA_H_CHECK(new_edge_v1_old != v_onto);
+        Real min_tri0_dist = 99999999;
+        //TODO the e1_v can be v_onto
+        //high level, which way do we start
+        LO v_not_onto = -1;
+        if (new_edge_v0_old == v_onto) v_not_onto = new_edge_v1_old;
+        if (new_edge_v1_old == v_onto) v_not_onto = new_edge_v0_old;
+        auto c_not_onto = get_vector<dim>(old_vertCtrlPts, v_not_onto);
         for (LO ef = old_e2ef[old_e0]; ef < old_e2ef[old_e0 + 1]; ++ef) {
           LO const adj_f = old_ef2f[ef];
           if ((oldface_gdim[adj_f] == FACE) &&
               (newedge_gid[new_edge] == oldface_gid[adj_f])) {
-            e0_adj_tri0 = adj_f;
-            break;
+            //compute dist from centroid of tri to vnotonto
+            Vector<dim> centroid;
+            Real dist = 0.0;
+            for (LO d=0; d<dim; ++d) {
+              centroid[d] = (old_coords[old_fv2v[adj_f*3 + 0] + d] +
+                             old_coords[old_fv2v[adj_f*3 + 1] + d] +
+                             old_coords[old_fv2v[adj_f*3 + 2] + d])/3.0;
+              dist += (centroid[d] - c_not_onto[d])*(centroid[d] - c_not_onto[d]);
+            }
+            dist = std::pow(dist, 0.5);
+            if (dist < min_tri0_dist) e0_adj_tri0 = adj_f;
+            //if dist less than min, save that tri
           }
         }
         printf("e0_adj_tri0 %d\n", e0_adj_tri0);
