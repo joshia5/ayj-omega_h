@@ -1302,10 +1302,10 @@ void build_cubic_cavities_3d(Mesh* mesh, Mesh* curveVtk_mesh,
                           LO n_sample_pts) {
   auto coords_h = HostRead<Real>(mesh->coords());
   auto vert_ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(0));
-  auto face_dualCone_h = HostRead<I8>(mesh->get_array<I8>(2, "face_dualCone"));
+  auto face_crvVis_h = HostRead<I8>(mesh->get_array<I8>(2, "face_crvVis"));
   LO nface = 0;
-  for (LO i = 0; i < face_dualCone_h.size(); ++i) {
-    if (face_dualCone_h[i] == 1) ++nface;
+  for (LO i = 0; i < face_crvVis_h.size(); ++i) {
+    if (face_crvVis_h[i] == 1) ++nface;
   }
   printf("building %d nfaces of cavities\n", nface);
 
@@ -1344,7 +1344,7 @@ void build_cubic_cavities_3d(Mesh* mesh, Mesh* curveVtk_mesh,
   
   LO count_curveVtk_mesh_vtx = 0;
   for (LO face = 0; face < mesh->nfaces(); ++face) {
-    if (face_dualCone_h[face] == 1) {
+    if (face_crvVis_h[face] == 1) {
       auto v0 = fv2v_h[face*3];
       auto v1 = fv2v_h[face*3 + 1];
       auto v2 = fv2v_h[face*3 + 2];
