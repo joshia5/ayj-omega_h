@@ -337,7 +337,73 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         Few<LO, 2> upper_edges;
         Few<I8, 2> from_first_vtx;
         LO count_upper_edge = 0;
-        for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
+        for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
+          //adj tris of vkey
+          LO const adj_t = old_vf2f[vf];
+          for (LO te = 0; te < 3; ++te) {
+            LO adj_t_e = old_fe2e[adj_t*3 + te];
+            //adj edges of tri
+            LO adj_t_e_v0 = old_ev2v[adj_t_e*2 + 0];
+            LO adj_t_e_v1 = old_ev2v[adj_t_e*2 + 1];
+            //adj verts of edge
+            if ((adj_t_e_v0 == v_onto) && (adj_t_e_v1 != v_key)) {
+              LO is_duplicate = -1;
+              for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+                if (adj_t_e == upper_edges[upper_e]) is_duplicate = 1;
+              }
+              if (is_duplicate == -1) {
+                if ((oldface_gid[adj_t] == newedge_gid[new_edge]) && (oldface_gdim[adj_t] == 2)) {
+                  OMEGA_H_CHECK(count_upper_edge < 2);
+                  upper_edges[count_upper_edge] = adj_t_e;
+                  from_first_vtx[count_upper_edge] = 1;
+                  ++count_upper_edge;
+                }
+              }
+            }
+            if ((adj_t_e_v1 == v_onto) && (adj_t_e_v0 != v_key)) {
+              LO is_duplicate = -1;
+              for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+                if (adj_t_e == upper_edges[upper_e]) is_duplicate = 1;
+              }
+              if (is_duplicate == -1) {
+                if ((oldface_gid[adj_t] == newedge_gid[new_edge]) && (oldface_gdim[adj_t] == 2)) {
+                  OMEGA_H_CHECK(count_upper_edge < 2);
+                  upper_edges[count_upper_edge] = adj_t_e;
+                  from_first_vtx[count_upper_edge] = -1;
+                  ++count_upper_edge;
+                }
+              }
+            }
+            if (oldvert_gdim[v_key] == 1) {
+              if ((adj_t_e_v0 == v_onto) && (adj_t_e_v1 == v_key)) {
+                LO is_duplicate = -1;
+                for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+                  if (adj_t_e == upper_edges[upper_e]) is_duplicate = 1;
+                }
+                if (is_duplicate == -1) {
+                  OMEGA_H_CHECK(count_upper_edge < 2);
+                  upper_edges[count_upper_edge] = adj_t_e;
+                  from_first_vtx[count_upper_edge] = 1;
+                  ++count_upper_edge;
+                }
+              }
+              if ((adj_t_e_v1 == v_onto) && (adj_t_e_v0 == v_key)) {
+                LO is_duplicate = -1;
+                for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+                  if (adj_t_e == upper_edges[upper_e]) is_duplicate = 1;
+                }
+                if (is_duplicate == -1) {
+                  OMEGA_H_CHECK(count_upper_edge < 2);
+                  upper_edges[count_upper_edge] = adj_t_e;
+                  from_first_vtx[count_upper_edge] = -1;
+                  ++count_upper_edge;
+                }
+              }
+            }
+          }
+        }
+/*
+        for (LO vf = old_v2vf[v_key]; vf < old_v2ve[v_key + 1]; ++ve) {
           LO const adj_e = old_ve2e[ve];
           //adj verts of edge
           //adj edges of vkey
@@ -378,6 +444,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             }
           }
         }
+        */
         printf("bdry count_upper_e %d\n", count_upper_edge);
 
         Few<Real, dim> t_avg;
