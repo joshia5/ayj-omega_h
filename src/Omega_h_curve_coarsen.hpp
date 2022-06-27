@@ -402,50 +402,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             }
           }
         }
-/*
-        for (LO vf = old_v2vf[v_key]; vf < old_v2ve[v_key + 1]; ++ve) {
-          LO const adj_e = old_ve2e[ve];
-          //adj verts of edge
-          //adj edges of vkey
-          if ((oldedge_gdim[adj_e] == 1) || (oldedge_gdim[adj_e] == 2)) {
-            for (LO ve2 = old_v2ve[v_onto]; ve2 < old_v2ve[v_onto + 1]; ++ve2) {
-              LO const adj_e2 = old_ve2e[ve2];
-              LO const adj_e2_v0 = old_ev2v[adj_e2*2 + 0];
-              LO const adj_e2_v1 = old_ev2v[adj_e2*2 + 1];
-              if (adj_e == adj_e2) {
-                printf("adje %d adje2 %d\n", adj_e, adj_e2);
-                if ((adj_e2_v0 == v_onto) && (adj_e2_v1 != v_key)) {
-                  printf("from first\n");
-                  OMEGA_H_CHECK(count_upper_edge < 2);
-                  LO is_duplicate = -1;
-                  for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
-                    if (adj_e == upper_edges[upper_e]) is_duplicate = 1;
-                  }
-                  if (is_duplicate == -1) {
-                    upper_edges[count_upper_edge] = adj_e;
-                    from_first_vtx[count_upper_edge] = 1;
-                    ++count_upper_edge;
-                  }
-                }
-                if ((adj_e2_v1 == v_onto) && (adj_e2_v0 != v_key)) {
-                  printf("not from first\n");
-                  OMEGA_H_CHECK(count_upper_edge < 2);
-                  LO is_duplicate = -1;
-                  for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
-                    if (adj_e == upper_edges[upper_e]) is_duplicate = 1;
-                  }
-                  if (is_duplicate == -1) {
-                    upper_edges[count_upper_edge] = adj_e;
-                    from_first_vtx[count_upper_edge] = -1;
-                    ++count_upper_edge;
-                  }
-                }
-              }
-            }
-          }
-        }
-        */
-        printf("bdry count_upper_e %d\n", count_upper_edge);
+        printf("bdry count_upper_e %d first %d second %d\n", 
+            count_upper_edge, upper_edges[0], upper_edges[1]);
 
         Few<Real, dim> t_avg;
         for (LO d = 0; d < dim; ++d) t_avg[d] = 0.0; 
