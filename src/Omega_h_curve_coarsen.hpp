@@ -194,7 +194,26 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   };
   parallel_for(nold_edges, std::move(calc_tangents));
 
-  auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
+  Write<LO> count_bdry_cavities(1, 0);
+  auto count_bdry_cavs = OMEGA_H_LAMBDA(LO i) {
+    LO const v_key = keys2verts[i];
+    LO const v_onto = keys2verts_onto[i];
+    LO has_bdry_cav = -1;
+    for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
+      LO new_edge = prods2new[prod];
+      //edges classified on g_edges or g_faces
+      if (((oldvert_gdim[v_key] <= 1) && (oldvert_gdim[v_onto] <= 1) &&
+          (newedge_gdim[new_edge] == 1)) || 
+         ((dim == 3) && (newedge_gdim[new_edge] == 2))) {
+          has_bdry_cav = 1;
+        }
+    }
+    if (has_bdry_cav == 1) 
+      atomic_increment(&count_bdry_cavities[0]);
+  };
+  parallel_for(keys2verts.size(), std::move(count_bdry_cavs));
+
+ auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO const v_key = keys2verts[i];
     LO const v_onto = keys2verts_onto[i];
     LO const nprods_gface_i = nprods_gface[i];
@@ -314,6 +333,74 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               old_coords[old_fv2v[c2_face*3 + 2] + d])/3.0;
         }
 
+        //count upper edges
+        Few<LO, 2> upper_edges;
+        Few<I8, 2> from_first_vtx;
+        LO count_upper_edge = 0;
+        for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
+          LO const adj_e = old_ve2e[ve];
+          //adj verts of edge
+          //adj edges of vkey
+          if ((oldedge_gdim[adj_e] == 1) || (oldedge_gdim[adj_e] == 2)) {
+            for (LO ve2 = old_v2ve[v_onto]; ve2 < old_v2ve[v_onto + 1]; ++ve2) {
+              LO const adj_e2 = old_ve2e[ve2];
+              LO const adj_e2_v0 = old_ev2v[adj_e2*2 + 0];
+              LO const adj_e2_v1 = old_ev2v[adj_e2*2 + 1];
+              if (adj_e == adj_e2) {
+                printf("adje %d adje2 %d\n", adj_e, adj_e2);
+                if ((adj_e2_v0 == v_onto) && (adj_e2_v1 != v_key)) {
+                  printf("from first\n");
+                  OMEGA_H_CHECK(count_upper_edge < 2);
+                  LO is_duplicate = -1;
+                  for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+                    if (adj_e == upper_edges[upper_e]) is_duplicate = 1;
+                  }
+                  if (is_duplicate == -1) {
+                    upper_edges[count_upper_edge] = adj_e;
+                    from_first_vtx[count_upper_edge] = 1;
+                    ++count_upper_edge;
+                  }
+                }
+                if ((adj_e2_v1 == v_onto) && (adj_e2_v0 != v_key)) {
+                  printf("not from first\n");
+                  OMEGA_H_CHECK(count_upper_edge < 2);
+                  LO is_duplicate = -1;
+                  for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+                    if (adj_e == upper_edges[upper_e]) is_duplicate = 1;
+                  }
+                  if (is_duplicate == -1) {
+                    upper_edges[count_upper_edge] = adj_e;
+                    from_first_vtx[count_upper_edge] = -1;
+                    ++count_upper_edge;
+                  }
+                }
+              }
+            }
+          }
+        }
+        printf("bdry count_upper_e %d\n", count_upper_edge);
+
+        Few<Real, dim> t_avg;
+        for (LO d = 0; d < dim; ++d) t_avg[d] = 0.0; 
+        for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+          if (from_first_vtx[upper_e] == 1) {
+            for (LO d = 0; d < dim; ++d) {
+              t_avg[d] += tangents[upper_edges[upper_e]*2*dim + d];
+            }
+          }
+          if (from_first_vtx[upper_e] == -1) {
+            for (LO d = 0; d < dim; ++d) {
+              t_avg[d] += tangents[upper_edges[upper_e]*2*dim + dim + d];
+            }
+          }
+        }
+        for (LO d = 0; d < dim; ++d) t_avg[d] = t_avg[d]/count_upper_edge;
+        Real length_t = 0.0;
+        for (LO d = 0; d < dim; ++d) length_t += t_avg[d]*t_avg[d]; 
+        for (LO d = 0; d < dim; ++d) t_avg[d] = t_avg[d]/std::sqrt(length_t);
+        /*
+        */
+
         auto p1 = face_parametricToParent_3d(3, c1_face, old_ev2v,
             old_fe2e, old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts,
             1.0/3.0, 1.0/3.0, old_fv2v);
@@ -334,7 +421,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         auto Cx = M1*fx - M1*M2*cx;
         auto Cy = M1*fy - M1*M2*cy;
         auto Cz = M1*fz - M1*M2*cz;
-        printf("%f %f %f\n", Cx[0], Cy[0], Cz[0]);
 
         if (nprods_gface_i > 1) {
           if (v_onto == new_edge_v0_old) {
@@ -365,26 +451,27 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         }
         else {
           OMEGA_H_CHECK (nprods_gface_i == 1);
-          /*
           edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = Cx[0];
           edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = Cy[0];
           edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = Cz[0];
           edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = Cx[1];
           edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = Cy[1];
           edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = Cz[1];
-          */
+          /*
           edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = old_faceCtrlPts[c1_face*dim + 0];
           edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = old_faceCtrlPts[c1_face*dim + 1];
           edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = old_faceCtrlPts[c1_face*dim + 2];
           edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = old_faceCtrlPts[c2_face*dim + 0];
           edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = old_faceCtrlPts[c2_face*dim + 1];
           edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = old_faceCtrlPts[c2_face*dim + 2];
+          */
         }
       }
 
     }
   };
   parallel_for(keys2verts.size(), std::move(curve_bdry_edges));
+  printf("bdry cavities %d\n", count_bdry_cavities[0]);
 
   Write<LO> count_dualCone_cavities(1, 0);
   Write<LO> count_interior_dualCone_cavities(1, 0);
