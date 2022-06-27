@@ -329,7 +329,7 @@ void test_collapse_kova(Library *lib) {
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(100)));
-  coarsen_by_size(&mesh, opts);
+  for (LO adapt_itr = 0; adapt_itr < 2; ++adapt_itr) coarsen_by_size(&mesh, opts);
   //while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 50));
   mesh.ask_qualities();
   writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/kovaCoarsen_aft.vtk", &mesh);
@@ -371,8 +371,10 @@ void test_collapse_boxCircle(Library *lib) {
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(100)));
-  coarsen_by_size(&mesh, opts);
+  for (LO adapt_itr = 0; adapt_itr < 2; ++adapt_itr) coarsen_by_size(&mesh, opts);
   mesh.ask_qualities();
+  writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/boxCircle_aft.vtk", &mesh);
+  writer.write();
   return;
 }
 
@@ -459,7 +461,7 @@ int main(int argc, char** argv) {
   //test_Kova_validity(&lib);
   //test_cubic_tet_validity(&lib);
   test_collapse_kova(&lib);
-  //test_collapse_boxCircle(&lib);
+  test_collapse_boxCircle(&lib);
   //test_collapse_cubicSlab(&lib);
   //test_antenna(&lib);
 
