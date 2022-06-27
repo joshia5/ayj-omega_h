@@ -37,6 +37,7 @@ void check_validity_all_tet(Mesh *new_mesh) {
 void correct_curved_edges(Mesh *new_mesh) {
 
   auto const edge_crv2bdry_dim = new_mesh->get_array<I8>(1, "edge_crv2bdry_dim");
+  auto const newedge_gid = new_mesh->get_array<LO>(1, "class_id");
   auto const new_rv2v = new_mesh->ask_down(3, 0).ab2b;
   auto const new_re2e = new_mesh->ask_down(3, 1).ab2b;
   auto const new_rf2f = new_mesh->ask_down(3, 2).ab2b;
@@ -72,8 +73,8 @@ void correct_curved_edges(Mesh *new_mesh) {
 
         has_invalid_tet = checkMinJacDet_3d(nodes_det, n_edge_pts+1);
         if (has_invalid_tet > 0) {
-          printf(" invalid tet %d for edge %d curved to g_dim %d with code %d\n"
-              , adj_tet, i, edge_crv2bdry_dim[i], has_invalid_tet);
+          printf(" invalid tet %d for edge %d curved to g_dim %d, g_id %d with code %d\n"
+              , adj_tet, i, edge_crv2bdry_dim[i], newedge_gid[i], has_invalid_tet);
           for (LO k=0; k<4; ++k) face_vis[new_rf2f[adj_tet*4 + k]] = 1;
         }
       }
@@ -86,7 +87,7 @@ void correct_curved_edges(Mesh *new_mesh) {
     }
   };
   parallel_for(nnew_edge, std::move(edge_correct), "edge_correct");
-  new_mesh->set_tag<I8>(2, "face_dualCone", Read<I8>(face_vis));
+  new_mesh->set_tag<I8>(2, "face_crvVis", Read<I8>(face_vis));
   return;
 }
 
