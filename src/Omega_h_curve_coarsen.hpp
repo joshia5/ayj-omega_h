@@ -161,10 +161,23 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 						    nnew_verts);
   auto const a2ab = new_verts2same_verts.a2ab;
   auto const ab2b = new_verts2same_verts.ab2b;
+  Write<LO> nprods_gface_w(nkeys, 0);
+
+  auto calc_gface_prods = OMEGA_H_LAMBDA(LO i) {
+    for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
+      LO const new_edge = prods2new[prod];
+      if ((dim == 3) && (newedge_gdim[new_edge] == 2)) {
+        atomic_increment(&nprods_gface_w[i]);
+      }
+    }
+  };
+  parallel_for(keys2verts.size(), std::move(calc_gface_prods));
+  auto nprods_gface = Read<LO>(nprods_gface_w);
 
   auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO const v_key = keys2verts[i];
     LO const v_onto = keys2verts_onto[i];
+    LO const nprods_gface_i = nprods_gface[i];
     for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
       LO new_edge = prods2new[prod];
       LO const new_edge_v0 = new_ev2v[new_edge*2 + 0];
@@ -210,208 +223,11 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         LO const new_edge_v0_old = same_verts2old_verts[ab2b[a2ab[new_edge_v0]]];
         LO const new_edge_v1_old = same_verts2old_verts[ab2b[a2ab[new_edge_v1]]];
         Vector<3> c1, c2;
+        //init with straight sided
         for (LO d = 0; d < dim; ++d) {
           c1[d] = edge_ctrlPts[new_edge*n_edge_pts*dim + d];
           c2[d] = edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d];
 	}
-
-//###############################
-        //begin new algorithm
-        //find old edges
-        LO old_e0 = -1;
-        LO old_e1 = -1;
-        Vector<dim> e1_mid;
-        for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
-          LO const e = old_ve2e[ve];
-          if ((new_edge_v0_old == old_ev2v[e*2+0]) || 
-              (new_edge_v0_old == old_ev2v[e*2+1])) {
-            old_e0 = e;
-          }
-          if ((new_edge_v1_old == old_ev2v[e*2+0]) || 
-              (new_edge_v1_old == old_ev2v[e*2+1])) {
-            old_e1 = e;
-          }
-        }
-        //printf("olde0, e1 %d, %d\n", old_e0, old_e1);
-
-        //now count num tris bet e0 and e1 (ntri = nedge + 1)
-        LO total_tris = 0;
-        //collect tris on cavity surface
-        Few<LO, 32> polygon_tris;
-        Few<LO, 32> has_bdry_edge;
-        for (LO count = 0; count < 32; ++count) has_bdry_edge[count] = -1;
-        for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
-          LO const adj_f = old_vf2f[vf];
-          if ((oldface_gdim[adj_f] == FACE) &&
-              (newedge_gid[new_edge] == oldface_gid[adj_f])) {
-            polygon_tris[total_tris] = adj_f;
-            for (LO f_e = 0; f_e < 3; ++f_e) {
-              LO const adj_f_e = old_fe2e[adj_f*3 + f_e];
-              if (oldedge_gdim[adj_f_e] == 1) {
-                has_bdry_edge[total_tris] = 1;
-                printf("tri %d has bdry edge\n", adj_f);
-              }
-            }
-            ++total_tris;
-          }
-        }
-        LO e0_adj_tri0 = -1;
-        //OMEGA_H_CHECK(new_edge_v1_old != v_onto);
-        Real min_tri0_dist = 99999999;
-        //TODO the e1_v can be v_onto
-        //high level, which way do we start
-        LO v_not_onto = -1;
-        if (new_edge_v0_old == v_onto) v_not_onto = new_edge_v1_old;
-        if (new_edge_v1_old == v_onto) v_not_onto = new_edge_v0_old;
-        auto c_not_onto = get_vector<dim>(old_vertCtrlPts, v_not_onto);
-        for (LO ef = old_e2ef[old_e0]; ef < old_e2ef[old_e0 + 1]; ++ef) {
-          LO const adj_f = old_ef2f[ef];
-          if ((oldface_gdim[adj_f] == FACE) &&
-              (newedge_gid[new_edge] == oldface_gid[adj_f])) {
-            //compute dist from centroid of tri to vnotonto
-            Vector<dim> centroid;
-            Real dist = 0.0;
-            for (LO d=0; d<dim; ++d) {
-              centroid[d] = (old_coords[old_fv2v[adj_f*3 + 0] + d] +
-                             old_coords[old_fv2v[adj_f*3 + 1] + d] +
-                             old_coords[old_fv2v[adj_f*3 + 2] + d])/3.0;
-              dist += (centroid[d] - c_not_onto[d])*(centroid[d] - c_not_onto[d]);
-            }
-            dist = std::pow(dist, 0.5);
-            if (dist < min_tri0_dist) e0_adj_tri0 = adj_f;
-            //if dist less than min, save that tri
-          }
-        }
-        printf("e0_adj_tri0 %d\n", e0_adj_tri0);
-
-        //for (LO count = 0; count < total_tris; ++count) {
-          //if (has_bdry_edge[count] == 1) e0_adj_tri0 = polygon_tris[count];
-        //}
-        printf("e0_adj_tri0 %d\n", e0_adj_tri0);
-        if (total_tris == 4) {
-          printf("4 tris {%d,%d,%d,%d}\n", polygon_tris[0], polygon_tris[1], 
-              polygon_tris[2], polygon_tris[3]);
-        }
-        Few<LO, 32*2> polygon_tris_edges;
-        LO total_tris_edges = 0;
-        //collect edges of tri in the cavity surface
-        for (LO count = 0; count < total_tris; ++count) {
-          LO const tri = polygon_tris[count];
-          LO edges_per_tri = 0;
-          for (LO n_e = 0; n_e < 3; ++n_e) {
-            LO const tri_e = old_fe2e[tri*3 + n_e];
-            LO const tri_e_v0 = old_ev2v[tri_e*2 + 0];
-            LO const tri_e_v1 = old_ev2v[tri_e*2 + 1];
-            if ((tri_e_v0 == v_key) || (tri_e_v1 == v_key)) {
-              polygon_tris_edges[total_tris_edges] = tri_e;
-              ++total_tris_edges;
-              ++edges_per_tri;
-            }
-          }
-          OMEGA_H_CHECK(edges_per_tri == 2);
-        }
-        //printf("total tris %d edges %d\n", total_tris, total_tris_edges);
-        OMEGA_H_CHECK(total_tris_edges == total_tris*2);
-        if (total_tris == 4) {
-          printf("4 tris_edges {%d,%d, %d,%d, %d,%d, %d,%d}\n",
-              polygon_tris_edges[0], polygon_tris_edges[1], 
-              polygon_tris_edges[2], polygon_tris_edges[3],
-              polygon_tris_edges[4], polygon_tris_edges[5], 
-              polygon_tris_edges[6], polygon_tris_edges[7]
-              );
-        }
-
-        LO count_tri_0 = -1;
-        LO count_edge_0 = -1;
-        Few<LO, 32> cyclic_tris;
-        Few<LO, 32> cyclic_edges;
-        ++count_tri_0;
-        cyclic_tris[count_tri_0] = e0_adj_tri0;
-        ++count_edge_0;
-        cyclic_edges[count_edge_0] = old_e0;
-        LO first_tri_index = -1;
-        LO first_edge_index = 0;
-        //find and replace index of first tri
-        for (LO n_t = 0; n_t < total_tris; ++n_t) {
-          LO const tri_r = polygon_tris[n_t];
-          //printf("n_t %d tri %d\n", n_t, tri_r);
-          if (tri_r == e0_adj_tri0) {
-            first_tri_index = n_t;
-            if ((oldedge_gdim[polygon_tris_edges[n_t*2 + 0]] == 2) &&
-                (oldedge_gdim[polygon_tris_edges[n_t*2 + 1]] == 2)) {
-              if (polygon_tris_edges[n_t*2 + 1] == old_e0) {
-                //choose the edge thats next and not the e0 itself
-                first_edge_index = 0;
-              }
-              else {
-                OMEGA_H_CHECK(polygon_tris_edges[n_t*2 + 0] == old_e0);
-                first_edge_index = 1;
-              }
-              polygon_tris[n_t] = -1;
-            }
-            if ((oldedge_gdim[polygon_tris_edges[n_t*2 + 0]] == 1) &&
-                (oldedge_gdim[polygon_tris_edges[n_t*2 + 1]] == 2)) {
-              first_edge_index = 1;
-              polygon_tris[n_t] = -1;
-            }
-            if ((oldedge_gdim[polygon_tris_edges[n_t*2 + 0]] == 2) &&
-                (oldedge_gdim[polygon_tris_edges[n_t*2 + 1]] == 1)) {
-              first_edge_index = 0;
-              polygon_tris[n_t] = -1;
-            }
-          }
-        }
-        printf("first edg ind %d\n", first_edge_index);
-        // use a while loop till ntris arranged are < total tris
-        LO next_edge = polygon_tris_edges[first_tri_index*2 + first_edge_index];
-        printf("next_edge %d\n", next_edge);
-        LO used_tris = 1;
-        while (next_edge != old_e1) {
-        //while (count_tri_0 < total_tris-1)
-          printf("next edge %d olde1 %d\n", next_edge, old_e1);
-          for (LO n_t = 0; n_t < total_tris; ++n_t) {
-            if (polygon_tris[n_t] == -1) continue;
-            printf("n_t %d\n", n_t);
-            LO const tri_next = polygon_tris[n_t];
-            LO const tri_next_e0 = polygon_tris_edges[n_t*2 + 0];
-            LO const tri_next_e1 = polygon_tris_edges[n_t*2 + 1];
-            if (tri_next_e0 == next_edge) {
-              printf("found next edge 0\n");
-              next_edge = tri_next_e1;
-              ++count_tri_0;
-              cyclic_tris[count_tri_0] = tri_next;
-              polygon_tris[n_t] = -1;
-              ++used_tris;
-              printf("next edge %d olde1 %d\n", next_edge, old_e1);
-              if (next_edge == old_e1) break;
-            }
-            else if (tri_next_e1 == next_edge) {
-              printf("found next edge 1\n");
-              next_edge = tri_next_e0;
-              ++count_tri_0;
-              cyclic_tris[count_tri_0] = tri_next;
-              polygon_tris[n_t] = -1;
-              ++used_tris;
-              printf("next edge %d olde1 %d\n", next_edge, old_e1);
-              if (next_edge == old_e1) break;
-            }
-            else {
-              printf("not next tri\n");
-            }
-          }
-        }
-        //OMEGA_H_CHECK(total_tris == count_tri_0+1);
-        for (LO n_t = 0; n_t < used_tris; ++n_t) {
-          printf("arranged %d tri is %d\n", n_t, cyclic_tris[n_t]);
-        }
-
-        //now use this cyclic_tris
-        //in that list, find the tri which is adj to olde0
-        //iterate till we find the tri that is adj to olde1
-        //end new algorithm
-
-        /*
-        */
 
         LO count_c1_faces = 0;
         Few<LO, 2> c1_faces;
@@ -426,7 +242,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
           LO const f = old_vf2f[vf];
           if ((oldface_gdim[f] == 2) && (oldface_gid[f] == e_g_face)) {
-            //this face is class. on same model face as collapsing edge
+            //this face is class on same model face as collapsing edge
             //now one of the verts is v0 then c1 face or v1 then c2 face
             //but can be mult faces so then find closest point
             for (LO k = 0; k < 3; ++k) {
@@ -467,7 +283,17 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           }
         }
 
-        /*
+        Vector<dim> c1_centroid;
+        Vector<dim> c2_centroid;
+        for (LO d=0; d<dim; ++d) {
+          c1_centroid[d] = (old_coords[old_fv2v[c1_face*3 + 0] + d] +
+              old_coords[old_fv2v[c1_face*3 + 1] + d] +
+              old_coords[old_fv2v[c1_face*3 + 2] + d])/3.0;
+          c2_centroid[d] = (old_coords[old_fv2v[c2_face*3 + 0] + d] +
+              old_coords[old_fv2v[c2_face*3 + 1] + d] +
+              old_coords[old_fv2v[c2_face*3 + 2] + d])/3.0;
+        }
+
         auto p1 = face_parametricToParent_3d(3, c1_face, old_ev2v,
             old_fe2e, old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts,
             1.0/3.0, 1.0/3.0, old_fv2v);
@@ -488,20 +314,51 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         auto Cx = M1*fx - M1*M2*cx;
         auto Cy = M1*fy - M1*M2*cy;
         auto Cz = M1*fz - M1*M2*cz;
-        edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = Cx[0];
-        edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = Cy[0];
-        edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = Cz[0];
-        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = Cx[1];
-        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = Cy[1];
-        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = Cz[1];
-        */
 
-        edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = old_faceCtrlPts[c1_face*dim + 0];
-        edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = old_faceCtrlPts[c1_face*dim + 1];
-        edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = old_faceCtrlPts[c1_face*dim + 2];
-        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = old_faceCtrlPts[c2_face*dim + 0];
-        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = old_faceCtrlPts[c2_face*dim + 1];
-        edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = old_faceCtrlPts[c2_face*dim + 2];
+        if (nprods_gface_i > 1) {
+          if (v_onto == new_edge_v0_old) {
+            //edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = Cx[1];
+            //edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = Cy[1];
+            //edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = Cz[1];
+            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = old_faceCtrlPts[c2_face*dim + 0];
+            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = old_faceCtrlPts[c2_face*dim + 1];
+            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = old_faceCtrlPts[c2_face*dim + 2];
+            //c1 should be mid pt of straight sided line c2-v_onto
+            edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] + old_vertCtrlPts[v_onto*dim + 0]);
+            edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] + old_vertCtrlPts[v_onto*dim + 1]);
+            edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] + old_vertCtrlPts[v_onto*dim + 2]);
+          }
+          else {
+            OMEGA_H_CHECK (v_onto == new_edge_v1_old);
+            //edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = Cx[0];
+            //edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = Cy[0];
+            //edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = Cz[0];
+            edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = old_faceCtrlPts[c1_face*dim + 0];
+            edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = old_faceCtrlPts[c1_face*dim + 1];
+            edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = old_faceCtrlPts[c1_face*dim + 2];
+            //c2 should be straight sided
+            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + 0] + old_vertCtrlPts[v_onto*dim + 0]);
+            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + 1] + old_vertCtrlPts[v_onto*dim + 1]);
+            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + 2] + old_vertCtrlPts[v_onto*dim + 2]);
+          }
+        }
+        else {
+          OMEGA_H_CHECK (nprods_gface_i == 1);
+          edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = Cx[0];
+          edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = Cy[0];
+          edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = Cz[0];
+          edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = Cx[1];
+          edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = Cy[1];
+          edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = Cz[1];
+          /*
+          edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = old_faceCtrlPts[c1_face*dim + 0];
+          edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = old_faceCtrlPts[c1_face*dim + 1];
+          edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = old_faceCtrlPts[c1_face*dim + 2];
+          edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = old_faceCtrlPts[c2_face*dim + 0];
+          edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = old_faceCtrlPts[c2_face*dim + 1];
+          edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = old_faceCtrlPts[c2_face*dim + 2];
+          */
+        }
       }
 
     }
@@ -511,14 +368,15 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   Write<LO> count_dualCone_cavities(1, 0);
   Write<LO> count_interior_dualCone_cavities(1, 0);
   Write<LO> count_interior_cavities(1, 0);
-  Write<I8> face_dualCone(nold_faces, -1);
+  Write<I8> face_crvVis(nold_faces, -1);
   auto count_dualCone_cav = OMEGA_H_LAMBDA(LO i) {
     LO const v_onto = keys2verts_onto[i];
     LO const v_key = keys2verts[i];
     //printf(" vkey %d vonto %d\n",v_key, v_onto);
     for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
       LO const f = old_vf2f[vf];
-      if (v_key == 27) face_dualCone[f] = 1;
+      face_crvVis[f] = 1;
+      //if (v_key == 27) face_crvVis[f] = 1;
     }
     if ((oldvert_gdim[v_key] == dim) && (oldvert_gdim[v_onto] == dim)) {
       atomic_increment(&count_interior_cavities[0]);
@@ -533,7 +391,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   parallel_for(keys2prods.size()-1, std::move(count_dualCone_cav));
   printf("total nkeys %d, nkeys in interior %d nkeys with dual cone cavities %d, %d in interior\n", keys2prods.size()-1, 
       count_interior_cavities[0], count_dualCone_cavities[0], count_interior_dualCone_cavities[0]);
-  mesh->add_tag<I8>(2, "face_dualCone", 1, Read<I8>(face_dualCone));//old mesh
+  mesh->add_tag<I8>(2, "face_crvVis", 1, Read<I8>(face_crvVis));//old mesh
 
   if (dim == 3) {
     auto v2t = mesh->ask_up(0, 3);
@@ -832,12 +690,12 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     auto const newface_gdim = new_mesh->get_array<I8>(2, "class_dim");
     auto const newface_gid = new_mesh->get_array<LO>(2, "class_id");
 
-    Write<I8> face_dualCone(nnew_faces, -1);
+    Write<I8> face_crvVis(nnew_faces, -1);
     auto face_blends = OMEGA_H_LAMBDA(LO e) {
       if (edge_dualCone[e] == 1) {
         for (LO et = e2et[e]; et < e2et[e + 1]; ++et) {
           LO const tri = et2t[et];
-          face_dualCone[tri] = 1;
+          face_crvVis[tri] = 1;
 
           auto p11 = face_blend_interp_3d(3, tri, new_ev2v, new_fe2e,
               vertCtrlPts, edgeCtrlPts, new_fv2v, weights);
@@ -865,7 +723,7 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       }
     };
     parallel_for(nnew_edges, std::move(face_blends), "face_blends");
-    new_mesh->add_tag<I8>(2, "face_dualCone", 1, Read<I8>(face_dualCone));
+    new_mesh->add_tag<I8>(2, "face_crvVis", 1, Read<I8>(face_crvVis));
   }
 
   new_mesh->add_tag<Real>(2, "bezier_pts", dim);
