@@ -161,18 +161,27 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 						    nnew_verts);
   auto const a2ab = new_verts2same_verts.a2ab;
   auto const ab2b = new_verts2same_verts.ab2b;
-  Write<LO> nprods_gface_w(nkeys, 0);
+  Write<LO> nedge_shared_gface_w(nnew_edge, 0);
 
-  auto calc_gface_prods = OMEGA_H_LAMBDA(LO i) {
-    for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
-      LO const new_edge = prods2new[prod];
-      if ((dim == 3) && (newedge_gdim[new_edge] == 2)) {
-        atomic_increment(&nprods_gface_w[i]);
+  if (dim == 3) {
+    auto calc_gface_prods = OMEGA_H_LAMBDA(LO i) {
+      for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
+        LO const new_edge = prods2new[prod];
+        if (newedge_gdim[new_edge] == 2) {
+          nedge_shared_gface_w[new_edge] += 1;
+          for (LO prod2 = keys2prods[i]; prod2 < keys2prods[i+1]; ++prod2) {
+            LO const other_edge = prods2new[prod2];
+            if ((other_edge != new_edge) && (newedge_gdim[other_edge] == 2)) {
+              if (newedge_gid[new_edge] == newedge_gid[other_edge]) 
+                nedge_shared_gface_w[new_edge] += 1;
+            }
+          }
+        }
       }
-    }
-  };
-  parallel_for(keys2verts.size(), std::move(calc_gface_prods));
-  auto nprods_gface = Read<LO>(nprods_gface_w);
+    };
+    parallel_for(keys2verts.size(), std::move(calc_gface_prods));
+  }
+  auto nedge_shared_gface = Read<LO>(nedge_shared_gface_w);
 
   // for every edge, calc and store 2 unit tangent vectors from either vertex
   Write<Real> tangents(nold_edges*2*dim, 0);
@@ -216,13 +225,17 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
  auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO const v_key = keys2verts[i];
     LO const v_onto = keys2verts_onto[i];
-    LO const nprods_gface_i = nprods_gface[i];
     for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
       LO new_edge = prods2new[prod];
+      LO const nedge_shared_gface_i = nedge_shared_gface[new_edge];
       LO const new_edge_v0 = new_ev2v[new_edge*2 + 0];
       LO const new_edge_v1 = new_ev2v[new_edge*2 + 1];
+      LO const new_edge_v0_old = same_verts2old_verts[ab2b[a2ab[new_edge_v0]]];
+      LO const new_edge_v1_old = same_verts2old_verts[ab2b[a2ab[new_edge_v1]]];
       auto const c0 = get_vector<dim>(vert_ctrlPts_r, new_edge_v0);
+      auto const c0_coord = get_vector<dim>(old_coords, new_edge_v0_old);
       auto const c3 = get_vector<dim>(vert_ctrlPts_r, new_edge_v1);
+      auto const c3_coord = get_vector<dim>(old_coords, new_edge_v1_old);
       Vector<dim> c1;
       Vector<dim> c2;
 
@@ -259,8 +272,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       if ((dim == 3) && (newedge_gdim[new_edge] == 2)) {
 	edge_crv2bdry_dim[new_edge] = 2;
         LO const e_g_face = newedge_gid[new_edge]; 
-        LO const new_edge_v0_old = same_verts2old_verts[ab2b[a2ab[new_edge_v0]]];
-        LO const new_edge_v1_old = same_verts2old_verts[ab2b[a2ab[new_edge_v1]]];
         Vector<3> c1, c2;
         //init with straight sided
         for (LO d = 0; d < dim; ++d) {
@@ -405,49 +416,39 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         printf("bdry count_upper_e %d first %d second %d\n", 
             count_upper_edge, upper_edges[0], upper_edges[1]);
 
-        Few<Real, dim> t_avg;
-        for (LO d = 0; d < dim; ++d) t_avg[d] = 0.0; 
+        Few<Real, dim> t_upper;
+        for (LO d = 0; d < dim; ++d) t_upper[d] = 0.0; 
         for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
           if (from_first_vtx[upper_e] == 1) {
             for (LO d = 0; d < dim; ++d) {
-              t_avg[d] += tangents[upper_edges[upper_e]*2*dim + d];
+              t_upper[d] += tangents[upper_edges[upper_e]*2*dim + d];
             }
           }
           if (from_first_vtx[upper_e] == -1) {
             for (LO d = 0; d < dim; ++d) {
-              t_avg[d] += tangents[upper_edges[upper_e]*2*dim + dim + d];
+              t_upper[d] += tangents[upper_edges[upper_e]*2*dim + dim + d];
             }
           }
         }
-        for (LO d = 0; d < dim; ++d) t_avg[d] = t_avg[d]/count_upper_edge;
+        for (LO d = 0; d < dim; ++d) t_upper[d] = t_upper[d]/count_upper_edge;
         Real length_t = 0.0;
-        for (LO d = 0; d < dim; ++d) length_t += t_avg[d]*t_avg[d]; 
-        for (LO d = 0; d < dim; ++d) t_avg[d] = t_avg[d]/std::sqrt(length_t);
-        /*
+        for (LO d = 0; d < dim; ++d) length_t += t_upper[d]*t_upper[d]; 
+        for (LO d = 0; d < dim; ++d) t_upper[d] = t_upper[d]/std::sqrt(length_t);
+
+        Vector<dim> c_upper;
+        auto new_length = 
+          (c3_coord[0] - c0_coord[0])*(c3_coord[0] - c0_coord[0]) + 
+          (c3_coord[1] - c0_coord[1])*(c3_coord[1] - c0_coord[1]) + 
+          (c3_coord[2] - c0_coord[2])*(c3_coord[2] - c0_coord[2]);
+        new_length = std::sqrt(new_length);
+        for (LO d = 0; d < dim; ++d) {
+          c_upper[d] = old_coords[v_onto*dim + d] + t_upper[d]*new_length/3.0;
+        }
+
+         /*
         */
 
-        auto p1 = face_parametricToParent_3d(3, c1_face, old_ev2v,
-            old_fe2e, old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts,
-            1.0/3.0, 1.0/3.0, old_fv2v);
-        auto p2 = face_parametricToParent_3d(3, c2_face, old_ev2v,
-            old_fe2e, old_vertCtrlPts, old_edgeCtrlPts, old_faceCtrlPts,
-            1.0/3.0, 1.0/3.0, old_fv2v);
-        auto fx = vector_2(p1[0], p2[0]);
-        auto fy = vector_2(p1[1], p2[1]);
-        auto fz = vector_2(p1[2], p2[2]);
-        auto M1_inv = matrix_2x2(Bi(3, 1, xi_1_cube()), Bi(3, 2, xi_1_cube()),
-            Bi(3, 1, xi_2_cube()), Bi(3, 2, xi_2_cube()));
-        auto M2 = matrix_2x2(Bi(3, 0, xi_1_cube()), Bi(3, 3, xi_1_cube()),
-            Bi(3, 0, xi_2_cube()), Bi(3, 3, xi_2_cube()));
-        auto M1 = invert(M1_inv);
-        auto cx = vector_2(c0[0], c3[0]);
-        auto cy = vector_2(c0[1], c3[1]);
-        auto cz = vector_2(c0[2], c3[2]);
-        auto Cx = M1*fx - M1*M2*cx;
-        auto Cy = M1*fy - M1*M2*cy;
-        auto Cz = M1*fz - M1*M2*cz;
-
-        if (nprods_gface_i > 1) {
+        if (nedge_shared_gface_i > 1) {
           if (v_onto == new_edge_v0_old) {
             //edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = Cx[1];
             //edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = Cy[1];
@@ -475,14 +476,40 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           }
         }
         else {
-          OMEGA_H_CHECK (nprods_gface_i == 1);
+          OMEGA_H_CHECK (nedge_shared_gface_i == 1);
+          printf("old edge new logic\n");
+          //check for new edge, first vertex is vlower or vupper
+          LO v_onto_is_first = -1;
+          if ((std::abs(c0_coord[0] - old_coords[v_onto*dim + 0]) < EPSILON) && 
+              (std::abs(c0_coord[1] - old_coords[v_onto*dim + 1]) < EPSILON) &&
+              (std::abs(c0_coord[2] - old_coords[v_onto*dim + 2]) < EPSILON)) {
+            v_onto_is_first = 1;
+          }
+          else {
+            OMEGA_H_CHECK (
+                (std::abs(c0_coord[0] - old_coords[new_edge_v1_old*dim + 0]) < EPSILON) && 
+                (std::abs(c0_coord[1] - old_coords[new_edge_v1_old*dim + 1]) < EPSILON) &&
+                (std::abs(c0_coord[2] - old_coords[new_edge_v1_old*dim + 2]) < EPSILON));
+          }
+
+          for (LO d = 0; d < dim; ++d) {
+            if (v_onto_is_first == 1) {
+              edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_upper[d];
+              edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = old_faceCtrlPts[c2_face*dim + d];
+            }
+            else {
+              OMEGA_H_CHECK (v_onto_is_first == -1);
+              edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_upper[d];
+              edge_ctrlPts[new_edge*n_edge_pts*dim + d] = old_faceCtrlPts[c1_face*dim + d];
+            }
+          }
+          /*
           edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = Cx[0];
           edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = Cy[0];
           edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = Cz[0];
           edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = Cx[1];
           edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = Cy[1];
           edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = Cz[1];
-          /*
           edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = old_faceCtrlPts[c1_face*dim + 0];
           edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = old_faceCtrlPts[c1_face*dim + 1];
           edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = old_faceCtrlPts[c1_face*dim + 2];
