@@ -405,11 +405,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         //printf("bdry count_upper_e %d first %d second %d\n", 
           //  count_upper_edge, upper_edges[0], upper_edges[1]);
 
-        Vector<dim> t_upper;
         Vector<dim> c_upper;
+        Vector<dim> c_lower;
         Few<Real, 2*dim> upper_tangents;
-        for (LO d = 0; d < dim; ++d) t_upper[d] = 0.0; 
         if (nedge_shared_gface_i == 1) {
+          Vector<dim> t_upper;
+          for (LO d = 0; d < dim; ++d) t_upper[d] = 0.0; 
           for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
             if (from_first_vtx[upper_e] == 1) {
               for (LO d = 0; d < dim; ++d) {
@@ -437,6 +438,83 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           for (LO d = 0; d < dim; ++d) {
             c_upper[d] = old_coords[v_onto*dim + d] + t_upper[d]*new_length/3.0;
           }
+
+          //find lower vtx, here upper is v_onto and lower is other end of edge
+          LO v_lower = -1;
+          if (new_edge_v0_old == v_onto) v_lower = new_edge_v1_old;
+          if (new_edge_v1_old == v_onto) v_lower = new_edge_v0_old;
+          Few<LO, 2> lower_edges;
+          Few<I8, 2> from_first_vtx_l;
+          LO count_lower_edge = 0;
+          for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
+            //adj tris of vkey
+            LO const adj_t = old_vf2f[vf];
+            for (LO te = 0; te < 3; ++te) {
+              LO adj_t_e = old_fe2e[adj_t*3 + te];
+              //adj edges of tri
+              LO adj_t_e_v0 = old_ev2v[adj_t_e*2 + 0];
+              LO adj_t_e_v1 = old_ev2v[adj_t_e*2 + 1];
+              //adj verts of edge
+              if ((adj_t_e_v0 == v_lower) && (adj_t_e_v1 != v_key)) {
+                LO is_duplicate = -1;
+                for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
+                  if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
+                }
+                if (is_duplicate == -1) {
+                  if ((oldface_gid[adj_t] == newedge_gid[new_edge]) && (oldface_gdim[adj_t] == 2)) {
+                    OMEGA_H_CHECK(count_lower_edge < 2);
+                    lower_edges[count_lower_edge] = adj_t_e;
+                    from_first_vtx_l[count_lower_edge] = 1;
+                    //printf("lower edge n %d is %d\n", count_lower_edge, adj_t_e);
+                    ++count_lower_edge;
+                  }
+                }
+              }
+              if ((adj_t_e_v1 == v_lower) && (adj_t_e_v0 != v_key)) {
+                LO is_duplicate = -1;
+                for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
+                  if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
+                }
+                if (is_duplicate == -1) {
+                  if ((oldface_gid[adj_t] == newedge_gid[new_edge]) && (oldface_gdim[adj_t] == 2)) {
+                    OMEGA_H_CHECK(count_lower_edge < 2);
+                    lower_edges[count_lower_edge] = adj_t_e;
+                    from_first_vtx_l[count_lower_edge] = -1;
+                    //printf("lower edge n %d is %d\n", count_lower_edge, adj_t_e);
+                    ++count_lower_edge;
+                  }
+                }
+              }
+            }
+          }
+          printf("bdry count_lower_e %d first %d second %d\n", 
+              count_lower_edge, lower_edges[0], lower_edges[1]);
+
+          Vector<dim> t_lower;
+          Few<Real, 2*dim> lower_tangents;
+          for (LO d = 0; d < dim; ++d) t_lower[d] = 0.0; 
+          for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
+            if (from_first_vtx_l[lower_e] == 1) {
+              for (LO d = 0; d < dim; ++d) {
+                t_lower[d] += tangents[lower_edges[lower_e]*2*dim + d];
+                lower_tangents[lower_e*dim + d] = tangents[lower_edges[lower_e]*2*dim + d];
+              }
+            }
+            if (from_first_vtx_l[lower_e] == -1) {
+              for (LO d = 0; d < dim; ++d) {
+                t_lower[d] += tangents[lower_edges[lower_e]*2*dim + dim + d];
+                lower_tangents[lower_e*dim + d] = tangents[lower_edges[lower_e]*2*dim + dim + d];
+              }
+            }
+          }
+          for (LO d = 0; d < dim; ++d) t_lower[d] = t_lower[d]/count_lower_edge;
+          length_t = 0.0;
+          for (LO d = 0; d < dim; ++d) length_t += t_lower[d]*t_lower[d]; 
+          for (LO d = 0; d < dim; ++d) t_lower[d] = t_lower[d]/std::sqrt(length_t);
+          for (LO d = 0; d < dim; ++d) {
+            c_lower[d] = old_coords[v_lower*dim + d] + t_lower[d]*new_length/3.0;
+          }
+
         }
 
         if (nedge_shared_gface_i > 1) {
@@ -451,87 +529,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           //find which one is closest to straight side pt of edge
         }
 
-        //find lower vtx, here upper is v_onto and lower is other end of edge
-        LO v_lower = -1;
-        if (new_edge_v0_old == v_onto) v_lower = new_edge_v1_old;
-        if (new_edge_v1_old == v_onto) v_lower = new_edge_v0_old;
-        Few<LO, 2> lower_edges;
-        Few<I8, 2> from_first_vtx_l;
-        LO count_lower_edge = 0;
-        for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
-          //adj tris of vkey
-          LO const adj_t = old_vf2f[vf];
-          for (LO te = 0; te < 3; ++te) {
-            LO adj_t_e = old_fe2e[adj_t*3 + te];
-            //adj edges of tri
-            LO adj_t_e_v0 = old_ev2v[adj_t_e*2 + 0];
-            LO adj_t_e_v1 = old_ev2v[adj_t_e*2 + 1];
-            //adj verts of edge
-            if ((adj_t_e_v0 == v_lower) && (adj_t_e_v1 != v_key)) {
-              LO is_duplicate = -1;
-              for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
-                if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
-              }
-              if (is_duplicate == -1) {
-                if ((oldface_gid[adj_t] == newedge_gid[new_edge]) && (oldface_gdim[adj_t] == 2)) {
-                  OMEGA_H_CHECK(count_lower_edge < 2);
-                  lower_edges[count_lower_edge] = adj_t_e;
-                  from_first_vtx_l[count_lower_edge] = 1;
-                  //printf("lower edge n %d is %d\n", count_lower_edge, adj_t_e);
-                  ++count_lower_edge;
-                }
-              }
-            }
-            if ((adj_t_e_v1 == v_lower) && (adj_t_e_v0 != v_key)) {
-              LO is_duplicate = -1;
-              for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
-                if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
-              }
-              if (is_duplicate == -1) {
-                if ((oldface_gid[adj_t] == newedge_gid[new_edge]) && (oldface_gdim[adj_t] == 2)) {
-                  OMEGA_H_CHECK(count_lower_edge < 2);
-                  lower_edges[count_lower_edge] = adj_t_e;
-                  from_first_vtx_l[count_lower_edge] = -1;
-                  //printf("lower edge n %d is %d\n", count_lower_edge, adj_t_e);
-                  ++count_lower_edge;
-                }
-              }
-            }
-            /*
-            if (oldvert_gdim[v_key] == 1) {
-              if ((adj_t_e_v0 == v_lower) && (adj_t_e_v1 == v_key)) {
-                LO is_duplicate = -1;
-                for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
-                  if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
-                }
-                if (is_duplicate == -1) {
-                  OMEGA_H_CHECK(count_lower_edge < 2);
-                  lower_edges[count_lower_edge] = adj_t_e;
-                  from_first_vtx_l[count_lower_edge] = 1;
-                  printf("lower edge n %d is %d\n", count_lower_edge, adj_t_e);
-                  ++count_lower_edge;
-                }
-              }
-              if ((adj_t_e_v1 == v_lower) && (adj_t_e_v0 == v_key)) {
-                LO is_duplicate = -1;
-                for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
-                  if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
-                }
-                if (is_duplicate == -1) {
-                  OMEGA_H_CHECK(count_lower_edge < 2);
-                  lower_edges[count_lower_edge] = adj_t_e;
-                  from_first_vtx_l[count_lower_edge] = -1;
-                  printf("lower edge n %d is %d\n", count_lower_edge, adj_t_e);
-                  ++count_lower_edge;
-                }
-              }
-            }
-            */
-          }
-        }
-        printf("bdry count_lower_e %d first %d second %d\n", 
-            count_lower_edge, lower_edges[0], lower_edges[1]);
- 
         /*
         */
 
@@ -582,12 +579,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           for (LO d = 0; d < dim; ++d) {
             if (v_onto_is_first == 1) {
               edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_upper[d];
-              edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = old_faceCtrlPts[c2_face*dim + d];
+              edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_lower[d];
             }
             else {
               OMEGA_H_CHECK (v_onto_is_first == -1);
               edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_upper[d];
-              edge_ctrlPts[new_edge*n_edge_pts*dim + d] = old_faceCtrlPts[c1_face*dim + d];
+              edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_lower[d];
             }
           }
         }
