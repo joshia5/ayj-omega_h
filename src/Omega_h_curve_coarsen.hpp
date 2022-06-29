@@ -455,12 +455,22 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           Few<Real, dim*16> cand_c;
           Few<Real, 16> cand_dists;
           //calc n locations of new tangent pts
+          printf("newedge leng %f\n", new_length);
           for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
-            for (LO d = 0; d < dim; ++d) {
+            Real length_t = 0.0;
+            for (LO d=0; d<dim; ++d) {
               cand_tangents[cand*dim + d] = upper_tangents[0*dim + d] + (cand+1)*(upper_tangents[dim + d] - upper_tangents[d])/(count_upper_edge + 1);
-              cand_c[cand*dim + d] = old_coords[v_onto*dim + d] + cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
-              //printf("d=%d cand %d tang %f upper1 %f upper2 %f\n", d, cand, cand_tangents[cand*dim+d], upper_tangents[d], upper_tangents[dim + d]);
+              length_t += cand_tangents[cand*dim + d]*cand_tangents[cand*dim + d]; 
             }
+            for (LO d = 0; d < dim; ++d) cand_tangents[cand*dim + d] = cand_tangents[cand*dim + d]/std::sqrt(length_t);
+
+            for (LO d = 0; d < dim; ++d) {
+              cand_c[cand*dim + d] = old_coords[v_onto*dim + d] + cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
+            }
+            printf("cand %d tang {%f,%f,%f} upper1 {%f,%f,%f} upper2 {%f,%f,%f}\n", cand, 
+                cand_tangents[cand*dim+0],cand_tangents[cand*dim+1],cand_tangents[cand*dim+2],
+                upper_tangents[0], upper_tangents[1], upper_tangents[2], 
+                upper_tangents[dim+0],upper_tangents[dim+1],upper_tangents[dim+2]);
           }
           //find which one is closest to straight side pt of edge
           if (v_onto_is_first == 1) { 
@@ -478,11 +488,14 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           LO min_cand_id = 0;
           Real min_dist = 99999999999;
           for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
-            //printf("cand %d dist %f, cpoint {%f,%f,%f} \n", cand, cand_dists[cand],
-              //  cand_c[cand*dim+0],cand_c[cand*dim+1],cand_c[cand*dim+2]);
-            if (cand_dists[cand] < min_dist) min_cand_id = cand;
+            printf("cand %d dist %f, cpoint {%f,%f,%f} \n", cand, cand_dists[cand],
+                cand_c[cand*dim+0],cand_c[cand*dim+1],cand_c[cand*dim+2]);
+            if (cand_dists[cand] < min_dist) {
+              min_cand_id = cand;
+              min_dist = cand_dists[cand];
+            }
           }
-          //printf("min id %d\n", min_cand_id);
+          printf("min id %d\n", min_cand_id);
           for (LO d = 0; d < dim; ++d) {
             c_upper[d] = cand_c[min_cand_id*dim + d];
           }
@@ -565,8 +578,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           c_lower[d] = old_coords[v_lower*dim + d] + t_lower[d]*new_length/3.0;
         }
 
-        /*
-        */
         for (LO d = 0; d < dim; ++d) {
           if (v_onto_is_first == 1) {
             edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_upper[d];
@@ -579,6 +590,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           }
         }
 
+        /*
         if (nedge_shared_gface_i > 1) {
           for (LO d = 0; d < dim; ++d) {
             if (v_onto_is_first == 1) {
@@ -592,6 +604,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             }
           }
         }
+        */
       }
 
     }
