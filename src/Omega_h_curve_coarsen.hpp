@@ -236,8 +236,22 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       auto const c0_coord = get_vector<dim>(old_coords, new_edge_v0_old);
       auto const c3 = get_vector<dim>(vert_ctrlPts_r, new_edge_v1);
       auto const c3_coord = get_vector<dim>(old_coords, new_edge_v1_old);
+      auto new_length = 
+        (c3_coord[0] - c0_coord[0])*(c3_coord[0] - c0_coord[0]) + 
+        (c3_coord[1] - c0_coord[1])*(c3_coord[1] - c0_coord[1]) + 
+        (c3_coord[2] - c0_coord[2])*(c3_coord[2] - c0_coord[2]);
+      new_length = std::sqrt(new_length);
       Vector<dim> c1;
       Vector<dim> c2;
+
+      //check for new edge, first vertex is vlower or vupper
+      LO v_onto_is_first = -1;
+      if (v_onto == new_edge_v0_old) {
+        v_onto_is_first = 1;
+      }
+      else {
+        OMEGA_H_CHECK (v_onto == new_edge_v1_old);
+      }
 
       //edges classified on g_edges
       if ((oldvert_gdim[v_key] <= 1) && (oldvert_gdim[v_onto] <= 1) &&
@@ -332,6 +346,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             c2_face = c2_faces[1];
           }
         }
+        printf("c1f c2f %d,%d\n",c1_face, c2_face);
 
         //count upper edges
         Few<LO, 2> upper_edges;
@@ -406,184 +421,173 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           //  count_upper_edge, upper_edges[0], upper_edges[1]);
 
         Vector<dim> c_upper;
-        Vector<dim> c_lower;
         Few<Real, 2*dim> upper_tangents;
-        if (nedge_shared_gface_i == 1) {
-          Vector<dim> t_upper;
-          for (LO d = 0; d < dim; ++d) t_upper[d] = 0.0; 
-          for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
-            if (from_first_vtx[upper_e] == 1) {
-              for (LO d = 0; d < dim; ++d) {
-                t_upper[d] += tangents[upper_edges[upper_e]*2*dim + d];
-                upper_tangents[upper_e*dim + d] = tangents[upper_edges[upper_e]*2*dim + d];
-              }
-            }
-            if (from_first_vtx[upper_e] == -1) {
-              for (LO d = 0; d < dim; ++d) {
-                t_upper[d] += tangents[upper_edges[upper_e]*2*dim + dim + d];
-                upper_tangents[upper_e*dim + d] = tangents[upper_edges[upper_e]*2*dim + dim + d];
-              }
+        Vector<dim> t_upper;
+        for (LO d = 0; d < dim; ++d) t_upper[d] = 0.0; 
+        for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+          if (from_first_vtx[upper_e] == 1) {
+            for (LO d = 0; d < dim; ++d) {
+              t_upper[d] += tangents[upper_edges[upper_e]*2*dim + d];
+              upper_tangents[upper_e*dim + d] = tangents[upper_edges[upper_e]*2*dim + d];
             }
           }
+          if (from_first_vtx[upper_e] == -1) {
+            for (LO d = 0; d < dim; ++d) {
+              t_upper[d] += tangents[upper_edges[upper_e]*2*dim + dim + d];
+              upper_tangents[upper_e*dim + d] = tangents[upper_edges[upper_e]*2*dim + dim + d];
+            }
+          }
+        }
+        if (nedge_shared_gface_i == 1) {
           for (LO d = 0; d < dim; ++d) t_upper[d] = t_upper[d]/count_upper_edge;
           Real length_t = 0.0;
           for (LO d = 0; d < dim; ++d) length_t += t_upper[d]*t_upper[d]; 
           for (LO d = 0; d < dim; ++d) t_upper[d] = t_upper[d]/std::sqrt(length_t);
 
-          auto new_length = 
-            (c3_coord[0] - c0_coord[0])*(c3_coord[0] - c0_coord[0]) + 
-            (c3_coord[1] - c0_coord[1])*(c3_coord[1] - c0_coord[1]) + 
-            (c3_coord[2] - c0_coord[2])*(c3_coord[2] - c0_coord[2]);
-          new_length = std::sqrt(new_length);
           for (LO d = 0; d < dim; ++d) {
             c_upper[d] = old_coords[v_onto*dim + d] + t_upper[d]*new_length/3.0;
           }
-
-          //find lower vtx, here upper is v_onto and lower is other end of edge
-          LO v_lower = -1;
-          if (new_edge_v0_old == v_onto) v_lower = new_edge_v1_old;
-          if (new_edge_v1_old == v_onto) v_lower = new_edge_v0_old;
-          Few<LO, 2> lower_edges;
-          Few<I8, 2> from_first_vtx_l;
-          LO count_lower_edge = 0;
-          for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
-            //adj tris of vkey
-            LO const adj_t = old_vf2f[vf];
-            for (LO te = 0; te < 3; ++te) {
-              LO adj_t_e = old_fe2e[adj_t*3 + te];
-              //adj edges of tri
-              LO adj_t_e_v0 = old_ev2v[adj_t_e*2 + 0];
-              LO adj_t_e_v1 = old_ev2v[adj_t_e*2 + 1];
-              //adj verts of edge
-              if ((adj_t_e_v0 == v_lower) && (adj_t_e_v1 != v_key)) {
-                LO is_duplicate = -1;
-                for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
-                  if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
-                }
-                if (is_duplicate == -1) {
-                  if ((oldface_gid[adj_t] == newedge_gid[new_edge]) && (oldface_gdim[adj_t] == 2)) {
-                    OMEGA_H_CHECK(count_lower_edge < 2);
-                    lower_edges[count_lower_edge] = adj_t_e;
-                    from_first_vtx_l[count_lower_edge] = 1;
-                    //printf("lower edge n %d is %d\n", count_lower_edge, adj_t_e);
-                    ++count_lower_edge;
-                  }
-                }
-              }
-              if ((adj_t_e_v1 == v_lower) && (adj_t_e_v0 != v_key)) {
-                LO is_duplicate = -1;
-                for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
-                  if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
-                }
-                if (is_duplicate == -1) {
-                  if ((oldface_gid[adj_t] == newedge_gid[new_edge]) && (oldface_gdim[adj_t] == 2)) {
-                    OMEGA_H_CHECK(count_lower_edge < 2);
-                    lower_edges[count_lower_edge] = adj_t_e;
-                    from_first_vtx_l[count_lower_edge] = -1;
-                    //printf("lower edge n %d is %d\n", count_lower_edge, adj_t_e);
-                    ++count_lower_edge;
-                  }
-                }
-              }
+        }
+        else {
+          assert(nedge_shared_gface_i > 1);
+          assert(nedge_shared_gface_i <= 16);
+          Few<Real, dim*16> cand_tangents;
+          Few<Real, dim*16> cand_c;
+          Few<Real, 16> cand_dists;
+          //calc n locations of new tangent pts
+          for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
+            for (LO d = 0; d < dim; ++d) {
+              cand_tangents[cand*dim + d] = upper_tangents[0*dim + d] + (cand+1)*(upper_tangents[dim + d] - upper_tangents[d])/(count_upper_edge + 1);
+              cand_c[cand*dim + d] = old_coords[v_onto*dim + d] + cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
+              //printf("d=%d cand %d tang %f upper1 %f upper2 %f\n", d, cand, cand_tangents[cand*dim+d], upper_tangents[d], upper_tangents[dim + d]);
             }
           }
-          printf("bdry count_lower_e %d first %d second %d\n", 
-              count_lower_edge, lower_edges[0], lower_edges[1]);
-
-          Vector<dim> t_lower;
-          Few<Real, 2*dim> lower_tangents;
-          for (LO d = 0; d < dim; ++d) t_lower[d] = 0.0; 
-          for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
-            if (from_first_vtx_l[lower_e] == 1) {
-              for (LO d = 0; d < dim; ++d) {
-                t_lower[d] += tangents[lower_edges[lower_e]*2*dim + d];
-                lower_tangents[lower_e*dim + d] = tangents[lower_edges[lower_e]*2*dim + d];
-              }
-            }
-            if (from_first_vtx_l[lower_e] == -1) {
-              for (LO d = 0; d < dim; ++d) {
-                t_lower[d] += tangents[lower_edges[lower_e]*2*dim + dim + d];
-                lower_tangents[lower_e*dim + d] = tangents[lower_edges[lower_e]*2*dim + dim + d];
-              }
+          //find which one is closest to straight side pt of edge
+          if (v_onto_is_first == 1) { 
+            for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
+              cand_dists[cand] = std::pow(cand_c[cand*dim + 0]-c1[0], 2) +
+                std::pow(cand_c[cand*dim + 1]-c1[1], 2) + std::pow(cand_c[cand*dim + 2]-c1[2], 2); 
             }
           }
-          for (LO d = 0; d < dim; ++d) t_lower[d] = t_lower[d]/count_lower_edge;
-          length_t = 0.0;
-          for (LO d = 0; d < dim; ++d) length_t += t_lower[d]*t_lower[d]; 
-          for (LO d = 0; d < dim; ++d) t_lower[d] = t_lower[d]/std::sqrt(length_t);
+          if (v_onto_is_first == -1) {
+            for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
+              cand_dists[cand] = std::pow(cand_c[cand*dim + 0]-c2[0], 2) +
+                std::pow(cand_c[cand*dim + 1]-c2[1], 2) + std::pow(cand_c[cand*dim + 2]-c2[2], 2); 
+            }
+          }
+          LO min_cand_id = 0;
+          Real min_dist = 99999999999;
+          for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
+            //printf("cand %d dist %f, cpoint {%f,%f,%f} \n", cand, cand_dists[cand],
+              //  cand_c[cand*dim+0],cand_c[cand*dim+1],cand_c[cand*dim+2]);
+            if (cand_dists[cand] < min_dist) min_cand_id = cand;
+          }
+          //printf("min id %d\n", min_cand_id);
           for (LO d = 0; d < dim; ++d) {
-            c_lower[d] = old_coords[v_lower*dim + d] + t_lower[d]*new_length/3.0;
+            c_upper[d] = cand_c[min_cand_id*dim + d];
           }
-
         }
 
-        if (nedge_shared_gface_i > 1) {
-          Few<Real, dim*64> cand_tangents;
-          //for (LO d = 0; d < dim; ++d) t_upper[d] = t_upper[d]/(nedge_shared_gface_i+1);
-          for (LO cand = 0; cand < count_upper_edge; ++cand) {
-            for (LO d = 0; d < dim; ++d) {
-              cand_tangents[cand*dim + d] = upper_tangents[d] + (cand+1)*(upper_tangents[dim + d] - upper_tangents[d])/(count_upper_edge + 1);
+        //find lower vtx, here upper is v_onto and lower is other end of edge
+        Vector<dim> c_lower;
+        LO v_lower = -1;
+        if (new_edge_v0_old == v_onto) v_lower = new_edge_v1_old;
+        if (new_edge_v1_old == v_onto) v_lower = new_edge_v0_old;
+        Few<LO, 2> lower_edges;
+        Few<I8, 2> from_first_vtx_l;
+        LO count_lower_edge = 0;
+        for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
+          //adj tris of vkey
+          LO const adj_t = old_vf2f[vf];
+          for (LO te = 0; te < 3; ++te) {
+            LO adj_t_e = old_fe2e[adj_t*3 + te];
+            //adj edges of tri
+            LO adj_t_e_v0 = old_ev2v[adj_t_e*2 + 0];
+            LO adj_t_e_v1 = old_ev2v[adj_t_e*2 + 1];
+            //adj verts of edge
+            if ((adj_t_e_v0 == v_lower) && (adj_t_e_v1 != v_key)) {
+              LO is_duplicate = -1;
+              for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
+                if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
+              }
+              if (is_duplicate == -1) {
+                if ((oldface_gid[adj_t] == newedge_gid[new_edge]) && (oldface_gdim[adj_t] == 2)) {
+                  OMEGA_H_CHECK(count_lower_edge < 2);
+                  lower_edges[count_lower_edge] = adj_t_e;
+                  from_first_vtx_l[count_lower_edge] = 1;
+                  //printf("lower edge n %d is %d\n", count_lower_edge, adj_t_e);
+                  ++count_lower_edge;
+                }
+              }
+            }
+            if ((adj_t_e_v1 == v_lower) && (adj_t_e_v0 != v_key)) {
+              LO is_duplicate = -1;
+              for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
+                if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
+              }
+              if (is_duplicate == -1) {
+                if ((oldface_gid[adj_t] == newedge_gid[new_edge]) && (oldface_gdim[adj_t] == 2)) {
+                  OMEGA_H_CHECK(count_lower_edge < 2);
+                  lower_edges[count_lower_edge] = adj_t_e;
+                  from_first_vtx_l[count_lower_edge] = -1;
+                  //printf("lower edge n %d is %d\n", count_lower_edge, adj_t_e);
+                  ++count_lower_edge;
+                }
+              }
             }
           }
-          //calc n locations of new tangent pts
-          //find which one is closest to straight side pt of edge
+        }
+        //printf("bdry count_lower_e %d first %d second %d\n", 
+        //  count_lower_edge, lower_edges[0], lower_edges[1]);
+
+        Vector<dim> t_lower;
+        Few<Real, 2*dim> lower_tangents;
+        for (LO d = 0; d < dim; ++d) t_lower[d] = 0.0; 
+        for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
+          if (from_first_vtx_l[lower_e] == 1) {
+            for (LO d = 0; d < dim; ++d) {
+              t_lower[d] += tangents[lower_edges[lower_e]*2*dim + d];
+              lower_tangents[lower_e*dim + d] = tangents[lower_edges[lower_e]*2*dim + d];
+            }
+          }
+          if (from_first_vtx_l[lower_e] == -1) {
+            for (LO d = 0; d < dim; ++d) {
+              t_lower[d] += tangents[lower_edges[lower_e]*2*dim + dim + d];
+              lower_tangents[lower_e*dim + d] = tangents[lower_edges[lower_e]*2*dim + dim + d];
+            }
+          }
+        }
+        for (LO d = 0; d < dim; ++d) t_lower[d] = t_lower[d]/count_lower_edge;
+        Real length_t = 0.0;
+        for (LO d = 0; d < dim; ++d) length_t += t_lower[d]*t_lower[d]; 
+        for (LO d = 0; d < dim; ++d) t_lower[d] = t_lower[d]/std::sqrt(length_t);
+        for (LO d = 0; d < dim; ++d) {
+          c_lower[d] = old_coords[v_lower*dim + d] + t_lower[d]*new_length/3.0;
         }
 
         /*
         */
-
-        if (nedge_shared_gface_i > 1) {
-          if (v_onto == new_edge_v0_old) {
-            //edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = Cx[1];
-            //edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = Cy[1];
-            //edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = Cz[1];
-            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = old_faceCtrlPts[c2_face*dim + 0];
-            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = old_faceCtrlPts[c2_face*dim + 1];
-            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = old_faceCtrlPts[c2_face*dim + 2];
-            //c1 should be mid pt of straight sided line c2-v_onto
-            edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] + old_vertCtrlPts[v_onto*dim + 0]);
-            edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] + old_vertCtrlPts[v_onto*dim + 1]);
-            edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] + old_vertCtrlPts[v_onto*dim + 2]);
+        for (LO d = 0; d < dim; ++d) {
+          if (v_onto_is_first == 1) {
+            edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_upper[d];
+            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_lower[d];
           }
           else {
-            OMEGA_H_CHECK (v_onto == new_edge_v1_old);
-            //edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = Cx[0];
-            //edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = Cy[0];
-            //edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = Cz[0];
-            edge_ctrlPts[new_edge*n_edge_pts*dim + 0] = old_faceCtrlPts[c1_face*dim + 0];
-            edge_ctrlPts[new_edge*n_edge_pts*dim + 1] = old_faceCtrlPts[c1_face*dim + 1];
-            edge_ctrlPts[new_edge*n_edge_pts*dim + 2] = old_faceCtrlPts[c1_face*dim + 2];
-            //c2 should be straight sided
-            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 0] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + 0] + old_vertCtrlPts[v_onto*dim + 0]);
-            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 1] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + 1] + old_vertCtrlPts[v_onto*dim + 1]);
-            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + 2] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + 2] + old_vertCtrlPts[v_onto*dim + 2]);
+            OMEGA_H_CHECK (v_onto_is_first == -1);
+            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_upper[d];
+            edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_lower[d];
           }
         }
-        else {
-          OMEGA_H_CHECK (nedge_shared_gface_i == 1);
-          printf("old edge new logic\n");
-          //check for new edge, first vertex is vlower or vupper
-          LO v_onto_is_first = -1;
-          if ((std::abs(c0_coord[0] - old_coords[v_onto*dim + 0]) < EPSILON) && 
-              (std::abs(c0_coord[1] - old_coords[v_onto*dim + 1]) < EPSILON) &&
-              (std::abs(c0_coord[2] - old_coords[v_onto*dim + 2]) < EPSILON)) {
-            v_onto_is_first = 1;
-          }
-          else {
-            OMEGA_H_CHECK (
-                (std::abs(c0_coord[0] - old_coords[new_edge_v1_old*dim + 0]) < EPSILON) && 
-                (std::abs(c0_coord[1] - old_coords[new_edge_v1_old*dim + 1]) < EPSILON) &&
-                (std::abs(c0_coord[2] - old_coords[new_edge_v1_old*dim + 2]) < EPSILON));
-          }
 
+        if (nedge_shared_gface_i > 1) {
           for (LO d = 0; d < dim; ++d) {
             if (v_onto_is_first == 1) {
-              edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_upper[d];
+              edge_ctrlPts[new_edge*n_edge_pts*dim + d] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] + old_vertCtrlPts[v_onto*dim + d]);
               edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_lower[d];
             }
             else {
               OMEGA_H_CHECK (v_onto_is_first == -1);
-              edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_upper[d];
+              edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + d] + old_vertCtrlPts[v_onto*dim + d]);
               edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_lower[d];
             }
           }
