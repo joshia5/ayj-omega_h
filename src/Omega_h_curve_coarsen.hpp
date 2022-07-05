@@ -339,7 +339,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             nedge_shared_gface_i,
             count_upper_edge, upper_edges[0], upper_edges[1]);
 
-        Vector<dim> c_upper;
         Few<Real, 2*dim> upper_tangents;
         Vector<dim> t_upper;
         for (LO d = 0; d < dim; ++d) t_upper[d] = 0.0; 
