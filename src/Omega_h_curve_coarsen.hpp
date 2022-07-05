@@ -605,23 +605,22 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               cand_dists[cand] = std::pow(cand_c[cand*dim + 0]-c1[0], 2) +
                 std::pow(cand_c[cand*dim + 1]-c1[1], 2) + std::pow(cand_c[cand*dim + 2]-c1[2], 2); 
               cand_dists[cand] = std::sqrt(cand_dists[cand]);
-              //OMEGA_H_CHECK(std::abs(cand_dists[cand]-all_cands_dist[count_prod*16 + cand]) < EPSILON);
             }
           }
           if (v_onto_is_first == -1) {
             for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
               cand_dists[cand] = std::pow(cand_c[cand*dim + 0]-c2[0], 2) +
-                std::pow(cand_c[cand*dim + 1]-c2[1], 2) + std::pow(cand_c[cand*dim + 2]-c2[2], 2); 
+                std::pow(cand_c[cand*dim + 1]-c2[1], 2) +
+                std::pow(cand_c[cand*dim + 2]-c2[2], 2); 
               cand_dists[cand] = std::sqrt(cand_dists[cand]);
-              //OMEGA_H_CHECK(std::abs(cand_dists[cand]-all_cands_dist[count_prod*16 + cand]) < EPSILON);
             }
           }
           LO min_cand_id = -1;
           Real min_dist = 999999999;
           for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
-            printf("cand %d dist %f, cpoint {%f,%f,%f} avail %d count_prod %d\n", cand, cand_dists[cand],
-                cand_c[cand*dim+0],cand_c[cand*dim+1],cand_c[cand*dim+2],
-                bdry_cands_avail[cand], count_prod);
+            printf("cand %d dist %f, cpoint {%f,%f,%f} \n", cand, cand_dists[cand],
+                cand_c[cand*dim+0],cand_c[cand*dim+1],cand_c[cand*dim+2]
+                );
             if (cand_dists[cand] < min_dist) {
 
               LO is_closest = 1;
@@ -665,26 +664,13 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                 ++count_prod2;
               }
 
-              //LO cand_closest_for_prod = 0; //should be total prod-1
-              //LO count_prod2 = 0;
-              //for (LO count_prod2 = 0; count_prod2 < total_prod; ++count_prod2) {
-                //if (count_prod2 != count_prod) {
-                  //printf("other prod %d dist %f\n", count_prod2, all_cands_dist[count_prod2*16 + cand]);
-                  //if (cand_dists[cand] < all_cands_dist[count_prod2*16 + cand]) ++cand_closest_for_prod;
-                //}
-              //}
-              //printf("total prod %d, cand closest+1 %d\n", total_prod, cand_closest_for_prod+1);
-              //if (total_prod == cand_closest_for_prod+1) {
               if (is_closest == 1) {
                 min_cand_id = cand;
                 edge_cands[new_edge] = cand;
                 min_dist = cand_dists[cand];
               }
-              //}
-              //}
             }
           }
-          //bdry_cands_avail[min_cand_id] = -1;
           printf("min id %d\n", min_cand_id);
           for (LO d = 0; d < dim; ++d) {
             c_upper[d] = cand_c[min_cand_id*dim + d];
