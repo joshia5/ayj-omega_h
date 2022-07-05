@@ -184,7 +184,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto nedge_shared_gface = Read<LO>(nedge_shared_gface_w);
 
   // for every edge, calc and store 2 unit tangent vectors from either vertex
-  Write<Real> tangents(nold_edges*2*dim, 0);
+  Write<Real> tangents(nold_edges*2*dim, 0.0);
   auto calc_tangents = OMEGA_H_LAMBDA (LO e) {
     LO const e_v0 = old_ev2v[e*2 + 0];
     LO const e_v1 = old_ev2v[e*2 + 1];
@@ -221,6 +221,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       atomic_increment(&count_bdry_cavities[0]);
   };
   parallel_for(keys2verts.size(), std::move(count_bdry_cavs));
+
+  Write<I8> edge_cands(nnew_edge, -1);
 
   auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO const v_key = keys2verts[i];
@@ -360,7 +362,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         Few<Real, dim*32> cand_c;
         //Few<Real, 32> cand_dists;
         //calc n locations of new tangent pts
-        printf("newedge leng %f\n", new_length);
+        //printf("newedge leng %f\n", new_length);
         for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
           Real length_t = 0.0;
           for (LO d=0; d<dim; ++d) {
@@ -578,7 +580,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           Few<Real, dim*32> cand_c;
           Few<Real, 32> cand_dists;
           //calc n locations of new tangent pts
-          printf("newedge leng %f\n", new_length);
+          //printf("newedge leng %f\n", new_length);
           for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
             Real length_t = 0.0;
             for (LO d=0; d<dim; ++d) {
@@ -602,24 +604,28 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
               cand_dists[cand] = std::pow(cand_c[cand*dim + 0]-c1[0], 2) +
                 std::pow(cand_c[cand*dim + 1]-c1[1], 2) + std::pow(cand_c[cand*dim + 2]-c1[2], 2); 
-              OMEGA_H_CHECK(std::abs(cand_dists[cand]-all_cands_dist[count_prod*16 + cand]) < EPSILON);
+              cand_dists[cand] = std::sqrt(cand_dists[cand]);
+              //OMEGA_H_CHECK(std::abs(cand_dists[cand]-all_cands_dist[count_prod*16 + cand]) < EPSILON);
             }
           }
           if (v_onto_is_first == -1) {
             for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
               cand_dists[cand] = std::pow(cand_c[cand*dim + 0]-c2[0], 2) +
                 std::pow(cand_c[cand*dim + 1]-c2[1], 2) + std::pow(cand_c[cand*dim + 2]-c2[2], 2); 
-              OMEGA_H_CHECK(std::abs(cand_dists[cand]-all_cands_dist[count_prod*16 + cand]) < EPSILON);
+              cand_dists[cand] = std::sqrt(cand_dists[cand]);
+              //OMEGA_H_CHECK(std::abs(cand_dists[cand]-all_cands_dist[count_prod*16 + cand]) < EPSILON);
             }
           }
           LO min_cand_id = -1;
           Real min_dist = 999999999;
           for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
-            //printf("cand %d dist %f, cpoint {%f,%f,%f} avail %d\n", cand, cand_dists[cand],
-              //  cand_c[cand*dim+0],cand_c[cand*dim+1],cand_c[cand*dim+2],
-                //bdry_cands_avail[cand]);
+            printf("cand %d dist %f, cpoint {%f,%f,%f} avail %d count_prod %d\n", cand, cand_dists[cand],
+                cand_c[cand*dim+0],cand_c[cand*dim+1],cand_c[cand*dim+2],
+                bdry_cands_avail[cand], count_prod);
             if (cand_dists[cand] < min_dist) {
 
+              LO is_closest = 1;
+              LO count_prod2 = 0;
               for (LO prod2 = keys2prods[i]; prod2 < keys2prods[i+1]; ++prod2) {
                 LO const other_edge = prods2new[prod2];
                 if ((other_edge != new_edge) && (newedge_gdim[other_edge] == 2) &&
@@ -638,12 +644,25 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                       other_p[d] = c0_coord2[d] + (1.0/3.0)*(c3_coord2[d] - c0_coord2[d]);
                   }
                   else {
-                    OMEGA_H_CHECK (v_onto == oth_edge_v1_old);
+                    OMEGA_H_CHECK(v_onto == oth_edge_v1_old);
                     for (LO d = 0; d < dim; ++d)
                       other_p[d] = c3_coord2[d] + (1.0/3.0)*(c0_coord2[d] - c3_coord2[d]);
                   }
-
+                  Real other_cand_dist = 
+                    std::pow(cand_c[cand*dim + 0]-other_p[0], 2) +
+                    std::pow(cand_c[cand*dim + 1]-other_p[1], 2) + 
+                    std::pow(cand_c[cand*dim + 2]-other_p[2], 2);
+                  other_cand_dist = std::sqrt(other_cand_dist);
+                  //must be some bug here
+                  printf("other p %f %f %f\n", other_p[0], other_p[1], other_p[2]);
+                  printf("other dist %f cand dist %f\n", other_cand_dist, cand_dists[cand]);
+                  if (other_cand_dist < cand_dists[cand]) is_closest = -1;
+                  if (edge_cands[other_edge] == cand) is_closest = -1;
+                    //TODO this is like a greedy algorithm which says if 
+                    //im first in the prods list and my dist to this cand 
+                    //is closer, ill take it
                 }
+                ++count_prod2;
               }
 
               //LO cand_closest_for_prod = 0; //should be total prod-1
@@ -655,10 +674,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                 //}
               //}
               //printf("total prod %d, cand closest+1 %d\n", total_prod, cand_closest_for_prod+1);
-              //if (bdry_cands_avail[cand] == 1) {
               //if (total_prod == cand_closest_for_prod+1) {
-              min_cand_id = cand;
-              min_dist = cand_dists[cand];
+              if (is_closest == 1) {
+                min_cand_id = cand;
+                edge_cands[new_edge] = cand;
+                min_dist = cand_dists[cand];
+              }
               //}
               //}
             }
