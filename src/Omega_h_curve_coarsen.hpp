@@ -233,7 +233,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     for (LO a=0; a<256; ++a) bdry_cands_avail[a] = 1;
 
     LO count_prod = 0;
-    for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
+/*    for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
       LO const new_edge = prods2new[prod];
       LO const nedge_shared_gface_i = nedge_shared_gface[new_edge];
       if ((nedge_shared_gface_i > 1) && (dim == 3) && (newedge_gdim[new_edge] == 2)) {
@@ -339,7 +339,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             nedge_shared_gface_i,
             count_upper_edge, upper_edges[0], upper_edges[1]);
 
-        Vector<dim> c_upper;
         Few<Real, 2*dim> upper_tangents;
         Vector<dim> t_upper;
         for (LO d = 0; d < dim; ++d) t_upper[d] = 0.0; 
@@ -367,7 +366,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           Real length_t = 0.0;
           for (LO d=0; d<dim; ++d) {
             cand_tangents[cand*dim + d] = upper_tangents[0*dim + d] + 
-              (cand+1)*(upper_tangents[dim+d] - upper_tangents[d])/(count_upper_edge + 1);
+              (cand+1)*(upper_tangents[dim+d] - upper_tangents[d])/
+              (nedge_shared_gface_i + 1);
             length_t += cand_tangents[cand*dim + d]*cand_tangents[cand*dim + d]; 
           }
           for (LO d = 0; d < dim; ++d) 
@@ -401,6 +401,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       ++count_prod;
     }
     //end calc for cand tangents
+    //*/
 
     //LO const total_prod = count_prod;
     OMEGA_H_CHECK(count_prod < 16);
@@ -585,7 +586,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             Real length_t = 0.0;
             for (LO d=0; d<dim; ++d) {
               cand_tangents[cand*dim + d] = upper_tangents[0*dim + d] + 
-                (cand+1)*(upper_tangents[dim+d] - upper_tangents[d])/(count_upper_edge + 1);
+                (cand+1)*(upper_tangents[dim+d] - upper_tangents[d])/
+                (nedge_shared_gface_i + 1);
               length_t += cand_tangents[cand*dim + d]*cand_tangents[cand*dim + d]; 
             }
             for (LO d = 0; d < dim; ++d) 
@@ -594,10 +596,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             for (LO d = 0; d < dim; ++d) {
               cand_c[cand*dim + d] = old_coords[v_onto*dim + d] + cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
             }
-            //printf("cand %d tang {%f,%f,%f} upper1 {%f,%f,%f} upper2 {%f,%f,%f}\n", cand, 
-              //  cand_tangents[cand*dim+0],cand_tangents[cand*dim+1],cand_tangents[cand*dim+2],
-                //upper_tangents[0], upper_tangents[1], upper_tangents[2], 
-                //upper_tangents[dim+0],upper_tangents[dim+1],upper_tangents[dim+2]);
+            printf("cand %d tang {%f,%f,%f} upper1 {%f,%f,%f} upper2 {%f,%f,%f}\n", cand, 
+                cand_tangents[cand*dim+0],cand_tangents[cand*dim+1],cand_tangents[cand*dim+2],
+                upper_tangents[0], upper_tangents[1], upper_tangents[2], 
+                upper_tangents[dim+0],upper_tangents[dim+1],upper_tangents[dim+2]);
           }
           //find which one is closest to straight side pt of edge
           if (v_onto_is_first == 1) { 
