@@ -85,7 +85,7 @@ void read_matchInternal(pMesh sm, Mesh* mesh, pGModel g, CommPtr comm) {
     ent_nodes[0].push_back(EN_id(vtx));
     ent_class_ids[0].push_back(classId(vtx));
 
-    pPList matches = EN_getMatchingEnts(vtx, NULL, 0);
+    pPList matches = EN_getMatchingEnts(vtx, NULL);
     count_matches = 0;
     pVertex match;
     void *iterM = 0;
@@ -134,7 +134,7 @@ void read_matchInternal(pMesh sm, Mesh* mesh, pGModel g, CommPtr comm) {
     verts = M_classifiedVertexIter(m, g_vert, 0);
     int match_gEnt = -1;
     while ((vert = (pVertex) VIter_next(verts))) {
-      pPList matches = EN_getMatchingEnts(vert, 0, 0);
+      pPList matches = EN_getMatchingEnts(vert, NULL);
       void *iterM = 0;
       pVertex match;
       if (matches) {
@@ -166,7 +166,7 @@ void read_matchInternal(pMesh sm, Mesh* mesh, pGModel g, CommPtr comm) {
     edges = M_classifiedEdgeIter(m, g_edge, 0);
     int match_gEnt = -1;
     while ((edge = (pEdge) EIter_next(edges))) {
-      pPList matches = EN_getMatchingEnts(edge, 0, 0);
+      pPList matches = EN_getMatchingEnts(edge, NULL);
       void *iterM = 0;
       pEdge match;
       if (matches) {
@@ -198,7 +198,7 @@ void read_matchInternal(pMesh sm, Mesh* mesh, pGModel g, CommPtr comm) {
     faces = M_classifiedFaceIter(m, g_face, 0);
     int match_gEnt = -1;
     while ((face = (pFace) FIter_next(faces))) {
-      pPList matches = EN_getMatchingEnts(face, 0, 0);
+      pPList matches = EN_getMatchingEnts(face, NULL);
       void *iterM = 0;
       pFace match;
       if (matches) {
@@ -234,7 +234,7 @@ void read_matchInternal(pMesh sm, Mesh* mesh, pGModel g, CommPtr comm) {
     }
     ent_class_ids[1].push_back(classId(edge));
 
-    pPList matches = EN_getMatchingEnts(edge, 0, 0);
+    pPList matches = EN_getMatchingEnts(edge, NULL);
     void *iterM = 0;
     pEdge match;
     count_matches = 0;
@@ -271,7 +271,7 @@ void read_matchInternal(pMesh sm, Mesh* mesh, pGModel g, CommPtr comm) {
     PList_delete(verts);
     ent_class_ids[2].push_back(classId(face));
 
-    pPList matches = EN_getMatchingEnts(face, 0, 0);
+    pPList matches = EN_getMatchingEnts(face, NULL);
     void *iterM = 0;
     pFace match;
     count_matches = 0;
@@ -299,7 +299,7 @@ void read_matchInternal(pMesh sm, Mesh* mesh, pGModel g, CommPtr comm) {
   ent_class_ids[3].reserve(numRegions);
   regions = M_regionIter(m);
   while ((rgn = (pRegion) RIter_next(regions))) {
-    pPList matches = EN_getMatchingEnts(rgn, 0, 0);
+    pPList matches = EN_getMatchingEnts(rgn, NULL);
     count_matches = 0;
     if (matches) {
       Omega_h_fail("region matches found\n");
