@@ -407,6 +407,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           Few<Real, 32> cand_dists;
           //calc n locations of new tangent pts
           //printf("newedge leng %f\n", new_length);
+          Real upper_cosTheta = (
+              upper_tangents[0]*upper_tangents[dim + 0] +
+              upper_tangents[1]*upper_tangents[dim + 1] +
+              upper_tangents[2]*upper_tangents[dim + 2]);
+        printf("upper costheta %f\n", upper_cosTheta);
+
           for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
             Real length_t = 0.0;
             for (LO d=0; d<dim; ++d) {
@@ -581,6 +587,13 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             }
           }
         }
+        Real lower_cosTheta = (
+            lower_tangents[0]*lower_tangents[dim + 0] +
+            lower_tangents[1]*lower_tangents[dim + 1] +
+            lower_tangents[2]*lower_tangents[dim + 2]);
+        printf("lower costheta %f\n", lower_cosTheta);
+
+        OMEGA_H_CHECK(count_lower_edge == 2);
         for (LO d = 0; d < dim; ++d) t_lower[d] = t_lower[d]/count_lower_edge;
         Real length_t = 0.0;
         for (LO d = 0; d < dim; ++d) length_t += t_lower[d]*t_lower[d]; 
