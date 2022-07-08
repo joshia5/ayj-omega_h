@@ -596,11 +596,31 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
         OMEGA_H_CHECK(count_lower_edge == 2);
         for (LO d = 0; d < dim; ++d) t_lower[d] = t_lower[d]/count_lower_edge;
         Real length_t = 0.0;
+
         for (LO d = 0; d < dim; ++d) length_t += t_lower[d]*t_lower[d]; 
         for (LO d = 0; d < dim; ++d) t_lower[d] = t_lower[d]/std::sqrt(length_t);
         for (LO d = 0; d < dim; ++d) {
           c_lower[d] = old_coords[v_lower*dim + d] + t_lower[d]*new_length/3.0;
         }
+
+        /**/
+        Real dist_to_upper = 0.0;
+        for (LO d = 0; d < dim; ++d) {
+          dist_to_upper += (c_lower[d] - old_coords[v_onto*dim + d])*
+                           (c_lower[d] - old_coords[v_onto*dim + d]);
+        }
+        dist_to_upper = std::sqrt(dist_to_upper);
+        if (dist_to_upper > new_length) {
+          printf("dist %f, leng %f, concavity found\n", dist_to_upper, new_length);
+          printf("v_onto {%f,%f,%f} c_lower {%f,%f,%f}\n", old_coords[v_onto*dim + 0],
+              old_coords[v_onto*dim + 1], old_coords[v_onto*dim + 2],
+              c_lower[0], c_lower[1], c_lower[2]);
+          for (LO d = 0; d < dim; ++d) {
+            c_lower[d] = old_coords[v_lower*dim + d] - t_lower[d]*new_length/3.0;
+          }
+          printf(" new c_lower {%f,%f,%f}\n", c_lower[0], c_lower[1], c_lower[2]);
+        }
+        /**/
 
         for (LO d = 0; d < dim; ++d) {
           if (v_onto_is_first == 1) {
