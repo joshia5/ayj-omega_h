@@ -244,7 +244,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     LO const v_onto = keys2verts_onto[i];
     Few<I8, 256> bdry_cands_avail;
     Few<Real, 256> all_cands_dist;//max 16 cand and 16 prods
-    for (LO k=0; k<256; ++k) all_cands_dist[k] = 999999999;
+    for (LO k=0; k<256; ++k) all_cands_dist[k] = DBL_MAX;
     for (LO a=0; a<256; ++a) bdry_cands_avail[a] = 1;
 
     for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
@@ -424,6 +424,11 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           Few<Real, 32> cand_dists;
 
           Few<Real, 32> cand_dist_to_uppere0;
+          Few<LO, 32> sorted_cands;
+          for (LO cand = 0; cand < 32; ++cand) {
+            sorted_cands[cand] = -1;
+            cand_dist_to_uppere0[cand] = DBL_MAX;
+          }
           LO const uppere0 = upper_edges[0];
           Vector<dim> uppere0_pt;
           LO const uppere0_v0 = old_ev2v[uppere0*2 + 0];
@@ -474,7 +479,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             }
             cand_dist_to_uppere0[cand] = std::sqrt(cand_dist_to_uppere0[cand]);
 
-            printf("cand dist to uppere0 %f\n", cand_dist_to_uppere0[cand]);
+            //printf("cand dist to uppere0 %f\n", cand_dist_to_uppere0[cand]);
 /*            printf("cav avg len %f new len %f\n", cav_edge_len_i, new_length);
             printf("cand %d tang {%f,%f,%f} upper1 {%f,%f,%f} upper2 {%f,%f,%f}\n", cand, 
                 cand_tangents[cand*dim+0],cand_tangents[cand*dim+1],
@@ -483,7 +488,80 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                 upper_tangents[dim+0],upper_tangents[dim+1],upper_tangents[dim+2]);
                 */
           }
-          //find which one is closest to straight side pt of edge
+          //create list containing sorted cands by dist to ue0
+          //TODO bug in this sorting routine, swap after finding min
+          for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
+            for (LO cand2 = cand; cand2 < nedge_shared_gface_i; ++cand2) {
+              if (cand_dist_to_uppere0[cand] < cand_dist_to_uppere0[cand2]) {
+                sorted_cands[cand] = cand;
+              }
+              else {
+                sorted_cands[cand] = cand2;
+              }
+            }
+            //printf("sorted cand %d is %d\n", cand, sorted_cands[cand]);
+          }
+          //find dist of all relevant prods to uppere0
+          Few<Real, 32> prod_dist_to_uppere0;
+          Few<LO, 32> sorted_prods;
+          Few<LO, 32> prod_ids;
+          for (LO count_p2 = 0; count_p2 < 32; ++count_p2) {
+            sorted_prods[count_p2] = -1;
+            prod_ids[count_p2] = -1;
+            prod_dist_to_uppere0[count_p2] = DBL_MAX;
+          }
+          LO count_prod2 = 0;
+          for (LO prod2 = keys2prods[i]; prod2 < keys2prods[i+1]; ++prod2) {
+            LO const other_edge = prods2new[prod2];
+            if ((newedge_gdim[other_edge] == 2) &&
+                (newedge_gid[new_edge] == newedge_gid[other_edge])) {
+              LO const oth_edge_v0 = new_ev2v[other_edge*2 + 0];
+              LO const oth_edge_v1 = new_ev2v[other_edge*2 + 1];
+              LO const oth_edge_v0_old = same_verts2old_verts[ab2b[a2ab[oth_edge_v0]]];
+              LO const oth_edge_v1_old = same_verts2old_verts[ab2b[a2ab[oth_edge_v1]]];
+              auto const c0_coord2= get_vector<dim>(old_coords, oth_edge_v0_old);
+              auto const c3_coord2= get_vector<dim>(old_coords, oth_edge_v1_old);
+              Vector<dim> other_p;
+
+              //check for new edge, first vertex is vlower or vupper
+              if (v_onto == oth_edge_v0_old) {
+                for (LO d = 0; d < dim; ++d)
+                  other_p[d] = c0_coord2[d] + (1.0/3.0)*(c3_coord2[d] - c0_coord2[d]);
+              }
+              else {
+                OMEGA_H_CHECK(v_onto == oth_edge_v1_old);
+                for (LO d = 0; d < dim; ++d)
+                  other_p[d] = c3_coord2[d] + (1.0/3.0)*(c0_coord2[d] - c3_coord2[d]);
+              }
+              prod_dist_to_uppere0[count_prod2] = 
+                std::pow(uppere0_pt[0]-other_p[0], 2) +
+                std::pow(uppere0_pt[1]-other_p[1], 2) +
+                std::pow(uppere0_pt[2]-other_p[2], 2);
+              prod_dist_to_uppere0[count_prod2] = std::sqrt(prod_dist_to_uppere0[count_prod2]);
+              prod_ids[count_prod2] = other_edge;
+              printf("prod %d dist to uppere0 %f\n", other_edge, prod_dist_to_uppere0[count_prod2]);
+
+              ++count_prod2;
+            }
+          }
+          OMEGA_H_CHECK(count_prod2 == nedge_shared_gface_i);
+          //sort prods by dist to upper e0
+          for (LO count_p2 = 0; count_p2 < nedge_shared_gface_i; ++count_p2) {
+            for (LO count_prod2_2 = count_p2; count_prod2_2 < nedge_shared_gface_i; ++count_prod2_2) {
+              if (prod_dist_to_uppere0[count_p2] < prod_dist_to_uppere0[count_prod2_2]) {
+                sorted_prods[count_p2] = prod_ids[count_p2];
+                //swap2(prod_dist_to_uppere0[count_p2] , prod_dist_to_uppere0[count_prod2_2]);
+                //swap2(prod_ids[count_p2] , prod_ids[count_prod2_2]);
+              }
+              else {
+                sorted_prods[count_p2] = prod_ids[count_prod2_2];
+                swap2(prod_dist_to_uppere0[count_p2] , prod_dist_to_uppere0[count_prod2_2]);
+                swap2(prod_ids[count_p2] , prod_ids[count_prod2_2]);
+              }
+            }
+            printf("sorted prod %d is %d\n", count_p2, sorted_prods[count_p2]);
+          }
+
           if (v_onto_is_first == 1) { 
             for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
               cand_dists[cand] = std::pow(cand_c[cand*dim + 0]-c1[0], 2) +
@@ -500,7 +578,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             }
           }
           LO min_cand_id = -1;
-          Real min_dist = 999999999;
+          Real min_dist = DBL_MAX;
           printf("vonto {%f,%f,%f}\n", old_coords[v_onto*3+0], 
               old_coords[v_onto*3+1],
               old_coords[v_onto*3+2]);
