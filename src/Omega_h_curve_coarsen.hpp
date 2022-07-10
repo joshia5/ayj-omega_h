@@ -421,7 +421,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           assert(nedge_shared_gface_i <= 32);
           Few<Real, dim*32> cand_tangents;
           Few<Real, dim*32> cand_c;
-          Few<Real, 32> cand_dists;
 
           Few<Real, 32> cand_dist_to_uppere0;
           Few<LO, 32> sorted_cands;
@@ -488,19 +487,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                 upper_tangents[dim+0],upper_tangents[dim+1],upper_tangents[dim+2]);
                 */
           }
-          //create list containing sorted cands by dist to ue0
-          //TODO bug in this sorting routine, swap after finding min
-          for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
-            for (LO cand2 = cand; cand2 < nedge_shared_gface_i; ++cand2) {
-              if (cand_dist_to_uppere0[cand] < cand_dist_to_uppere0[cand2]) {
-                sorted_cands[cand] = cand;
-              }
-              else {
-                sorted_cands[cand] = cand2;
-              }
-            }
-            //printf("sorted cand %d is %d\n", cand, sorted_cands[cand]);
-          }
+
           //find dist of all relevant prods to uppere0
           Few<Real, 32> prod_dist_to_uppere0;
           Few<LO, 32> sorted_prods;
@@ -561,7 +548,16 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             }
             printf("sorted prod %d is %d\n", count_p2, sorted_prods[count_p2]);
           }
+          LO opt_cand_id = -1;
+          for (LO count_p2 = 0; count_p2 < nedge_shared_gface_i; ++count_p2) {
+            if (prod_ids[count_p2] == new_edge) opt_cand_id = count_p2;
+          }
+          for (LO d = 0; d < dim; ++d) {
+            c_upper[d] = cand_c[opt_cand_id*dim + d];
+          }
 
+          /*
+          Few<Real, 32> cand_dists;
           if (v_onto_is_first == 1) { 
             for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
               cand_dists[cand] = std::pow(cand_c[cand*dim + 0]-c1[0], 2) +
@@ -640,6 +636,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           for (LO d = 0; d < dim; ++d) {
             c_upper[d] = cand_c[min_cand_id*dim + d];
           }
+      */
+          
         }
 
         //find lower vtx, here upper is v_onto and lower is other end of edge
