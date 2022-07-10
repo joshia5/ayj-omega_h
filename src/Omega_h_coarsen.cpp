@@ -232,7 +232,7 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
     printf("after coarsen has %d elems\n", mesh->nelems());
     auto cubic_cavityMesh = Mesh(mesh->comm()->library());
     cubic_cavityMesh.set_comm(comm);
-    build_cubic_cavities_3d(mesh, &cubic_cavityMesh, 10);
+    build_cubic_cavities_3d(mesh, &cubic_cavityMesh, 55);
     vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_cavities.vtu";
     vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_cavityMesh, 2);
   }
