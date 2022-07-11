@@ -478,22 +478,18 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                 upper_tangents[0], upper_tangents[1], upper_tangents[2],
                 upper_tangents[dim+0], upper_tangents[dim+1], upper_tangents[dim+2]
                 );
-            /*
-            auto A = tensor_3(
-                n[0], upper_tangents[0], upper_tangents[dim+0],
-                n[1], upper_tangents[1], upper_tangents[dim+1],
-                n[2], upper_tangents[2], upper_tangents[dim+2]
-                );
-            */
             auto A_inv = invert(A);
             auto X = A_inv*b;
             printf("new tang {%f,%f,%f}\n",X[0],X[1],X[2]);
             /**/
 
             for (LO d=0; d<dim; ++d) {
+              cand_tangents[cand*dim + d] = X[d];
+              /*
               cand_tangents[cand*dim + d] = upper_tangents[0*dim + d] + 
                 (cand+1)*(upper_tangents[dim+d] - upper_tangents[d])/
                 (nedge_shared_gface_i + 1);
+              */
               length_t += cand_tangents[cand*dim + d]*cand_tangents[cand*dim + d]; 
             }
             if (new_edge == 1413) {
@@ -540,6 +536,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             prod_dist_to_uppere0[count_p2] = DBL_MAX;
           }
           LO count_prod2 = 0;
+          //TODO find and sort based on angle-to-upper_e0 instead of dist.
           for (LO prod2 = keys2prods[i]; prod2 < keys2prods[i+1]; ++prod2) {
             LO const other_edge = prods2new[prod2];
             if ((newedge_gdim[other_edge] == 2) &&
