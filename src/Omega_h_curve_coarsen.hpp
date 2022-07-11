@@ -314,6 +314,19 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           c1[d] = edge_ctrlPts[new_edge*n_edge_pts*dim + d];
           c2[d] = edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d];
 	}
+
+        //find lower vtx, here upper is v_onto and lower is other end of edge
+        Vector<dim> c_lower;
+        LO v_lower = -1;
+        if (new_edge_v0_old == v_onto) v_lower = new_edge_v1_old;
+        if (new_edge_v1_old == v_onto) v_lower = new_edge_v0_old;
+        LO e_lower = -1;
+        for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
+          LO const e = old_ve2e[ve];
+          if ((v_lower == old_ev2v[e*2+0]) || 
+              (v_lower == old_ev2v[e*2+1])) e_lower = e;
+        }
+        OMEGA_H_CHECK(e_lower);
                
         //count upper edges
         Few<LO, 2> upper_edges;
@@ -461,15 +474,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                  (upper_tangents[2]*upper_tangents[dim + 0]);
           n[2] = (upper_tangents[0]*upper_tangents[dim + 1]) - 
                  (upper_tangents[1]*upper_tangents[dim + 0]);
-          printf("normalAngle %f degree\n", acos(
-              upper_tangents[0]*n[0] + upper_tangents[1]*n[1] + upper_tangents[2]*n[2]
-              )*180/PI);
 
           for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
-            Real length_t = 0.0;
 
             /**/
             Real theta_c = (cand+1)*upper_theta/(nedge_shared_gface_i + 1);
+            printf("theta cand %f degree\n",theta_c*180/PI);
             Vector<3> b;
             b[0] = 0.0; b[1] = cos(theta_c); b[2] = cos(upper_theta-theta_c);
             auto A = tensor_3(
@@ -477,26 +487,45 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                 upper_tangents[0], upper_tangents[1], upper_tangents[2],
                 upper_tangents[dim+0], upper_tangents[dim+1], upper_tangents[dim+2]
                 );
+            /*
+            if ((std::abs(upper_theta - PI) < EPSILON) && 
+                (std::abs(theta_c - PI/2) > EPSILON)) {
+              A = tensor_3(
+                n[0]+0.1, n[1], n[2],
+                upper_tangents[0], upper_tangents[1]+0.1,
+                  upper_tangents[2],
+                upper_tangents[dim+0], upper_tangents[dim+1],
+                  upper_tangents[dim+2]+0.1
+                );
+            }
+            */
             auto A_inv = invert(A);
             auto X = A_inv*b;
+            //if ((std::abs(theta_c - PI/2) < EPSILON) &&
+              //  (std::abs(n[1] - 1.) < EPSILON))
+            if (((std::abs(upper_theta - PI) < EPSILON) && 
+                ((std::abs(upper_tangents[0]) - 1.0)) < EPSILON)) {
+              X[0] = upper_tangents[0]*cos(theta_c) + upper_tangents[2]*sin(theta_c);
+              X[1] = upper_tangents[1];
+              X[2] = -upper_tangents[0]*sin(theta_c) + upper_tangents[2]*cos(theta_c);
+                printf("rotation, n {%f,%f,%f}\n", n[0],n[1],n[2]);
+              if (n[1] < 0.0) {
+                printf("rotation matrix -y \n");
+                X[2] =-(-upper_tangents[0]*sin(theta_c) + upper_tangents[2]*cos(theta_c));
+              }
+            }
             printf("new tang {%f,%f,%f}\n",X[0],X[1],X[2]);
             /**/
 
+            Real length_t = 0.0;
             for (LO d=0; d<dim; ++d) {
               cand_tangents[cand*dim + d] = X[d];
-              /*
-              cand_tangents[cand*dim + d] = upper_tangents[0*dim + d] + 
-                (cand+1)*(upper_tangents[dim+d] - upper_tangents[d])/
-                (nedge_shared_gface_i + 1);
-              */
               length_t += cand_tangents[cand*dim + d]*cand_tangents[cand*dim + d]; 
             }
-            if (new_edge == 1413) {
-              printf("#468 newE 1413 cand_tgts {%f,%f,%f} lenT %f \n", 
+              printf("#468 newE %d cand_tgts {%f,%f,%f} lenT %f \n", new_edge,
                   cand_tangents[cand*dim+0],cand_tangents[cand*dim+1],
                   cand_tangents[cand*dim+2],
                   length_t);
-            }
             for (LO d = 0; d < dim; ++d) {
               cand_tangents[cand*dim + d] = cand_tangents[cand*dim + d]/
                 std::sqrt(length_t);
@@ -505,17 +534,56 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               cand_c[cand*dim + d] = old_coords[v_onto*dim + d] +
                 cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
             }
+            //account for concave
+            {
+              Real dist_to_lower = 0.0;
+              for (LO d = 0; d < dim; ++d) {
+                dist_to_lower += std::pow(
+                    (cand_c[cand*dim+d] - old_coords[v_lower*dim + d]), 2);
+              }
+              dist_to_lower = std::sqrt(dist_to_lower);
+              if (dist_to_lower > new_length) {
+                /*
+                printf("dist %f, leng %f, concavity found\n", dist_to_upper, new_length);
+                printf("v_onto {%f,%f,%f} c_lower {%f,%f,%f}\n", old_coords[v_onto*dim + 0],
+                    old_coords[v_onto*dim + 1], old_coords[v_onto*dim + 2],
+                    c_upper[0], c_upper[1], c_upper[2]);
+                    */
+                for (LO d = 0; d < dim; ++d) {
+                  cand_c[cand*dim + d] = old_coords[v_onto*dim + d] -
+                    cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
+                }
+                //printf(" new c_lower {%f,%f,%f}\n", c_lower[0], c_lower[1], c_lower[2]);
+              }
+            }
             cand_dist_to_uppere0[cand] = 0.0;
             for (LO d = 0; d < dim; ++d) {
               cand_dist_to_uppere0[cand] += std::pow((uppere0_pt[d] - cand_c[cand*dim + d]), 2);
             }
             cand_dist_to_uppere0[cand] = std::sqrt(cand_dist_to_uppere0[cand]);
-            if (new_edge == 1413) {
-              printf("#481 newE 1413 candc {%f,%f,%f} cand_tgts {%f,%f,%f} disttoUpp %f newl %f\n", 
+            /*
+            for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
+              for (LO cand2 = cand; cand2 < nedge_shared_gface_i; ++cand2) {
+                if (cand_dist_to_uppere0[cand] < cand_dist_to_uppere0[cand2]) {
+                  sorted_cands[cand] = cand;
+                }
+                else {
+                  sorted_cands[cand] = cand2;
+                  swap2(cand_dist_to_uppere0[cand] , cand_dist_to_uppere0[cand2]);
+                  swap2(cand_c[cand*dim + 0], cand_c[cand2*dim + 0]);
+                  swap2(cand_c[cand*dim + 1], cand_c[cand2*dim + 1]);
+                  swap2(cand_c[cand*dim + 2], cand_c[cand2*dim + 2]);
+                  //swap2(prod_ids[count_p2] , prod_ids[count_prod2_2]);
+                }
+              }
+              printf("sorted cand %d is %d\n", cand,sorted_cands[cand]);
+            }
+            */
+
+              printf("#481 candc {%f,%f,%f} cand_tgts {%f,%f,%f} disttoUpp %f newl %f\n", 
                   cand_c[cand*dim+0],cand_c[cand*dim+1],cand_c[cand*dim+2],
                   cand_tangents[cand*dim+0],cand_tangents[cand*dim+1],cand_tangents[cand*dim+2],
                   cand_dist_to_uppere0[cand], new_length);
-            }
 
             //printf("cand dist to uppere0 %f\n", cand_dist_to_uppere0[cand]);
             printf("cand %d tang {%f,%f,%f} upper1 {%f,%f,%f} upper2 {%f,%f,%f}\n", cand, 
@@ -523,6 +591,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                 cand_tangents[cand*dim+2],
                 upper_tangents[0], upper_tangents[1], upper_tangents[2], 
                 upper_tangents[dim+0],upper_tangents[dim+1],upper_tangents[dim+2]);
+                
           }
 
           //find dist of all relevant prods to uppere0
@@ -575,8 +644,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             for (LO count_prod2_2 = count_p2; count_prod2_2 < nedge_shared_gface_i; ++count_prod2_2) {
               if (prod_dist_to_uppere0[count_p2] < prod_dist_to_uppere0[count_prod2_2]) {
                 sorted_prods[count_p2] = prod_ids[count_p2];
-                //swap2(prod_dist_to_uppere0[count_p2] , prod_dist_to_uppere0[count_prod2_2]);
-                //swap2(prod_ids[count_p2] , prod_ids[count_prod2_2]);
               }
               else {
                 sorted_prods[count_p2] = prod_ids[count_prod2_2];
@@ -592,15 +659,14 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           }
           for (LO d = 0; d < dim; ++d) {
             c_upper[d] = cand_c[opt_cand_id*dim + d];
+            //c_upper[d] = cand_c[sorted_cands[opt_cand_id]*dim + d];
           }
-          if (new_edge == 1413) {
             printf("#559 newE 1413 cu {%f,%f,%f} opt_cand_id %d candc {%f,%f,%f}\n", 
                 c_upper[0], c_upper[1], c_upper[2],
                 opt_cand_id,
                 cand_c[opt_cand_id*dim+0],cand_c[opt_cand_id*dim+1],cand_c[opt_cand_id*dim+2]
                 );
-          }
-
+            
           /*
           Few<Real, 32> cand_dists;
           if (v_onto_is_first == 1) { 
@@ -685,19 +751,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           
         }
 
-        //find lower vtx, here upper is v_onto and lower is other end of edge
-        Vector<dim> c_lower;
-        LO v_lower = -1;
-        if (new_edge_v0_old == v_onto) v_lower = new_edge_v1_old;
-        if (new_edge_v1_old == v_onto) v_lower = new_edge_v0_old;
-        LO e_lower = -1;
-        for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
-          LO const e = old_ve2e[ve];
-          if ((v_lower == old_ev2v[e*2+0]) || 
-              (v_lower == old_ev2v[e*2+1])) e_lower = e;
-        }
-        OMEGA_H_CHECK(e_lower);
-
         Few<LO, 2> lower_edges;
         Few<I8, 2> from_first_vtx_l;
         LO count_lower_edge = 0;
@@ -780,21 +833,23 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
         /*For concave lower angle*/
         //TODO account for concave upper angle
-        Real dist_to_upper = 0.0;
-        for (LO d = 0; d < dim; ++d) {
-          dist_to_upper += (c_lower[d] - old_coords[v_onto*dim + d])*
-                           (c_lower[d] - old_coords[v_onto*dim + d]);
-        }
-        dist_to_upper = std::sqrt(dist_to_upper);
-        if (dist_to_upper > new_length) {
-          printf("dist %f, leng %f, concavity found\n", dist_to_upper, new_length);
-          printf("v_onto {%f,%f,%f} c_lower {%f,%f,%f}\n", old_coords[v_onto*dim + 0],
-              old_coords[v_onto*dim + 1], old_coords[v_onto*dim + 2],
-              c_lower[0], c_lower[1], c_lower[2]);
+        {
+          Real dist_to_upper = 0.0;
           for (LO d = 0; d < dim; ++d) {
-            c_lower[d] = old_coords[v_lower*dim + d] - t_lower[d]*new_length/3.0;
+            dist_to_upper += (c_lower[d] - old_coords[v_onto*dim + d])*
+              (c_lower[d] - old_coords[v_onto*dim + d]);
           }
-          printf(" new c_lower {%f,%f,%f}\n", c_lower[0], c_lower[1], c_lower[2]);
+          dist_to_upper = std::sqrt(dist_to_upper);
+          if (dist_to_upper > new_length) {
+            printf("dist %f, leng %f, concavity found\n", dist_to_upper, new_length);
+            printf("v_onto {%f,%f,%f} c_lower {%f,%f,%f}\n", old_coords[v_onto*dim + 0],
+                old_coords[v_onto*dim + 1], old_coords[v_onto*dim + 2],
+                c_lower[0], c_lower[1], c_lower[2]);
+            for (LO d = 0; d < dim; ++d) {
+              c_lower[d] = old_coords[v_lower*dim + d] - t_lower[d]*new_length/3.0;
+            }
+            printf(" new c_lower {%f,%f,%f}\n", c_lower[0], c_lower[1], c_lower[2]);
+          }
         }
         /**/
 
