@@ -329,11 +329,17 @@ void test_collapse_kova(Library *lib) {
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(100)));
-  for (LO adapt_itr = 0; adapt_itr < 4; ++adapt_itr) coarsen_by_size(&mesh, opts);
+  fprintf(stderr, "start coarsening\n");
+  for (LO adapt_itr = 0; adapt_itr < 4; ++adapt_itr) {
+    fprintf(stderr, "itr %d\n", adapt_itr);
+    coarsen_by_size(&mesh, opts);
+  }
   //while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 50));
+  fprintf(stderr, "finish coarsening\n");
   mesh.ask_qualities();
   writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/kovaCoarsen_aft.vtk", &mesh);
   writer.write();
+  fprintf(stderr, "finished kova case\n");
   
   return;
 }
