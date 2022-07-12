@@ -132,7 +132,7 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
   if (opts.verbosity >= EACH_REBUILD) {
     auto ntotal_keys = comm->allreduce(GO(nkeys), OMEGA_H_SUM);
     if (comm->rank() == 0) {
-      std::cout << "coarsening " << ntotal_keys << " vertices\n";
+      printf("coarsening %ld vertices\n", ntotal_keys);
     }
   }
   auto rails2edges = LOs();
@@ -215,8 +215,10 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
   }
 
   *mesh = new_mesh;
+  fprintf(stderr, "after coarsen has %d elems\n", mesh->nelems());
 
   if (mesh->is_curved() > 0) {
+    printf("writing current curved mesh\n");
     vtk::write_parallel("/lore/joshia5/Meshes/curved/coarsen_itr.vtk", mesh, mesh->dim());
     auto cubic_curveVtk_mesh = Mesh(mesh->comm()->library());
     cubic_curveVtk_mesh.set_comm(comm);
@@ -229,7 +231,6 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
     vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_wireframe.vtu";
     vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe, 1);
     vtk::write_parallel("/lore/joshia5/Meshes/curved/coarsen_itr_linear.vtk", mesh);
-    printf("after coarsen has %d elems\n", mesh->nelems());
     auto cubic_cavityMesh = Mesh(mesh->comm()->library());
     cubic_cavityMesh.set_comm(comm);
     build_cubic_cavities_3d(mesh, &cubic_cavityMesh, 55);

@@ -457,7 +457,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           for (LO d=0; d<dim; ++d) {
             uppere0_pt[d] = old_coords[v_onto*dim + d] + 
               (old_coords[uppere0_vlower*dim + d] - old_coords[v_onto*dim + d])/2.0;
-            std::cout << uppere0_pt[d] << "\n";
+            printf("%f\n", uppere0_pt[d]);
           }
 
           //calc n locations of new tangent pts
