@@ -64,6 +64,7 @@ template <Int dim>
 void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     LOs prods2new, LOs old_verts2new_verts, LOs keys2verts, LOs keys2verts_onto,
     LOs keys2prods, LOs same_verts2new_verts, LOs same_verts2old_verts) {
+  printf("67 coming in fn\n");
   auto const nold_verts = mesh->nverts();
   auto const nold_edges = mesh->nedges();
   auto const nold_faces = mesh->nfaces();
@@ -74,10 +75,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const old_fv2v = mesh->ask_down(2, 0).ab2b;
   auto const old_v2vf = mesh->ask_up(0,2).a2ab;
   auto const old_vf2f = mesh->ask_up(0,2).ab2b;
-  //auto const old_e2e = mesh->edges_across_tris(
-    //  mesh->get_adj(2,1), mesh->ask_up(1,2));
-  //auto const old_e2ee = old_e2e.a2ab;
-  //auto const old_ee2e = old_e2e.ab2b;
+  printf("79 ok\n");
   auto const nkeys = keys2verts.size();
   if (!mesh->has_tag(0, "bezier_pts")) {
     mesh->add_tag<Real>(0, "bezier_pts", dim, mesh->coords());
@@ -86,6 +84,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
   auto const old_faceCtrlPts = mesh->get_ctrlPts(2);
   auto const old_coords = mesh->coords();
+  printf("91 ok\n");
 
   auto const new_ev2v = new_mesh->get_adj(1, 0).ab2b;
   auto const new_coords = new_mesh->coords();
@@ -109,6 +108,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   };
   parallel_for(nold_verts, std::move(copy_sameCtrlPts),
       "copy same vtx ctrlPts");
+  printf("#114 nkeys %d\n", keys2verts.size());
   new_mesh->add_tag<Real>(0, "bezier_pts", dim);
   new_mesh->set_tag_for_ctrlPts(0, Reals(vert_ctrlPts));
 
@@ -164,6 +164,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
   Write<LO> nedge_shared_gface_w(nnew_edge, 0);
   Write<Real> cav_edge_len_w(nnew_edge, 0.0);
 
+  printf("#168 nkeys %d\n", keys2verts.size());
   if (dim == 3) {
     auto calc_gface_prods = OMEGA_H_LAMBDA(LO i) {
       for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
@@ -195,6 +196,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     };
     parallel_for(keys2verts.size(), std::move(calc_gface_prods));
   }
+  printf("#208 nkeys %d\n", keys2verts.size());
   auto nedge_shared_gface = Read<LO>(nedge_shared_gface_w);
   auto cav_edge_len = Read<Real>(cav_edge_len_w);
 
@@ -217,6 +219,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     }
   };
   parallel_for(nold_edges, std::move(calc_tangents));
+  printf("#231 nkeys %d\n", keys2verts.size());
 
   Write<LO> count_bdry_cavities(1, 0);
   auto count_bdry_cavs = OMEGA_H_LAMBDA(LO i) {
@@ -236,10 +239,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
       atomic_increment(&count_bdry_cavities[0]);
   };
   parallel_for(keys2verts.size(), std::move(count_bdry_cavs));
+  printf("#251 nkeys %d\n", keys2verts.size());
 
   Write<I8> edge_cands(nnew_edge, -1);
 
-  fprintf(stderr, "nkeys %d\n", keys2verts.size());
   auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     printf("curve bdry pfor i %d\n", i);
     LO const v_key = keys2verts[i];
@@ -480,7 +483,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 
           for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
 
-            /**/
+            //
             Real theta_c = (cand+1)*upper_theta/(nedge_shared_gface_i + 1);
             printf("theta cand %f degree\n",theta_c*180/PI);
             Vector<3> b;
@@ -490,18 +493,18 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                 upper_tangents[0], upper_tangents[1], upper_tangents[2],
                 upper_tangents[dim+0], upper_tangents[dim+1], upper_tangents[dim+2]
                 );
-            /*
-            if ((std::abs(upper_theta - PI) < EPSILON) && 
-                (std::abs(theta_c - PI/2) > EPSILON)) {
-              A = tensor_3(
-                n[0]+0.1, n[1], n[2],
-                upper_tangents[0], upper_tangents[1]+0.1,
-                  upper_tangents[2],
-                upper_tangents[dim+0], upper_tangents[dim+1],
-                  upper_tangents[dim+2]+0.1
-                );
-            }
-            */
+            //damping diag of A
+            //if ((std::abs(upper_theta - PI) < EPSILON) && 
+              //  (std::abs(theta_c - PI/2) > EPSILON)) {
+              //A = tensor_3(
+                //n[0]+0.1, n[1], n[2],
+                //upper_tangents[0], upper_tangents[1]+0.1,
+                  //upper_tangents[2],
+                //upper_tangents[dim+0], upper_tangents[dim+1],
+                  //upper_tangents[dim+2]+0.1
+               // );
+            //}
+            //
             auto A_inv = invert(A);
             auto X = A_inv*b;
             //if ((std::abs(theta_c - PI/2) < EPSILON) &&
@@ -518,7 +521,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               }
             }
             printf("new tang {%f,%f,%f}\n",X[0],X[1],X[2]);
-            /**/
+            //
 
             Real length_t = 0.0;
             for (LO d=0; d<dim; ++d) {
@@ -537,7 +540,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               cand_c[cand*dim + d] = old_coords[v_onto*dim + d] +
                 cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
             }
-            //account for concave upper angle
+            //TODO account for concave upper angle
+            /*
             {
               Real dist_to_lower = 0.0;
               for (LO d = 0; d < dim; ++d) {
@@ -546,12 +550,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
               }
               dist_to_lower = std::sqrt(dist_to_lower);
               if (dist_to_lower > new_length) {
-                /*
-                printf("dist %f, leng %f, concavity found\n", dist_to_upper, new_length);
-                printf("v_onto {%f,%f,%f} c_lower {%f,%f,%f}\n", old_coords[v_onto*dim + 0],
+                printf("dist %f, leng %f, concavity found\n", dist_to_lower, new_length);
+                printf("v_onto {%f,%f,%f} c_upper {%f,%f,%f}\n", old_coords[v_onto*dim + 0],
                     old_coords[v_onto*dim + 1], old_coords[v_onto*dim + 2],
                     c_upper[0], c_upper[1], c_upper[2]);
-                    */
                 for (LO d = 0; d < dim; ++d) {
                   cand_c[cand*dim + d] = old_coords[v_onto*dim + d] -
                     cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
@@ -559,29 +561,30 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                 //printf(" new c_lower {%f,%f,%f}\n", c_lower[0], c_lower[1], c_lower[2]);
               }
             }
+            */
             cand_dist_to_uppere0[cand] = 0.0;
             for (LO d = 0; d < dim; ++d) {
               cand_dist_to_uppere0[cand] += std::pow((uppere0_pt[d] - cand_c[cand*dim + d]), 2);
             }
             cand_dist_to_uppere0[cand] = std::sqrt(cand_dist_to_uppere0[cand]);
-            /*
-            for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
-              for (LO cand2 = cand; cand2 < nedge_shared_gface_i; ++cand2) {
-                if (cand_dist_to_uppere0[cand] < cand_dist_to_uppere0[cand2]) {
-                  sorted_cands[cand] = cand;
-                }
-                else {
-                  sorted_cands[cand] = cand2;
-                  swap2(cand_dist_to_uppere0[cand] , cand_dist_to_uppere0[cand2]);
-                  swap2(cand_c[cand*dim + 0], cand_c[cand2*dim + 0]);
-                  swap2(cand_c[cand*dim + 1], cand_c[cand2*dim + 1]);
-                  swap2(cand_c[cand*dim + 2], cand_c[cand2*dim + 2]);
+            //
+            //for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
+              //for (LO cand2 = cand; cand2 < nedge_shared_gface_i; ++cand2) {
+                //if (cand_dist_to_uppere0[cand] < cand_dist_to_uppere0[cand2]) {
+                //  sorted_cands[cand] = cand;
+               // }
+                //else {
+                  //sorted_cands[cand] = cand2;
+                  //swap2(cand_dist_to_uppere0[cand] , cand_dist_to_uppere0[cand2]);
+                  //swap2(cand_c[cand*dim + 0], cand_c[cand2*dim + 0]);
+                  //swap2(cand_c[cand*dim + 1], cand_c[cand2*dim + 1]);
+                  //swap2(cand_c[cand*dim + 2], cand_c[cand2*dim + 2]);
                   //swap2(prod_ids[count_p2] , prod_ids[count_prod2_2]);
-                }
-              }
-              printf("sorted cand %d is %d\n", cand,sorted_cands[cand]);
-            }
-            */
+                //}
+              //}
+              //printf("sorted cand %d is %d\n", cand,sorted_cands[cand]);
+            //}
+            //
 
               printf("#481 candc {%f,%f,%f} cand_tgts {%f,%f,%f} disttoUpp %f newl %f\n", 
                   cand_c[cand*dim+0],cand_c[cand*dim+1],cand_c[cand*dim+2],
@@ -752,7 +755,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
           c_lower[d] = old_coords[v_lower*dim + d] + t_lower[d]*new_length/3.0;
         }
 
-        /*For concave lower angle*/
+        //For concave lower angle//
         {
           Real dist_to_upper = 0.0;
           for (LO d = 0; d < dim; ++d) {
@@ -771,25 +774,21 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
             printf(" new c_lower {%f,%f,%f}\n", c_lower[0], c_lower[1], c_lower[2]);
           }
         }
-        /**/
+        //
 
         for (LO d = 0; d < dim; ++d) {
           if (v_onto_is_first == 1) {
-            /*
-            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = old_edgeCtrlPts[e_lower*2*dim+d];
-            edge_ctrlPts[new_edge*n_edge_pts*dim + d] =
-              0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] + old_vertCtrlPts[v_onto*dim + d]);
-              */
+            //edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = old_edgeCtrlPts[e_lower*2*dim+d];
+            //edge_ctrlPts[new_edge*n_edge_pts*dim + d] = 0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] + old_vertCtrlPts[v_onto*dim + d]);
+              
             edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_lower[d];
             edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_upper[d];
           }
           else {
             OMEGA_H_CHECK (v_onto_is_first == -1);
-            /*
-            edge_ctrlPts[new_edge*n_edge_pts*dim + d] = old_edgeCtrlPts[e_lower*2*dim+d];
-            edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] =
-              0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + d] + old_vertCtrlPts[v_onto*dim + d]);
-              */
+            //edge_ctrlPts[new_edge*n_edge_pts*dim + d] = old_edgeCtrlPts[e_lower*2*dim+d];
+            //edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] =
+              //0.5*(edge_ctrlPts[new_edge*n_edge_pts*dim + d] + old_vertCtrlPts[v_onto*dim + d]);
             edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_lower[d];
             edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_upper[d];
           }
@@ -804,7 +803,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     printf("finish pfor i %d\n", i);
   };
   parallel_for(keys2verts.size(), curve_bdry_edges);
-  printf("bdry cavities %d\n", count_bdry_cavities[0]);
   printf("finish bdry crv pfor\n");
 
   Write<LO> count_dualCone_cavities(1, 0);
@@ -831,8 +829,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
     }
   };
   parallel_for(keys2prods.size()-1, std::move(count_dualCone_cav));
-  printf("total nkeys %d, nkeys in interior %d nkeys with dual cone cavities %d, %d in interior\n", keys2prods.size()-1, 
-      count_interior_cavities[0], count_dualCone_cavities[0], count_interior_dualCone_cavities[0]);
+  //printf("total nkeys %d, nkeys in interior %d nkeys with dual cone cavities %d, %d in interior\n", keys2prods.size()-1, 
+    //  count_interior_cavities[0], count_dualCone_cavities[0], count_interior_dualCone_cavities[0]);
   mesh->add_tag<I8>(2, "face_crvVis", 1, Read<I8>(face_crvVis));//old mesh
 
   if (dim == 3) {
