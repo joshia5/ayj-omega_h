@@ -77,7 +77,7 @@ OMEGA_H_INLINE LO quadnomial(LO n, LO i, LO j, LO k) {
   return binomial(n,i)*binomial(n-i,j)*binomial(n-i-j,k);
 }
 
-constexpr OMEGA_H_INLINE Real const_factorial(Int N) {
+OMEGA_H_INLINE Real const_factorial(Int N) {
   switch (N) {
     case 0:
       return 1.0;
