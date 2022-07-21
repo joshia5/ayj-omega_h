@@ -81,7 +81,7 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
   #endif
   /* cavity quality checks */
   auto cand_edge_quals = coarsen_qualities(mesh, cands2edges, cand_edge_codes);
-  if (mesh->is_curved() < 0) {
+  //if (mesh->is_curved() < 0) {
     cand_edge_codes = filter_coarsen_min_qual(
         cand_edge_codes, cand_edge_quals, opts.min_quality_allowed);
     if (improve == IMPROVE_LOCALLY) {
@@ -89,7 +89,7 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
           mesh, cands2edges, cand_edge_codes, cand_edge_quals);
     }
     filter_coarsen_candidates(&cands2edges, &cand_edge_codes, &cand_edge_quals);
-  }
+  //}
   /* finished cavity quality checks */
 
   /* cavity invalidity checks */
