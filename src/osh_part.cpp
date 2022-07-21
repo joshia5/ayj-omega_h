@@ -47,6 +47,13 @@ int main(int argc, char** argv) {
   auto version = Omega_h::binary::read_version(path_in, world);
   if (is_in) {
     Omega_h::binary::read_in_comm(path_in, comm_in, &mesh, version);
+    if (mesh.is_curved() > 0) {
+      for (Omega_h::LO i = 0; i <= mesh.dim(); ++i) {
+        if (!mesh.has_tag(i, "global")) {
+          mesh.add_tag(i, "global", 1, Omega_h::GOs(mesh.nents(i), 0, 1));
+        }
+      }
+    }
     if (nparts_out < nparts_in) {
       Omega_h_fail(
           "partitioning to a smaller part count not yet implemented\n");
