@@ -61,9 +61,9 @@ static Few<Real, 10> const BlendedTriangleGetValues(
 }
 
 template <Int dim>
-void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
-    LOs prods2new, LOs old_verts2new_verts, LOs keys2verts, LOs keys2verts_onto,
-    LOs keys2prods, LOs same_verts2new_verts, LOs same_verts2old_verts) {
+void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
+    const LOs prods2new, const LOs old_verts2new_verts, const LOs keys2verts, const LOs keys2verts_onto,
+    const LOs keys2prods, const LOs same_verts2new_verts, const LOs same_verts2old_verts) {
   printf("67 coming in fn\n");
   auto const nold_verts = mesh->nverts();
   auto const nold_edges = mesh->nedges();
@@ -1048,8 +1048,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 }
 
 template <Int dim>
-void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, LOs old2new,
-    LOs prods2new) {
+void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
+    const LOs prods2new) {
   auto const new_fv2v = new_mesh->ask_down(2, 0).ab2b;
   auto const new_fe2e = new_mesh->get_adj(2, 1).ab2b;
   auto const new_ev2v = new_mesh->get_adj(1, 0).ab2b;
