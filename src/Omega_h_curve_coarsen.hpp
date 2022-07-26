@@ -509,31 +509,24 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                 upper_tangents[0], upper_tangents[1], upper_tangents[2],
                 upper_tangents[dim+0], upper_tangents[dim+1], upper_tangents[dim+2]
                 );
-            //damping diag of A
-            //if ((std::abs(upper_theta - PI) < EPSILON) && 
-              //  (std::abs(theta_c - PI/2) > EPSILON)) {
-              //A = tensor_3(
-                //n[0]+0.1, n[1], n[2],
-                //upper_tangents[0], upper_tangents[1]+0.1,
-                  //upper_tangents[2],
-                //upper_tangents[dim+0], upper_tangents[dim+1],
-                  //upper_tangents[dim+2]+0.1
-               // );
-            //}
-            //
+
             auto A_inv = invert(A);
             auto X = A_inv*b;
-            //if ((std::abs(theta_c - PI/2) < EPSILON) &&
-              //  (std::abs(n[1] - 1.) < EPSILON))
+            //hc-calc +/- y axis as tang if A is ill-cond
             if (((std::abs(upper_theta - PI) < EPSILON) && 
                 ((std::abs(upper_tangents[0]) - 1.0)) < EPSILON)) {
-              X[0] = upper_tangents[0]*cos(theta_c) + upper_tangents[2]*sin(theta_c);
+              //+y
+              X[0] = upper_tangents[0]*cos(theta_c) +
+                     upper_tangents[2]*sin(theta_c);
               X[1] = upper_tangents[1];
-              X[2] = -upper_tangents[0]*sin(theta_c) + upper_tangents[2]*cos(theta_c);
-                printf("rotation, n {%f,%f,%f}\n", n[0],n[1],n[2]);
+              X[2] = -upper_tangents[0]*sin(theta_c) + 
+                      upper_tangents[2]*cos(theta_c);
+              printf("rotation, n {%f,%f,%f}\n", n[0],n[1],n[2]);
+              //-y
               if (n[1] < 0.0) {
                 printf("rotation matrix -y \n");
-                X[2] =-(-upper_tangents[0]*sin(theta_c) + upper_tangents[2]*cos(theta_c));
+                X[2] = upper_tangents[0]*sin(theta_c) -
+                       upper_tangents[2]*cos(theta_c);
               }
             }
             printf("new tang {%f,%f,%f}\n",X[0],X[1],X[2]);
