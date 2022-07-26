@@ -429,10 +429,25 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           Real length_t = 0.0;
           for (LO d = 0; d < dim; ++d) length_t += t_upper[d]*t_upper[d]; 
           for (LO d = 0; d < dim; ++d) t_upper[d] = t_upper[d]/std::sqrt(length_t);
-
           for (LO d = 0; d < dim; ++d) {
             c_upper[d] = old_coords[v_onto*dim + d] + t_upper[d]*new_length/3.0;
           }
+
+          //upper concavity
+          Real dist_to_lower = 0.0;
+          for (LO d = 0; d < dim; ++d) {
+            dist_to_lower += std::pow(
+                (c_upper[d] - old_coords[v_lower*dim + d]), 2);
+          }
+          dist_to_lower = std::sqrt(dist_to_lower);
+          if (dist_to_lower > new_length) {
+            printf("dist %f, leng %f, 1 newE concavity found\n",
+                dist_to_lower, new_length);
+            for (LO d = 0; d < dim; ++d) {
+              c_upper[d] = old_coords[v_onto*dim + d] - t_upper[d]*new_length/3.0;
+            }
+          }
+          //
         }
         else {
           assert(nedge_shared_gface_i > 1);
@@ -455,8 +470,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           if (uppere0_v1 == v_onto) uppere0_vlower = uppere0_v0;
           Real uppere0_len = 0.0;
           for (LO d=0; d<dim; ++d) {
-            uppere0_len += (old_coords[uppere0_v0*dim + d] - old_coords[uppere0_v1*dim + d])*
-                           (old_coords[uppere0_v0*dim + d] - old_coords[uppere0_v1*dim + d]);
+            uppere0_len += std::pow((old_coords[uppere0_v0*dim + d] -
+                                     old_coords[uppere0_v1*dim + d]), 2);
           }
           uppere0_len = std::sqrt(uppere0_len);
           printf("upper pt\n");
@@ -474,6 +489,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               upper_tangents[2]*upper_tangents[dim + 2]);
           printf("upper angle %f degree\n", upper_theta*180/PI);
           Vector<dim> n;
+          //cross
           n[0] = (upper_tangents[1]*upper_tangents[dim + 2]) - 
                  (upper_tangents[2]*upper_tangents[dim + 1]);
           n[1] = -(upper_tangents[0]*upper_tangents[dim + 2]) +
