@@ -108,7 +108,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
   };
   parallel_for(nold_verts, std::move(copy_sameCtrlPts),
       "copy same vtx ctrlPts");
-  printf("#114 nkeys %d\n", keys2verts.size());
   new_mesh->add_tag<Real>(0, "bezier_pts", dim);
   new_mesh->set_tag_for_ctrlPts(0, Reals(vert_ctrlPts));
 
@@ -164,7 +163,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
   Write<LO> nedge_shared_gface_w(nnew_edge, 0);
   Write<Real> cav_edge_len_w(nnew_edge, 0.0);
 
-  printf("#168 nkeys %d\n", keys2verts.size());
   if (dim == 3) {
     auto calc_gface_prods = OMEGA_H_LAMBDA(LO i) {
       for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
@@ -196,7 +194,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
     };
     parallel_for(keys2verts.size(), std::move(calc_gface_prods));
   }
-  printf("#208 nkeys %d\n", keys2verts.size());
   auto nedge_shared_gface = Read<LO>(nedge_shared_gface_w);
   auto cav_edge_len = Read<Real>(cav_edge_len_w);
 
@@ -219,7 +216,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
     }
   };
   parallel_for(nold_edges, std::move(calc_tangents));
-  printf("#231 nkeys %d\n", keys2verts.size());
 
   Write<LO> count_bdry_cavities(1, 0);
   auto count_bdry_cavs = OMEGA_H_LAMBDA(LO i) {
@@ -239,7 +235,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
       atomic_increment(&count_bdry_cavities[0]);
   };
   parallel_for(keys2verts.size(), std::move(count_bdry_cavs));
-  printf("#251 nkeys %d\n", keys2verts.size());
 
   Write<I8> edge_cands(nnew_edge, -1);
 
@@ -406,47 +401,59 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             nedge_shared_gface_i,
             count_upper_edge, upper_edges[0], upper_edges[1]);
 
+        Vector<dim> c_upper;
+        Vector<dim> c_avg_upper;
         Few<Real, 2*dim> upper_tangents;
-        Vector<dim> t_upper;
-        for (LO d = 0; d < dim; ++d) t_upper[d] = 0.0; 
+        Vector<dim> t_avg_upper;
+        for (LO d = 0; d < dim; ++d) t_avg_upper[d] = 0.0; 
         for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
           if (from_first_vtx[upper_e] == 1) {
             for (LO d = 0; d < dim; ++d) {
-              t_upper[d] += tangents[upper_edges[upper_e]*2*dim + d];
+              t_avg_upper[d] += tangents[upper_edges[upper_e]*2*dim + d];
               upper_tangents[upper_e*dim + d] = tangents[upper_edges[upper_e]*2*dim + d];
             }
           }
           if (from_first_vtx[upper_e] == -1) {
             for (LO d = 0; d < dim; ++d) {
-              t_upper[d] += tangents[upper_edges[upper_e]*2*dim + dim + d];
+              t_avg_upper[d] += tangents[upper_edges[upper_e]*2*dim + dim + d];
               upper_tangents[upper_e*dim + d] = tangents[upper_edges[upper_e]*2*dim + dim + d];
             }
           }
         }
-        if (nedge_shared_gface_i == 1) {
-          for (LO d = 0; d < dim; ++d) t_upper[d] = t_upper[d]/count_upper_edge;
-          Real length_t = 0.0;
-          for (LO d = 0; d < dim; ++d) length_t += t_upper[d]*t_upper[d]; 
-          for (LO d = 0; d < dim; ++d) t_upper[d] = t_upper[d]/std::sqrt(length_t);
-          for (LO d = 0; d < dim; ++d) {
-            c_upper[d] = old_coords[v_onto*dim + d] + t_upper[d]*new_length/3.0;
-          }
 
-          //upper concavity
-          Real dist_to_lower = 0.0;
+        //calc c using upper avg dir to check concavity
+        Real length_t = 0.0;
+        LO concave_upper = -1;
+        for (LO d = 0; d < dim; ++d) 
+          t_avg_upper[d] = t_avg_upper[d]/count_upper_edge;
+        for (LO d = 0; d < dim; ++d) 
+          length_t += t_avg_upper[d]*t_avg_upper[d]; 
+        for (LO d = 0; d < dim; ++d) 
+          t_avg_upper[d] = t_avg_upper[d]/std::sqrt(length_t);
+        for (LO d = 0; d < dim; ++d) {
+          c_avg_upper[d] = old_coords[v_onto*dim + d] + 
+                           t_avg_upper[d]*new_length/3.0;
+        }
+        //calc upper concavity
+        Real dist_to_lower = 0.0;
+        for (LO d = 0; d < dim; ++d) {
+          dist_to_lower += std::pow(
+              (c_avg_upper[d] - old_coords[v_lower*dim + d]), 2);
+        }
+        dist_to_lower = std::sqrt(dist_to_lower);
+        if (dist_to_lower > new_length) {
+          concave_upper = 1;
+          printf("dist %f, leng %f, 1 newE concavity found\n",
+              dist_to_lower, new_length);
           for (LO d = 0; d < dim; ++d) {
-            dist_to_lower += std::pow(
-                (c_upper[d] - old_coords[v_lower*dim + d]), 2);
+            c_avg_upper[d] = 
+              old_coords[v_onto*dim + d] - t_avg_upper[d]*new_length/3.0;
           }
-          dist_to_lower = std::sqrt(dist_to_lower);
-          if (dist_to_lower > new_length) {
-            printf("dist %f, leng %f, 1 newE concavity found\n",
-                dist_to_lower, new_length);
-            for (LO d = 0; d < dim; ++d) {
-              c_upper[d] = old_coords[v_onto*dim + d] - t_upper[d]*new_length/3.0;
-            }
-          }
-          //
+        }
+        //
+
+        if (nedge_shared_gface_i == 1) {
+          for (LO d = 0; d < dim; ++d) c_upper[d] = c_avg_upper[d];
         }
         else {
           assert(nedge_shared_gface_i > 1);
@@ -531,15 +538,15 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             printf("new tang {%f,%f,%f}\n",X[0],X[1],X[2]);
             //
 
-            Real length_t = 0.0;
+            length_t = 0.0;
             for (LO d=0; d<dim; ++d) {
               cand_tangents[cand*dim + d] = X[d];
-              length_t += cand_tangents[cand*dim + d]*cand_tangents[cand*dim + d]; 
+              length_t += std::pow(cand_tangents[cand*dim + d], 2);
             }
-              printf("#468 newE %d cand_tgts {%f,%f,%f} lenT %f \n", new_edge,
-                  cand_tangents[cand*dim+0],cand_tangents[cand*dim+1],
-                  cand_tangents[cand*dim+2],
-                  length_t);
+            printf("#468 newE %d cand_tgts {%f,%f,%f} lenT %f \n", new_edge,
+                cand_tangents[cand*dim+0],cand_tangents[cand*dim+1],
+                cand_tangents[cand*dim+2],
+                length_t);
             for (LO d = 0; d < dim; ++d) {
               cand_tangents[cand*dim + d] = cand_tangents[cand*dim + d]/
                 std::sqrt(length_t);
@@ -548,6 +555,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               cand_c[cand*dim + d] = old_coords[v_onto*dim + d] +
                 cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
             }
+            if (concave_upper == 1)
             //TODO account for concave upper angle
             /*
             {
@@ -675,12 +683,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             c_upper[d] = cand_c[opt_cand_id*dim + d];
             //c_upper[d] = cand_c[sorted_cands[opt_cand_id]*dim + d];
           }
-            printf("#559 newE 1413 cu {%f,%f,%f} opt_cand_id %d candc {%f,%f,%f}\n", 
-                c_upper[0], c_upper[1], c_upper[2],
-                opt_cand_id,
-                cand_c[opt_cand_id*dim+0],cand_c[opt_cand_id*dim+1],cand_c[opt_cand_id*dim+2]
-                );
-            
+          printf("#559 newE 1413 cu {%f,%f,%f} opt_cand_id %d candc {%f,%f,%f}\n", 
+              c_upper[0], c_upper[1], c_upper[2],
+              opt_cand_id,
+              cand_c[opt_cand_id*dim+0],cand_c[opt_cand_id*dim+1],cand_c[opt_cand_id*dim+2]
+              );
+
         }
 
         Few<LO, 2> lower_edges;
@@ -755,7 +763,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
 
         OMEGA_H_CHECK(count_lower_edge == 2);
         for (LO d = 0; d < dim; ++d) t_lower[d] = t_lower[d]/count_lower_edge;
-        Real length_t = 0.0;
+        length_t = 0.0;
 
         for (LO d = 0; d < dim; ++d) length_t += t_lower[d]*t_lower[d]; 
         for (LO d = 0; d < dim; ++d) t_lower[d] = t_lower[d]/std::sqrt(length_t);
