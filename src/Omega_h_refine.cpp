@@ -12,6 +12,7 @@
 #include "Omega_h_refine_topology.hpp"
 #include "Omega_h_transfer.hpp"
 #include "Omega_h_beziers.hpp"
+#include "Omega_h_curve_coarsen.hpp"
 
 #include "Omega_h_file.hpp"
 #include<Omega_h_build.hpp>
@@ -116,6 +117,10 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
     }
 
     old_lows2new_lows = old_ents2new_ents;
+  }
+
+  if (mesh->is_curved() > 0) {
+    check_validity_all_tet(&new_mesh);
   }
 
   *mesh = new_mesh;
