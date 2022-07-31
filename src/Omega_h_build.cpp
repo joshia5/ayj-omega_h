@@ -1302,7 +1302,7 @@ void build_cubic_cavities_3d(Mesh* mesh, Mesh* curveVtk_mesh,
                           LO n_sample_pts) {
   auto coords_h = HostRead<Real>(mesh->coords());
   auto vert_ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(0));
-  auto face_crvVis_h = HostRead<I8>(mesh->get_array<I8>(2, "face_crvVis"));
+  auto face_crvVis_h = HostRead<LO>(mesh->get_array<LO>(2, "face_crvVis"));
   LO nface = 0;
   for (LO i = 0; i < face_crvVis_h.size(); ++i) {
     if (face_crvVis_h[i] == 1) ++nface;

@@ -120,6 +120,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
   }
 
   if (mesh->is_curved() > 0) {
+    printf("checking validity after refine\n");
     check_validity_all_tet(&new_mesh);
   }
 
