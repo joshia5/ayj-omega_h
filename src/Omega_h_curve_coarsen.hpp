@@ -810,7 +810,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
   Write<LO> count_dualCone_cavities(1, 0);
   Write<LO> count_interior_dualCone_cavities(1, 0);
   Write<LO> count_interior_cavities(1, 0);
-  Write<I8> face_crvVis(nold_faces, -1);
+  Write<LO> face_crvVis(nold_faces, -1);
   auto count_dualCone_cav = OMEGA_H_LAMBDA(LO i) {
     LO const v_onto = keys2verts_onto[i];
     LO const v_key = keys2verts[i];
@@ -833,7 +833,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
   parallel_for(keys2prods.size()-1, std::move(count_dualCone_cav));
   //printf("total nkeys %d, nkeys in interior %d nkeys with dual cone cavities %d, %d in interior\n", keys2prods.size()-1, 
     //  count_interior_cavities[0], count_dualCone_cavities[0], count_interior_dualCone_cavities[0]);
-  mesh->add_tag<I8>(2, "face_crvVis", 1, Read<I8>(face_crvVis));//old mesh
+  mesh->add_tag<LO>(2, "face_crvVis", 1, Read<LO>(face_crvVis));//old mesh
 
   if (dim == 3) {
     auto v2t = mesh->ask_up(0, 3);
@@ -1111,7 +1111,7 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
     auto const newface_gdim = new_mesh->get_array<I8>(2, "class_dim");
     auto const newface_gid = new_mesh->get_array<LO>(2, "class_id");
 
-    Write<I8> face_crvVis(nnew_faces, -1);
+    Write<LO> face_crvVis(nnew_faces, -1);
     auto face_blends = OMEGA_H_LAMBDA(LO e) {
       if (edge_dualCone[e] == 1) {
         for (LO et = e2et[e]; et < e2et[e + 1]; ++et) {
@@ -1144,7 +1144,7 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
       }
     };
     parallel_for(nnew_edges, std::move(face_blends), "face_blends");
-    new_mesh->add_tag<I8>(2, "face_crvVis", 1, Read<I8>(face_crvVis));
+    new_mesh->add_tag<LO>(2, "face_crvVis", 1, Read<LO>(face_crvVis));
   }
 
   new_mesh->add_tag<Real>(2, "bezier_pts", dim);

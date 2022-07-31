@@ -1,4 +1,6 @@
 #include "Omega_h_curve_coarsen.hpp"
+#include "Omega_h_build.hpp"
+#include "Omega_h_file.hpp"
 
 #include "Omega_h_curve_validity_3d.hpp"
 
@@ -14,23 +16,63 @@ void check_validity_all_tet(Mesh *new_mesh) {
   auto const new_e2er = new_e2r.a2ab;
   auto const new_er2r = new_e2r.ab2b;
   auto const nnew_tet = new_mesh->nregions();
+  auto const nfaces = new_mesh->nfaces();
 
   auto const vertCtrlPts = new_mesh->get_ctrlPts(0);
   auto const edgeCtrlPts = new_mesh->get_ctrlPts(1);
   auto const faceCtrlPts = new_mesh->get_ctrlPts(2);
 
+  Write<LO> invalid_tet(nnew_tet, -1);
+
   printf("mesh size %d tets\n", nnew_tet);
   auto check_tet = OMEGA_H_LAMBDA(LO i) {
-    LO has_invalid_tet = -1;
+    LO is_invalid = -1;
     Few<Real, 60> tet_pts = collect_tet_pts(3, i, new_ev2v, new_rv2v, vertCtrlPts
         , edgeCtrlPts, faceCtrlPts, new_re2e, new_rf2f);
 
     Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
 
-    has_invalid_tet = checkMinJacDet_3d(nodes_det, 3);
-    if (has_invalid_tet > 0) printf("tet %d invalid code %d\n", i, has_invalid_tet);
+    is_invalid = checkMinJacDet_3d(nodes_det, 3);
+    invalid_tet[i] = is_invalid;
+    if (is_invalid > 0) {
+      printf("tet %d invalid code %d\n", i, is_invalid);
+    }
   };
   parallel_for(nnew_tet, std::move(check_tet), "check_tet");
+
+  new_mesh->add_tag<LO>(3, "invalidity", 1, Read<LO>(invalid_tet));
+ 
+  HostWrite<LO> face_crvVis(nfaces);
+  new_mesh->add_tag<LO>(2, "face_crvVis", 1);
+  auto tet_invalid_h = HostRead<LO>(Read<LO>(invalid_tet));
+  auto new_rf2f_h = HostRead<LO>(new_rf2f);
+  for (LO i = 0; i < nnew_tet; ++i) {
+    LO const is_invalid = tet_invalid_h[i];
+    if (is_invalid > 0) {
+      printf("writing file for tet %d\n", i);
+      for (LO j=0; j<4; ++j) {
+        LO const f = new_rf2f_h[i*4 + j];
+        face_crvVis[f] = 1;
+      }
+      new_mesh->set_tag<LO>(2, "face_crvVis", Read<LO>(face_crvVis.write()));
+
+      auto mesh_invalids = Mesh(new_mesh->comm()->library());
+      mesh_invalids.set_comm(new_mesh->comm());
+      build_cubic_cavities_3d(new_mesh, &mesh_invalids, 50);//curveVtk
+      std::string vtuPath = "/lore/joshia5/Meshes/curved/invalid_tet_";
+      vtuPath += std::to_string(i);
+      vtuPath += ".vtu";
+      vtk::write_simplex_connectivity(vtuPath.c_str(), &mesh_invalids, 2);
+
+      for (LO j=0; j<4; ++j) {
+        LO const f = new_rf2f_h[i*4 + j];
+        face_crvVis[f] = -1;
+      }
+      new_mesh->set_tag<LO>(2, "face_crvVis", Read<LO>(face_crvVis.write()));
+    }
+  }
+  new_mesh->remove_tag(2, "face_crvVis");
+
   return;
 }
 
@@ -56,7 +98,7 @@ void correct_curved_edges(Mesh *new_mesh) {
   auto const edgeCtrlPts = new_mesh->get_ctrlPts(1);
   auto const faceCtrlPts = new_mesh->get_ctrlPts(2);
 
-  Write<I8> face_vis (nnew_face, -1);
+  Write<LO> face_vis (nnew_face, -1);
   //pfor over all edges using curved to bdry algo
   //if it was curved before, check validity of all its adjacent tets
   //if any adjacent tet is invalid, print out error
@@ -87,7 +129,7 @@ void correct_curved_edges(Mesh *new_mesh) {
     }
   };
   parallel_for(nnew_edge, std::move(edge_correct), "edge_correct");
-  new_mesh->set_tag<I8>(2, "face_crvVis", Read<I8>(face_vis));
+  new_mesh->set_tag<LO>(2, "face_crvVis", Read<LO>(face_vis));
   return;
 }
 
