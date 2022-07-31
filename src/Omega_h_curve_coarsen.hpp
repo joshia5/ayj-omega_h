@@ -461,11 +461,11 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           Few<Real, 3*32> cand_tangents;
           Few<Real, 3*32> cand_c;
 
-          Few<Real, 32> cand_dist_to_uppere0;
+          Few<Real, 32> cand_angle_to_uppere0;
           Few<LO, 32> sorted_cands;
           for (LO cand = 0; cand < 32; ++cand) {
             sorted_cands[cand] = -1;
-            cand_dist_to_uppere0[cand] = DBL_MAX;
+            cand_angle_to_uppere0[cand] = DBL_MAX;
           }
           LO const uppere0 = upper_edges[0];
           Vector<dim> uppere0_pt;
@@ -555,43 +555,29 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               cand_c[cand*dim + d] = old_coords[v_onto*dim + d] +
                 cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
             }
-            if (concave_upper == 1)
-            //TODO account for concave upper angle
-            /*
-            {
-              Real dist_to_lower = 0.0;
+            if (concave_upper == 1) {
               for (LO d = 0; d < dim; ++d) {
-                dist_to_lower += std::pow(
-                    (cand_c[cand*dim+d] - old_coords[v_lower*dim + d]), 2);
+                cand_c[cand*dim + d] = old_coords[v_onto*dim + d] -
+                  cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
               }
-              dist_to_lower = std::sqrt(dist_to_lower);
-              if (dist_to_lower > new_length) {
-                printf("dist %f, leng %f, concavity found\n", dist_to_lower, new_length);
-                printf("v_onto {%f,%f,%f} c_upper {%f,%f,%f}\n", old_coords[v_onto*dim + 0],
-                    old_coords[v_onto*dim + 1], old_coords[v_onto*dim + 2],
-                    c_upper[0], c_upper[1], c_upper[2]);
-                for (LO d = 0; d < dim; ++d) {
-                  cand_c[cand*dim + d] = old_coords[v_onto*dim + d] -
-                    cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
-                }
-                //printf(" new c_lower {%f,%f,%f}\n", c_lower[0], c_lower[1], c_lower[2]);
+              cand_angle_to_uppere0[cand] = 0.0;
+              for (LO d = 0; d < dim; ++d) {
+                //TODO
+                cand_angle_to_uppere0[cand] = acos(
+                    upper_tangents[0]*upper_tangents[dim + 0] +
+                    upper_tangents[1]*upper_tangents[dim + 1] +
+                    upper_tangents[2]*upper_tangents[dim + 2]);
               }
             }
-            */
-            cand_dist_to_uppere0[cand] = 0.0;
-            for (LO d = 0; d < dim; ++d) {
-              cand_dist_to_uppere0[cand] += std::pow((uppere0_pt[d] - cand_c[cand*dim + d]), 2);
-            }
-            cand_dist_to_uppere0[cand] = std::sqrt(cand_dist_to_uppere0[cand]);
             //
             //for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
               //for (LO cand2 = cand; cand2 < nedge_shared_gface_i; ++cand2) {
-                //if (cand_dist_to_uppere0[cand] < cand_dist_to_uppere0[cand2]) {
+                //if (cand_angle_to_uppere0[cand] < cand_angle_to_uppere0[cand2]) {
                 //  sorted_cands[cand] = cand;
                // }
                 //else {
                   //sorted_cands[cand] = cand2;
-                  //swap2(cand_dist_to_uppere0[cand] , cand_dist_to_uppere0[cand2]);
+                  //swap2(cand_angle_to_uppere0[cand] , cand_angle_to_uppere0[cand2]);
                   //swap2(cand_c[cand*dim + 0], cand_c[cand2*dim + 0]);
                   //swap2(cand_c[cand*dim + 1], cand_c[cand2*dim + 1]);
                   //swap2(cand_c[cand*dim + 2], cand_c[cand2*dim + 2]);
@@ -605,9 +591,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               printf("#481 candc {%f,%f,%f} cand_tgts {%f,%f,%f} disttoUpp %f newl %f\n", 
                   cand_c[cand*dim+0],cand_c[cand*dim+1],cand_c[cand*dim+2],
                   cand_tangents[cand*dim+0],cand_tangents[cand*dim+1],cand_tangents[cand*dim+2],
-                  cand_dist_to_uppere0[cand], new_length);
+                  cand_angle_to_uppere0[cand], new_length);
 
-            //printf("cand dist to uppere0 %f\n", cand_dist_to_uppere0[cand]);
+            //printf("cand dist to uppere0 %f\n", cand_angle_to_uppere0[cand]);
             printf("cand %d tang {%f,%f,%f} upper1 {%f,%f,%f} upper2 {%f,%f,%f}\n", cand, 
                 cand_tangents[cand*dim+0],cand_tangents[cand*dim+1],
                 cand_tangents[cand*dim+2],
