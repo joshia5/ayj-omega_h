@@ -1,6 +1,7 @@
 #include "Omega_h_mesh.hpp"
 #include "Omega_h_beziers.hpp"
 #include "Omega_h_bezier_interp.hpp"
+#include "Omega_h_curve_coarsen.hpp"
 #include "Omega_h_element.hpp"
 #include "Omega_h_for.hpp"
 #include "Omega_h_map.hpp"
@@ -229,8 +230,9 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   auto const old_re2e = mesh->ask_down(3, 1).ab2b;
   auto const old_rf2f = mesh->get_adj(3, 2).ab2b;
   auto const old_coords = mesh->coords();
-  auto const nold_rgn = mesh->nents(3);
-  auto const nold_vert = mesh->nents(0);
+  //auto const nold_rgn = mesh->nents(3);
+  //auto const nold_vert = mesh->nents(0);
+  assert(old_verts2new_verts.exists());
 
   auto const old_vertCtrlPts = mesh->get_ctrlPts(0);
   auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
@@ -265,8 +267,8 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   parallel_for(nkeys, count_nold_faces);
   auto keys2nold_faces = LOs(keys2nold_faces_w);
 
+  /*
   auto create_crv_prod_faces = OMEGA_H_LAMBDA (LO const key) {
-
     auto old_key_edge = keys2edges[key];
     auto const start = keys2prods[key];
     auto const end = keys2prods[key + 1] - 1;
@@ -403,6 +405,26 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   };
   parallel_for(nkeys, std::move(create_crv_prod_faces),
                "create_crv_prod_faces");
+  */
+  Vector<3> face_xi;
+  face_xi[0] = 1.0/3.0;
+  face_xi[1] = 1.0/3.0;
+  face_xi[2] = 1.0/3.0;
+  auto const weights = BlendedTriangleGetValues(face_xi, 2);
+
+  auto face_blends = OMEGA_H_LAMBDA(LO key) {
+    for (LO prod=keys2prods[key]; prod<keys2prods[key+1]; ++prod) {
+      LO const tri = prods2new[prod];
+      auto p11 = face_blend_interp_3d(3, tri, new_ev2v, new_fe2e,
+          new_vertCtrlPts, new_edgeCtrlPts, new_fv2v, weights);
+      auto newface_c11 = face_interpToCtrlPt_3d(3, tri, new_ev2v, new_fe2e,
+          new_vertCtrlPts, new_edgeCtrlPts, p11, new_fv2v);
+      for (LO k=0; k<3; ++k) {
+        face_ctrlPts[tri*dim + k] = newface_c11[k];
+      }
+    }
+  };
+  parallel_for(nkeys, std::move(face_blends), "face_blends");
 
   auto create_crv_same_faces = OMEGA_H_LAMBDA (LO old_face) {
     if (old2new[old_face] != -1) {
