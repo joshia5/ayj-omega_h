@@ -12,6 +12,7 @@
 #include <Omega_h_build.hpp>
 #include <Omega_h_adapt.hpp>
 #include <Omega_h_metric.hpp>
+#include <Omega_h_refine.hpp>
 #include <Omega_h_array_ops.hpp>
 
 using namespace Omega_h;
@@ -322,9 +323,9 @@ void test_sim_quadToCubic(Library *lib, const std::string &model_file,
 */
 void test_sim_kova_quadratic(Library *lib) {
   auto comm = lib->world();
-  auto mesh = binary::read("/lore/joshia5/Meshes/curved/box_circleCut-3p5mil.osh", comm);
+  //auto mesh = binary::read("/lore/joshia5/Meshes/curved/box_circleCut-3p5mil.osh", comm);
   //auto mesh = binary::read("/lore/joshia5/develop/mfem_omega/omega_h/meshes/box_circleCut-3p5mil.osh", comm);
-  //auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
+  auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
   if (!mesh.has_tag(0, "bezier_pts")) 
     mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
   calc_quad_ctrlPts_from_interpPts(&mesh);
@@ -363,7 +364,7 @@ void test_sim_kova_quadratic(Library *lib) {
   }
   AdaptOpts opts(&mesh);
   auto nelems = mesh.nglobal_ents(mesh.dim());
-  auto desired_group_nelems = 10000000;
+  auto desired_group_nelems = 310;
   Now t0 = now();
   while (nelems < desired_group_nelems) {
     if (!mesh.has_tag(0, "metric")) {
@@ -377,26 +378,27 @@ void test_sim_kova_quadratic(Library *lib) {
     auto const metric_ncomps =
       divide_no_remainder(metrics.size(), mesh.nverts());
     mesh.add_tag(0, "metric", metric_ncomps, metrics);
-    adapt_refine(&mesh, opts);
+    refine_by_size(&mesh, opts);
+    //adapt_refine(&mesh, opts);
     nelems = mesh.nglobal_ents(mesh.dim());
     std::cout << "mesh now has " << nelems << " total elements\n";
   }
   Now t1 = now();
   std::cout << "total refine time: " << (t1 - t0) << " seconds\n";
-  /*
   vtk::write_parallel("/lore/joshia5/Meshes/curved/kova_refined.vtk", &mesh, 2);
-  wireframe_mesh = Mesh(comm->library());
+  auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
-  build_cubic_wireframe_3d(&mesh, &wireframe_mesh, 2);
-  vtuPath = "/lore/joshia5/Meshes/curved/KovaGeomSim-123tet_wireframe_refined.vtu";
+  build_cubic_wireframe_3d(&mesh, &wireframe_mesh, 10);
+  std::string vtuPath = 
+    "/lore/joshia5/Meshes/curved/KovaGeomSim-123tet_wireframe_refined.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
 
-  curveVtk_mesh = Mesh(comm->library());
+  auto curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
-  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh, 2);
-  vtuPath = "/lore/joshia5/Meshes/curved/KovaGeomSim-123tet_curveVtk_refined.vtu";
+  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh, 10);
+  vtuPath = 
+    "/lore/joshia5/Meshes/curved/KovaGeomSim-123tet_curveVtk_refined.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
-  */
   return;
 }
 /*
@@ -504,11 +506,11 @@ int main(int argc, char** argv) {
 
   auto lib = Library (&argc, &argv);
 
+  /*
   if (argc != 6) {
     Omega_h_fail(
       "a.out <2d_in_osh> <2d_out_vtk> <3d_in_model-geomsim> <3d_in_mesh> <3d_out_vtk>\n");
   };
-  /*
   char const* path_2d = nullptr;
   char const* path_2d_vtk = nullptr;
   path_2d = argv[1];

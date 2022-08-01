@@ -43,6 +43,12 @@ void check_validity_all_tet(Mesh *new_mesh) {
   new_mesh->add_tag<LO>(3, "invalidity", 1, Read<LO>(invalid_tet));
  
   HostWrite<LO> face_crvVis(nfaces);
+  for (LO i = 0; i < nfaces; ++i) {
+    face_crvVis[i] = -1;
+  }
+  if (new_mesh->has_tag(2, "face_crvVis")) {
+    new_mesh->remove_tag(2, "face_crvVis");
+  }
   new_mesh->add_tag<LO>(2, "face_crvVis", 1);
   auto tet_invalid_h = HostRead<LO>(Read<LO>(invalid_tet));
   auto new_rf2f_h = HostRead<LO>(new_rf2f);
@@ -129,7 +135,7 @@ void correct_curved_edges(Mesh *new_mesh) {
     }
   };
   parallel_for(nnew_edge, std::move(edge_correct), "edge_correct");
-  new_mesh->set_tag<LO>(2, "face_crvVis", Read<LO>(face_vis));
+  //new_mesh->set_tag<LO>(2, "face_crvVis", Read<LO>(face_vis));
   return;
 }
 
