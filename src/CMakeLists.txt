@@ -470,6 +470,10 @@ if(BUILD_TESTING)
 
   osh_add_exe(curve_coarsen_test)
   test_func(run_curve_coarsen_test 1 ./curve_coarsen_test)
+  osh_add_exe(curve_test)
+  test_func(run_curve_test 1 ./curve_test)
+  osh_add_exe(curve_test_parallel)
+  test_func(run_curve_test_parallel 2 ./curve_test_parallel)
 
   osh_add_exe(2d_conserve_test)
   test_func(serial_2d_conserve 1 ./2d_conserve_test)
