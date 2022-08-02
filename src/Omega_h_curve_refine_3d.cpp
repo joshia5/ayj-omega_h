@@ -213,6 +213,10 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
                            LOs keys2prods, LOs keys2edges, LOs keys2old_faces,
                            LOs old_verts2new_verts) {
+  //TODO instead of blending, calc new pts by using correct xi locations
+  //from old tet. error in either : 0. assuming one is f0 other is f1
+  //1. error in calculation orientation s.t xi values are wrong
+  //2. selecting the wrong tet to interpolate
   auto const order = mesh->get_max_order();
   OMEGA_H_CHECK(order >= 2);
   //if (order == 2) return;
