@@ -329,7 +329,7 @@ class Mesh {
 
   void add_rcField(Int ent_dim, std::string const& name, TagPtr tag);
   I8 curved_ = -1;
-  Int max_order_ = -1;
+  Int max_order_ = 1;
 
  public:
   void add_coords(Reals array);
