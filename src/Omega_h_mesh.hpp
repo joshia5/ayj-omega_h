@@ -283,7 +283,7 @@ class Mesh {
   AdjPtr revClass_[DIMS];
 
   I8 curved_ = -1;
-  Int max_order_ = -1;
+  Int max_order_ = 1;
 
  public:
   void add_coords(Reals array);
