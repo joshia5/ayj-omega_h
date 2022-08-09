@@ -339,7 +339,7 @@ Bij(LO const P, LO const i, LO const j, Real const u, Real const v) noexcept {
   return resultant;
 }
 
-OMEGA_H_INLINE Real 
+OMEGA_H_INLINE Real
 Bi(LO const P, LO const i, Real const u) noexcept {
   LO const j = P - i;
   OMEGA_H_CHECK((j >= 0) && (j <= P));
