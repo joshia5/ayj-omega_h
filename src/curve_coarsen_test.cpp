@@ -347,7 +347,8 @@ void test_collapse_kova(Library *lib) {
 void test_collapse_boxCircle(Library *lib) {
   auto comm = lib->world();
 
-  auto mesh = binary::read("/lore/joshia5/Meshes/curved/box_circleCut_4k.osh", comm);
+  auto mesh = binary::read(
+      "/lore/joshia5/Meshes/curved/box_circleCut_4k.osh", comm);
                             
   for (LO i = 0; i <= mesh.dim(); ++i) {
     if (!mesh.has_tag(i, "global")) {
@@ -370,16 +371,19 @@ void test_collapse_boxCircle(Library *lib) {
   vtuPath = "/lore/joshia5/Meshes/curved/box_circleCut_4k_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
   vtk::FullWriter writer;
-  writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/boxCircle_bef.vtk", &mesh);
+  writer = vtk::FullWriter(
+      "/lore/joshia5/Meshes/curved/boxCircle_bef.vtk", &mesh);
   writer.write();
  
   auto opts = AdaptOpts(&mesh);
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(100)));
-  for (LO adapt_itr = 0; adapt_itr < 2; ++adapt_itr) coarsen_by_size(&mesh, opts);
+  for (LO adapt_itr = 0; adapt_itr < 1; ++adapt_itr) 
+    coarsen_by_size(&mesh, opts);
   mesh.ask_qualities();
-  writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/boxCircle_aft.vtk", &mesh);
+  writer = vtk::FullWriter(
+      "/lore/joshia5/Meshes/curved/boxCircle_aft.vtk", &mesh);
   writer.write();
   return;
 }
@@ -466,8 +470,8 @@ int main(int argc, char** argv) {
   //test_quadratic_tet_validity(&lib);
   //test_Kova_validity(&lib);
   //test_cubic_tet_validity(&lib);
-  test_collapse_kova(&lib);
-  //test_collapse_boxCircle(&lib);
+  //test_collapse_kova(&lib);
+  test_collapse_boxCircle(&lib);
   //test_collapse_cubicSlab(&lib);
   //test_antenna(&lib);
 
