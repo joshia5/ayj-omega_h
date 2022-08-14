@@ -199,6 +199,7 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
         }
         //validity of edges that were attempted to curve after newmesh created
         if (ent_dim == REGION) {
+          /*
           correct_curved_edges(&new_mesh);
           check_validity_new_curved_edges(&new_mesh);
           check_validity_all_tet(&new_mesh);
@@ -207,6 +208,7 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
           build_cubic_cavities_3d(mesh, &cubic_cavityMesh, 10);
           std::string vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_old_cavities.vtu";
           vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_cavityMesh, 2);
+          */
         }
       }
     }
@@ -218,6 +220,9 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
   fprintf(stderr, "after coarsen has %d elems\n", mesh->nelems());
 
   if (mesh->is_curved() > 0) {
+    printf("checking validity after refine\n");
+    check_validity_all_tet(mesh);
+
     printf("writing current curved mesh\n");
     vtk::write_parallel("/lore/joshia5/Meshes/curved/coarsen_itr.vtk",
         mesh, mesh->dim());
@@ -233,11 +238,11 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
     vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe, 1);
     vtk::write_parallel("/lore/joshia5/Meshes/curved/coarsen_itr_linear.vtk",
         mesh);
-    auto cubic_cavityMesh = Mesh(mesh->comm()->library());
-    cubic_cavityMesh.set_comm(comm);
-    build_cubic_cavities_3d(mesh, &cubic_cavityMesh, 55);
-    vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_cavities.vtu";
-    vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_cavityMesh, 2);
+    //auto cubic_cavityMesh = Mesh(mesh->comm()->library());
+    //cubic_cavityMesh.set_comm(comm);
+    //build_cubic_cavities_3d(mesh, &cubic_cavityMesh, 55);
+    //vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_cavities.vtu";
+    //vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_cavityMesh, 2);
   }
 }
 
