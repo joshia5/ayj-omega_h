@@ -560,14 +560,14 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               }
               cand_angle_to_uppere0[cand] = 0.0;
               for (LO d = 0; d < dim; ++d) {
-                //TODO
+                //TODO sort for concave
                 cand_angle_to_uppere0[cand] = acos(
                     upper_tangents[0]*upper_tangents[dim + 0] +
                     upper_tangents[1]*upper_tangents[dim + 1] +
                     upper_tangents[2]*upper_tangents[dim + 2]);
               }
             }
-            //
+            //TODO unless concave sorting is not need for cands
             //for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
               //for (LO cand2 = cand; cand2 < nedge_shared_gface_i; ++cand2) {
                 //if (cand_angle_to_uppere0[cand] < cand_angle_to_uppere0[cand2]) {
@@ -604,13 +604,13 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           }
 
           //find dist of all relevant prods to uppere0
-          Few<Real, 32> prod_dist_to_uppere0;
+          Few<Real, 32> prod_angle_to_uppere0;
           Few<LO, 32> sorted_prods;
           Few<LO, 32> prod_ids;
           for (LO count_p2 = 0; count_p2 < 32; ++count_p2) {
             sorted_prods[count_p2] = -1;
             prod_ids[count_p2] = -1;
-            prod_dist_to_uppere0[count_p2] = DBL_MAX;
+            prod_angle_to_uppere0[count_p2] = DBL_MAX;
           }
           LO count_prod2 = 0;
           //TODO find and sort based on angle-to-upper_e0 instead of dist.
@@ -629,25 +629,44 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               auto const c0_coord2= get_vector<dim>(old_coords, oth_edge_v0_old);
               auto const c3_coord2= get_vector<dim>(old_coords, oth_edge_v1_old);
               Vector<dim> other_p;
+              Vector<dim> other_vec;
+              Real other_len = 0.0;
 
               //check for new edge, first vertex is vlower or vupper
               if (v_onto == oth_edge_v0_old) {
-                for (LO d = 0; d < dim; ++d)
+                for (LO d = 0; d < dim; ++d) {
                   other_p[d] = c0_coord2[d] + (1.0/3.0)*(c3_coord2[d] - c0_coord2[d]);
+                  other_vec[d] = other_p[d] - c0_coord2[d];
+                  other_len += std::pow(other_vec[d], 2);
+                }
               }
               else {
                 OMEGA_H_CHECK(v_onto == oth_edge_v1_old);
-                for (LO d = 0; d < dim; ++d)
+                for (LO d = 0; d < dim; ++d) {
                   other_p[d] = c3_coord2[d] + (1.0/3.0)*(c0_coord2[d] - c3_coord2[d]);
+                  other_vec[d] = other_p[d] - c3_coord2[d];
+                  other_len += std::pow(other_vec[d], 2);
+                }
               }
-              prod_dist_to_uppere0[count_prod2] = 
+              for (LO d = 0; d < dim; ++d) {
+                other_vec[d] = other_vec[d]/std::sqrt(other_len);
+              }
+              //found unit vec in dir of other edge
+              //now find angle
+
+              prod_angle_to_uppere0[count_prod2] = acos(
+                 other_vec[0]*upper_tangents[0] + 
+                 other_vec[1]*upper_tangents[1] + 
+                 other_vec[2]*upper_tangents[2]); 
+              /*
                 std::pow(uppere0_pt[0]-other_p[0], 2) +
                 std::pow(uppere0_pt[1]-other_p[1], 2) +
                 std::pow(uppere0_pt[2]-other_p[2], 2);
               prod_dist_to_uppere0[count_prod2] = std::sqrt(prod_dist_to_uppere0[count_prod2]);
+              */
               prod_ids[count_prod2] = other_edge;
-              printf("newEdge %d prodEdge %d dist to uppere0 %f\n", new_edge, other_edge,
-                  prod_dist_to_uppere0[count_prod2]);
+              printf("newEdge %d prodEdge %d angle to uppere0 %f\n", new_edge, other_edge,
+                  prod_angle_to_uppere0[count_prod2]);
 
               ++count_prod2;
             }
@@ -656,12 +675,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           //sort prods by dist to upper e0
           for (LO count_p2 = 0; count_p2 < nedge_shared_gface_i; ++count_p2) {
             for (LO count_prod2_2 = count_p2; count_prod2_2 < nedge_shared_gface_i; ++count_prod2_2) {
-              if (prod_dist_to_uppere0[count_p2] < prod_dist_to_uppere0[count_prod2_2]) {
+              if (prod_angle_to_uppere0[count_p2] < prod_angle_to_uppere0[count_prod2_2]) {
                 sorted_prods[count_p2] = prod_ids[count_p2];
               }
               else {
                 sorted_prods[count_p2] = prod_ids[count_prod2_2];
-                swap2(prod_dist_to_uppere0[count_p2], prod_dist_to_uppere0[count_prod2_2]);
+                swap2(prod_angle_to_uppere0[count_p2], prod_angle_to_uppere0[count_prod2_2]);
                 swap2(prod_ids[count_p2], prod_ids[count_prod2_2]);
               }
             }
