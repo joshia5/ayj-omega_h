@@ -500,8 +500,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                  (upper_tangents[1]*upper_tangents[dim + 0]);
 
           for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
-
-            //
             Real theta_c = (cand+1)*upper_theta/(nedge_shared_gface_i + 1);
             //printf("theta cand %f degree\n",theta_c*180/PI);
             Vector<3> b;
@@ -560,31 +558,11 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                   cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
               }
               cand_angle_to_uppere0[cand] = 0.0;
-              for (LO d = 0; d < dim; ++d) {
-                //TODO sort for concave
-                cand_angle_to_uppere0[cand] = acos(
-                    upper_tangents[0]*upper_tangents[dim + 0] +
-                    upper_tangents[1]*upper_tangents[dim + 1] +
-                    upper_tangents[2]*upper_tangents[dim + 2]);
-              }
-              //TODO unless concave sorting is not need for cands
-              //for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
-              //for (LO cand2 = cand; cand2 < nedge_shared_gface_i; ++cand2) {
-              //if (cand_angle_to_uppere0[cand] < cand_angle_to_uppere0[cand2]) {
-              //  sorted_cands[cand] = cand;
-              // }
-              //else {
-              //sorted_cands[cand] = cand2;
-              //swap2(cand_angle_to_uppere0[cand] , cand_angle_to_uppere0[cand2]);
-              //swap2(cand_c[cand*dim + 0], cand_c[cand2*dim + 0]);
-              //swap2(cand_c[cand*dim + 1], cand_c[cand2*dim + 1]);
-              //swap2(cand_c[cand*dim + 2], cand_c[cand2*dim + 2]);
-              //swap2(prod_ids[count_p2] , prod_ids[count_prod2_2]);
-              //}
-              //}
-              //printf("sorted cand %d is %d\n", cand,sorted_cands[cand]);
-              //}
-              //
+              //TODO sort for concave
+              cand_angle_to_uppere0[cand] = acos(
+                  upper_tangents[0]*cand_c[cand*dim + 0] +
+                  upper_tangents[1]*cand_c[cand*dim + 1] +
+                  upper_tangents[2]*cand_c[cand*dim + 2]);
             }
 
             /*
@@ -602,6 +580,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                 upper_tangents[0], upper_tangents[1], upper_tangents[2], 
                 upper_tangents[dim+0],upper_tangents[dim+1],upper_tangents[dim+2]);
                 */
+          }
+          
+          //unless concave sorting cands is not need for cands
+          if (concave_upper == 1) {
           }
 
           //find dist of all relevant prods to uppere0
