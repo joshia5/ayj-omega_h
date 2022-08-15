@@ -555,6 +555,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             }
             if (concave_upper == 1) {
               for (LO d = 0; d < dim; ++d) {
+                //flip upper tangent
                 cand_c[cand*dim + d] = old_coords[v_onto*dim + d] -
                   cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
               }
@@ -566,25 +567,25 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                     upper_tangents[1]*upper_tangents[dim + 1] +
                     upper_tangents[2]*upper_tangents[dim + 2]);
               }
-            }
-            //TODO unless concave sorting is not need for cands
-            //for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
+              //TODO unless concave sorting is not need for cands
+              //for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
               //for (LO cand2 = cand; cand2 < nedge_shared_gface_i; ++cand2) {
-                //if (cand_angle_to_uppere0[cand] < cand_angle_to_uppere0[cand2]) {
-                //  sorted_cands[cand] = cand;
-               // }
-                //else {
-                  //sorted_cands[cand] = cand2;
-                  //swap2(cand_angle_to_uppere0[cand] , cand_angle_to_uppere0[cand2]);
-                  //swap2(cand_c[cand*dim + 0], cand_c[cand2*dim + 0]);
-                  //swap2(cand_c[cand*dim + 1], cand_c[cand2*dim + 1]);
-                  //swap2(cand_c[cand*dim + 2], cand_c[cand2*dim + 2]);
-                  //swap2(prod_ids[count_p2] , prod_ids[count_prod2_2]);
-                //}
+              //if (cand_angle_to_uppere0[cand] < cand_angle_to_uppere0[cand2]) {
+              //  sorted_cands[cand] = cand;
+              // }
+              //else {
+              //sorted_cands[cand] = cand2;
+              //swap2(cand_angle_to_uppere0[cand] , cand_angle_to_uppere0[cand2]);
+              //swap2(cand_c[cand*dim + 0], cand_c[cand2*dim + 0]);
+              //swap2(cand_c[cand*dim + 1], cand_c[cand2*dim + 1]);
+              //swap2(cand_c[cand*dim + 2], cand_c[cand2*dim + 2]);
+              //swap2(prod_ids[count_p2] , prod_ids[count_prod2_2]);
+              //}
               //}
               //printf("sorted cand %d is %d\n", cand,sorted_cands[cand]);
-            //}
-            //
+              //}
+              //
+            }
 
             /*
               printf("#481 candc {%f,%f,%f} cand_tgts {%f,%f,%f} disttoUpp %f newl %f\n", 
@@ -613,7 +614,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             prod_angle_to_uppere0[count_p2] = DBL_MAX;
           }
           LO count_prod2 = 0;
-          //TODO find and sort based on angle-to-upper_e0 instead of dist.
           //0. find unit vec for e0 as stored earlir in tags
           //1. we are finding otherp so find unit vec in dir of other p
           //2. take dot product 
@@ -658,12 +658,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                  other_vec[0]*upper_tangents[0] + 
                  other_vec[1]*upper_tangents[1] + 
                  other_vec[2]*upper_tangents[2]); 
-              /*
-                std::pow(uppere0_pt[0]-other_p[0], 2) +
-                std::pow(uppere0_pt[1]-other_p[1], 2) +
-                std::pow(uppere0_pt[2]-other_p[2], 2);
-              prod_dist_to_uppere0[count_prod2] = std::sqrt(prod_dist_to_uppere0[count_prod2]);
-              */
               prod_ids[count_prod2] = other_edge;
               printf("newEdge %d prodEdge %d angle to uppere0 %f\n", new_edge, other_edge,
                   prod_angle_to_uppere0[count_prod2]);
@@ -672,7 +666,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             }
           }
           OMEGA_H_CHECK(count_prod2 == nedge_shared_gface_i);
-          //sort prods by dist to upper e0
+          //sort prods by angle to upper e0
           for (LO count_p2 = 0; count_p2 < nedge_shared_gface_i; ++count_p2) {
             for (LO count_prod2_2 = count_p2; count_prod2_2 < nedge_shared_gface_i; ++count_prod2_2) {
               if (prod_angle_to_uppere0[count_p2] < prod_angle_to_uppere0[count_prod2_2]) {
