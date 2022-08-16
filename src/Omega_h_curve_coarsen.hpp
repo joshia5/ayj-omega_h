@@ -508,21 +508,45 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             auto A_inv = invert(A);
             auto X = A_inv*b;
             //hand-calc +/- y axis as tang if A is ill-cond
-            if (((std::abs(upper_theta - PI) < EPSILON) && 
-                ((std::abs(upper_tangents[0]) - 1.0)) < EPSILON)) {
+            if ((std::abs(upper_theta - PI) < EPSILON) && 
+                ((std::abs(upper_tangents[0]) - 1.0) < EPSILON)) {
               //+y
+              printf("rotation matrix +y \n");
+              printf("normal {%f,%f,%f}\n",n[0],n[1],n[2]);
+              //TODO base the rotation about +y or minus y depending on angle
+              //made by straight edge with uppere0
               X[0] = upper_tangents[0]*cos(theta_c) +
                      upper_tangents[2]*sin(theta_c);
               X[1] = upper_tangents[1];
-              X[2] = -upper_tangents[0]*sin(theta_c) + 
-                      upper_tangents[2]*cos(theta_c);
-              //printf("rotation, n {%f,%f,%f}\n", n[0],n[1],n[2]);
-              //-y
-              if (n[1] < 0.0) {
+              X[2] =-upper_tangents[0]*sin(theta_c) + 
+                     upper_tangents[2]*cos(theta_c);
+              //calc temp candidate to check if this solved value of tangent
+              //vector is pointing in right direction or should be flipped
+              Vector<dim> temp_c, temp_t;
+              length_t = 0.0;
+              for (LO d=0; d<dim; ++d) length_t += std::pow(X[d], 2);
+              for (LO d=0; d<dim; ++d) temp_t[d] = X[d]/std::sqrt(length_t);
+              for (LO d=0; d<dim; ++d) {
+                temp_c[d] = old_coords[v_onto*dim + d] +
+                  temp_t[d]*new_length/3.0;
+              }
+              Real temp_dist = 0.0;//dist from tempc to vlower
+              for (LO d = 0; d < dim; ++d) {
+                temp_dist+=std::pow((temp_c[d]-old_coords[v_lower*dim+d]),2);
+              }
+              temp_dist = std::sqrt(temp_dist);
+              if (temp_dist > new_length) {
                 printf("rotation matrix -y \n");
                 X[2] = upper_tangents[0]*sin(theta_c) -
-                       upper_tangents[2]*cos(theta_c);
+                  upper_tangents[2]*cos(theta_c);
               }
+
+/*
+              if (n[1] < 0.0) {
+                X[2] = upper_tangents[0]*sin(theta_c) -
+                  upper_tangents[2]*cos(theta_c);
+              }
+*/
             }
 
             length_t = 0.0;
@@ -558,9 +582,11 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                   upper_tangents[1]*cand_vec[1] +
                   upper_tangents[2]*cand_vec[2]);
             }
+            printf("cand_c {%f,%f,%f}\n",cand_c[cand*dim+0],cand_c[cand*dim+1],
+            cand_c[cand*dim+2]);
           }
           
-          //unless concave sorting cands is not need for cands
+          //unless concave sorting cands is not needed for cands
           if (concave_upper == 1) {
             //sort cands
             for (LO count_c2 = 0; count_c2 < nedge_shared_gface_i; ++count_c2) {
@@ -651,7 +677,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                 swap2(prod_ids[count_p2], prod_ids[count_prod2_2]);
               }
             }
-    //        printf("sorted prod %d is %d\n", count_p2, sorted_prods[count_p2]);
           }
           //assign optimal cand with optimal prod
           LO opt_cand_id = -1;
@@ -664,7 +689,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           for (LO d = 0; d < dim; ++d) {
             c_upper[d] = cand_c[opt_cand_id*dim + d];
           }
-
         }
 
         Few<LO, 2> lower_edges;
@@ -793,11 +817,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
   auto count_dualCone_cav = OMEGA_H_LAMBDA(LO i) {
     LO const v_onto = keys2verts_onto[i];
     LO const v_key = keys2verts[i];
-    //printf(" vkey %d vonto %d\n",v_key, v_onto);
     for (LO vf = old_v2vf[v_key]; vf < old_v2vf[v_key + 1]; ++vf) {
       LO const f = old_vf2f[vf];
       face_crvVis[f] = 1;
-      //if (v_key == 27) face_crvVis[f] = 1;
     }
     if ((oldvert_gdim[v_key] == dim) && (oldvert_gdim[v_onto] == dim)) {
       atomic_increment(&count_interior_cavities[0]);
