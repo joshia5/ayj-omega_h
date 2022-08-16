@@ -672,7 +672,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             if (prod_ids[count_p2] == new_edge) opt_cand_id = count_p2;
           }
           if (concave_upper == 1) {
-            //opt_cand_id = sorted_cands[opt_cand_id];
+            opt_cand_id = sorted_cands[opt_cand_id];
           }
           for (LO d = 0; d < dim; ++d) {
             c_upper[d] = cand_c[opt_cand_id*dim + d];
