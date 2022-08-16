@@ -511,8 +511,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             if ((std::abs(upper_theta - PI) < EPSILON) && 
                 ((std::abs(upper_tangents[0]) - 1.0) < EPSILON)) {
               //+y
-              printf("rotation matrix +y \n");
-              printf("normal {%f,%f,%f}\n",n[0],n[1],n[2]);
+              //printf("rotation matrix +y \n");
+              //printf("normal {%f,%f,%f}\n",n[0],n[1],n[2]);
               //TODO base the rotation about +y or minus y depending on angle
               //made by straight edge with uppere0
               X[0] = upper_tangents[0]*cos(theta_c) +
@@ -520,6 +520,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               X[1] = upper_tangents[1];
               X[2] =-upper_tangents[0]*sin(theta_c) + 
                      upper_tangents[2]*cos(theta_c);
+
               //calc temp candidate to check if this solved value of tangent
               //vector is pointing in right direction or should be flipped
               Vector<dim> temp_c, temp_t;
@@ -536,18 +537,11 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               }
               temp_dist = std::sqrt(temp_dist);
               if (temp_dist > new_length) {
-                printf("rotation matrix -y \n");
+                //printf("rotation matrix -y \n");
                 X[2] = upper_tangents[0]*sin(theta_c) -
                   upper_tangents[2]*cos(theta_c);
               }
-
-/*
-              if (n[1] < 0.0) {
-                X[2] = upper_tangents[0]*sin(theta_c) -
-                  upper_tangents[2]*cos(theta_c);
-              }
-*/
-            }
+           }
 
             length_t = 0.0;
             for (LO d=0; d<dim; ++d) {
