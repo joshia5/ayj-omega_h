@@ -348,7 +348,7 @@ void test_collapse_boxCircle(Library *lib) {
   auto comm = lib->world();
 
   auto mesh = binary::read(
-      "/lore/joshia5/Meshes/curved/box_circleCut_4k.osh", comm);
+      "../omega_h/meshes/box_circleCut_4k.osh", comm);
                             
   for (LO i = 0; i <= mesh.dim(); ++i) {
     if (!mesh.has_tag(i, "global")) {
@@ -360,6 +360,7 @@ void test_collapse_boxCircle(Library *lib) {
   elevate_curve_order_2to3(&mesh);
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
 
+/*
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
   build_cubic_wireframe_3d(&mesh, &wireframe_mesh);
@@ -374,6 +375,7 @@ void test_collapse_boxCircle(Library *lib) {
   writer = vtk::FullWriter(
       "/lore/joshia5/Meshes/curved/boxCircle_bef.vtk", &mesh);
   writer.write();
+*/
  
   auto opts = AdaptOpts(&mesh);
   mesh.add_tag<Real>(VERT, "metric", 1);
@@ -382,9 +384,11 @@ void test_collapse_boxCircle(Library *lib) {
   for (LO adapt_itr = 0; adapt_itr < 2; ++adapt_itr) 
     coarsen_by_size(&mesh, opts);
   mesh.ask_qualities();
+/*
   writer = vtk::FullWriter(
       "/lore/joshia5/Meshes/curved/boxCircle_aft.vtk", &mesh);
   writer.write();
+*/
   return;
 }
 
