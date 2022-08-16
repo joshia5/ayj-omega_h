@@ -494,7 +494,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           //cross
           n[0] = (upper_tangents[1]*upper_tangents[dim + 2]) - 
                  (upper_tangents[2]*upper_tangents[dim + 1]);
-          n[1] = -(upper_tangents[0]*upper_tangents[dim + 2]) +
+          n[1] =-(upper_tangents[0]*upper_tangents[dim + 2]) +
                  (upper_tangents[2]*upper_tangents[dim + 0]);
           n[2] = (upper_tangents[0]*upper_tangents[dim + 1]) - 
                  (upper_tangents[1]*upper_tangents[dim + 0]);
@@ -557,33 +557,31 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                 cand_c[cand*dim + d] = old_coords[v_onto*dim + d] -
                   cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
               }
-              cand_angle_to_uppere0[cand] = 0.0;
-              //TODO sort for concave
               cand_angle_to_uppere0[cand] = acos(
                   upper_tangents[0]*cand_c[cand*dim + 0] +
                   upper_tangents[1]*cand_c[cand*dim + 1] +
                   upper_tangents[2]*cand_c[cand*dim + 2]);
             }
-
-            /*
-              printf("#481 candc {%f,%f,%f} cand_tgts {%f,%f,%f} disttoUpp %f newl %f\n", 
-                  cand_c[cand*dim+0],cand_c[cand*dim+1],cand_c[cand*dim+2],
-                  cand_tangents[cand*dim+0],cand_tangents[cand*dim+1],cand_tangents[cand*dim+2],
-                  cand_angle_to_uppere0[cand], new_length);
-                  */
-
-            //printf("cand dist to uppere0 %f\n", cand_angle_to_uppere0[cand]);
-            /*
-            printf("cand %d tang {%f,%f,%f} upper1 {%f,%f,%f} upper2 {%f,%f,%f}\n", cand, 
-                cand_tangents[cand*dim+0],cand_tangents[cand*dim+1],
-                cand_tangents[cand*dim+2],
-                upper_tangents[0], upper_tangents[1], upper_tangents[2], 
-                upper_tangents[dim+0],upper_tangents[dim+1],upper_tangents[dim+2]);
-                */
           }
           
           //unless concave sorting cands is not need for cands
           if (concave_upper == 1) {
+            //sort cands
+            for (LO count_c2 = 0; count_c2 < nedge_shared_gface_i; ++count_c2) {
+              for (LO count_cand2_2 = count_c2; count_cand2_2 < nedge_shared_gface_i; ++count_cand2_2) {
+                if (cand_angle_to_uppere0[count_c2] < cand_angle_to_uppere0[count_cand2_2]) {
+                  sorted_cands[count_c2] = count_c2;
+                }
+                else {
+                  sorted_cands[count_c2] = count_cand2_2;
+                  swap2(cand_angle_to_uppere0[count_c2], cand_angle_to_uppere0[count_cand2_2]);
+                  //swap2(prod_ids[count_p2], prod_ids[count_prod2_2]);
+                }
+              }
+            }
+            for (LO count_c2 = 0; count_c2 < nedge_shared_gface_i; ++count_c2) {
+              printf("sorted cand %d is %d\n", count_c2, sorted_cands[count_c2]);
+            }
           }
 
           //find dist of all relevant prods to uppere0
@@ -599,7 +597,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           //0. find unit vec for e0 as stored earlir in tags
           //1. we are finding otherp so find unit vec in dir of other p
           //2. take dot product 
-          //3. store acos angle value as disttouppere0
+          //3. store acos angle value as angle_touppere0
+          //4. sort
           for (LO prod2 = keys2prods[i]; prod2 < keys2prods[i+1]; ++prod2) {
             LO const other_edge = prods2new[prod2];
             if ((newedge_gdim[other_edge] == 2) &&
@@ -662,6 +661,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             }
     //        printf("sorted prod %d is %d\n", count_p2, sorted_prods[count_p2]);
           }
+          //assign optimal cand with optimal prod
           LO opt_cand_id = -1;
           for (LO count_p2 = 0; count_p2 < nedge_shared_gface_i; ++count_p2) {
             if (prod_ids[count_p2] == new_edge) opt_cand_id = count_p2;
