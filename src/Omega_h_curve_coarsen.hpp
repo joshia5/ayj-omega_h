@@ -438,8 +438,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
         dist_to_lower = std::sqrt(dist_to_lower);
         if (dist_to_lower > new_length) {
           concave_upper = 1;
-          //printf("dist %f, leng %f, 1 newE concavity found\n",
-            //  dist_to_lower, new_length);
           for (LO d = 0; d < dim; ++d) {
             c_avg_upper[d] = 
               //old_coords[v_onto*dim + d] - t_avg_upper[d]*new_length*xi_1_cube();
@@ -478,20 +476,16 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                                      old_coords[uppere0_v1*dim + d]), 2);
           }
           uppere0_len = std::sqrt(uppere0_len);
-         // printf("upper pt\n");
           for (LO d=0; d<dim; ++d) {
             uppere0_pt[d] = old_coords[v_onto*dim + d] + 
               (old_coords[uppere0_vlower*dim + d] - old_coords[v_onto*dim + d])/2.0;
-            //printf("%f\n", uppere0_pt[d]);
           }
 
           //calc n locations of new tangent pts
-          //printf("newedge leng %f\n", new_length);
           Real upper_theta = acos(
               upper_tangents[0]*upper_tangents[dim + 0] +
               upper_tangents[1]*upper_tangents[dim + 1] +
               upper_tangents[2]*upper_tangents[dim + 2]);
-          //printf("upper angle %f degree\n", upper_theta*180/PI);
           Vector<dim> n;
           //cross
           n[0] = (upper_tangents[1]*upper_tangents[dim + 2]) - 
@@ -581,11 +575,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                 }
               }
             }
-            for (LO count_c2 = 0; count_c2 < nedge_shared_gface_i; ++count_c2) {
-              printf("sorted cand %d is %d, angle %f\n", count_c2,
-              sorted_cands[count_c2], cand_angle_to_uppere0[count_c2]
-              );
-            }
           }
 
           //###FOR PRODS
@@ -645,8 +634,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                  other_vec[1]*upper_tangents[1] + 
                  other_vec[2]*upper_tangents[2]); 
               prod_ids[count_prod2] = other_edge;
-              //printf("newEdge %d prodEdge %d angle to uppere0 %f\n", new_edge, other_edge,
-                  //prod_angle_to_uppere0[count_prod2]);
 
               ++count_prod2;
             }
@@ -677,11 +664,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           for (LO d = 0; d < dim; ++d) {
             c_upper[d] = cand_c[opt_cand_id*dim + d];
           }
-          //printf("#559 newE 1413 cu {%f,%f,%f} opt_cand_id %d candc {%f,%f,%f}\n", 
-            //  c_upper[0], c_upper[1], c_upper[2],
-              //opt_cand_id,
-//              cand_c[opt_cand_id*dim+0],cand_c[opt_cand_id*dim+1],cand_c[opt_cand_id*dim+2]
-  //            );
 
         }
 
