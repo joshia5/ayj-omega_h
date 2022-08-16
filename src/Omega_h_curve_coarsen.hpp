@@ -459,8 +459,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
 
           Few<Real, 32> cand_angle_to_uppere0;
           Few<LO, 32> sorted_cands;
+          Few<LO, 32> cand_ids;
           for (LO cand = 0; cand < 32; ++cand) {
             sorted_cands[cand] = -1;
+            cand_ids[cand] = cand;
             cand_angle_to_uppere0[cand] = DBL_MAX;
           }
           LO const uppere0 = upper_edges[0];
@@ -501,7 +503,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
 
           for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
             Real theta_c = (cand+1)*upper_theta/(nedge_shared_gface_i + 1);
-            //printf("theta cand %f degree\n",theta_c*180/PI);
             Vector<3> b;
             b[0] = 0.0; b[1] = cos(theta_c); b[2] = cos(upper_theta-theta_c);
             auto A = tensor_3(
@@ -512,7 +513,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
 
             auto A_inv = invert(A);
             auto X = A_inv*b;
-            //hc-calc +/- y axis as tang if A is ill-cond
+            //hand-calc +/- y axis as tang if A is ill-cond
             if (((std::abs(upper_theta - PI) < EPSILON) && 
                 ((std::abs(upper_tangents[0]) - 1.0)) < EPSILON)) {
               //+y
@@ -521,7 +522,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               X[1] = upper_tangents[1];
               X[2] = -upper_tangents[0]*sin(theta_c) + 
                       upper_tangents[2]*cos(theta_c);
-              printf("rotation, n {%f,%f,%f}\n", n[0],n[1],n[2]);
+              //printf("rotation, n {%f,%f,%f}\n", n[0],n[1],n[2]);
               //-y
               if (n[1] < 0.0) {
                 printf("rotation matrix -y \n");
@@ -529,38 +530,39 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                        upper_tangents[2]*cos(theta_c);
               }
             }
-            //printf("new tang {%f,%f,%f}\n",X[0],X[1],X[2]);
-            //
 
             length_t = 0.0;
             for (LO d=0; d<dim; ++d) {
               cand_tangents[cand*dim + d] = X[d];
               length_t += std::pow(cand_tangents[cand*dim + d], 2);
             }
-            /*
-            printf("#468 newE %d cand_tgts {%f,%f,%f} lenT %f \n", new_edge,
-                cand_tangents[cand*dim+0],cand_tangents[cand*dim+1],
-                cand_tangents[cand*dim+2],
-                length_t);
-                */
             for (LO d = 0; d < dim; ++d) {
               cand_tangents[cand*dim + d] = cand_tangents[cand*dim + d]/
                 std::sqrt(length_t);
             }
             for (LO d = 0; d < dim; ++d) {
               cand_c[cand*dim + d] = old_coords[v_onto*dim + d] +
-                cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
+                cand_tangents[cand*dim + d]*new_length/3.0;
+                //v_onto is always upper
             }
             if (concave_upper == 1) {
+              Vector<dim> cand_vec;
+              Real cand_len = 0.0;
               for (LO d = 0; d < dim; ++d) {
                 //flip upper tangent
                 cand_c[cand*dim + d] = old_coords[v_onto*dim + d] -
-                  cand_tangents[cand*dim + d]*new_length/3.0;//onto is upper
+                  cand_tangents[cand*dim + d]*new_length/3.0;
+                cand_vec[d] = cand_c[cand*dim+d] - old_coords[v_onto*dim+d];
+                cand_len += std::pow(cand_vec[d], 2);
+              }
+              cand_len = std::sqrt(cand_len);
+              for (LO d = 0; d < dim; ++d) {
+                cand_vec[d] = cand_vec[d]/cand_len;
               }
               cand_angle_to_uppere0[cand] = acos(
-                  upper_tangents[0]*cand_c[cand*dim + 0] +
-                  upper_tangents[1]*cand_c[cand*dim + 1] +
-                  upper_tangents[2]*cand_c[cand*dim + 2]);
+                  upper_tangents[0]*cand_vec[0] +
+                  upper_tangents[1]*cand_vec[1] +
+                  upper_tangents[2]*cand_vec[2]);
             }
           }
           
@@ -570,20 +572,23 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             for (LO count_c2 = 0; count_c2 < nedge_shared_gface_i; ++count_c2) {
               for (LO count_cand2_2 = count_c2; count_cand2_2 < nedge_shared_gface_i; ++count_cand2_2) {
                 if (cand_angle_to_uppere0[count_c2] < cand_angle_to_uppere0[count_cand2_2]) {
-                  sorted_cands[count_c2] = count_c2;
+                  sorted_cands[count_c2] = cand_ids[count_c2];
                 }
                 else {
-                  sorted_cands[count_c2] = count_cand2_2;
+                  sorted_cands[count_c2] = cand_ids[count_cand2_2];
                   swap2(cand_angle_to_uppere0[count_c2], cand_angle_to_uppere0[count_cand2_2]);
-                  //swap2(prod_ids[count_p2], prod_ids[count_prod2_2]);
+                  swap2(cand_ids[count_c2], cand_ids[count_cand2_2]);
                 }
               }
             }
             for (LO count_c2 = 0; count_c2 < nedge_shared_gface_i; ++count_c2) {
-              printf("sorted cand %d is %d\n", count_c2, sorted_cands[count_c2]);
+              printf("sorted cand %d is %d, angle %f\n", count_c2,
+              sorted_cands[count_c2], cand_angle_to_uppere0[count_c2]
+              );
             }
           }
 
+          //###FOR PRODS
           //find dist of all relevant prods to uppere0
           Few<Real, 32> prod_angle_to_uppere0;
           Few<LO, 32> sorted_prods;
@@ -640,8 +645,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                  other_vec[1]*upper_tangents[1] + 
                  other_vec[2]*upper_tangents[2]); 
               prod_ids[count_prod2] = other_edge;
-              printf("newEdge %d prodEdge %d angle to uppere0 %f\n", new_edge, other_edge,
-                  prod_angle_to_uppere0[count_prod2]);
+              //printf("newEdge %d prodEdge %d angle to uppere0 %f\n", new_edge, other_edge,
+                  //prod_angle_to_uppere0[count_prod2]);
 
               ++count_prod2;
             }
