@@ -1307,7 +1307,7 @@ void build_cubic_cavities_3d(Mesh* mesh, Mesh* curveVtk_mesh,
   for (LO i = 0; i < face_crvVis_h.size(); ++i) {
     if (face_crvVis_h[i] == 1) ++nface;
   }
-  printf("building %d nfaces of cavities\n", nface);
+  //printf("building %d nfaces of cavities\n", nface);
 
   auto vert_ctrlPts = mesh->get_ctrlPts(0);
   if (vert_ctrlPts.exists()) {
