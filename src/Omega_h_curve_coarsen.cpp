@@ -32,7 +32,7 @@ void check_validity_all_tet(Mesh *new_mesh) {
 
     Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
 
-    is_invalid = checkMinJacDet_3d(nodes_det, 3);
+    is_invalid = checkMinJacDet_3d(nodes_det, 3, 1);
     invalid_tet[i] = is_invalid;
     if (is_invalid > 0) {
       printf("tet %d invalid code %d\n", i, is_invalid);

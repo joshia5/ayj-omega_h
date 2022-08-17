@@ -92,7 +92,6 @@ OMEGA_H_DEVICE Few<Real, n> getTetJacDetNodes(LO P, Few<Real, 60> const& elemNod
 
 OMEGA_H_INLINE LO checkMinJacDet_3d(Few<Real, 84> const& nodes, LO order,
   LO verts_only = -1) {
-  printf("verts only %d\n", verts_only);
   // first 4 vertices
   Real minAcceptable = 0.0;
   for (LO i = 0; i < 4; ++i) {
