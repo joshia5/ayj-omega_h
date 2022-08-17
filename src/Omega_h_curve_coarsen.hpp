@@ -318,12 +318,17 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
         if (new_edge_v0_old == v_onto) v_lower = new_edge_v1_old;
         if (new_edge_v1_old == v_onto) v_lower = new_edge_v0_old;
         LO e_lower = -1;
+        //e_lower is lower half of collapsing edge i.e. edge connecting vkey
+        //to vlower;
         for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
           LO const e = old_ve2e[ve];
           if ((v_lower == old_ev2v[e*2+0]) || 
               (v_lower == old_ev2v[e*2+1])) e_lower = e;
         }
-        OMEGA_H_CHECK(e_lower);
+        Vector<dim> t_e_lower;//tangent unit vec from either one end-vtx
+        for (LO d=0; d<dim; ++d) {
+          t_e_lower[d] = tangents[e_lower*2*dim + d];
+        }
                
         //count upper edges
         Few<LO, 2> upper_edges;
@@ -426,7 +431,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           t_avg_upper[d] = t_avg_upper[d]/std::sqrt(length_t);
         for (LO d = 0; d < dim; ++d) {
           c_avg_upper[d] = old_coords[v_onto*dim + d] + 
-                           //t_avg_upper[d]*new_length*xi_1_cube();
                            t_avg_upper[d]*new_length/3.0;
         }
         //calc upper concavity
@@ -437,10 +441,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
         }
         dist_to_lower = std::sqrt(dist_to_lower);
         if (dist_to_lower > new_length) {
+          printf("newedge %d has concave upper\n", new_edge);
           concave_upper = 1;
           for (LO d = 0; d < dim; ++d) {
             c_avg_upper[d] = 
-              //old_coords[v_onto*dim + d] - t_avg_upper[d]*new_length*xi_1_cube();
               old_coords[v_onto*dim + d] - t_avg_upper[d]*new_length/3.0;
           }
         }
@@ -507,41 +511,120 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
 
             auto A_inv = invert(A);
             auto X = A_inv*b;
-            //hand-calc +/- y axis as tang if A is ill-cond
-            if ((std::abs(upper_theta - PI) < EPSILON) && 
-                ((std::abs(upper_tangents[0]) - 1.0) < EPSILON)) {
-              //+y
-              //printf("rotation matrix +y \n");
-              //printf("normal {%f,%f,%f}\n",n[0],n[1],n[2]);
-              //TODO base the rotation about x and z axis also
-              //made by straight edge with uppere0
-              X[0] = upper_tangents[0]*cos(theta_c) +
-                     upper_tangents[2]*sin(theta_c);
-              X[1] = upper_tangents[1];
-              X[2] =-upper_tangents[0]*sin(theta_c) + 
-                     upper_tangents[2]*cos(theta_c);
+            if (std::abs(upper_theta - PI) < EPSILON) {
+              n[0] = (upper_tangents[1]*t_e_lower[2]) - 
+                (upper_tangents[2]*t_e_lower[1]);
+              n[1] =-(upper_tangents[0]*t_e_lower[2]) +
+                (upper_tangents[2]*t_e_lower[0]);
+              n[2] = (upper_tangents[0]*t_e_lower[1]) - 
+                (upper_tangents[1]*t_e_lower[0]);
+              Real len_n =0.0;
+              for (LO d=0;d<3;++d) len_n+= std::pow(n[d],2);
+              for (LO d=0;d<3;++d) n[d] = n[d]/std::sqrt(len_n);//unit normal
 
-              //calc temp candidate to check if this solved value of tangent
-              //vector is pointing in right direction or should be flipped
-              Vector<dim> temp_c, temp_t;
-              length_t = 0.0;
-              for (LO d=0; d<dim; ++d) length_t += std::pow(X[d], 2);
-              for (LO d=0; d<dim; ++d) temp_t[d] = X[d]/std::sqrt(length_t);
-              for (LO d=0; d<dim; ++d) {
-                temp_c[d] = old_coords[v_onto*dim + d] +
-                  temp_t[d]*new_length/3.0;
+              //hand-calc +/- y axis as tang if A is ill-cond
+              if ((std::abs(n[0])<EPSILON) && ((std::abs(n[1])-1.0)<EPSILON)
+                  && (std::abs(n[2])<EPSILON)) {
+                printf("rotation matrix +y \n");
+                printf("normal {%f,%f,%f}\n",n[0],n[1],n[2]);
+                X[0] = upper_tangents[0]*cos(theta_c) +
+                       upper_tangents[2]*sin(theta_c);
+                X[1] = upper_tangents[1];
+                X[2] =-upper_tangents[0]*sin(theta_c) + 
+                       upper_tangents[2]*cos(theta_c);
+
+                //calc temp candidate to check if this solved value of tangent
+                //vector is pointing in right direction or should be flipped
+                Vector<dim> temp_c, temp_t;
+                length_t = 0.0;
+                for (LO d=0; d<dim; ++d) length_t += std::pow(X[d], 2);
+                for (LO d=0; d<dim; ++d) temp_t[d] = X[d]/std::sqrt(length_t);
+                for (LO d=0; d<dim; ++d) {
+                  temp_c[d] = old_coords[v_onto*dim + d] +
+                    temp_t[d]*new_length/3.0;
+                }
+                Real temp_dist = 0.0;//dist from tempc to vlower
+                for (LO d = 0; d < dim; ++d) {
+                  temp_dist+=std::pow((temp_c[d]-old_coords[v_lower*dim+d]),2);
+                }
+                temp_dist = std::sqrt(temp_dist);
+                if (temp_dist > new_length) {
+                  printf("rotation matrix -y \n");
+                  X[0] = upper_tangents[0]*cos(theta_c+PI) +
+                    upper_tangents[2]*sin(theta_c+PI);
+                  X[2] =-upper_tangents[0]*sin(theta_c+PI) + 
+                    upper_tangents[2]*cos(theta_c+PI);
+                }
               }
-              Real temp_dist = 0.0;//dist from tempc to vlower
-              for (LO d = 0; d < dim; ++d) {
-                temp_dist+=std::pow((temp_c[d]-old_coords[v_lower*dim+d]),2);
+
+              //hand-calc +/- x axis as tang if A is ill-cond
+              if ((std::abs(n[1])<EPSILON) && ((std::abs(n[0])-1.0)<EPSILON)
+                  && (std::abs(n[2])<EPSILON)) {
+                //printf("rotation matrix +x \n");
+                //made by straight edge with uppere0
+                X[0] = upper_tangents[0];
+                X[1] = upper_tangents[1]*cos(theta_c) -
+                       upper_tangents[2]*sin(theta_c);
+                X[2] = upper_tangents[1]*sin(theta_c) + 
+                       upper_tangents[2]*cos(theta_c);
+
+                //calc temp candidate to check if this solved value of tangent
+                //vector is pointing in right direction or should be flipped
+                Vector<dim> temp_c, temp_t;
+                length_t = 0.0;
+                for (LO d=0; d<dim; ++d) length_t += std::pow(X[d], 2);
+                for (LO d=0; d<dim; ++d) temp_t[d] = X[d]/std::sqrt(length_t);
+                for (LO d=0; d<dim; ++d) {
+                  temp_c[d] = old_coords[v_onto*dim + d] +
+                    temp_t[d]*new_length/3.0;
+                }
+                Real temp_dist = 0.0;//dist from tempc to vlower
+                for (LO d = 0; d < dim; ++d) {
+                  temp_dist+=std::pow((temp_c[d]-old_coords[v_lower*dim+d]),2);
+                }
+                temp_dist = std::sqrt(temp_dist);
+                if (temp_dist > new_length) {
+                  X[1] = upper_tangents[1]*cos(theta_c+PI) -
+                    upper_tangents[2]*sin(theta_c+PI);
+                  X[2] = upper_tangents[1]*sin(theta_c+PI) + 
+                    upper_tangents[2]*cos(theta_c+PI);
+                }
               }
-              temp_dist = std::sqrt(temp_dist);
-              if (temp_dist > new_length) {
-                //printf("rotation matrix -y \n");
-                X[2] = upper_tangents[0]*sin(theta_c) -
-                  upper_tangents[2]*cos(theta_c);
+
+              //hand-calc +/- z axis as tang if A is ill-cond
+              if ((std::abs(n[0])<EPSILON) && ((std::abs(n[2])-1.0)<EPSILON)
+                  && (std::abs(n[1])<EPSILON)) {
+                printf("rotation matrix +z \n");
+                //made by straight edge with uppere0
+                X[0] = upper_tangents[0]*cos(theta_c) -
+                       upper_tangents[1]*sin(theta_c);
+                X[1] = upper_tangents[0]*sin(theta_c) +
+                       upper_tangents[1]*cos(theta_c);
+                X[2] = upper_tangents[2];
+
+                //calc temp candidate to check if this solved value of tangent
+                //vector is pointing in right direction or should be flipped
+                Vector<dim> temp_c, temp_t;
+                length_t = 0.0;
+                for (LO d=0; d<dim; ++d) length_t += std::pow(X[d], 2);
+                for (LO d=0; d<dim; ++d) temp_t[d] = X[d]/std::sqrt(length_t);
+                for (LO d=0; d<dim; ++d) {
+                  temp_c[d] = old_coords[v_onto*dim + d] +
+                    temp_t[d]*new_length/3.0;
+                }
+                Real temp_dist = 0.0;//dist from tempc to vlower
+                for (LO d = 0; d < dim; ++d) {
+                  temp_dist+=std::pow((temp_c[d]-old_coords[v_lower*dim+d]),2);
+                }
+                temp_dist = std::sqrt(temp_dist);
+                if (temp_dist > new_length) {
+                  X[0] = upper_tangents[0]*cos(theta_c+PI) -
+                         upper_tangents[1]*sin(theta_c+PI);
+                  X[1] = upper_tangents[0]*sin(theta_c+PI) +
+                         upper_tangents[1]*cos(theta_c+PI);
+                }
               }
-           }
+            }
 
             length_t = 0.0;
             for (LO d=0; d<dim; ++d) {
@@ -679,9 +762,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             }
           }
           for (LO count_p2 = 0; count_p2 < nedge_shared_gface_i; ++count_p2) {
-            printf("i %d, prod id %d, angle %f\n", count_p2, prod_ids[count_p2],
-                    prod_angle_to_uppere1[count_p2]);
-            printf("sorted prod index %d is %d\n", count_p2, sorted_prods[count_p2]);
+            //printf("i %d, prod id %d, angle %f\n", count_p2, prod_ids[count_p2],
+              //      prod_angle_to_uppere1[count_p2]);
+            //printf("sorted prod index %d is %d\n", count_p2, sorted_prods[count_p2]);
           }
           //assign optimal cand with optimal prod
           LO opt_cand_id = -1;
@@ -794,37 +877,118 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
 
           auto A_inv = invert(A);
           auto X = A_inv*b;
-          //TODO base the rotation about y and z axis also
           //hand-calc +/- x axis as tang if A is ill-cond
-          if ((std::abs(lower_theta - PI) < EPSILON) && 
-              ((std::abs(lower_tangents[2]) - 1.0) < EPSILON)) {
-            //+x
-            printf("rotation matrix about +x \n");
-            X[0] = lower_tangents[0];
-            X[1] = lower_tangents[1]*cos(theta_c) -
-                   lower_tangents[2]*sin(theta_c);
-            X[2] = lower_tangents[1]*sin(theta_c) + 
-                   lower_tangents[2]*cos(theta_c);
+          if (std::abs(lower_theta - PI) < EPSILON) {
+            n[0] = (lower_tangents[1]*t_e_lower[2]) - 
+              (lower_tangents[2]*t_e_lower[1]);
+            n[1] =-(lower_tangents[0]*t_e_lower[2]) +
+              (lower_tangents[2]*t_e_lower[0]);
+            n[2] = (lower_tangents[0]*t_e_lower[1]) - 
+              (lower_tangents[1]*t_e_lower[0]);
+            Real len_n =0.0;
+            for (LO d=0;d<3;++d) len_n+= std::pow(n[d],2);
+            for (LO d=0;d<3;++d) n[d] = n[d]/std::sqrt(len_n);//unit normal
 
-            //calc temp candidate to check if this solved value of tangent
-            //vector is pointing in right direction or should be flipped
-            Vector<dim> temp_c, temp_t;
-            Real length_t2 = 0.0;
-            for (LO d=0; d<dim; ++d) length_t2 += std::pow(X[d], 2);
-            for (LO d=0; d<dim; ++d) temp_t[d] = X[d]/std::sqrt(length_t2);
-            for (LO d=0; d<dim; ++d) {
-              temp_c[d] = old_coords[v_lower*dim + d] +
-                temp_t[d]*new_length/3.0;
+            //+x
+            if (((std::abs(n[0])-1.0)<EPSILON) && (std::abs(n[1])<EPSILON)
+                && (std::abs(n[2])<EPSILON)) {
+              printf("rotation matrix about +x \n");
+              X[0] = lower_tangents[0];
+              X[1] = lower_tangents[1]*cos(theta_c) -
+                     lower_tangents[2]*sin(theta_c);
+              X[2] = lower_tangents[1]*sin(theta_c) +
+                     lower_tangents[2]*cos(theta_c);
+  
+              //calc temp candidate to check if this solved value of tangent
+              //vector is pointing in right direction or should be flipped
+              Vector<dim> temp_c, temp_t;
+              Real length_t2 = 0.0;
+              for (LO d=0; d<dim; ++d) length_t2 += std::pow(X[d], 2);
+              for (LO d=0; d<dim; ++d) temp_t[d] = X[d]/std::sqrt(length_t2);
+              for (LO d=0; d<dim; ++d) {
+                temp_c[d] = old_coords[v_lower*dim + d] +
+                  temp_t[d]*new_length/3.0;
+              }
+              Real temp_dist = 0.0;//dist from tempc to vupper
+              for (LO d = 0; d < dim; ++d) {
+                temp_dist+=std::pow((temp_c[d]-old_coords[v_onto*dim+d]),2);
+              }
+              temp_dist = std::sqrt(temp_dist);
+              if (temp_dist > new_length) {
+                printf("flip by PI to get rotation about -x \n");
+              X[1] = lower_tangents[1]*cos(theta_c+PI) -
+                     lower_tangents[2]*sin(theta_c+PI);
+              X[2] = lower_tangents[1]*sin(theta_c+PI) +
+                     lower_tangents[2]*cos(theta_c+PI);
+              }
             }
-            Real temp_dist = 0.0;//dist from tempc to vupper
-            for (LO d = 0; d < dim; ++d) {
-              temp_dist+=std::pow((temp_c[d]-old_coords[v_onto*dim+d]),2);
+
+            //hand-calc +/- y axis as tang if A is ill-cond
+            if ((std::abs(n[0])<EPSILON) && ((std::abs(n[1])-1.0)<EPSILON)
+             && (std::abs(n[2])<EPSILON)) {
+              printf("rotation matrix about +y \n");
+              X[0] = lower_tangents[0]*cos(theta_c) +
+                     lower_tangents[2]*sin(theta_c);
+              X[1] = lower_tangents[1];
+              X[2] =-lower_tangents[0]*sin(theta_c) +
+                     lower_tangents[2]*cos(theta_c);
+
+              //calc temp candidate to check if this solved value of tangent
+              //vector is pointing in right direction or should be flipped
+              Vector<dim> temp_c, temp_t;
+              Real length_t2 = 0.0;
+              for (LO d=0; d<dim; ++d) length_t2 += std::pow(X[d], 2);
+              for (LO d=0; d<dim; ++d) temp_t[d] = X[d]/std::sqrt(length_t2);
+              for (LO d=0; d<dim; ++d) {
+                temp_c[d] = old_coords[v_lower*dim + d] +
+                  temp_t[d]*new_length/3.0;
+              }
+              Real temp_dist = 0.0;//dist from tempc to vupper
+              for (LO d = 0; d < dim; ++d) {
+                temp_dist+=std::pow((temp_c[d]-old_coords[v_onto*dim+d]),2);
+              }
+              temp_dist = std::sqrt(temp_dist);
+              if (temp_dist > new_length) {
+                printf("flip to get rotation about -y \n");
+              X[0] = lower_tangents[0]*cos(theta_c+PI) +
+                     lower_tangents[2]*sin(theta_c+PI);
+              X[2] =-lower_tangents[0]*sin(theta_c+PI) +
+                     lower_tangents[2]*cos(theta_c+PI);
+              }
             }
-            temp_dist = std::sqrt(temp_dist);
-            if (temp_dist > new_length) {
-              printf("flip to get roation about -x \n");
-              X[2] = upper_tangents[0]*sin(theta_c) -
-                upper_tangents[2]*cos(theta_c);
+
+            //hand-calc +/- z axis as tang if A is ill-cond
+            if ((std::abs(n[0])<EPSILON) && ((std::abs(n[2])-1.0)<EPSILON)
+             && (std::abs(n[1])<EPSILON)) {
+              printf("rotation matrix about +z \n");
+              X[0] = lower_tangents[0]*cos(theta_c) -
+                     lower_tangents[1]*sin(theta_c);
+              X[1] = lower_tangents[0]*sin(theta_c) +
+                     lower_tangents[1]*cos(theta_c);
+              X[2] = lower_tangents[2];
+
+              //calc temp candidate to check if this solved value of tangent
+              //vector is pointing in right direction or should be flipped
+              Vector<dim> temp_c, temp_t;
+              Real length_t2 = 0.0;
+              for (LO d=0; d<dim; ++d) length_t2 += std::pow(X[d], 2);
+              for (LO d=0; d<dim; ++d) temp_t[d] = X[d]/std::sqrt(length_t2);
+              for (LO d=0; d<dim; ++d) {
+                temp_c[d] = old_coords[v_lower*dim + d] +
+                  temp_t[d]*new_length/3.0;
+              }
+              Real temp_dist = 0.0;//dist from tempc to vupper
+              for (LO d = 0; d < dim; ++d) {
+                temp_dist+=std::pow((temp_c[d]-old_coords[v_onto*dim+d]),2);
+              }
+              temp_dist = std::sqrt(temp_dist);
+              if (temp_dist > new_length) {
+                printf("flip to get roation about -z \n");
+                X[0] = lower_tangents[0]*cos(theta_c+PI) -
+                       lower_tangents[1]*sin(theta_c+PI);
+                X[1] = lower_tangents[0]*sin(theta_c+PI) +
+                       lower_tangents[1]*cos(theta_c+PI);
+              }
             }
           }
           printf("lower tgt X={%f,%f,%f}\n",X[0],X[1],X[2]);
