@@ -90,7 +90,9 @@ OMEGA_H_DEVICE Few<Real, n> getTetJacDetNodes(LO P, Few<Real, 60> const& elemNod
   return nodes;
 }
 
-OMEGA_H_INLINE LO checkMinJacDet_3d(Few<Real, 84> const& nodes, LO order) {
+OMEGA_H_INLINE LO checkMinJacDet_3d(Few<Real, 84> const& nodes, LO order,
+  LO verts_only = -1) {
+  printf("verts only %d\n", verts_only);
   // first 4 vertices
   Real minAcceptable = 0.0;
   for (LO i = 0; i < 4; ++i) {
@@ -99,25 +101,27 @@ OMEGA_H_INLINE LO checkMinJacDet_3d(Few<Real, 84> const& nodes, LO order) {
     }
   }
 
-  for (int edge = 0; edge < 6; ++edge){
-    for (int i = 0; i < 3*(order-1)-1; ++i){
-      if (nodes[4+edge*(3*(order-1)-1)+i] < minAcceptable){
-        return 8+edge;
+  if (verts_only == -1) {
+    for (int edge = 0; edge < 6; ++edge){
+      for (int i = 0; i < 3*(order-1)-1; ++i){
+        if (nodes[4+edge*(3*(order-1)-1)+i] < minAcceptable){
+          return 8+edge;
+        }
       }
     }
-  }
 
-  for (int face = 0; face < 4; ++face){
-    for (int i = 0; i < (3*order-4)*(3*order-5)/2; ++i){
-      if (nodes[18*order-20+face*(3*order-4)*(3*order-5)/2+i] < minAcceptable) {
+    for (int face = 0; face < 4; ++face){
+      for (int i = 0; i < (3*order-4)*(3*order-5)/2; ++i){
+        if (nodes[18*order-20+face*(3*order-4)*(3*order-5)/2+i] < minAcceptable) {
           return 14+face;
+        }
       }
     }
-  }
 
-  for (int i = 0; i < (3*order-4)*(3*order-5)*(3*order-6)/6; ++i) {
-    if (nodes[18*order*order-36*order+20+i] < minAcceptable) {
-      return 20;
+    for (int i = 0; i < (3*order-4)*(3*order-5)*(3*order-6)/6; ++i) {
+      if (nodes[18*order*order-36*order+20+i] < minAcceptable) {
+        return 20;
+      }
     }
   }
 
