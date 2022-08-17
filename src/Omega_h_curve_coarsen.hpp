@@ -513,7 +513,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               //+y
               //printf("rotation matrix +y \n");
               //printf("normal {%f,%f,%f}\n",n[0],n[1],n[2]);
-              //TODO base the rotation about +y or minus y depending on angle
+              //TODO base the rotation about x and z axis also
               //made by straight edge with uppere0
               X[0] = upper_tangents[0]*cos(theta_c) +
                      upper_tangents[2]*sin(theta_c);
@@ -794,6 +794,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
 
           auto A_inv = invert(A);
           auto X = A_inv*b;
+          //TODO base the rotation about y and z axis also
           //hand-calc +/- x axis as tang if A is ill-cond
           if ((std::abs(lower_theta - PI) < EPSILON) && 
               ((std::abs(lower_tangents[2]) - 1.0) < EPSILON)) {
