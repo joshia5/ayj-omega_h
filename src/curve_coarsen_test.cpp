@@ -361,18 +361,18 @@ void test_collapse_boxCircle(Library *lib) {
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
 
   vtk::FullWriter writer;
-/*
+
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
   build_cubic_wireframe_3d(&mesh, &wireframe_mesh);
-  std::string vtuPath = "/lore/joshia5/Meshes/curved/box_circleCut_4k_wire.vtu";
+  std::string vtuPath = "../omega_h/meshes/box_circleCut_4k_wire.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
   auto curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
   build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh);
-  vtuPath = "/lore/joshia5/Meshes/curved/box_circleCut_4k_curveVtk.vtu";
+  vtuPath = "../omega_h/meshes/box_circleCut_4k_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
-  vtk::FullWriter writer;
+/*
   writer = vtk::FullWriter(
       "/lore/joshia5/Meshes/curved/boxCircle_bef.vtk", &mesh);
   writer.write();
@@ -382,7 +382,7 @@ void test_collapse_boxCircle(Library *lib) {
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(100)));
-  for (LO adapt_itr = 0; adapt_itr < 2; ++adapt_itr) 
+  for (LO adapt_itr = 0; adapt_itr < 4; ++adapt_itr) 
     coarsen_by_size(&mesh, opts);
   mesh.ask_qualities();
   writer = vtk::FullWriter(

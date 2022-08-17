@@ -576,8 +576,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                   upper_tangents[1]*cand_vec[1] +
                   upper_tangents[2]*cand_vec[2]);
             }
-            if ((new_edge == 77) || (new_edge == 78) || (new_edge == 2735))
-              printf("new_edge %d cand_c {%f,%f,%f}\n",new_edge,
+            if (new_edge == 183) printf("new_edge %d cand_c {%f,%f,%f}\n",new_edge,
                 cand_c[cand*dim+0],cand_c[cand*dim+1],cand_c[cand*dim+2]);
           }
           
@@ -761,16 +760,79 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             }
           }
         }
-        //Real lower_cosTheta = (
-          //  lower_tangents[0]*lower_tangents[dim + 0] +
-            //lower_tangents[1]*lower_tangents[dim + 1] +
-            //lower_tangents[2]*lower_tangents[dim + 2]);
 
         OMEGA_H_CHECK(count_lower_edge == 2);
         for (LO d = 0; d < dim; ++d) t_lower[d] = t_lower[d]/count_lower_edge;
         length_t = 0.0;
 
         for (LO d = 0; d < dim; ++d) length_t += t_lower[d]*t_lower[d]; 
+        if (new_edge == 183) printf("low t_len %f\n", length_t);
+
+        if (std::abs(length_t - 0.0) < EPSILON) {
+          Real lower_theta = acos(
+            lower_tangents[0]*lower_tangents[dim + 0] +
+            lower_tangents[1]*lower_tangents[dim + 1] +
+            lower_tangents[2]*lower_tangents[dim + 2]);
+          Vector<dim> n;
+          //cross
+          n[0] = (lower_tangents[1]*lower_tangents[dim + 2]) - 
+                 (lower_tangents[2]*lower_tangents[dim + 1]);
+          n[1] =-(lower_tangents[0]*lower_tangents[dim + 2]) +
+                 (lower_tangents[2]*lower_tangents[dim + 0]);
+          n[2] = (lower_tangents[0]*lower_tangents[dim + 1]) - 
+                 (lower_tangents[1]*lower_tangents[dim + 0]);
+          printf("normal {%f,%f,%f}\n",n[0],n[1],n[2]);
+
+          Real theta_c = lower_theta/2.0;
+          Vector<3> b;
+          b[0] = 0.0; b[1] = cos(theta_c); b[2] = cos(lower_theta-theta_c);
+          auto A = tensor_3(
+              n[0], n[1], n[2],
+              lower_tangents[0], lower_tangents[1], lower_tangents[2],
+              lower_tangents[dim+0], lower_tangents[dim+1], lower_tangents[dim+2]
+              );
+
+          auto A_inv = invert(A);
+          auto X = A_inv*b;
+          //hand-calc +/- x axis as tang if A is ill-cond
+          if ((std::abs(lower_theta - PI) < EPSILON) && 
+              ((std::abs(lower_tangents[2]) - 1.0) < EPSILON)) {
+            //+x
+            printf("rotation matrix about +x \n");
+            X[0] = lower_tangents[0];
+            X[1] = lower_tangents[1]*cos(theta_c) -
+                   lower_tangents[2]*sin(theta_c);
+            X[2] = lower_tangents[1]*sin(theta_c) + 
+                   lower_tangents[2]*cos(theta_c);
+
+            //calc temp candidate to check if this solved value of tangent
+            //vector is pointing in right direction or should be flipped
+            Vector<dim> temp_c, temp_t;
+            Real length_t2 = 0.0;
+            for (LO d=0; d<dim; ++d) length_t2 += std::pow(X[d], 2);
+            for (LO d=0; d<dim; ++d) temp_t[d] = X[d]/std::sqrt(length_t2);
+            for (LO d=0; d<dim; ++d) {
+              temp_c[d] = old_coords[v_lower*dim + d] +
+                temp_t[d]*new_length/3.0;
+            }
+            Real temp_dist = 0.0;//dist from tempc to vupper
+            for (LO d = 0; d < dim; ++d) {
+              temp_dist+=std::pow((temp_c[d]-old_coords[v_onto*dim+d]),2);
+            }
+            temp_dist = std::sqrt(temp_dist);
+            if (temp_dist > new_length) {
+              printf("flip to get roation about -x \n");
+              X[2] = upper_tangents[0]*sin(theta_c) -
+                upper_tangents[2]*cos(theta_c);
+            }
+          }
+          printf("lower tgt X={%f,%f,%f}\n",X[0],X[1],X[2]);
+          for (LO d=0; d<dim; ++d) {
+            t_lower[d] = X[d];
+            length_t += std::pow(X[d], 2);
+          }
+        }
+
         for (LO d = 0; d < dim; ++d) t_lower[d] = t_lower[d]/std::sqrt(length_t);
         for (LO d = 0; d < dim; ++d) {
           //c_lower[d] = old_coords[v_lower*dim + d] + t_lower[d]*new_length*xi_1_cube();
@@ -792,6 +854,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             }
           }
         }
+            if (new_edge == 183) 
+            printf("new_edge %d up_c {%f,%f,%f} low_c{%f,%f,%f}\n",new_edge,
+                c_upper[0], c_upper[1], c_upper[2], c_lower[0], c_lower[1], c_lower[2]);
         //
 
         for (LO d = 0; d < dim; ++d) {
