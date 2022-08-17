@@ -576,8 +576,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                   upper_tangents[1]*cand_vec[1] +
                   upper_tangents[2]*cand_vec[2]);
             }
-            printf("cand_c {%f,%f,%f}\n",cand_c[cand*dim+0],cand_c[cand*dim+1],
-            cand_c[cand*dim+2]);
+            if ((new_edge == 77) || (new_edge == 78) || (new_edge == 2735))
+              printf("new_edge %d cand_c {%f,%f,%f}\n",new_edge,
+                cand_c[cand*dim+0],cand_c[cand*dim+1],cand_c[cand*dim+2]);
           }
           
           //unless concave sorting cands is not needed for cands
@@ -595,17 +596,23 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                 }
               }
             }
+            for (LO count_c2 = 0; count_c2 < nedge_shared_gface_i; ++count_c2) {
+              printf("sorted cand %d is %d, angle %f\n", count_c2,
+                  sorted_cands[count_c2],
+                  cand_angle_to_uppere0[count_c2]
+                  );
+            }
           }
 
           //###FOR PRODS
           //find dist of all relevant prods to uppere0
-          Few<Real, 32> prod_angle_to_uppere0;
+          Few<Real, 32> prod_angle_to_uppere1;
           Few<LO, 32> sorted_prods;
           Few<LO, 32> prod_ids;
           for (LO count_p2 = 0; count_p2 < 32; ++count_p2) {
             sorted_prods[count_p2] = -1;
             prod_ids[count_p2] = -1;
-            prod_angle_to_uppere0[count_p2] = DBL_MAX;
+            prod_angle_to_uppere1[count_p2] = DBL_MAX;
           }
           LO count_prod2 = 0;
           //0. find unit vec for e0 as stored earlir in tags
@@ -649,10 +656,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               //found unit vec in dir of other edge
               //now find angle
 
-              prod_angle_to_uppere0[count_prod2] = acos(
-                 other_vec[0]*upper_tangents[0] + 
-                 other_vec[1]*upper_tangents[1] + 
-                 other_vec[2]*upper_tangents[2]); 
+              prod_angle_to_uppere1[count_prod2] = acos(
+                 other_vec[0]*upper_tangents[dim+0] + 
+                 other_vec[1]*upper_tangents[dim+1] + 
+                 other_vec[2]*upper_tangents[dim+2]); 
               prod_ids[count_prod2] = other_edge;
 
               ++count_prod2;
@@ -662,15 +669,20 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           //sort prods by angle to upper e0
           for (LO count_p2 = 0; count_p2 < nedge_shared_gface_i; ++count_p2) {
             for (LO count_prod2_2 = count_p2; count_prod2_2 < nedge_shared_gface_i; ++count_prod2_2) {
-              if (prod_angle_to_uppere0[count_p2] < prod_angle_to_uppere0[count_prod2_2]) {
+              if (prod_angle_to_uppere1[count_p2] > prod_angle_to_uppere1[count_prod2_2]) {
                 sorted_prods[count_p2] = prod_ids[count_p2];
               }
               else {
                 sorted_prods[count_p2] = prod_ids[count_prod2_2];
-                swap2(prod_angle_to_uppere0[count_p2], prod_angle_to_uppere0[count_prod2_2]);
+                swap2(prod_angle_to_uppere1[count_p2], prod_angle_to_uppere1[count_prod2_2]);
                 swap2(prod_ids[count_p2], prod_ids[count_prod2_2]);
               }
             }
+          }
+          for (LO count_p2 = 0; count_p2 < nedge_shared_gface_i; ++count_p2) {
+            printf("i %d, prod id %d, angle %f\n", count_p2, prod_ids[count_p2],
+                    prod_angle_to_uppere1[count_p2]);
+            printf("sorted prod index %d is %d\n", count_p2, sorted_prods[count_p2]);
           }
           //assign optimal cand with optimal prod
           LO opt_cand_id = -1;

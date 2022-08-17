@@ -360,6 +360,7 @@ void test_collapse_boxCircle(Library *lib) {
   elevate_curve_order_2to3(&mesh);
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
 
+  vtk::FullWriter writer;
 /*
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
@@ -384,11 +385,9 @@ void test_collapse_boxCircle(Library *lib) {
   for (LO adapt_itr = 0; adapt_itr < 2; ++adapt_itr) 
     coarsen_by_size(&mesh, opts);
   mesh.ask_qualities();
-/*
   writer = vtk::FullWriter(
-      "/lore/joshia5/Meshes/curved/boxCircle_aft.vtk", &mesh);
+      "../omega_h/meshes/boxCircle_aft.vtk", &mesh);
   writer.write();
-*/
   return;
 }
 
