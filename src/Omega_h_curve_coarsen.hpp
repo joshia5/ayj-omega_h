@@ -236,7 +236,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
   Write<I8> edge_cands(nnew_edge, -1);
 
   auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
-    //printf("curve bdry pfor i %d\n", i);
     LO const v_key = keys2verts[i];
     LO const v_onto = keys2verts_onto[i];
     Few<I8, 256> bdry_cands_avail;
@@ -441,7 +440,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
         }
         dist_to_lower = std::sqrt(dist_to_lower);
         if (dist_to_lower > new_length) {
-          if (new_edge==462) printf("newedge %d has concave upper\n", new_edge);
           concave_upper = 1;
           for (LO d = 0; d < dim; ++d) {
             c_avg_upper[d] = 
@@ -525,8 +523,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               //hand-calc +/- y axis as tang if A is ill-cond
               if ((std::abs(n[0])<EPSILON) && ((std::abs(n[1])-1.0)<EPSILON)
                   && (std::abs(n[2])<EPSILON)) {
-                printf("newedge %d upper rotation matrix +y \n", new_edge);
-                printf("new_edge %d normal {%f,%f,%f}\n",new_edge,n[0],n[1],n[2]);
                 X[0] = upper_tangents[0]*cos(theta_c) +
                        upper_tangents[2]*sin(theta_c);
                 X[1] = upper_tangents[1];
@@ -549,7 +545,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                 }
                 temp_dist = std::sqrt(temp_dist);
                 if (temp_dist > new_length) {
-                  printf("upper rotation matrix -y \n");
                   X[0] = upper_tangents[0]*cos(-theta_c) +
                     upper_tangents[2]*sin(-theta_c);
                   X[2] =-upper_tangents[0]*sin(-theta_c) + 
@@ -560,7 +555,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               //hand-calc +/- x axis as tang if A is ill-cond
               if ((std::abs(n[1])<EPSILON) && ((std::abs(n[0])-1.0)<EPSILON)
                   && (std::abs(n[2])<EPSILON)) {
-                printf("upper rotation matrix +x \n");
                 //made by straight edge with uppere0
                 X[0] = upper_tangents[0];
                 X[1] = upper_tangents[1]*cos(theta_c) -
@@ -594,7 +588,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               //hand-calc +/- z axis as tang if A is ill-cond
               if ((std::abs(n[0])<EPSILON) && ((std::abs(n[2])-1.0)<EPSILON)
                   && (std::abs(n[1])<EPSILON)) {
-                printf("upper rotation matrix +z \n");
                 //made by straight edge with uppere0
                 X[0] = upper_tangents[0]*cos(theta_c) -
                        upper_tangents[1]*sin(theta_c);
@@ -659,8 +652,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                   upper_tangents[1]*cand_vec[1] +
                   upper_tangents[2]*cand_vec[2]);
             }
-            if (new_edge == 462) printf("new_edge %d cand_c {%f,%f,%f}\n",new_edge,
-                cand_c[cand*dim+0],cand_c[cand*dim+1],cand_c[cand*dim+2]);
           }
           
           //unless concave sorting cands is not needed for cands
@@ -677,12 +668,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                   swap2(cand_ids[count_c2], cand_ids[count_cand2_2]);
                 }
               }
-            }
-            for (LO count_c2 = 0; count_c2 < nedge_shared_gface_i; ++count_c2) {
-              if (new_edge == 462) printf("sorted cand %d is %d, angle %f\n", count_c2,
-                  sorted_cands[count_c2],
-                  cand_angle_to_uppere0[count_c2]
-                  );
             }
           }
 
@@ -761,11 +746,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               }
             }
           }
-          for (LO count_p2 = 0; count_p2 < nedge_shared_gface_i; ++count_p2) {
-            //printf("i %d, prod id %d, angle %f\n", count_p2, prod_ids[count_p2],
-              //      prod_angle_to_uppere1[count_p2]);
-            //printf("sorted prod index %d is %d\n", count_p2, sorted_prods[count_p2]);
-          }
           //assign optimal cand with optimal prod
           LO opt_cand_id = -1;
           for (LO count_p2 = 0; count_p2 < nedge_shared_gface_i; ++count_p2) {
@@ -801,7 +781,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                   OMEGA_H_CHECK(count_lower_edge < 2);
                   lower_edges[count_lower_edge] = adj_t_e;
                   from_first_vtx_l[count_lower_edge] = 1;
-                  //printf("lower edge n %d is %d\n", count_lower_edge, adj_t_e);
                   ++count_lower_edge;
                 }
               }
@@ -816,15 +795,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                   OMEGA_H_CHECK(count_lower_edge < 2);
                   lower_edges[count_lower_edge] = adj_t_e;
                   from_first_vtx_l[count_lower_edge] = -1;
-                  //printf("lower edge n %d is %d\n", count_lower_edge, adj_t_e);
                   ++count_lower_edge;
                 }
               }
             }
           }
         }
-        //printf("bdry count_lower_e %d first %d second %d\n", 
-        //  count_lower_edge, lower_edges[0], lower_edges[1]);
 
         Vector<dim> t_lower;
         Few<Real, 2*dim> lower_tangents;
@@ -849,7 +825,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
         length_t = 0.0;
 
         for (LO d = 0; d < dim; ++d) length_t += t_lower[d]*t_lower[d]; 
-        if (new_edge == 462) printf("low t_len %f\n", length_t);
 
         if (std::abs(length_t - 0.0) < EPSILON) {
           Real lower_theta = acos(
@@ -864,7 +839,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                  (lower_tangents[2]*lower_tangents[dim + 0]);
           n[2] = (lower_tangents[0]*lower_tangents[dim + 1]) - 
                  (lower_tangents[1]*lower_tangents[dim + 0]);
-          if (new_edge == 462) printf("lower normal {%f,%f,%f}\n",n[0],n[1],n[2]);
 
           Real theta_c = lower_theta/2.0;
           Vector<3> b;
@@ -892,7 +866,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             //+x
             if (((std::abs(n[0])-1.0)<EPSILON) && (std::abs(n[1])<EPSILON)
                 && (std::abs(n[2])<EPSILON)) {
-              printf("lower rotation matrix about +x \n");
               X[0] = lower_tangents[0];
               X[1] = lower_tangents[1]*cos(theta_c) -
                      lower_tangents[2]*sin(theta_c);
@@ -915,7 +888,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               }
               temp_dist = std::sqrt(temp_dist);
               if (temp_dist > new_length) {
-                printf("lower rflip by PI to get rotation about -x \n");
               X[1] = lower_tangents[1]*cos(-theta_c) -
                      lower_tangents[2]*sin(-theta_c);
               X[2] = lower_tangents[1]*sin(-theta_c) +
@@ -926,7 +898,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             //hand-calc +/- y axis as tang if A is ill-cond
             if ((std::abs(n[0])<EPSILON) && ((std::abs(n[1])-1.0)<EPSILON)
              && (std::abs(n[2])<EPSILON)) {
-              printf("lower rrotation matrix about +y \n");
               X[0] = lower_tangents[0]*cos(theta_c) +
                      lower_tangents[2]*sin(theta_c);
               X[1] = lower_tangents[1];
@@ -949,7 +920,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               }
               temp_dist = std::sqrt(temp_dist);
               if (temp_dist > new_length) {
-                printf("flip to get rotation about -y \n");
               X[0] = lower_tangents[0]*cos(-theta_c) +
                      lower_tangents[2]*sin(-theta_c);
               X[2] =-lower_tangents[0]*sin(-theta_c) +
@@ -960,7 +930,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             //hand-calc +/- z axis as tang if A is ill-cond
             if ((std::abs(n[0])<EPSILON) && ((std::abs(n[2])-1.0)<EPSILON)
              && (std::abs(n[1])<EPSILON)) {
-              printf("lower rrotation matrix about +z \n");
               X[0] = lower_tangents[0]*cos(theta_c) -
                      lower_tangents[1]*sin(theta_c);
               X[1] = lower_tangents[0]*sin(theta_c) +
@@ -983,7 +952,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               }
               temp_dist = std::sqrt(temp_dist);
               if (temp_dist > new_length) {
-                printf("flip to get roation about -z \n");
                 X[0] = lower_tangents[0]*cos(-theta_c) -
                        lower_tangents[1]*sin(-theta_c);
                 X[1] = lower_tangents[0]*sin(-theta_c) +
@@ -991,7 +959,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               }
             }
           }
-          printf("lower tgt X={%f,%f,%f}\n",X[0],X[1],X[2]);
           for (LO d=0; d<dim; ++d) {
             t_lower[d] = X[d];
             length_t += std::pow(X[d], 2);
@@ -1014,14 +981,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           dist_to_upper = std::sqrt(dist_to_upper);
           if (dist_to_upper > new_length) {
             for (LO d = 0; d < dim; ++d) {
-              //c_lower[d] = old_coords[v_lower*dim + d] - t_lower[d]*new_length*xi_1_cube();
               c_lower[d] = old_coords[v_lower*dim + d] - t_lower[d]*new_length/3.0;
             }
           }
         }
-            if (new_edge == 462) 
-            printf("new_edge %d up_c {%f,%f,%f} low_c{%f,%f,%f}\n",new_edge,
-                c_upper[0], c_upper[1], c_upper[2], c_lower[0], c_lower[1], c_lower[2]);
         //
 
         for (LO d = 0; d < dim; ++d) {
