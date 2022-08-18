@@ -220,7 +220,7 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
   fprintf(stderr, "after coarsen has %d elems\n", mesh->nelems());
 
   if (mesh->is_curved() > 0) {
-    printf("checking validity after refine\n");
+    printf("checking validity after coarsen\n");
     check_validity_all_tet(mesh);
 
     printf("writing current curved mesh\n");
