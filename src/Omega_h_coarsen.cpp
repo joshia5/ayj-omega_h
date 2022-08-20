@@ -261,6 +261,22 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
     mesh->set_parting(OMEGA_H_ELEM_BASED, false);
 
     coarsen_element_based2(mesh, opts);
+    /*
+       if (!curved) then just call above fn once and move ahead;
+       if (curved) {then
+       coarsen_element_based2_crv;//calc shapes and get list of
+       invalid cands but
+       dont modify the mesh,  may need to create a dummy mesh
+       object in order to
+       not modify the mesh and just query info from it
+    //filter the cands and do a similar process
+    //as coarsen_ghosted
+    //then again call
+    //coarsen_element_based3_crv and
+    //actually modify the mesh
+    //object
+    }
+     */
   }
   end_code();
   return ret;
