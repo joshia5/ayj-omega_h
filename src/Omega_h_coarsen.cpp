@@ -184,12 +184,13 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
   *mesh = new_mesh;
 }
 
-static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts) {
+static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
+  LO const should_modify_mesh) {
   auto comm = mesh->comm();
   auto verts_are_keys = mesh->get_array<I8>(VERT, "key");
   auto vert_quals = mesh->get_array<Real>(VERT, "collapse_quality");
   auto vert_rails = mesh->get_array<GO>(VERT, "collapse_rail");
-  mesh->remove_tag(VERT, "collapse_rail");
+  //mesh->remove_tag(VERT, "collapse_rail");
   auto keys2verts = collect_marked(verts_are_keys);
   auto nkeys = keys2verts.size();
   if (opts.verbosity >= EACH_REBUILD) {
@@ -201,6 +202,7 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts) {
   auto rails2edges = LOs();
   auto rail_col_dirs = Read<I8>();
   find_rails(mesh, keys2verts, vert_rails, &rails2edges, &rail_col_dirs);
+  //find_rails modifies arrays
   auto dead_ents = mark_dead_ents(mesh, rails2edges, rail_col_dirs);
   auto keys2verts_onto = get_verts_onto(mesh, rails2edges, rail_col_dirs);
   auto new_mesh = mesh->copy_meta();
@@ -274,13 +276,15 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts) {
           */
 
           printf("checking validity after coarsen\n");
-          check_validity_all_tet(mesh);
+          check_validity_all_tet(&new_mesh);
 
-          auto edge_cand_codes = get_edge_codes(mesh);
-          auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
-          auto cands2edges = collect_marked(edges_are_cands);
-          auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
-          std::cout << "at end of elembased, coes exist in old mesh\n";
+          if (should_modify_mesh < 0) {
+            auto edge_cand_codes = get_edge_codes(mesh);
+            auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
+            auto cands2edges = collect_marked(edges_are_cands);
+            auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
+            std::cout << "at end of elembased, codes exist in old mesh\n";
+          }
         }
       }
     }
@@ -288,8 +292,10 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts) {
     old_lows2new_lows = old_ents2new_ents;
   }
 
-  *mesh = new_mesh;
-  fprintf(stderr, "after coarsen has %d elems\n", mesh->nelems());
+  if (should_modify_mesh > 0) {
+    *mesh = new_mesh;
+    fprintf(stderr, "after coarsen has %d elems\n", mesh->nelems());
+  }
 
   if (mesh->is_curved() > 0) {
     printf("writing current curved mesh\n");
@@ -315,7 +321,6 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts) {
   }
 }
 
-
 static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
     Improve improve) {
   begin_code("coarsen");
@@ -334,14 +339,14 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
     mesh->set_parting(OMEGA_H_ELEM_BASED, false);
     mesh->change_all_rcFieldsToMesh();
 
-    if (mesh->is_curved() == -1) {
+    if (mesh->is_curved() < 0) {
       coarsen_element_based2(mesh, opts);
     }
-    if (mesh->is_curved() == 1) {
-      coarsen_element_based2_crv(mesh, opts);
+    if (mesh->is_curved() > 0) {
+      coarsen_element_based2_crv(mesh, opts, -1);
+      coarsen_element_based2_crv(mesh, opts, 1);
     }
     /*
-       if (!curved) then just call above fn once and move ahead;
        if (curved) {then
        coarsen_element_based2_crv;//calc shapes and get list of
        invalid cands but
