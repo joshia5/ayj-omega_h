@@ -179,6 +179,63 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
     transfer_coarsen(mesh, opts.xfer_opts, &new_mesh, keys2verts, keys2doms,
         ent_dim, prods2new_ents, same_ents2old_ents, same_ents2new_ents);
 
+    old_lows2new_lows = old_ents2new_ents;
+  }
+  *mesh = new_mesh;
+}
+
+static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts) {
+  auto comm = mesh->comm();
+  auto verts_are_keys = mesh->get_array<I8>(VERT, "key");
+  auto vert_quals = mesh->get_array<Real>(VERT, "collapse_quality");
+  auto vert_rails = mesh->get_array<GO>(VERT, "collapse_rail");
+  mesh->remove_tag(VERT, "collapse_rail");
+  auto keys2verts = collect_marked(verts_are_keys);
+  auto nkeys = keys2verts.size();
+  if (opts.verbosity >= EACH_REBUILD) {
+    auto ntotal_keys = comm->allreduce(GO(nkeys), OMEGA_H_SUM);
+    if (comm->rank() == 0) {
+      printf("coarsening %ld vertices\n", ntotal_keys);
+    }
+  }
+  auto rails2edges = LOs();
+  auto rail_col_dirs = Read<I8>();
+  find_rails(mesh, keys2verts, vert_rails, &rails2edges, &rail_col_dirs);
+  auto dead_ents = mark_dead_ents(mesh, rails2edges, rail_col_dirs);
+  auto keys2verts_onto = get_verts_onto(mesh, rails2edges, rail_col_dirs);
+  auto new_mesh = mesh->copy_meta();
+  auto old_verts2new_verts = LOs();
+  auto same_verts2new_verts = LOs();
+  auto same_verts2old_verts = LOs();
+  auto old_lows2new_lows = LOs();
+  for (Int ent_dim = 0; ent_dim <= mesh->dim(); ++ent_dim) {
+    auto keys2prods = LOs();
+    auto prod_verts2verts = LOs();
+    auto keys2doms = Adj();
+    if (ent_dim == VERT) {
+      keys2prods = LOs(nkeys + 1, 0);
+    } else {
+      keys2doms =
+          find_coarsen_domains(mesh, keys2verts, ent_dim, dead_ents[ent_dim]);
+      keys2prods = keys2doms.a2ab;
+      prod_verts2verts = coarsen_topology(
+          mesh, keys2verts_onto, ent_dim, keys2doms, old_verts2new_verts);
+    }
+    auto prods2new_ents = LOs();
+    auto same_ents2old_ents = LOs();
+    auto same_ents2new_ents = LOs();
+    auto old_ents2new_ents = LOs();
+    modify_ents_adapt(mesh, &new_mesh, ent_dim, VERT, keys2verts, keys2prods,
+        prod_verts2verts, old_lows2new_lows, &prods2new_ents,
+        &same_ents2old_ents, &same_ents2new_ents, &old_ents2new_ents);
+    if (ent_dim == VERT) {
+      old_verts2new_verts = old_ents2new_ents;
+      same_verts2new_verts = same_ents2new_ents;
+      same_verts2old_verts = same_ents2old_ents;
+    }
+    transfer_coarsen(mesh, opts.xfer_opts, &new_mesh, keys2verts, keys2doms,
+        ent_dim, prods2new_ents, same_ents2old_ents, same_ents2new_ents);
+
     if (mesh->is_curved() > 0) {
       if (mesh->dim() == 2) {
         if (ent_dim == EDGE) {
@@ -258,6 +315,7 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
   }
 }
 
+
 static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
     Improve improve) {
   begin_code("coarsen");
@@ -276,7 +334,12 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
     mesh->set_parting(OMEGA_H_ELEM_BASED, false);
     mesh->change_all_rcFieldsToMesh();
 
-    coarsen_element_based2(mesh, opts);
+    if (mesh->is_curved() == -1) {
+      coarsen_element_based2(mesh, opts);
+    }
+    if (mesh->is_curved() == 1) {
+      coarsen_element_based2_crv(mesh, opts);
+    }
     /*
        if (!curved) then just call above fn once and move ahead;
        if (curved) {then
