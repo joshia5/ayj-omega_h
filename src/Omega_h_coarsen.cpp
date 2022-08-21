@@ -118,6 +118,12 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
   mesh->add_tag(VERT, "collapse_rail", 1, vert_rails);
   auto keys2verts = collect_marked(verts_are_keys);
   set_owners_by_indset(mesh, VERT, keys2verts, verts2cav_elems);
+  
+  if (mesh->is_curved() > 0) {
+    put_edge_codes(mesh, cands2edges, cand_edge_codes);
+  }
+  std::cout<<"put codes after coarsen_ghosted\n";
+
   return true;
 }
 
@@ -209,6 +215,15 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
           std::string vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_old_cavities.vtu";
           vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_cavityMesh, 2);
           */
+
+          printf("checking validity after coarsen\n");
+          check_validity_all_tet(mesh);
+
+          auto edge_cand_codes = get_edge_codes(mesh);
+          auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
+          auto cands2edges = collect_marked(edges_are_cands);
+          auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
+          std::cout << "at end of elembased, coes exist in old mesh\n";
         }
       }
     }
@@ -220,9 +235,6 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
   fprintf(stderr, "after coarsen has %d elems\n", mesh->nelems());
 
   if (mesh->is_curved() > 0) {
-    printf("checking validity after coarsen\n");
-    check_validity_all_tet(mesh);
-
     printf("writing current curved mesh\n");
     vtk::write_parallel("../omega_h/meshes/coarsen_itr.vtk",
         mesh, mesh->dim());
@@ -282,6 +294,7 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
     }
      */
   }
+
   end_code();
   return ret;
 }
