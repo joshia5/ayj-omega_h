@@ -8,10 +8,10 @@ namespace Omega_h {
 
 void check_validity_all_tet(Mesh *new_mesh) {
 
+  auto const new_ev2v = new_mesh->ask_down(1, 0).ab2b;
   auto const new_rv2v = new_mesh->ask_down(3, 0).ab2b;
   auto const new_re2e = new_mesh->ask_down(3, 1).ab2b;
   auto const new_rf2f = new_mesh->ask_down(3, 2).ab2b;
-  auto const new_ev2v = new_mesh->ask_down(1, 0).ab2b;
   auto const new_e2r = new_mesh->ask_up(1, 3);
   auto const new_e2er = new_e2r.a2ab;
   auto const new_er2r = new_e2r.ab2b;
