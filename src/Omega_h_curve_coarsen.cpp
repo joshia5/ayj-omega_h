@@ -36,17 +36,11 @@ void check_validity_all_tet(Mesh *new_mesh) {
     invalid_tet[i] = is_invalid;
     if (is_invalid > 0) {
       printf("tet %d invalid code %d\n", i, is_invalid);
-      if ((i == 895) || (i == 896)) {
-        printf("edges {%d,%d,%d,%d,%d,%d}\n", new_re2e[i*6+0],
-        new_re2e[i*6+1],new_re2e[i*6+2],new_re2e[i*6+3],new_re2e[i*6+4],
-        new_re2e[i*6+5]);
-      }
     }
   };
   parallel_for(nnew_tet, std::move(check_tet), "check_tet");
 
   new_mesh->add_tag<LO>(3, "invalidity", 1, Read<LO>(invalid_tet));
- 
   HostWrite<LO> face_crvVis(nfaces);
   for (LO i = 0; i < nfaces; ++i) {
     face_crvVis[i] = -1;
