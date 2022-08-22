@@ -57,6 +57,7 @@ enum Improve { DONT_IMPROVE, IMPROVE_LOCALLY };
 
 static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
     OvershootLimit overshoot, Improve improve) {
+  std::cout << "in coarsen ghosted\n";
   auto comm = mesh->comm();
   auto edge_cand_codes = get_edge_codes(mesh);
   auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
@@ -110,6 +111,12 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
   auto vert_rails = Read<GO>();
   choose_rails(mesh, cands2edges, cand_edge_codes, cand_edge_quals,
       &verts_are_cands, &vert_quals, &vert_rails);
+  if (mesh->is_curved() < 0) {
+   // choose_rails(mesh, cands2edges, cand_edge_codes, cand_edge_quals,
+     // &verts_are_cands, &vert_quals, &vert_rails);
+     // choose rails after we have determined new valid ents using new collapse
+     // operators
+  }
   auto verts_are_keys = find_indset(mesh, VERT, vert_quals, verts_are_cands);
   Graph verts2cav_elems;
   verts2cav_elems = mesh->ask_up(VERT, mesh->dim());
@@ -190,7 +197,9 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
   auto verts_are_keys = mesh->get_array<I8>(VERT, "key");
   auto vert_quals = mesh->get_array<Real>(VERT, "collapse_quality");
   auto vert_rails = mesh->get_array<GO>(VERT, "collapse_rail");
-  //mesh->remove_tag(VERT, "collapse_rail");
+  if (should_modify_mesh > 0) {
+    mesh->remove_tag(VERT, "collapse_rail");
+  }
   auto keys2verts = collect_marked(verts_are_keys);
   auto nkeys = keys2verts.size();
   if (opts.verbosity >= EACH_REBUILD) {
@@ -271,7 +280,8 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
           auto cubic_cavityMesh = Mesh(mesh->comm()->library());
           cubic_cavityMesh.set_comm(comm);
           build_cubic_cavities_3d(mesh, &cubic_cavityMesh, 10);
-          std::string vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_old_cavities.vtu";
+          std::string vtuPath = 
+            "/lore/joshia5/Meshes/curved/coarsen_itr_old_cavities.vtu";
           vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_cavityMesh, 2);
           */
 
@@ -283,6 +293,23 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
             auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
             auto cands2edges = collect_marked(edges_are_cands);
             auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
+            /*
+            auto cand_edge_invalidities = coarsen_invalidities
+              (&new_mesh, cands2edges, cand_edge_codes);//somewhere in here we
+              //will have to take the new invalid tet and map it back to old edge
+              //id i.e. old cand ID
+            */
+            std::cout <<"ok1\n";
+            auto cand_edge_invalidities = Write<LO>(cands2edges.size()*2, 1);
+            std::cout <<"ok2\n";
+            cand_edge_codes = filter_coarsen_invalids(
+                cand_edge_codes, cand_edge_invalidities, -1);
+            std::cout <<"ok3\n";
+            filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
+            std::cout <<"ok4\n";
+            if (mesh->is_curved() > 0) {
+              put_edge_codes(mesh, cands2edges, cand_edge_codes);
+            }
             std::cout << "at end of elembased, codes exist in old mesh\n";
           }
         }
@@ -344,8 +371,18 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
     }
     if (mesh->is_curved() > 0) {
       coarsen_element_based2_crv(mesh, opts, -1);
+    }
+  }
+  if (mesh->is_curved() > 0) {
+    if (ret) {
+      mesh->set_parting(OMEGA_H_GHOSTED);
+      ret = coarsen_ghosted(mesh, opts, overshoot, improve);
+    }
+    if (ret) {
+      mesh->set_parting(OMEGA_H_ELEM_BASED, false);
       coarsen_element_based2_crv(mesh, opts, 1);
     }
+  }
     /*
        if (curved) {then
        coarsen_element_based2_crv;//calc shapes and get list of
@@ -361,7 +398,6 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
     //object
     }
      */
-  }
 
   end_code();
   return ret;
