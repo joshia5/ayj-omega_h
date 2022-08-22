@@ -66,18 +66,6 @@ static bool coarsen_ghosted2_crv(Mesh* mesh) {
   auto cand_edge_quals = coarsen_qualities(mesh, cands2edges, cand_edge_codes);
   if (comm->reduce_and(cands2edges.size() == 0)) return false;
   
-  /* cavity invalidity checks */
-  /*
-  if (mesh->is_curved() > 0) {
-    auto cand_edge_invalidities = coarsen_invalidities
-      (mesh, cands2edges, cand_edge_codes);
-    cand_edge_codes = filter_coarsen_invalids(
-        cand_edge_codes, cand_edge_invalidities, -1);
-    filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
-  }
-  */ 
-  /* finished cavity invalidity checks */
-
   if (comm->reduce_and(cands2edges.size() == 0)) return false;
   auto verts_are_cands = Read<I8>();
   auto vert_quals = Reals();
@@ -335,13 +323,9 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
             auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
             auto cands2edges = collect_marked(edges_are_cands);
             auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
-            auto cand_edge_invalidities = coarsen_invalidities_new_ops
+            auto cand_edge_invalidities = coarsen_invalidities_new_mesh
               (mesh, cands2edges, cand_edge_codes, &new_mesh, 
-               old_verts2new_verts);
-            /*
-              //take the new invalid tet and map it back to old edge
-              //id i.e. old cand ID
-            */
+               old_verts2new_verts, verts_are_keys);
             cand_edge_codes = filter_coarsen_invalids(
                 cand_edge_codes, cand_edge_invalidities, -1);
             filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
@@ -377,11 +361,6 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
     vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe, 1);
     vtk::write_parallel("../omega_h/meshes/coarsen_itr_linear.vtk",
         mesh);
-    //auto cubic_cavityMesh = Mesh(mesh->comm()->library());
-    //cubic_cavityMesh.set_comm(comm);
-    //build_cubic_cavities_3d(mesh, &cubic_cavityMesh, 55);
-    //vtuPath = "/lore/joshia5/Meshes/curved/coarsen_itr_cavities.vtu";
-    //vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_cavityMesh, 2);
   }
 }
 

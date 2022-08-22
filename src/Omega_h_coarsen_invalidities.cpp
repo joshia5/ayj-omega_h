@@ -625,9 +625,9 @@ LOs coarsen_invalidities_3d(
   return mesh->sync_subset_array(EDGE, out_invalid, cands2edges, -1, 2);
 }
 
-LOs coarsen_invalidities_new_ops(
+LOs coarsen_invalidities_new_mesh(
     Mesh* mesh, LOs cands2edges, Read<I8> cand_codes, Mesh* new_mesh,
-    LOs const old_verts2new_verts) {
+    LOs const old_verts2new_verts, Read<I8> const verts_are_keys) {
   LO const mesh_dim = mesh->dim();
   OMEGA_H_CHECK(mesh_dim == 3);
   auto ev2v = mesh->ask_verts_of(EDGE);
@@ -650,14 +650,14 @@ LOs coarsen_invalidities_new_ops(
     auto code = cand_codes[cand];
     for (Int eev_col = 0; eev_col < 2; ++eev_col) {
       if (!collapses(code, eev_col)) continue;
-      //auto v_col = ev2v[e * 2 + eev_col];
+      auto v_col = ev2v[e * 2 + eev_col];
+      //printf("vcol is key %d\n", verts_are_keys[v_col]);
+      if (verts_are_keys[v_col] < 1) continue;
       auto eev_onto = 1 - eev_col;
-      //printf("edge %d collapses\n", e);
       auto v_onto = ev2v[e * 2 + eev_onto];
-      //printf("v_onto %d\n", v_onto);
       auto v_onto_new = old_verts2new_verts[v_onto];
       if (v_onto_new == -1) continue;
-      //printf("v_onto_new %d\n", v_onto_new);
+      printf("edge %d v_onto_new %d\n", e, v_onto_new);
       LO max_invalid = -1;
       for (LO vc = v2vc_new[v_onto_new]; vc < v2vc_new[v_onto_new+1]; ++vc) {
         auto c = vc2c_new[vc];
@@ -665,7 +665,7 @@ LOs coarsen_invalidities_new_ops(
           vertCtrlPts, edgeCtrlPts, faceCtrlPts, new_re2e, new_rf2f);
 
         auto nodes_det = getTetJacDetNodes<84>(3, tet_pts);
-        auto is_invalid = checkMinJacDet_3d(nodes_det, 3, 1);
+        auto is_invalid = checkMinJacDet_3d(nodes_det, 3);
 
         max_invalid = max2(max_invalid, is_invalid);
       }
