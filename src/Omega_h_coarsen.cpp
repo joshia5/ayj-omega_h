@@ -170,7 +170,6 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
   if (mesh->is_curved() > 0) {
     put_edge_codes(mesh, cands2edges, cand_edge_codes);
   }
-  std::cout<<"put codes after coarsen_ghosted\n";
 
   return true;
 }
