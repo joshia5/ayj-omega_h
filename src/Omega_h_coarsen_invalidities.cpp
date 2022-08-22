@@ -625,6 +625,57 @@ LOs coarsen_invalidities_3d(
   return mesh->sync_subset_array(EDGE, out_invalid, cands2edges, -1, 2);
 }
 
+LOs coarsen_invalidities_new_ops(
+    Mesh* mesh, LOs cands2edges, Read<I8> cand_codes, Mesh* new_mesh,
+    LOs const old_verts2new_verts) {
+  LO const mesh_dim = mesh->dim();
+  OMEGA_H_CHECK(mesh_dim == 3);
+  auto ev2v = mesh->ask_verts_of(EDGE);
+  auto ncands = cands2edges.size();
+  auto invalidities = Write<LO>(ncands*2, -1);
+
+  auto v2vc_new = (new_mesh->ask_up(VERT, mesh_dim)).a2ab;
+  auto vc2c_new = (new_mesh->ask_up(VERT, mesh_dim)).ab2b;
+
+  auto const new_ev2v = new_mesh->ask_down(1, 0).ab2b;
+  auto const new_rv2v = new_mesh->ask_down(3, 0).ab2b;
+  auto const new_re2e = new_mesh->ask_down(3, 1).ab2b;
+  auto const new_rf2f = new_mesh->ask_down(3, 2).ab2b;
+  auto const vertCtrlPts = new_mesh->get_ctrlPts(0);
+  auto const edgeCtrlPts = new_mesh->get_ctrlPts(1);
+  auto const faceCtrlPts = new_mesh->get_ctrlPts(2);
+
+  auto f = OMEGA_H_LAMBDA(LO cand) {
+    auto e = cands2edges[cand];
+    auto code = cand_codes[cand];
+    for (Int eev_col = 0; eev_col < 2; ++eev_col) {
+      if (!collapses(code, eev_col)) continue;
+      //auto v_col = ev2v[e * 2 + eev_col];
+      auto eev_onto = 1 - eev_col;
+      //printf("edge %d collapses\n", e);
+      auto v_onto = ev2v[e * 2 + eev_onto];
+      //printf("v_onto %d\n", v_onto);
+      auto v_onto_new = old_verts2new_verts[v_onto];
+      if (v_onto_new == -1) continue;
+      //printf("v_onto_new %d\n", v_onto_new);
+      LO max_invalid = -1;
+      for (LO vc = v2vc_new[v_onto_new]; vc < v2vc_new[v_onto_new+1]; ++vc) {
+        auto c = vc2c_new[vc];
+        Few<Real, 60> tet_pts = collect_tet_pts(3, c, new_ev2v, new_rv2v,
+          vertCtrlPts, edgeCtrlPts, faceCtrlPts, new_re2e, new_rf2f);
+
+        auto nodes_det = getTetJacDetNodes<84>(3, tet_pts);
+        auto is_invalid = checkMinJacDet_3d(nodes_det, 3, 1);
+
+        max_invalid = max2(max_invalid, is_invalid);
+      }
+      invalidities[cand*2 + eev_col] = max_invalid;
+    }
+  };
+  parallel_for(ncands, f, "coarsen_invalidities");
+  auto out_invalid = LOs(invalidities);
+  return mesh->sync_subset_array(EDGE, out_invalid, cands2edges, -1, 2);
+}
 
 LOs coarsen_invalidities(Mesh* mesh, LOs cands2edges, Read<I8> cand_codes) {
   OMEGA_H_CHECK(mesh->parting() == OMEGA_H_GHOSTED);

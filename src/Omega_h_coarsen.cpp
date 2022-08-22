@@ -14,6 +14,7 @@
 #include "Omega_h_file.hpp"
 #include "Omega_h_build.hpp"
 #include "Omega_h_curve_coarsen.hpp"
+#include "Omega_h_coarsen_invalidities.hpp"
 
 namespace Omega_h {
 
@@ -54,6 +55,46 @@ static void filter_coarsen_candidates(
 enum OvershootLimit { DESIRED, ALLOWED };
 
 enum Improve { DONT_IMPROVE, IMPROVE_LOCALLY };
+
+static bool coarsen_ghosted2_crv(Mesh* mesh) {
+  std::cout << "in coarsen ghosted\n";
+  auto comm = mesh->comm();
+  auto edge_cand_codes = get_edge_codes(mesh);
+  auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
+  auto cands2edges = collect_marked(edges_are_cands);
+  auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
+  auto cand_edge_quals = coarsen_qualities(mesh, cands2edges, cand_edge_codes);
+  if (comm->reduce_and(cands2edges.size() == 0)) return false;
+  
+  /* cavity invalidity checks */
+  /*
+  if (mesh->is_curved() > 0) {
+    auto cand_edge_invalidities = coarsen_invalidities
+      (mesh, cands2edges, cand_edge_codes);
+    cand_edge_codes = filter_coarsen_invalids(
+        cand_edge_codes, cand_edge_invalidities, -1);
+    filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
+  }
+  */ 
+  /* finished cavity invalidity checks */
+
+  if (comm->reduce_and(cands2edges.size() == 0)) return false;
+  auto verts_are_cands = Read<I8>();
+  auto vert_quals = Reals();
+  auto vert_rails = Read<GO>();
+  choose_rails(mesh, cands2edges, cand_edge_codes, cand_edge_quals,
+      &verts_are_cands, &vert_quals, &vert_rails);
+  auto verts_are_keys = find_indset(mesh, VERT, vert_quals, verts_are_cands);
+  Graph verts2cav_elems;
+  verts2cav_elems = mesh->ask_up(VERT, mesh->dim());
+  mesh->add_tag(VERT, "key", 1, verts_are_keys);
+  mesh->add_tag(VERT, "collapse_quality", 1, vert_quals);
+  mesh->add_tag(VERT, "collapse_rail", 1, vert_rails);
+  auto keys2verts = collect_marked(verts_are_keys);
+  set_owners_by_indset(mesh, VERT, keys2verts, verts2cav_elems);
+ 
+  return true;
+}
 
 static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
     OvershootLimit overshoot, Improve improve) {
@@ -287,30 +328,27 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
 
           printf("checking validity after coarsen\n");
           check_validity_all_tet(&new_mesh);
-
+//TODO put this block in coarsen_ghosted2 wherein we only filter based on this
+//new routine
+//TODO OR just call syncsubsetarray in ghosted2
           if (should_modify_mesh < 0) {
             auto edge_cand_codes = get_edge_codes(mesh);
             auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
             auto cands2edges = collect_marked(edges_are_cands);
             auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
+            auto cand_edge_invalidities = coarsen_invalidities_new_ops
+              (mesh, cands2edges, cand_edge_codes, &new_mesh, 
+               old_verts2new_verts);
             /*
-            auto cand_edge_invalidities = coarsen_invalidities
-              (&new_mesh, cands2edges, cand_edge_codes);//somewhere in here we
-              //will have to take the new invalid tet and map it back to old edge
+              //take the new invalid tet and map it back to old edge
               //id i.e. old cand ID
             */
-            std::cout <<"ok1\n";
-            auto cand_edge_invalidities = Write<LO>(cands2edges.size()*2, 1);
-            std::cout <<"ok2\n";
             cand_edge_codes = filter_coarsen_invalids(
                 cand_edge_codes, cand_edge_invalidities, -1);
-            std::cout <<"ok3\n";
             filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
-            std::cout <<"ok4\n";
             if (mesh->is_curved() > 0) {
               put_edge_codes(mesh, cands2edges, cand_edge_codes);
             }
-            std::cout << "at end of elembased, codes exist in old mesh\n";
           }
         }
       }
@@ -376,7 +414,7 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
   if (mesh->is_curved() > 0) {
     if (ret) {
       mesh->set_parting(OMEGA_H_GHOSTED);
-      ret = coarsen_ghosted(mesh, opts, overshoot, improve);
+      ret = coarsen_ghosted2_crv(mesh);
     }
     if (ret) {
       mesh->set_parting(OMEGA_H_ELEM_BASED, false);
