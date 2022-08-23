@@ -388,7 +388,7 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
       }
     }
   }
-  int wait=0; while(wait);
+  int wait=1; while(wait);
   if (mesh->is_curved() > 0) {
     if (ret) {
       mesh->set_parting(OMEGA_H_GHOSTED);
