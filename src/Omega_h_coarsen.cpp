@@ -64,7 +64,6 @@ static bool coarsen_ghosted2_crv(Mesh* mesh) {
   auto cands2edges = collect_marked(edges_are_cands);
   auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
   auto cand_edge_quals = coarsen_qualities(mesh, cands2edges, cand_edge_codes);
-  if (comm->reduce_and(cands2edges.size() == 0)) return false;
   
   if (comm->reduce_and(cands2edges.size() == 0)) return false;
   auto verts_are_cands = Read<I8>();
@@ -80,6 +79,8 @@ static bool coarsen_ghosted2_crv(Mesh* mesh) {
   mesh->add_tag(VERT, "collapse_rail", 1, vert_rails);
   auto keys2verts = collect_marked(verts_are_keys);
   set_owners_by_indset(mesh, VERT, keys2verts, verts2cav_elems);
+
+  put_edge_codes(mesh, cands2edges, cand_edge_codes);
  
   return true;
 }
@@ -348,15 +349,15 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
   if (mesh->is_curved() > 0) {
     printf("writing current curved mesh\n");
     vtk::write_parallel("../omega_h/meshes/coarsen_itr.vtk",
-        mesh, mesh->dim());
+        &new_mesh, mesh->dim());
     auto cubic_curveVtk_mesh = Mesh(mesh->comm()->library());
     cubic_curveVtk_mesh.set_comm(comm);
-    build_cubic_curveVtk_3d(mesh, &cubic_curveVtk_mesh, 20);
+    build_cubic_curveVtk_3d(&new_mesh, &cubic_curveVtk_mesh, 20);
     std::string vtuPath = "../omega_h/meshes/coarsen_itr_curveVtk.vtu";
     vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
     auto cubic_wireframe = Mesh(mesh->comm()->library());
     cubic_wireframe.set_comm(comm);
-    build_cubic_wireframe_3d(mesh, &cubic_wireframe, 20);
+    build_cubic_wireframe_3d(&new_mesh, &cubic_wireframe, 20);
     vtuPath = "../omega_h/meshes/coarsen_itr_wireframe.vtu";
     vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe, 1);
     vtk::write_parallel("../omega_h/meshes/coarsen_itr_linear.vtk",
@@ -382,13 +383,23 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
       coarsen_element_based2(mesh, opts);
     }
     if (mesh->is_curved() > 0) {
-      coarsen_element_based2_crv(mesh, opts, -1);
+      auto temp_mesh = *mesh;
+      coarsen_element_based2_crv(&temp_mesh, opts, -1);
+      {
+        auto edge_cand_codes = get_edge_codes(&temp_mesh);
+        auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
+        auto cands2edges = collect_marked(edges_are_cands);
+        auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
+        put_edge_codes(mesh, cands2edges, cand_edge_codes);
+      }
+      //coarsen_element_based2_crv(mesh, opts, -1);
     }
   }
   if (mesh->is_curved() > 0) {
     if (ret) {
       mesh->set_parting(OMEGA_H_GHOSTED);
       ret = coarsen_ghosted2_crv(mesh);
+      ret = coarsen_ghosted(mesh, opts, overshoot, improve);
     }
     if (ret) {
       mesh->set_parting(OMEGA_H_ELEM_BASED, false);
