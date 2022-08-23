@@ -627,7 +627,8 @@ LOs coarsen_invalidities_3d(
 
 LOs coarsen_invalidities_new_mesh(
     Mesh* mesh, LOs cands2edges, Read<I8> cand_codes, Mesh* new_mesh,
-    LOs const old_verts2new_verts, Read<I8> const verts_are_keys) {
+    LOs const old_verts2new_verts, Read<I8> const verts_are_keys,
+    LOs const keys2verts_onto) {
   LO const mesh_dim = mesh->dim();
   OMEGA_H_CHECK(mesh_dim == 3);
   auto ev2v = mesh->ask_verts_of(EDGE);
@@ -645,23 +646,39 @@ LOs coarsen_invalidities_new_mesh(
   auto const edgeCtrlPts = new_mesh->get_ctrlPts(1);
   auto const faceCtrlPts = new_mesh->get_ctrlPts(2);
 
+  Write<I8> verts_are_onto(mesh->nverts(), 0);
+  auto fv = OMEGA_H_LAMBDA(LO key) {
+    LO const v_onto = keys2verts_onto[key];
+    verts_are_onto[v_onto] = 1;
+  };
+  parallel_for(keys2verts_onto.size(), fv);
+
   auto f = OMEGA_H_LAMBDA(LO cand) {
     auto e = cands2edges[cand];
     auto code = cand_codes[cand];
     for (Int eev_col = 0; eev_col < 2; ++eev_col) {
-      if (!collapses(code, eev_col)) continue;
+      if (!collapses(code, eev_col)) {
+        invalidities[cand*2 + eev_col] = INT8_MAX;
+        continue;
+      }
       auto v_col = ev2v[e*2 + eev_col];
       //printf("vcol is key %d\n", verts_are_keys[v_col]);
-      if (verts_are_keys[v_col] < 1) continue;
+      if (verts_are_keys[v_col] < 1) {
+        invalidities[cand*2 + eev_col] = INT8_MAX;
+        continue;
+      }
       auto eev_onto = 1 - eev_col;
       auto v_onto = ev2v[e*2 + eev_onto];
       auto v_onto_new = old_verts2new_verts[v_onto];
-      if (v_onto_new == -1) continue;
-      printf("edge %d v_onto_new %d\n", e, v_onto_new);
+      if ((v_onto_new == -1) || (verts_are_onto[v_onto] < 1)) {
+        invalidities[cand*2 + eev_col] = INT8_MAX;
+        continue;
+      }
+      //printf("edge %d v_onto_new %d\n", e, v_onto_new);
       LO max_invalid = -1;
       for (LO vc = v2vc_new[v_onto_new]; vc < v2vc_new[v_onto_new+1]; ++vc) {
         auto c = vc2c_new[vc];
-        printf("new tet %d\n", c);
+        //printf("new tet %d\n", c); //there are tets checked multiple times
         Few<Real, 60> tet_pts = collect_tet_pts(3, c, new_ev2v, new_rv2v,
           vertCtrlPts, edgeCtrlPts, faceCtrlPts, new_re2e, new_rf2f);
 
