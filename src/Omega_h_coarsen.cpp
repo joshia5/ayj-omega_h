@@ -213,7 +213,12 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
   if (opts.verbosity >= EACH_REBUILD) {
     auto ntotal_keys = comm->allreduce(GO(nkeys), OMEGA_H_SUM);
     if (comm->rank() == 0) {
-      printf("coarsening %ld vertices\n", ntotal_keys);
+      if (should_modify_mesh > 0) {
+        printf("coarsening %ld vertices\n", ntotal_keys);
+      }
+      else {
+        printf("attempting %ld collapses\n", ntotal_keys);
+      }
     }
   }
   auto rails2edges = LOs();
@@ -285,11 +290,12 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
             auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
             auto cands2edges = collect_marked(edges_are_cands);
             auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
-            //this does not require ghosting as its only needed for ind. set selection
-            //called afterwards
+            // this does not require ghosting as 
+            // ghosting called later for ind. set selection
             auto cand_edge_invalidities = coarsen_invalidities_new_mesh
               (mesh, cands2edges, cand_edge_codes, &new_mesh, 
-               old_verts2new_verts, verts_are_keys, keys2verts_onto);
+               old_verts2new_verts, verts_are_keys, keys2verts_onto,
+               prods2new_ents);
             cand_edge_codes = filter_coarsen_invalids(
                 cand_edge_codes, cand_edge_invalidities, -1);
             filter_coarsen_candidates(&cands2edges, &cand_edge_codes);

@@ -628,7 +628,7 @@ LOs coarsen_invalidities_3d(
 LOs coarsen_invalidities_new_mesh(
     Mesh* mesh, LOs cands2edges, Read<I8> cand_codes, Mesh* new_mesh,
     LOs const old_verts2new_verts, Read<I8> const verts_are_keys,
-    LOs const keys2verts_onto) {
+    LOs const keys2verts_onto, LOs const prods2new_ents) {
   LO const mesh_dim = mesh->dim();
   OMEGA_H_CHECK(mesh_dim == 3);
   auto ev2v = mesh->ask_verts_of(EDGE);
@@ -652,6 +652,17 @@ LOs coarsen_invalidities_new_mesh(
     verts_are_onto[v_onto] = 1;
   };
   parallel_for(keys2verts_onto.size(), fv);
+  //preprocess and check validity of all new tets, then just get value to cands
+  Write<I8> tets_are_invalid(new_mesh->nregions(), -1);
+  //all same tets remain valid
+  auto ft = OMEGA_H_LAMBDA(LO prod) {
+    LO const c = prods2new_ents[prod];
+    Few<Real, 60> tet_pts = collect_tet_pts(3, c, new_ev2v, new_rv2v,
+      vertCtrlPts, edgeCtrlPts, faceCtrlPts, new_re2e, new_rf2f);
+    auto nodes_det = getTetJacDetNodes<84>(3, tet_pts);
+    tets_are_invalid[c] = checkMinJacDet_3d(nodes_det, 3);
+  };
+  parallel_for(prods2new_ents.size(), ft);
 
   auto f = OMEGA_H_LAMBDA(LO cand) {
     auto e = cands2edges[cand];
@@ -662,7 +673,6 @@ LOs coarsen_invalidities_new_mesh(
         continue;
       }
       auto v_col = ev2v[e*2 + eev_col];
-      //printf("vcol is key %d\n", verts_are_keys[v_col]);
       if (verts_are_keys[v_col] < 1) {
         invalidities[cand*2 + eev_col] = INT8_MAX;
         continue;
@@ -674,16 +684,10 @@ LOs coarsen_invalidities_new_mesh(
         invalidities[cand*2 + eev_col] = INT8_MAX;
         continue;
       }
-      //printf("edge %d v_onto_new %d\n", e, v_onto_new);
       LO max_invalid = -1;
       for (LO vc = v2vc_new[v_onto_new]; vc < v2vc_new[v_onto_new+1]; ++vc) {
         auto c = vc2c_new[vc];
-        //printf("new tet %d\n", c); //there are tets checked multiple times
-        Few<Real, 60> tet_pts = collect_tet_pts(3, c, new_ev2v, new_rv2v,
-          vertCtrlPts, edgeCtrlPts, faceCtrlPts, new_re2e, new_rf2f);
-
-        auto nodes_det = getTetJacDetNodes<84>(3, tet_pts);
-        auto is_invalid = checkMinJacDet_3d(nodes_det, 3);
+        LO is_invalid = tets_are_invalid[c];
 
         max_invalid = max2(max_invalid, is_invalid);
       }
