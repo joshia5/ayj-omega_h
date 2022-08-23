@@ -690,9 +690,10 @@ LOs coarsen_invalidities_new_mesh(
       invalidities[cand*2 + eev_col] = max_invalid;
     }
   };
-  parallel_for(ncands, f, "coarsen_invalidities");
+  parallel_for(ncands, f, "coarsen_invalidities_new_mesh");
   auto out_invalid = LOs(invalidities);
-  return mesh->sync_subset_array(EDGE, out_invalid, cands2edges, -1, 2);
+  return mesh->sync_subset_array(EDGE, out_invalid, cands2edges, INT8_MAX, 2);
+  //changed default from -1 to int8max
 }
 
 LOs coarsen_invalidities(Mesh* mesh, LOs cands2edges, Read<I8> cand_codes) {

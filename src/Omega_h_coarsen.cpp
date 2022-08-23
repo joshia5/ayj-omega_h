@@ -57,7 +57,6 @@ enum OvershootLimit { DESIRED, ALLOWED };
 enum Improve { DONT_IMPROVE, IMPROVE_LOCALLY };
 
 static bool coarsen_ghosted2_crv(Mesh* mesh) {
-  std::cout << "in coarsen ghosted\n";
   auto comm = mesh->comm();
   auto edge_cand_codes = get_edge_codes(mesh);
   auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
@@ -80,14 +79,11 @@ static bool coarsen_ghosted2_crv(Mesh* mesh) {
   auto keys2verts = collect_marked(verts_are_keys);
   set_owners_by_indset(mesh, VERT, keys2verts, verts2cav_elems);
 
-  put_edge_codes(mesh, cands2edges, cand_edge_codes);
- 
   return true;
 }
 
 static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
     OvershootLimit overshoot, Improve improve) {
-  std::cout << "in coarsen ghosted\n";
   auto comm = mesh->comm();
   auto edge_cand_codes = get_edge_codes(mesh);
   auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
@@ -123,30 +119,13 @@ static bool coarsen_ghosted(Mesh* mesh, AdaptOpts const& opts,
   //}
   /* finished cavity quality checks */
 
-  /* cavity invalidity checks */
-  /*
-  if (mesh->is_curved() > 0) {
-    auto cand_edge_invalidities = coarsen_invalidities
-      (mesh, cands2edges, cand_edge_codes);
-    cand_edge_codes = filter_coarsen_invalids(
-        cand_edge_codes, cand_edge_invalidities, -1);
-    filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
-  }
-  */ 
-  /* finished cavity invalidity checks */
-
   if (comm->reduce_and(cands2edges.size() == 0)) return false;
   auto verts_are_cands = Read<I8>();
   auto vert_quals = Reals();
   auto vert_rails = Read<GO>();
   choose_rails(mesh, cands2edges, cand_edge_codes, cand_edge_quals,
       &verts_are_cands, &vert_quals, &vert_rails);
-  if (mesh->is_curved() < 0) {
-   // choose_rails(mesh, cands2edges, cand_edge_codes, cand_edge_quals,
-     // &verts_are_cands, &vert_quals, &vert_rails);
-     // choose rails after we have determined new valid ents using new collapse
-     // operators
-  }
+
   auto verts_are_keys = find_indset(mesh, VERT, vert_quals, verts_are_cands);
   Graph verts2cav_elems;
   verts2cav_elems = mesh->ask_up(VERT, mesh->dim());
@@ -300,18 +279,14 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
           coarsen_curved_faces<3>(mesh, &new_mesh, old_ents2new_ents,
                                   prods2new_ents);
         }
-        //validity of edges that were attempted to curve after newmesh created
         if (ent_dim == REGION) {
-          printf("checking validity after coarsen\n");
-          check_validity_all_tet(&new_mesh);
-//TODO put this block in coarsen_ghosted2 wherein we only filter based on this
-//new routine
-//TODO OR just call syncsubsetarray in ghosted2
           if (should_modify_mesh < 0) {
             auto edge_cand_codes = get_edge_codes(mesh);
             auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
             auto cands2edges = collect_marked(edges_are_cands);
             auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
+            //this does not require ghosting as its only needed for ind. set selection
+            //called afterwards
             auto cand_edge_invalidities = coarsen_invalidities_new_mesh
               (mesh, cands2edges, cand_edge_codes, &new_mesh, 
                old_verts2new_verts, verts_are_keys, keys2verts_onto);
@@ -322,6 +297,11 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
               put_edge_codes(mesh, cands2edges, cand_edge_codes);
             }
           }
+          else {
+            //validity of new curved ents
+            printf("checking validity after coarsen\n");
+            check_validity_all_tet(&new_mesh);
+          }
         }
       }
     }
@@ -331,25 +311,24 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
 
   if (should_modify_mesh > 0) {
     *mesh = new_mesh;
-    fprintf(stderr, "after coarsen has %d elems\n", mesh->nelems());
-  }
 
-  if (mesh->is_curved() > 0) {
-    printf("writing current curved mesh\n");
-    vtk::write_parallel("../omega_h/meshes/coarsen_itr.vtk",
-        &new_mesh, mesh->dim());
-    auto cubic_curveVtk_mesh = Mesh(mesh->comm()->library());
-    cubic_curveVtk_mesh.set_comm(comm);
-    build_cubic_curveVtk_3d(&new_mesh, &cubic_curveVtk_mesh, 20);
-    std::string vtuPath = "../omega_h/meshes/coarsen_itr_curveVtk.vtu";
-    vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
-    auto cubic_wireframe = Mesh(mesh->comm()->library());
-    cubic_wireframe.set_comm(comm);
-    build_cubic_wireframe_3d(&new_mesh, &cubic_wireframe, 20);
-    vtuPath = "../omega_h/meshes/coarsen_itr_wireframe.vtu";
-    vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe, 1);
-    vtk::write_parallel("../omega_h/meshes/coarsen_itr_linear.vtk",
-        mesh);
+    if (mesh->is_curved() > 0) {
+      printf("writing current curved mesh\n");
+      vtk::write_parallel("../omega_h/meshes/coarsen_itr.vtk",
+          &new_mesh, mesh->dim());
+      auto cubic_curveVtk_mesh = Mesh(mesh->comm()->library());
+      cubic_curveVtk_mesh.set_comm(comm);
+      build_cubic_curveVtk_3d(&new_mesh, &cubic_curveVtk_mesh, 20);
+      std::string vtuPath = "../omega_h/meshes/coarsen_itr_curveVtk.vtu";
+      vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
+      auto cubic_wireframe = Mesh(mesh->comm()->library());
+      cubic_wireframe.set_comm(comm);
+      build_cubic_wireframe_3d(&new_mesh, &cubic_wireframe, 20);
+      vtuPath = "../omega_h/meshes/coarsen_itr_wireframe.vtu";
+      vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_wireframe, 1);
+      vtk::write_parallel("../omega_h/meshes/coarsen_itr_linear.vtk",
+          mesh);
+    }
   }
 }
 
@@ -371,12 +350,9 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
       coarsen_element_based2(mesh, opts);
     }
     if (mesh->is_curved() > 0) {
-      //auto temp_mesh = *mesh;
-      //coarsen_element_based2_crv(&temp_mesh, opts, -1);
       coarsen_element_based2_crv(mesh, opts, -1);
       {
         auto edge_cand_codes = get_edge_codes(mesh);
-        //auto edge_cand_codes = get_edge_codes(&temp_mesh);
         auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
         auto cands2edges = collect_marked(edges_are_cands);
         auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
@@ -384,33 +360,16 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
       }
     }
   }
-  int wait=1; while(wait);
   if (mesh->is_curved() > 0) {
     if (ret) {
       mesh->set_parting(OMEGA_H_GHOSTED);
       ret = coarsen_ghosted2_crv(mesh);
-      //ret = coarsen_ghosted(mesh, opts, overshoot, improve);
     }
     if (ret) {
       mesh->set_parting(OMEGA_H_ELEM_BASED, false);
       coarsen_element_based2_crv(mesh, opts, 1);
     }
   }
-    /*
-       if (curved) {then
-       coarsen_element_based2_crv;//calc shapes and get list of
-       invalid cands but
-       dont modify the mesh,  may need to create a dummy mesh
-       object in order to
-       not modify the mesh and just query info from it
-    //filter the cands and do a similar process
-    //as coarsen_ghosted
-    //then again call
-    //coarsen_element_based3_crv and
-    //actually modify the mesh
-    //object
-    }
-     */
 
   end_code();
   return ret;
