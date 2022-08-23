@@ -659,8 +659,8 @@ LOs coarsen_invalidities_new_mesh(
     LO const c = prods2new_ents[prod];
     Few<Real, 60> tet_pts = collect_tet_pts(3, c, new_ev2v, new_rv2v,
       vertCtrlPts, edgeCtrlPts, faceCtrlPts, new_re2e, new_rf2f);
-    auto nodes_det = getTetJacDetNodes<84>(3, tet_pts);
-    tets_are_invalid[c] = checkMinJacDet_3d(nodes_det, 3);
+    Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
+    tets_are_invalid[c] = checkMinJacDet_3d(nodes_det, 3, -1);
   };
   parallel_for(prods2new_ents.size(), ft);
 
