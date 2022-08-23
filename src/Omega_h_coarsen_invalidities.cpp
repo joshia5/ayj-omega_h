@@ -650,17 +650,18 @@ LOs coarsen_invalidities_new_mesh(
     auto code = cand_codes[cand];
     for (Int eev_col = 0; eev_col < 2; ++eev_col) {
       if (!collapses(code, eev_col)) continue;
-      auto v_col = ev2v[e * 2 + eev_col];
+      auto v_col = ev2v[e*2 + eev_col];
       //printf("vcol is key %d\n", verts_are_keys[v_col]);
       if (verts_are_keys[v_col] < 1) continue;
       auto eev_onto = 1 - eev_col;
-      auto v_onto = ev2v[e * 2 + eev_onto];
+      auto v_onto = ev2v[e*2 + eev_onto];
       auto v_onto_new = old_verts2new_verts[v_onto];
       if (v_onto_new == -1) continue;
       printf("edge %d v_onto_new %d\n", e, v_onto_new);
       LO max_invalid = -1;
       for (LO vc = v2vc_new[v_onto_new]; vc < v2vc_new[v_onto_new+1]; ++vc) {
         auto c = vc2c_new[vc];
+        printf("new tet %d\n", c);
         Few<Real, 60> tet_pts = collect_tet_pts(3, c, new_ev2v, new_rv2v,
           vertCtrlPts, edgeCtrlPts, faceCtrlPts, new_re2e, new_rf2f);
 
