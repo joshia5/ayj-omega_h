@@ -250,7 +250,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
     for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
       LO const new_edge = prods2new[prod];
       LO const nedge_shared_gface_i = nedge_shared_gface[new_edge];
-      //Real const cav_edge_len_i = cav_edge_len[new_edge];
       LO const new_edge_v0 = new_ev2v[new_edge*2 + 0];
       LO const new_edge_v1 = new_ev2v[new_edge*2 + 1];
       LO const new_edge_v0_old = same_verts2old_verts[ab2b[a2ab[new_edge_v0]]];
@@ -1044,13 +1043,105 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
         //interior
         if ((oldvert_gdim[v_key] == dim) && (oldvert_gdim[v_onto] == dim) &&
             (newedge_gdim[new_edge] == dim)) {
+          LO const new_edge_v0 = new_ev2v[new_edge*2 + 0];
+          LO const new_edge_v1 = new_ev2v[new_edge*2 + 1];
+          auto new_edge_v0_c = get_vector<dim>(new_coords, new_edge_v0);
+          auto new_edge_v1_c = get_vector<dim>(new_coords, new_edge_v1);
+          Real const new_length = std::sqrt(
+            std::pow((new_edge_v1_c[0] - new_edge_v0_c[0]), 2) + 
+            std::pow((new_edge_v1_c[1] - new_edge_v0_c[1]), 2) + 
+            std::pow((new_edge_v1_c[2] - new_edge_v0_c[2]), 2)); 
+
+          //find lower vtx
+          LO v_lower = -1;
+          for (LO ve = v2ve[v_key]; ve < v2ve[v_key + 1]; ++ve) {
+            //adj edges of vkey
+            LO adj_e = ve2e[ve];
+            LO adj_e_v0 = old_ev2v[adj_e*2 + 0];
+            LO adj_e_v1 = old_ev2v[adj_e*2 + 1];
+            LO other_vtx = -1;
+            LO count_not_ring = 0;
+            //note id of other end of edge
+            if (v_key == adj_e_v0) {
+              other_vtx = adj_e_v1;
+            }
+            if (v_key == adj_e_v1) {
+              other_vtx = adj_e_v0;
+            }
+            if (other_vtx != v_onto) {//eliminate v_onto
+              for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+                if (other_vtx != vtx_ring[upper_e]) ++count_not_ring;
+              }
+              if (count_not_ring == count_upper_edge) {
+                v_lower = other_vtx;
+                break;
+              }
+            }
+          }
+
+          Few<LO, 128> lower_edges;
+          Few<I8, 128> from_first_vtx_low;
+          LO count_lower_edge = 0;
+          for (LO vt = v2vt[v_key]; vt < v2vt[v_key + 1]; ++vt) {
+            //adj tets of vkey
+            LO adj_t = vt2t[vt];
+            for (LO te = 0; te < 6; ++te) {
+              LO adj_t_e = te2e[adj_t*6 + te];
+              //adj edges of tet
+              LO adj_t_e_v0 = old_ev2v[adj_t_e*2 + 0];
+              LO adj_t_e_v1 = old_ev2v[adj_t_e*2 + 1];
+              //adj verts of edge
+              if ((adj_t_e_v0 == v_lower) && (adj_t_e_v1 != v_key)) {
+                OMEGA_H_CHECK(count_lower_edge < 128);
+                LO is_duplicate = -1;
+                for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
+                  if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
+                }
+                if (is_duplicate == -1) {
+                  lower_edges[count_lower_edge] = adj_t_e;
+                  from_first_vtx_low[count_lower_edge] = 1;
+                  ++count_lower_edge;
+                }
+              }
+              if ((adj_t_e_v1 == v_lower) && (adj_t_e_v0 != v_key)) {
+                LO is_duplicate = -1;
+                for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
+                  if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
+                }
+                if (is_duplicate == -1) {
+                  lower_edges[count_lower_edge] = adj_t_e;
+                  from_first_vtx_low[count_lower_edge] = -1;
+                  ++count_lower_edge;
+                }
+              }
+            }
+          }
+
+          Few<Real, dim> t_avg_l;
+          for (LO d = 0; d < dim; ++d) t_avg_l[d] = 0.0; 
+          for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
+            if (from_first_vtx_low[lower_e] == 1) {
+              for (LO d = 0; d < dim; ++d) {
+                t_avg_l[d] += tangents[lower_edges[lower_e]*2*dim + d];
+              }
+            }
+            if (from_first_vtx_low[lower_e] == -1) {
+              for (LO d = 0; d < dim; ++d) {
+                t_avg_l[d] += tangents[lower_edges[lower_e]*2*dim + dim + d];
+              }
+            }
+          }
+          for (LO d = 0; d < dim; ++d) t_avg_l[d] = t_avg_l[d]/count_lower_edge;
+          Real length_t_l = 0.0;
+          for (LO d = 0; d < dim; ++d) length_t_l += t_avg_l[d]*t_avg_l[d]; 
+          for (LO d = 0; d < dim; ++d) t_avg_l[d] = t_avg_l[d]/std::sqrt(length_t_l);
+          Vector<dim> c_lower;
+          for (LO d = 0; d < dim; ++d) {
+            c_lower[d] = old_coords[v_lower*dim + d] + t_avg_l[d]*new_length/3.0;
+          }
           //dual cone
           if (nprods == 1) {
             edge_dualCone[new_edge] = 1;
-            auto new_edge_v0 = new_ev2v[new_edge*2 + 0];
-            auto new_edge_v1 = new_ev2v[new_edge*2 + 1];
-            auto new_edge_v0_c = get_vector<dim>(new_coords, new_edge_v0);
-            auto new_edge_v1_c = get_vector<dim>(new_coords, new_edge_v1);
 
             //count upper edges
             Few<LO, 128> upper_edges;
@@ -1113,99 +1204,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             for (LO d = 0; d < dim; ++d) length_t += t_avg[d]*t_avg[d]; 
             for (LO d = 0; d < dim; ++d) t_avg[d] = t_avg[d]/std::sqrt(length_t);
 
-            //find lower vtx
-            LO v_lower = -1;
-            for (LO ve = v2ve[v_key]; ve < v2ve[v_key + 1]; ++ve) {
-              //adj edges of vkey
-              LO adj_e = ve2e[ve];
-              LO adj_e_v0 = old_ev2v[adj_e*2 + 0];
-              LO adj_e_v1 = old_ev2v[adj_e*2 + 1];
-              LO other_vtx = -1;
-              LO count_not_ring = 0;
-              //note id of other end of edge
-              if (v_key == adj_e_v0) {
-                other_vtx = adj_e_v1;
-              }
-              if (v_key == adj_e_v1) {
-                other_vtx = adj_e_v0;
-              }
-              if (other_vtx != v_onto) {//eliminate v_onto
-                for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
-                  if (other_vtx != vtx_ring[upper_e]) ++count_not_ring;
-                }
-                if (count_not_ring == count_upper_edge) {
-                  v_lower = other_vtx;
-                  break;
-                }
-              }
-            }
-
-            Few<LO, 128> lower_edges;
-            Few<I8, 128> from_first_vtx_low;
-            LO count_lower_edge = 0;
-            for (LO vt = v2vt[v_key]; vt < v2vt[v_key + 1]; ++vt) {
-              //adj tets of vkey
-              LO adj_t = vt2t[vt];
-              for (LO te = 0; te < 6; ++te) {
-                LO adj_t_e = te2e[adj_t*6 + te];
-                //adj edges of tet
-                LO adj_t_e_v0 = old_ev2v[adj_t_e*2 + 0];
-                LO adj_t_e_v1 = old_ev2v[adj_t_e*2 + 1];
-                //adj verts of edge
-                if ((adj_t_e_v0 == v_lower) && (adj_t_e_v1 != v_key)) {
-                  OMEGA_H_CHECK(count_lower_edge < 128);
-                  LO is_duplicate = -1;
-                  for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
-                    if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
-                  }
-                  if (is_duplicate == -1) {
-                    lower_edges[count_lower_edge] = adj_t_e;
-                    from_first_vtx_low[count_lower_edge] = 1;
-                    ++count_lower_edge;
-                  }
-                }
-                if ((adj_t_e_v1 == v_lower) && (adj_t_e_v0 != v_key)) {
-                  LO is_duplicate = -1;
-                  for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
-                    if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
-                  }
-                  if (is_duplicate == -1) {
-                    lower_edges[count_lower_edge] = adj_t_e;
-                    from_first_vtx_low[count_lower_edge] = -1;
-                    ++count_lower_edge;
-                  }
-                }
-              }
-            }
-
-            Few<Real, dim> t_avg_l;
-            for (LO d = 0; d < dim; ++d) t_avg_l[d] = 0.0; 
-            for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
-              if (from_first_vtx_low[lower_e] == 1) {
-                for (LO d = 0; d < dim; ++d) {
-                  t_avg_l[d] += tangents[lower_edges[lower_e]*2*dim + d];
-                }
-              }
-              if (from_first_vtx_low[lower_e] == -1) {
-                for (LO d = 0; d < dim; ++d) {
-                  t_avg_l[d] += tangents[lower_edges[lower_e]*2*dim + dim + d];
-                }
-              }
-            }
-            for (LO d = 0; d < dim; ++d) t_avg_l[d] = t_avg_l[d]/count_lower_edge;
-            Real length_t_l = 0.0;
-            for (LO d = 0; d < dim; ++d) length_t_l += t_avg_l[d]*t_avg_l[d]; 
-            for (LO d = 0; d < dim; ++d) t_avg_l[d] = t_avg_l[d]/std::sqrt(length_t_l);
-            Vector<dim> c_lower;
             Vector<dim> c_upper;
-            auto new_length = 
-              (new_edge_v1_c[0] - new_edge_v0_c[0])*(new_edge_v1_c[0] - new_edge_v0_c[0]) + 
-              (new_edge_v1_c[1] - new_edge_v0_c[1])*(new_edge_v1_c[1] - new_edge_v0_c[1]) + 
-              (new_edge_v1_c[2] - new_edge_v0_c[2])*(new_edge_v1_c[2] - new_edge_v0_c[2]);
-            new_length = std::sqrt(new_length);
             for (LO d = 0; d < dim; ++d) {
               c_upper[d] = old_coords[v_onto*dim + d] + t_avg[d]*new_length/3.0;
-              c_lower[d] = old_coords[v_lower*dim + d] + t_avg_l[d]*new_length/3.0;
             }
 
             //check for new edge, first vertex is vlower or vupper
