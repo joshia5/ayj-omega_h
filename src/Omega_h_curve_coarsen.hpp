@@ -267,11 +267,14 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
 
       //check for new edge, first vertex is vlower or vupper
       LO v_onto_is_first = -1;
+      LO v_lower = -1;
       if (v_onto == new_edge_v0_old) {
         v_onto_is_first = 1;
+        v_lower = new_edge_v1_old;
       }
       else {
         OMEGA_H_CHECK (v_onto == new_edge_v1_old);
+        v_lower = new_edge_v0_old;
       }
 
       //edges classified on g_edges
@@ -316,9 +319,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
 
         //find lower vtx, here upper is v_onto and lower is other end of edge
         Vector<dim> c_lower;
-        LO v_lower = -1;
-        if (new_edge_v0_old == v_onto) v_lower = new_edge_v1_old;
-        if (new_edge_v1_old == v_onto) v_lower = new_edge_v0_old;
         LO e_lower = -1;
         //e_lower is lower half of collapsing edge i.e. edge connecting vkey
         //to vlower;
@@ -1045,6 +1045,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             (newedge_gdim[new_edge] == dim)) {
           LO const new_edge_v0 = new_ev2v[new_edge*2 + 0];
           LO const new_edge_v1 = new_ev2v[new_edge*2 + 1];
+          LO const new_edge_v0_old = same_verts2old_verts[ab2b[a2ab[new_edge_v0]]];
+          LO const new_edge_v1_old = same_verts2old_verts[ab2b[a2ab[new_edge_v1]]];
           auto new_edge_v0_c = get_vector<dim>(new_coords, new_edge_v0);
           auto new_edge_v1_c = get_vector<dim>(new_coords, new_edge_v1);
           Real const new_length = std::sqrt(
@@ -1052,31 +1054,16 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             std::pow((new_edge_v1_c[1] - new_edge_v0_c[1]), 2) + 
             std::pow((new_edge_v1_c[2] - new_edge_v0_c[2]), 2)); 
 
-          //find lower vtx
+          //find lower vtx & check first vertex is vlower or vupper
+          LO v_onto_is_first = -1;
           LO v_lower = -1;
-          for (LO ve = v2ve[v_key]; ve < v2ve[v_key + 1]; ++ve) {
-            //adj edges of vkey
-            LO adj_e = ve2e[ve];
-            LO adj_e_v0 = old_ev2v[adj_e*2 + 0];
-            LO adj_e_v1 = old_ev2v[adj_e*2 + 1];
-            LO other_vtx = -1;
-            LO count_not_ring = 0;
-            //note id of other end of edge
-            if (v_key == adj_e_v0) {
-              other_vtx = adj_e_v1;
-            }
-            if (v_key == adj_e_v1) {
-              other_vtx = adj_e_v0;
-            }
-            if (other_vtx != v_onto) {//eliminate v_onto
-              for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
-                if (other_vtx != vtx_ring[upper_e]) ++count_not_ring;
-              }
-              if (count_not_ring == count_upper_edge) {
-                v_lower = other_vtx;
-                break;
-              }
-            }
+          if (v_onto == new_edge_v0_old) {
+            v_onto_is_first = 1;
+            v_lower = new_edge_v1_old;
+          }
+          else {
+            OMEGA_H_CHECK (v_onto == new_edge_v1_old);
+            v_lower = new_edge_v0_old;
           }
 
           Few<LO, 128> lower_edges;
@@ -1139,10 +1126,10 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           for (LO d = 0; d < dim; ++d) {
             c_lower[d] = old_coords[v_lower*dim + d] + t_avg_l[d]*new_length/3.0;
           }
-          //dual cone
+
+          //###dual cone
           if (nprods == 1) {
             edge_dualCone[new_edge] = 1;
-
             //count upper edges
             Few<LO, 128> upper_edges;
             Few<LO, 128> vtx_ring;
@@ -1207,20 +1194,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             Vector<dim> c_upper;
             for (LO d = 0; d < dim; ++d) {
               c_upper[d] = old_coords[v_onto*dim + d] + t_avg[d]*new_length/3.0;
-            }
-
-            //check for new edge, first vertex is vlower or vupper
-            LO v_onto_is_first = -1;
-            if ((std::abs(new_edge_v0_c[0] - old_coords[v_onto*dim + 0]) < EPSILON) && 
-                (std::abs(new_edge_v0_c[1] - old_coords[v_onto*dim + 1]) < EPSILON) &&
-                (std::abs(new_edge_v0_c[2] - old_coords[v_onto*dim + 2]) < EPSILON)) {
-              v_onto_is_first = 1;
-            }
-            else {
-              OMEGA_H_CHECK (
-                  (std::abs(new_edge_v0_c[0] - old_coords[v_lower*dim + 0]) < EPSILON) && 
-                  (std::abs(new_edge_v0_c[1] - old_coords[v_lower*dim + 1]) < EPSILON) &&
-                  (std::abs(new_edge_v0_c[2] - old_coords[v_lower*dim + 2]) < EPSILON));
             }
 
             for (LO d = 0; d < dim; ++d) {
