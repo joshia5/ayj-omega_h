@@ -1138,35 +1138,42 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               }
             }
           }
-          for (LO d = 0; d < dim; ++d) t_avg_l[d] = t_avg_l[d]/count_lower_edge;
+          for (LO d = 0; d < dim; ++d) t_avg_l[d]=t_avg_l[d]/count_lower_edge;
           Real length_t_l = 0.0;
           for (LO d = 0; d < dim; ++d) length_t_l += t_avg_l[d]*t_avg_l[d]; 
           for (LO d = 0; d < dim; ++d) 
             t_avg_l[d] = t_avg_l[d]/std::sqrt(length_t_l);
-          // only using this makes very curved and skinny tets so
-          // average t_avg_l and t_e_lower
-          for (LO d = 0; d < dim; ++d) t_avg_l[d] = (t_avg_l[d]+t_e_lower[d])*0.5;
-          length_t_l = 0.0;
-          for (LO d = 0; d < dim; ++d) length_t_l += t_avg_l[d]*t_avg_l[d]; 
-          for (LO d = 0; d < dim; ++d)
-            t_avg_l[d] = t_avg_l[d]/std::sqrt(length_t_l);
-
           Vector<dim> c_lower;
           for (LO d = 0; d < dim; ++d) {
-            c_lower[d] = (old_coords[v_lower*dim+d] + old_coords[v_key*dim+d])*0.5;
-            //c_lower[d] = old_coords[v_lower*dim + d] + 
+            c_lower[d] = old_coords[v_lower*dim + d] + 
+              t_avg_l[d]*new_length/3.0;
+          }
+
+          // only using this makes very curved and skinny tets so
+          // average t_avg_l and t_e_lower
+          if (nprods > 1) {
+            for (LO d = 0; d < dim; ++d) t_avg_l[d] = (t_avg_l[d]+t_e_lower[d])*0.5;
+            length_t_l = 0.0;
+            for (LO d = 0; d < dim; ++d) length_t_l += t_avg_l[d]*t_avg_l[d]; 
+            for (LO d = 0; d < dim; ++d)
+              t_avg_l[d] = t_avg_l[d]/std::sqrt(length_t_l);
+
+            for (LO d = 0; d < dim; ++d) {
+              //c_lower[d] = (old_coords[v_lower*dim+d] + old_coords[v_key*dim+d])*0.5;
+              c_lower[d] = old_coords[v_lower*dim + d] + 
               //t_avg_l[d]*new_length/3.0;
-              ////(old_coords[v_onto*dim + d] - old_coords[v_lower*dim + d])/3.0*2.0;
+              (old_coords[v_onto*dim + d] - old_coords[v_lower*dim + d])/3.0;
+            }
           }
 
           Vector<dim> c_upper;
           //init c_upper for inner edges as mid pt of clower and vonto making
           //that 2/3 of the bezier curve straight sided
           for (LO d = 0; d < dim; ++d) {
-            c_upper[d] = (old_coords[v_onto*dim+d] + old_coords[v_key*dim+d])*0.5;
-            //c_upper[d] = old_coords[v_onto*dim + d] +
+            //c_upper[d] = (old_coords[v_onto*dim+d] + old_coords[v_key*dim+d])*0.5;
+            c_upper[d] = old_coords[v_onto*dim + d] +
               //(c_lower[d] - old_coords[v_onto*dim + d])*0.5;
-              ////(old_coords[v_lower*dim + d] - old_coords[v_onto*dim + d])/3.0;
+              (old_coords[v_lower*dim + d] - old_coords[v_onto*dim + d])/3.0;
           }
 
           //###dual cone
