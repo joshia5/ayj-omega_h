@@ -331,7 +331,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
         for (LO d=0; d<dim; ++d) {
           t_e_lower[d] = tangents[e_lower*2*dim + d];
         }
-               
+
         //count upper edges
         Few<LO, 2> upper_edges;
         Few<I8, 2> from_first_vtx;
@@ -1065,6 +1065,26 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             OMEGA_H_CHECK (v_onto == new_edge_v1_old);
             v_lower = new_edge_v0_old;
           }
+          LO e_lower = -1;
+          //e_lower is lower half of collapsing edge i.e. edge connecting vkey
+          //to vlower;
+          for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
+            LO const e = old_ve2e[ve];
+            if ((v_lower == old_ev2v[e*2+0]) || 
+                (v_lower == old_ev2v[e*2+1])) e_lower = e;
+          }
+          Vector<dim> t_e_lower;//tangent unit vec from v_lower
+          if (v_lower == old_ev2v[e_lower*2+0]) {
+            for (LO d=0; d<dim; ++d) {
+              t_e_lower[d] = tangents[e_lower*2*dim + d];
+            }
+          }
+          else {
+            OMEGA_H_CHECK (v_lower == old_ev2v[e_lower*2+1]);
+            for (LO d=0; d<dim; ++d) {
+              t_e_lower[d] = tangents[e_lower*2*dim + dim + d];
+            }
+          }
 
           Few<LO, 128> lower_edges;
           Few<I8, 128> from_first_vtx_low;
@@ -1121,10 +1141,30 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           for (LO d = 0; d < dim; ++d) t_avg_l[d] = t_avg_l[d]/count_lower_edge;
           Real length_t_l = 0.0;
           for (LO d = 0; d < dim; ++d) length_t_l += t_avg_l[d]*t_avg_l[d]; 
-          for (LO d = 0; d < dim; ++d) t_avg_l[d] = t_avg_l[d]/std::sqrt(length_t_l);
+          for (LO d = 0; d < dim; ++d) 
+            t_avg_l[d] = t_avg_l[d]/std::sqrt(length_t_l);
+          // only using this makes very curved and skinny tets so
+          // average t_avg_l and t_e_lower
+          for (LO d = 0; d < dim; ++d) t_avg_l[d] = (t_avg_l[d]+t_e_lower[d])*0.5;
+          length_t_l = 0.0;
+          for (LO d = 0; d < dim; ++d) length_t_l += t_avg_l[d]*t_avg_l[d]; 
+          for (LO d = 0; d < dim; ++d)
+            t_avg_l[d] = t_avg_l[d]/std::sqrt(length_t_l);
+
           Vector<dim> c_lower;
           for (LO d = 0; d < dim; ++d) {
-            c_lower[d] = old_coords[v_lower*dim + d] + t_avg_l[d]*new_length/3.0;
+            c_lower[d] = old_coords[v_lower*dim + d] + 
+              //(old_coords[v_onto*dim + d] - old_coords[v_lower*dim + d])/3.0*2.0;
+              t_avg_l[d]*new_length/3.0;
+          }
+
+          Vector<dim> c_upper;
+          //init c_upper for inner edges as mid pt of clower and vonto making
+          //that 2/3 of the bezier curve straight sided
+          for (LO d = 0; d < dim; ++d) {
+            c_upper[d] = old_coords[v_onto*dim + d] +
+              //(old_coords[v_lower*dim + d] - old_coords[v_onto*dim + d])/3.0;
+              (c_lower[d] - old_coords[v_onto*dim + d])*0.5;
           }
 
           //###dual cone
@@ -1191,21 +1231,19 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             for (LO d = 0; d < dim; ++d) length_t += t_avg[d]*t_avg[d]; 
             for (LO d = 0; d < dim; ++d) t_avg[d] = t_avg[d]/std::sqrt(length_t);
 
-            Vector<dim> c_upper;
             for (LO d = 0; d < dim; ++d) {
               c_upper[d] = old_coords[v_onto*dim + d] + t_avg[d]*new_length/3.0;
             }
-
-            for (LO d = 0; d < dim; ++d) {
-              if (v_onto_is_first == 1) {
-                edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_upper[d];
-                edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_lower[d];
-              }
-              else {
-                OMEGA_H_CHECK (v_onto_is_first == -1);
-                edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_lower[d];
-                edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_upper[d];
-              }
+          }
+          for (LO d = 0; d < dim; ++d) {
+            if (v_onto_is_first == 1) {
+              edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_upper[d];
+              edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_lower[d];
+            }
+            else {
+              OMEGA_H_CHECK (v_onto_is_first == -1);
+              edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_lower[d];
+              edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_upper[d];
             }
           }
         }
