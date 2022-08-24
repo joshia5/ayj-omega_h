@@ -1153,18 +1153,20 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
 
           Vector<dim> c_lower;
           for (LO d = 0; d < dim; ++d) {
-            c_lower[d] = old_coords[v_lower*dim + d] + 
-              //(old_coords[v_onto*dim + d] - old_coords[v_lower*dim + d])/3.0*2.0;
-              t_avg_l[d]*new_length/3.0;
+            c_lower[d] = (old_coords[v_lower*dim+d] + old_coords[v_key*dim+d])*0.5;
+            //c_lower[d] = old_coords[v_lower*dim + d] + 
+              //t_avg_l[d]*new_length/3.0;
+              ////(old_coords[v_onto*dim + d] - old_coords[v_lower*dim + d])/3.0*2.0;
           }
 
           Vector<dim> c_upper;
           //init c_upper for inner edges as mid pt of clower and vonto making
           //that 2/3 of the bezier curve straight sided
           for (LO d = 0; d < dim; ++d) {
-            c_upper[d] = old_coords[v_onto*dim + d] +
-              //(old_coords[v_lower*dim + d] - old_coords[v_onto*dim + d])/3.0;
-              (c_lower[d] - old_coords[v_onto*dim + d])*0.5;
+            c_upper[d] = (old_coords[v_onto*dim+d] + old_coords[v_key*dim+d])*0.5;
+            //c_upper[d] = old_coords[v_onto*dim + d] +
+              //(c_lower[d] - old_coords[v_onto*dim + d])*0.5;
+              ////(old_coords[v_lower*dim + d] - old_coords[v_onto*dim + d])/3.0;
           }
 
           //###dual cone
