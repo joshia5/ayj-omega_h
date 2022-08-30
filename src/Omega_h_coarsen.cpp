@@ -350,7 +350,7 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
 
     ret = coarsen_ghosted(mesh, opts, overshoot, improve);
   }
-  I8 should_filter_invalids = -1;
+  I8 should_filter_invalids = 1;
   if (ret) {
 
     mesh->set_parting(OMEGA_H_ELEM_BASED, false);
@@ -433,6 +433,7 @@ bool coarsen_slivers(Mesh* mesh, AdaptOpts const& opts) {
   mesh->set_parting(OMEGA_H_GHOSTED);
 
   auto comm = mesh->comm();
+  if (comm->rank() == 0) std::cout << "coarsening slivers\n";
   auto elems_are_cands =
       mark_sliver_layers(mesh, opts.min_quality_desired, opts.nsliver_layers);
   OMEGA_H_CHECK(get_max(comm, elems_are_cands) == 1);

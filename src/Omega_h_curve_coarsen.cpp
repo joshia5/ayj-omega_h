@@ -64,7 +64,7 @@ void check_validity_all_tet(Mesh *new_mesh) {
       auto mesh_invalids = Mesh(new_mesh->comm()->library());
       mesh_invalids.set_comm(new_mesh->comm());
       build_cubic_cavities_3d(new_mesh, &mesh_invalids, 50);//curveVtk
-      std::string vtuPath = "../omega_h/meshes/invalid_tet_";
+      std::string vtuPath = "./invalid_tet_";
       vtuPath += std::to_string(i);
       vtuPath += ".vtu";
       vtk::write_simplex_connectivity(vtuPath.c_str(), &mesh_invalids, 2);
