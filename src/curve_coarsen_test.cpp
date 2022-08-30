@@ -379,12 +379,16 @@ void test_collapse_boxCircle(Library *lib) {
 */
  
   auto opts = AdaptOpts(&mesh);
+  opts.should_swap = false;
+  opts.should_refine = false;
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(100)));
   fprintf(stderr, "initial mesh size %d\n", mesh.nregions());
-  for (LO adapt_itr = 0; adapt_itr < 10; ++adapt_itr) 
+  for (LO adapt_itr = 0; adapt_itr < 10; ++adapt_itr) {
     coarsen_by_size(&mesh, opts);
+    coarsen_slivers(&mesh, opts);
+  }
   mesh.ask_qualities();
   writer = vtk::FullWriter(
       "../omega_h/meshes/boxCircle_aft.vtk", &mesh);
