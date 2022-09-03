@@ -352,7 +352,7 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
 
     ret = coarsen_ghosted(mesh, opts, overshoot, improve);
   }
-  I8 should_filter_invalids = 1;
+  I8 const should_filter_invalids = opts.should_filter_invalids;
   if (ret) {
 
     mesh->change_all_rcFieldsTorc();
