@@ -81,6 +81,66 @@ void check_validity_all_tet(Mesh *new_mesh) {
   return;
 }
 
+void check_validity_edges_from_complex_cav(Mesh *new_mesh) {
+
+  auto const new_ev2v = new_mesh->ask_down(1, 0).ab2b;
+  auto const new_rv2v = new_mesh->ask_down(3, 0).ab2b;
+  auto const new_re2e = new_mesh->ask_down(3, 1).ab2b;
+  auto const new_rf2f = new_mesh->ask_down(3, 2).ab2b;
+  auto const new_e2r = new_mesh->ask_up(1, 3);
+  auto const new_e2er = new_e2r.a2ab;
+  auto const new_er2r = new_e2r.ab2b;
+  auto const nnew_edge = new_mesh->nedges();
+  auto const nfaces = new_mesh->nfaces();
+
+  auto const vertCtrlPts = new_mesh->get_ctrlPts(0);
+  auto const edgeCtrlPts = new_mesh->get_ctrlPts(1);
+  auto const faceCtrlPts = new_mesh->get_ctrlPts(2);
+
+  Write<LO> invalid_edge(nnew_edge, -1);
+
+  auto check_edge = OMEGA_H_LAMBDA(LO i) {
+    for (LO er = new_e2er[i]; er < new_e2er[i+1]; ++er) {
+      LO adj_tet = new_er2r[er];
+      LO is_invalid = -1;
+      Few<Real, 60> tet_pts = collect_tet_pts(3,adj_tet,new_ev2v,new_rv2v,vertCtrlPts
+          , edgeCtrlPts, faceCtrlPts, new_re2e, new_rf2f);
+
+      Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
+
+      is_invalid = checkMinJacDet_3d(nodes_det, 3, 1);
+      invalid_edge[i] = is_invalid;
+      if (is_invalid > 0) {
+        printf("edge %d invalid code %d\n", i, is_invalid);
+        if (is_invalid > 0) break;
+      }
+    }
+  };
+  parallel_for(nnew_edge, std::move(check_edge));
+
+  /*
+  auto tet_invalid_h = HostRead<LO>(Read<LO>(invalid_tet));
+  auto new_rf2f_h = HostRead<LO>(new_rf2f);
+  for (LO i = 0; i < nnew_tet; ++i) {
+    LO const is_invalid = tet_invalid_h[i];
+    if (is_invalid > 0) {
+      //printf("writing file for tet %d\n", i);
+
+      auto mesh_invalids = Mesh(new_mesh->comm()->library());
+      mesh_invalids.set_comm(new_mesh->comm());
+      build_cubic_cavities_3d(new_mesh, &mesh_invalids, 50);//curveVtk
+      std::string vtuPath = "./invalid_edge_";
+      vtuPath += std::to_string(i);
+      vtuPath += ".vtu";
+      vtk::write_simplex_connectivity(vtuPath.c_str(), &mesh_invalids, 2);
+
+    }
+  }
+  */
+
+  return;
+}
+
 void correct_curved_edges(Mesh *new_mesh) {
 
   auto const edge_crv2bdry_dim = new_mesh->get_array<I8>(1, "edge_crv2bdry_dim");
