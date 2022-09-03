@@ -81,9 +81,7 @@ bool swap_edges_3d(Mesh* mesh, AdaptOpts const& opts) {
   if (!swap3d_ghosted(mesh, opts)) return false;
 
   mesh->change_all_rcFieldsTorc();
-
   mesh->set_parting(OMEGA_H_ELEM_BASED, false);
-
   mesh->change_all_rcFieldsToMesh();
 
   swap3d_element_based(mesh, opts);
