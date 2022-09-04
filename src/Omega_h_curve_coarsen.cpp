@@ -82,6 +82,7 @@ void check_validity_all_tet(Mesh *new_mesh) {
 }
 
 void check_validity_edges_from_complex_cav(Mesh *new_mesh) {
+//TODO add complex cav tag while creating new crv edge and check here
 
   auto const new_ev2v = new_mesh->ask_down(1, 0).ab2b;
   auto const new_rv2v = new_mesh->ask_down(3, 0).ab2b;
@@ -91,7 +92,7 @@ void check_validity_edges_from_complex_cav(Mesh *new_mesh) {
   auto const new_e2er = new_e2r.a2ab;
   auto const new_er2r = new_e2r.ab2b;
   auto const nnew_edge = new_mesh->nedges();
-  auto const nfaces = new_mesh->nfaces();
+  //auto const nfaces = new_mesh->nfaces();
 
   auto const vertCtrlPts = new_mesh->get_ctrlPts(0);
   auto const edgeCtrlPts = new_mesh->get_ctrlPts(1);
@@ -111,7 +112,7 @@ void check_validity_edges_from_complex_cav(Mesh *new_mesh) {
       is_invalid = checkMinJacDet_3d(nodes_det, 3, 1);
       invalid_edge[i] = is_invalid;
       if (is_invalid > 0) {
-        printf("edge %d invalid code %d\n", i, is_invalid);
+        printf("edge %d, adj_tet %d invalid code %d\n", i, adj_tet, is_invalid);
         if (is_invalid > 0) break;
       }
     }
