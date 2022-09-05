@@ -469,6 +469,44 @@ void test_collapse_cubicSlab(Library *lib) {
   return;
 }
 
+void test_sphere(Library *lib) {
+  auto comm = lib->world();
+
+  auto mesh = binary::read("/lore/joshia5/Meshes/curved/sphere_8.osh", comm);
+                            
+  for (LO i = 0; i <= mesh.dim(); ++i) {
+    if (!mesh.has_tag(i, "global")) {
+      mesh.add_tag(i, "global", 1, Omega_h::GOs(mesh.nents(i), 0, 1));
+    }
+  }
+
+  calc_quad_ctrlPts_from_interpPts(&mesh);
+  elevate_curve_order_2to3(&mesh);
+  mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
+
+  auto wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_3d(&mesh, &wireframe_mesh);
+  std::string vtuPath = "/lore/joshia5/Meshes/curved/sphere_wire.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  auto curveVtk_mesh = Mesh(comm->library());
+  curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh);
+  vtuPath = "/lore/joshia5/Meshes/curved/sphere_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
+ 
+  //binary::write("/lore/joshia5/Meshes/curved/sphere_8_invalid.osh", &mesh);
+  /*
+  auto opts = AdaptOpts(&mesh);
+  opts.min_quality_allowed = 0.00001;
+  mesh.add_tag<Real>(VERT, "metric", 1);
+  mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
+        metric_eigenvalue_from_length(10000)));
+  coarsen_by_size(&mesh, opts);
+  mesh.ask_qualities();
+  */
+  return;
+}
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
@@ -481,9 +519,10 @@ int main(int argc, char** argv) {
   //test_Kova_validity(&lib);
   //test_cubic_tet_validity(&lib);
   //test_collapse_kova(&lib);
-  test_collapse_boxCircle(&lib);
+  //test_collapse_boxCircle(&lib);
   //test_collapse_cubicSlab(&lib);
   //test_antenna(&lib);
+  test_sphere(&lib);
 
   return 0;
 }
