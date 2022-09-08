@@ -1568,22 +1568,16 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
   }
 
   mesh->set_dim(max_dim);
-  if (is_simplex || is_hypercube) {
-    if (is_simplex) {
-      mesh->set_family(OMEGA_H_SIMPLEX);
-    }
-    
-    mesh->set_verts(numVtx);
-    mesh->add_coords(Reals(host_coords.write()));
-    mesh->add_tag<ClassId>(0, "class_id", 1,
-                           Read<ClassId>(host_class_ids_vtx.write()));
-    mesh->add_tag<I8>(0, "class_dim", 1,
-                      Read<I8>(host_class_dim_vtx.write()));
-  }
+  mesh->set_family(OMEGA_H_SIMPLEX);
 
-  edge_points[0].reserve(numEdges);
+  mesh->set_verts(numVtx);
+  mesh->add_coords(Reals(host_coords.write()));
+  mesh->add_tag<ClassId>(0, "class_id", 1,
+      Read<ClassId>(host_class_ids_vtx.write()));
+  mesh->add_tag<I8>(0, "class_dim", 1,
+      Read<I8>(host_class_dim_vtx.write()));
+
   int count_edge = 0;
-
   int edge_numPts = 0;
   HostWrite<Real> edgePt_coords(numEdges*max_dim);
 
@@ -1598,7 +1592,6 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
       for(int j=0; j<max_dim; j++) {
         edgePt_coords[count_edge * max_dim + j] = p_coord[j];
       }
-
     }
 
     count_edge += 1;
@@ -1623,57 +1616,43 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
     }
   }
   auto ev2v = Read<LO>(host_e2v.write());
-  if (is_simplex || is_hypercube) {
-    mesh->set_ents(1, Adj(ev2v));
-    mesh->add_tag<ClassId>(1, "class_id", 1,
-                           Read<ClassId>(host_class_ids_edge.write()));
-    mesh->add_tag<I8>(1, "class_dim", 1,
-                      Read<I8>(host_class_dim_edge.write()));
-  }
-
-  face_vertices[0].reserve(count_tri*3);
-  face_vertices[1].reserve(count_quad*4);
-  std::vector<int> face_class_ids[2];
-  std::vector<int> face_class_dim[2];
-  face_class_ids[0].reserve(count_tri);
-  face_class_dim[0].reserve(count_tri);
-  face_class_ids[1].reserve(count_quad);
-  face_class_dim[1].reserve(count_quad);
+  mesh->set_ents(1, Adj(ev2v));
+  mesh->add_tag<ClassId>(1, "class_id", 1,
+      Read<ClassId>(host_class_ids_edge.write()));
+  mesh->add_tag<I8>(1, "class_dim", 1,
+      Read<I8>(host_class_dim_edge.write()));
 
   HostWrite<Real> facePt_coords(numFaces*max_dim);
   int count_face = 0;
   while ((face = (pFace) FIter_next(faces))) {
-    if (F_numEdges(face) == 3) {
-      pVertex tri_vertex;
-      pPList tri_vertices = F_vertices(face,1);
-      assert (PList_size(tri_vertices) == 3);
-      void *iter = 0;
-      while ((tri_vertex = (pVertex) PList_next(tri_vertices, &iter))) {
-        face_vertices[0].push_back(EN_id(tri_vertex));
-      }
-      PList_delete(tri_vertices);
-      face_class_ids[0].push_back(classId(face));
-      face_class_dim[0].push_back(classType(face));
-
-      // query face pt for cubic
-      double xyz[3];
-      double lpt[2];
-      lpt[0] = 1.0/3.0;
-      lpt[1] = 1.0/3.0;
-      EN_localToGlobal(face, lpt, xyz);
-      if (max_dim < 3 && xyz[2] != 0) {
-        Omega_h_fail("The z coordinate must be zero for a 2d mesh!\n");
-      }
-      for(int j=0; j<max_dim; j++) {
-        facePt_coords[count_face * max_dim + j] = xyz[j];
-      }
-      count_face += 1;
+    pVertex tri_vertex;
+    pPList tri_vertices = F_vertices(face,1);
+    assert (PList_size(tri_vertices) == 3);
+    void *iter = 0;
+    while ((tri_vertex = (pVertex) PList_next(tri_vertices, &iter))) {
+      face_vertices[0].push_back(EN_id(tri_vertex));
     }
+    PList_delete(tri_vertices);
+    face_class_ids[0].push_back(classId(face));
+    face_class_dim[0].push_back(classType(face));
+
+    // query face pt for cubic
+    double xyz[3];
+    double lpt[2];
+    lpt[0] = 1.0/3.0;
+    lpt[1] = 1.0/3.0;
+    EN_localToGlobal(face, lpt, xyz);
+    if (max_dim < 3 && xyz[2] != 0) {
+      Omega_h_fail("The z coordinate must be zero for a 2d mesh!\n");
+    }
+    for(int j=0; j<max_dim; j++) {
+      facePt_coords[count_face * max_dim + j] = xyz[j];
+    }
+    count_face += 1;
 
     ent_class_ids[2].push_back(classId(face));
     ent_class_dim[2].push_back(classType(face));
   }
-  FIter_delete(faces);
 
   for (int i = 0; i < numFaces; ++i) {
     host_class_ids_face[i] = ent_class_ids[2][static_cast<std::size_t>(i)];
@@ -1685,19 +1664,11 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
     host_class_ids_tri[i] = face_class_ids[0][static_cast<std::size_t>(i)];
     host_class_dim_tri[i] = face_class_dim[0][static_cast<std::size_t>(i)];
   }
-  HostWrite<LO> host_class_ids_quad(count_quad);
-  HostWrite<I8> host_class_dim_quad(count_quad);
-  for (int i = 0; i < count_quad; ++i) {
-    host_class_ids_quad[i] = face_class_ids[1][static_cast<std::size_t>(i)];
-    host_class_dim_quad[i] = face_class_dim[1][static_cast<std::size_t>(i)];
-  }
 
   Adj edge2vert;
   Adj vert2edge;
-  if (is_simplex || is_hypercube) {
-    edge2vert = mesh->get_adj(1, 0);
-    vert2edge = mesh->ask_up(0, 1);
-  }
+  edge2vert = mesh->get_adj(1, 0);
+  vert2edge = mesh->ask_up(0, 1);
 
   HostWrite<LO> host_tri2verts(count_tri*3);
   for (Int i = 0; i < count_tri; ++i) {
@@ -1708,34 +1679,18 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
   }
   auto tri2verts = Read<LO>(host_tri2verts.write());
   Adj down;
-  if (is_simplex) {
-    down = reflect_down(tri2verts, edge2vert.ab2b, vert2edge,
-                        OMEGA_H_SIMPLEX, 2, 1);
-    mesh->set_ents(2, down);
-    mesh->add_tag<ClassId>(2, "class_id", 1,
-                           Read<ClassId>(host_class_ids_face.write()));
-    mesh->add_tag<I8>(2, "class_dim", 1,
-                      Read<I8>(host_class_dim_face.write()));
-  }
+  down = reflect_down(tri2verts, edge2vert.ab2b, vert2edge,
+      OMEGA_H_SIMPLEX, 2, 1);
+  mesh->set_ents(2, down);
+  mesh->add_tag<ClassId>(2, "class_id", 1,
+      Read<ClassId>(host_class_ids_face.write()));
+  mesh->add_tag<I8>(2, "class_dim", 1,
+      Read<I8>(host_class_dim_face.write()));
 
-  HostWrite<LO> host_quad2verts(count_quad*4);
-
-  if (!(count_tet == 0 && count_hex == 0 && count_wedge == 0 && 
-        count_pyramid == 0)) {
-    rgn_vertices[0].reserve(count_tet*4);
-    rgn_vertices[1].reserve(count_hex*8);
-    rgn_vertices[2].reserve(count_wedge*6);
-    rgn_vertices[3].reserve(count_pyramid*5);
+  if (count_tet > 0) {
     std::vector<int> rgn_class_ids[4];
     std::vector<int> rgn_class_dim[4];
-    rgn_class_ids[0].reserve(count_tet);
-    rgn_class_dim[0].reserve(count_tet);
-    rgn_class_ids[1].reserve(count_hex);
-    rgn_class_dim[1].reserve(count_hex);
-    rgn_class_ids[2].reserve(count_wedge);
-    rgn_class_dim[2].reserve(count_wedge);
-    rgn_class_ids[3].reserve(count_pyramid);
-    rgn_class_dim[3].reserve(count_pyramid);
+
 
     while ((rgn = (pRegion) RIter_next(regions))) {
       if (R_topoType(rgn) == Rtet) {
@@ -1769,12 +1724,8 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
 
     Adj tri2vert;
     Adj vert2tri;
-    Adj quad2vert;
-    Adj vert2quad;
-    if (is_simplex) {
-      tri2vert = mesh->ask_down(2, 0);
-      vert2tri = mesh->ask_up(0, 2);
-    }
+    tri2vert = mesh->ask_down(2, 0);
+    vert2tri = mesh->ask_up(0, 2);
 
     HostWrite<LO> host_tet2verts(count_tet*4);
     for (Int i = 0; i < count_tet; ++i) {
@@ -1784,34 +1735,28 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
       }
     }
     auto tet2verts = Read<LO>(host_tet2verts.write());
-    if (is_simplex) {
-      down = reflect_down(tet2verts, tri2vert.ab2b, vert2tri,
-          OMEGA_H_SIMPLEX, 3, 2);
-      mesh->set_ents(3, down);
-      mesh->add_tag<ClassId>(3, "class_id", 1,
-          Read<ClassId>(host_class_ids_rgn.write()));
-      mesh->add_tag<I8>(3, "class_dim", 1,
-          Read<I8>(host_class_dim_rgn.write()));
-    }
-
-    
+    down = reflect_down(tet2verts, tri2vert.ab2b, vert2tri,
+        OMEGA_H_SIMPLEX, 3, 2);
+    mesh->set_ents(3, down);
+    mesh->add_tag<ClassId>(3, "class_id", 1,
+        Read<ClassId>(host_class_ids_rgn.write()));
+    mesh->add_tag<I8>(3, "class_dim", 1,
+        Read<I8>(host_class_dim_rgn.write()));
   }
 
-  if (is_simplex || is_hypercube) {
-    for (LO i = 0; i <= mesh->dim(); ++i) {
-      if (!mesh->has_tag(i, "global")) {
-        mesh->add_tag(i, "global", 1, Omega_h::GOs(mesh->nents(i), 0, 1));
-      }
+  for (LO i = 0; i <= mesh->dim(); ++i) {
+    if (!mesh->has_tag(i, "global")) {
+      mesh->add_tag(i, "global", 1, Omega_h::GOs(mesh->nents(i), 0, 1));
     }
-    if (edge_numPts > 0) {
-      assert(edge_numPts == 1);
-      mesh->set_curved(1);
-      mesh->set_max_order(edge_numPts + 1);
-      mesh->add_tags_for_ctrlPts();
-      mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords.write()));
-      //mesh->set_tag_for_ctrlPts(0, mesh->coords());
-      //mesh->add_tag<Real>(2, "face_interpPts", max_dim, Reals(facePt_coords.write()));
-    }
+  }
+  if (edge_numPts > 0) {
+    assert(edge_numPts == 1);
+    mesh->set_curved(1);
+    mesh->set_max_order(edge_numPts + 1);
+    mesh->add_tags_for_ctrlPts();
+    mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords.write()));
+    //mesh->set_tag_for_ctrlPts(0, mesh->coords());
+    //mesh->add_tag<Real>(2, "face_interpPts", max_dim, Reals(facePt_coords.write()));
   }
 
   return;
@@ -1849,7 +1794,6 @@ void build_quartic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
   LO curveVtk_mesh_nface = faces_perTri*nface;
   HostWrite<LO> host_fv2v(curveVtk_mesh_nface*3);
   std::vector<int> face_vertices[1];
-  face_vertices[0].reserve(curveVtk_mesh_nface*3);
   
   LO count_curveVtk_mesh_vtx = 0;
   for (LO face = 0; face < nface; ++face) {
