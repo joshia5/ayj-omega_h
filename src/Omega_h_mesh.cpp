@@ -21,6 +21,9 @@
 #include "Omega_h_print.hpp"
 #include "Omega_h_int_scan.hpp"
 #include "Omega_h_atomics.hpp"
+#include "Omega_h_reduce.hpp"
+#include "Omega_h_print.hpp"
+#include "Omega_h_dbg.hpp"
 
 namespace Omega_h {
 
@@ -355,27 +358,30 @@ void Mesh::add_tag(Topo_type ent_type, std::string const& name, Int ncomps,
   check_type2(ent_type);
   auto it = tag_iter(ent_type, name);
   auto had_tag = (it != tags_type_[int(ent_type)].end());
-  Tag<T>* tag;
+  auto ptr = std::make_shared<Tag<T>>(name, ncomps);
+  ptr->set_array(array);
   if (had_tag) {
-    tag = as<T>(it->get());
-    OMEGA_H_CHECK(ncomps == tag->ncomps());
+    OMEGA_H_CHECK(ncomps == ptr->ncomps());
+    *it = std::move(ptr);
   } else {
     check_tag_name(name);
     OMEGA_H_CHECK(ncomps >= 0);
     OMEGA_H_CHECK(ncomps <= Int(INT8_MAX));
     OMEGA_H_CHECK(tags_type_[int(ent_type)].size() < size_t(INT8_MAX));
-    tag = new Tag<T>(name, ncomps);
-    TagPtr ptr(tag);
     tags_type_[int(ent_type)].push_back(std::move(ptr));
   }
   OMEGA_H_CHECK(array.size() == nents_type_[int(ent_type)] * ncomps);
   if (!internal) react_to_set_tag(ent_type, name);
-  tag->set_array(array);
 }
 
 template <typename T>
 void Mesh::set_tag(
     Int ent_dim, std::string const& name, Read<T> array, bool internal) {
+  if (!has_tag(ent_dim, name)) {
+    Omega_h_fail("set_tag(%s, %s): tag doesn't exist (use add_tag first)\n",
+        topological_plural_name(family(), ent_dim), name.c_str());
+  }
+
   this->add_tag(ent_dim, name, divide_no_remainder(array.size(), nents(ent_dim)), array, internal);
 }
 
@@ -386,10 +392,8 @@ void Mesh::set_tag(
     Omega_h_fail("set_tag(%s, %s): tag doesn't exist (use add_tag first)\n",
       dimensional_plural_name(ent_type), name.c_str());
   }
-  Tag<T>* tag = as<T>(tag_iter(ent_type, name)->get());
-  OMEGA_H_CHECK(array.size() == nents(ent_type) * tag->ncomps());
-  if (!internal) react_to_set_tag(ent_type, name);
-  tag->set_array(array);
+  auto it = tag_iter(ent_type,name);
+  this->add_tag(ent_type, name, (*it)->ncomps(), array, internal);
 }
 
 void Mesh::react_to_set_tag(Int ent_dim, std::string const& name) {
@@ -593,6 +597,24 @@ Mesh::TagCIter Mesh::tag_iter(Int ent_dim, std::string const& name) const {
   return std::find_if(tags_[ent_dim].begin(), tags_[ent_dim].end(),
       [&](TagPtr const& a) { return a->name() == name; });
 }
+//std::pair<bool,Mesh::TagIter> Mesh::rc_tag_iter(Int ent_dim, std::string const& name) {
+Mesh::TagIterResult Mesh::rc_tag_iter(Int ent_dim, std::string const& name) {
+  auto rc_begin = rc_field_tags_[ent_dim].begin();
+  auto rc_end = rc_field_tags_[ent_dim].end();
+  auto it =  std::find_if(rc_begin, rc_end,
+      [&](TagPtr const& a) { return (a->name() == name); });
+  auto found = (it!=rc_field_tags_[ent_dim].end());
+  return {found, it};
+}
+
+Mesh::TagCIterResult Mesh::rc_tag_iter(Int ent_dim, std::string const& name) const {
+  auto rc_begin = rc_field_tags_[ent_dim].begin();
+  auto rc_end = rc_field_tags_[ent_dim].end();
+  auto it = std::find_if(rc_begin, rc_end,
+      [&](TagPtr const& a) { return a->name() == name; });
+  auto found = (it!=rc_field_tags_[ent_dim].end());
+  return {found, it};
+}
 
 Mesh::TagIter Mesh::tag_iter(Topo_type ent_type, std::string const& name) {
   return std::find_if(tags_type_[int(ent_type)].begin(), tags_type_[int(ent_type)].end(),
@@ -605,8 +627,8 @@ Mesh::TagCIter Mesh::tag_iter(Topo_type ent_type, std::string const& name) const
 }
 
 void Mesh::check_dim(Int ent_dim) const {
-  OMEGA_H_CHECK(0 <= ent_dim);
-  OMEGA_H_CHECK(ent_dim <= dim());
+  OMEGA_H_CHECK_OP(0, <=, ent_dim);
+  OMEGA_H_CHECK_OP(ent_dim, <=, dim());
 }
 
 void Mesh::check_dim2(Int ent_dim) const {
@@ -1023,6 +1045,18 @@ void Mesh::balance(bool predictive) {
   migrate_mesh(this, sorted_new2owners, OMEGA_H_ELEM_BASED, false);
 }
 
+void Mesh::migrate(Remotes& owners) {
+  OMEGA_H_TIME_FUNCTION;
+  if (comm_->size() == 1) return;
+  set_parting(OMEGA_H_ELEM_BASED);
+  auto unsorted_new2owners = Dist(comm_, owners, nelems());
+  auto owners2new = unsorted_new2owners.invert();
+  auto owner_globals = this->globals(dim());
+  owners2new.set_dest_globals(owner_globals);
+  auto sorted_new2owners = owners2new.invert();
+  migrate_mesh(this, sorted_new2owners, OMEGA_H_ELEM_BASED, false);
+}
+
 void Mesh::swap_root_owner(Int dim) {
   OMEGA_H_CHECK(this->is_matched());
   auto matches = this->get_matches(dim);
@@ -1136,6 +1170,17 @@ Read<T> Mesh::owned_array(Int ent_dim, Read<T> a, Int width) {
   auto o = owned(ent_dim);
   auto o2e = collect_marked(o);
   return unmap(o2e, a, width);
+}
+
+template <typename T>
+Read<T> Mesh::owned_subset_array(
+    Int ent_dim, Read<T> a_data, LOs a2e, T default_val, Int width) {
+  if (!could_be_shared(ent_dim)) return a_data;
+  auto e_data = map_onto(a_data, a2e, nents(ent_dim), default_val, width);
+  OMEGA_H_CHECK(e_data.size() == width * nents(ent_dim));
+  auto o = owned(ent_dim);
+  auto o2e = collect_marked(o);
+  return unmap(o2e, e_data, width);
 }
 
 void Mesh::sync_tag(Int ent_dim, std::string const& name) {
@@ -1306,6 +1351,72 @@ void Mesh::set_down(Int high_dim, Int low_dim, LOs hl2l) {
   auto deg = element_degree(family(), high_dim, low_dim);
   nents_[high_dim] = divide_no_remainder(hl2l.size(), deg);
   adjs_[high_dim][low_dim] = std::make_shared<Adj>(Adj(hl2l));
+}
+
+std::string Mesh::string(int verbose) {
+  auto gre = ghosted_ratio(dim());
+  auto gr0 = ghosted_ratio(0);
+  auto gre_max = comm()->allreduce(gre, OMEGA_H_MAX);
+  auto gr0_max = comm()->allreduce(gr0, OMEGA_H_MAX);
+
+  std::ostringstream oss;
+  oss << "Mesh:"
+      << "\n    comm()->size                = " << comm()->size()
+      << "\n    parting                     = " << parting()
+      << "\n    dim                         = " << dim()
+      << "\n    family                      = " << family()
+      << "\n    nents(dim)                  = " << nents(dim())
+      << "\n    nents(0)                    = " << nents(0)
+      << "\n    nelems                      = " << nelems();
+  if (dim() > 2) {
+    oss
+      << "\n    nregions                    = " << nregions();
+  }
+  if (dim() > 1) {
+    oss
+      << "\n    nfaces                      = " << nfaces();
+  }
+  oss << "\n    nedges                      = " << nedges()
+      << "\n    nverts                      = " << nverts()
+      << "\n    nglobal_ents(dim)           = " << nglobal_ents(dim())
+      << "\n    nglobal_ents(0)             = " << nglobal_ents(0)
+      << "\n    ntags                       = " << ntags(dim())
+      << "\n    ntags(0)                    = " << ntags(0)
+    //<< "\n    min_quality                 = " << min_quality()
+    //<< "\n    max_length                  = " << max_length()
+      << "\n    could_be_shared(dim)        = " << could_be_shared(dim())
+      << "\n    could_be_shared(0)          = " << could_be_shared(0)
+      << "\n    owners_have_all_upward(dim) = " << owners_have_all_upward(dim())
+      << "\n    owners_have_all_upward(0)   = " << owners_have_all_upward(0)
+      << "\n    have_all_upward             = " << have_all_upward()
+      << "\n    imbalance                   = " << imbalance()
+      << "\n    ghosted_ratio(dim)          = " << gre
+      << "\n    ghosted_ratio(0)            = " << gr0
+      << "\n    max ghosted_ratio(dim)      = " << gre_max
+      << "\n    max ghosted_ratio(0)        = " << gr0_max;
+
+  if (verbose) {
+    oss
+      << "\n    globals(dim)                =\n" << globals(dim())
+      << "\n    globals(0)                  =\n" << globals(0);
+  }
+  return oss.str();
+}
+
+LO Mesh::nents_owned(Int ent_dim) {
+  auto all_ents = owned(ent_dim);
+  auto transform = OMEGA_H_LAMBDA(int ent)->LO {
+    if (all_ents[ent]) return 1;
+    return 0;
+  };
+  return Omega_h::transform_reduce(Omega_h::IntIterator(0), Omega_h::IntIterator(all_ents.size()), 0, plus<LO>(), std::move(transform));
+}
+
+Real Mesh::ghosted_ratio(Int ent_dim) {
+  auto all_ents = owned(ent_dim);
+  LO const nowned = nents_owned(ent_dim);
+  return static_cast<Real>(all_ents.size())/static_cast<Real>(nowned);
+
 }
 
 bool can_print(Mesh* mesh) {
@@ -1574,6 +1685,8 @@ __host__
   template Future<T> Mesh::isync_array(Int ent_dim, Read<T> a, Int width);     \
   template Read<T> Mesh::owned_array(Int ent_dim, Read<T> a, Int width);       \
   template Read<T> Mesh::sync_subset_array(                                    \
+      Int ent_dim, Read<T> a_data, LOs a2e, T default_val, Int width);         \
+  template Read<T> Mesh::owned_subset_array(                                   \
       Int ent_dim, Read<T> a_data, LOs a2e, T default_val, Int width);         \
   template Read<T> Mesh::reduce_array(                                         \
       Int ent_dim, Read<T> a, Int width, Omega_h_Op op);

@@ -347,18 +347,19 @@ static bool coarsen(Mesh* mesh, AdaptOpts const& opts, OvershootLimit overshoot,
   auto ret = coarsen_element_based1(mesh);
   if (ret) {
 
-    mesh->change_all_rcFieldsTorc();
+    //rc
     mesh->set_parting(OMEGA_H_GHOSTED);
-    mesh->change_all_rcFieldsToMesh();
+    //mesh
 
     ret = coarsen_ghosted(mesh, opts, overshoot, improve);
   }
   I8 const should_filter_invalids = opts.should_filter_invalids;
   if (ret) {
 
-    mesh->change_all_rcFieldsTorc();
+
+    //rc
     mesh->set_parting(OMEGA_H_ELEM_BASED, false);
-    mesh->change_all_rcFieldsToMesh();
+    //mesh
 
     if (mesh->is_curved() < 0) {
       coarsen_element_based2(mesh, opts);
@@ -435,9 +436,9 @@ bool coarsen_by_size(Mesh* mesh, AdaptOpts const& opts) {
 bool coarsen_slivers(Mesh* mesh, AdaptOpts const& opts) {
   OMEGA_H_TIME_FUNCTION;
 
-  mesh->change_all_rcFieldsTorc();
+  //rc
   mesh->set_parting(OMEGA_H_GHOSTED);
-  mesh->change_all_rcFieldsToMesh();
+  //mesh
 
   auto comm = mesh->comm();
   if (comm->rank() == 0) std::cout << "coarsening slivers\n";
