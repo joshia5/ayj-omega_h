@@ -1525,7 +1525,7 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
   //auto mesh = Mesh(comm->library());
   //mesh.set_comm(comm);
   //these 2 from outside
-  mesh.set_parting(OMEGA_H_ELEM_BASED);
+  mesh->set_parting(OMEGA_H_ELEM_BASED);
 
   Int max_dim=3;
   const int numVtx = 1*4;
