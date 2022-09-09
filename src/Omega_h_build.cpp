@@ -1527,6 +1527,7 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
   //these 2 from outside
   mesh->set_parting(OMEGA_H_ELEM_BASED);
 
+/*
   Int max_dim=3;
   const int numVtx = 1*4;
   const int numEdges = 1*6;
@@ -1726,6 +1727,7 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
   }
 
   return;
+  */
 }
 
 void build_quartic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
