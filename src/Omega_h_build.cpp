@@ -1535,9 +1535,9 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
   fprintf(stderr, "tet=%d\n", numFaces);
   fprintf(stderr, "tri=%d\n", numRegions);
 
-  Write<LO> rgn_vertices[4*numRegions];
-  Write<LO> face_vertices[3*numFaces];
-  Write<LO> edge_vertices[2*numEdges];
+  Write<LO> rgn_vertices[4*numRegions];//TODO count unique
+  Write<LO> face_vertices[3*numFaces];//TODO count unique
+  Write<LO> edge_vertices[2*numEdges];//TODO count unique
 
   Write<LO> class_ids_vtx(numVtx);
   Write<I8> class_dim_vtx(numVtx);
@@ -1548,41 +1548,33 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
   Write<LO> class_ids_rgn(numRegions);
   Write<I8> class_dim_rgn(numRegions);
   //std::vector<int> edge_points[1];
-
   Write<Real> coords(numVtx*max_dim);
-  LO v = 0;
-  while ((vtx = (pVertex) VIter_next(vertices))) {
-    double xyz[3];
-    V_coord(vtx,xyz);
-    for(int j=0; j<max_dim; j++) {
-      host_coords[v * max_dim + j] = xyz[j];
+  auto full_coords = full_mesh->coords();
+  auto full_rv2v = full_mesh->ask_down(3, 0).ab2b;
+  auto full_classids_v = full_mesh->get_array<LO>(0, "class_id");
+  auto full_classdim_v = full_mesh->get_array<I8>(0, "class_dim");
+
+  LO tet_id = 1;
+  for (LO v = 0; v < 4; ++v) {
+    LO const full_v = full_ev2v[tet_id*4 + v];
+    for (int j=0; j<max_dim; j++) {
+      coords[v*max_dim + j] = full_coords[full_v*max_dim + j];
     }
-    ent_class_ids[0].push_back(classId(vtx));
-    ent_class_dim[0].push_back(classType(vtx));
-    ++v;
+    class_ids_vtx[v] = full_classids_v[full_v];
+    class_dim_vtx[v] = full_classdim_v[full_v];
   }
-
-  for (int i = 0; i < numVtx; ++i) {
-    host_class_ids_vtx[i] = ent_class_ids[0][static_cast<std::size_t>(i)];
-    host_class_dim_vtx[i] = ent_class_dim[0][static_cast<std::size_t>(i)];
-  }
-
   mesh->set_dim(max_dim);
   mesh->set_family(OMEGA_H_SIMPLEX);
-
   mesh->set_verts(numVtx);
-  mesh->add_coords(Reals(host_coords.write()));
-  mesh->add_tag<ClassId>(0, "class_id", 1,
-      Read<ClassId>(host_class_ids_vtx.write()));
-  mesh->add_tag<I8>(0, "class_dim", 1,
-      Read<I8>(host_class_dim_vtx.write()));
+  mesh->add_coords(Reals(coords));
+  mesh->add_tag<ClassId>(0, "class_id", 1, Read<ClassId>(class_ids_vtx));
+  mesh->add_tag<I8>(0, "class_dim", 1, Read<I8>(class_dim_vtx));
 
   int count_edge = 0;
   int edge_numPts = 0;
-  HostWrite<Real> edgePt_coords(numEdges*max_dim);
+  //TODOHostWrite<Real> edgePt_coords(numEdges*max_dim);
 
   while ((edge = (pEdge) EIter_next(edges))) {
-
     edge_numPts = E_numPoints(edge);
     if (edge_numPts > 0) {
       assert(edge_numPts == 1);
@@ -1603,11 +1595,6 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
     ent_class_dim[1].push_back(classType(edge));
   }
   
-  for (int i = 0; i < numEdges; ++i) {
-    host_class_ids_edge[i] = ent_class_ids[1][static_cast<std::size_t>(i)];
-    host_class_dim_edge[i] = ent_class_dim[1][static_cast<std::size_t>(i)];
-  }
-
   HostWrite<LO> host_e2v(numEdges*2);
   for (Int i = 0; i < numEdges; ++i) {
     for (Int j = 0; j < 2; ++j) {
