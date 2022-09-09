@@ -372,12 +372,7 @@ void test_collapse_boxCircle(Library *lib) {
   build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh);
   vtuPath = "../omega_h/meshes/box_circleCut_4k_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
-/*
-  writer = vtk::FullWriter(
-      "/lore/joshia5/Meshes/curved/boxCircle_bef.vtk", &mesh);
-  writer.write();
-*/
- 
+
   auto opts = AdaptOpts(&mesh);
   opts.should_swap = false;
   opts.should_refine = false;
@@ -519,10 +514,10 @@ int main(int argc, char** argv) {
   //test_Kova_validity(&lib);
   //test_cubic_tet_validity(&lib);
   //test_collapse_kova(&lib);
-  //test_collapse_boxCircle(&lib);
+  test_collapse_boxCircle(&lib);
   //test_collapse_cubicSlab(&lib);
   //test_antenna(&lib);
-  test_sphere(&lib);
+  //test_sphere(&lib);
 
   return 0;
 }
