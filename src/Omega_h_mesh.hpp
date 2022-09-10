@@ -114,20 +114,12 @@ class Mesh {
   Int ent_dim(Topo_type ent_type) const;
   template <typename T>
   void add_tag(Topo_type ent_type, std::string const& name, Int ncomps);
-  template <typename T>
-  void add_tag(Topo_type ent_type, std::string const& name, Int ncomps,
-               Read<T> array, bool internal = false);
-  template <typename T>
-  void set_tag(Topo_type ent_type, std::string const& name, Read<T> array,
-               bool internal = false);
   TagBase const* get_tagbase(Topo_type ent_type, std::string const& name) const;
   template <typename T>
   Tag<T> const* get_tag(Topo_type ent_type, std::string const& name) const;
   template <typename T>
   Read<T> get_array(Topo_type ent_type, std::string const& name) const;
   void remove_tag(Topo_type ent_type, std::string const& name);
-  bool has_tag(Topo_type ent_type, std::string const& name) const;
-  Int ntags(Topo_type ent_type) const;
   TagBase const* get_tag(Topo_type ent_type, Int i) const;
   bool has_ents(Topo_type ent_type) const;
   bool has_adj(Topo_type from_type, Topo_type to_type) const;
@@ -310,8 +302,6 @@ class Mesh {
   ChildrenPtr children_[DIMS][DIMS];
   Library* library_;
 
-  TagIter tag_iter(Topo_type ent_type, std::string const& name);
-  TagCIter tag_iter(Topo_type ent_type, std::string const& name) const;
   void check_type(Topo_type ent_type) const;
   void check_type2(Topo_type ent_type) const;
   void add_adj(Topo_type from_type, Topo_type to_type, Adj adj);
@@ -319,7 +309,6 @@ class Mesh {
   Adj ask_adj(Topo_type from_type, Topo_type to_type);
   void react_to_set_tag(Topo_type ent_type, std::string const& name);
   LO nents_type_[TOPO_TYPES];
-  TagVector tags_type_[TOPO_TYPES];
   AdjPtr adjs_type_[TOPO_TYPES][TOPO_TYPES];
 
   I8 matched_ = -1;

@@ -149,7 +149,7 @@ Adj Mesh::ask_revClass(Int edim) {
   if (has_revClass(edim)) {
     return get_revClass(edim);
   }
-  Adj derived_rc = derive_revClass(edim);
+  Adj derived_rc = derive_revClass(edim, -1);
   revClass_[edim] = std::make_shared<Adj>(derived_rc);
   return derived_rc;
 }

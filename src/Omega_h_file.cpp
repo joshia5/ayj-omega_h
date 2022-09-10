@@ -336,7 +336,7 @@ static void read_tag(std::istream& stream, Mesh* mesh, Int d,
 
     size_t found = name.find("_rc");
     if (found != std::string::npos) {
-      mesh->change_tagTorc<I8> (d, ncomps, name, class_ids);
+      //mesh->change_tagTorc<I8> (d, ncomps, name, class_ids);
     }
 
   } else if (type == OMEGA_H_I32) {
@@ -346,18 +346,20 @@ static void read_tag(std::istream& stream, Mesh* mesh, Int d,
 
     size_t found = name.find("_rc");
     if (found != std::string::npos) {
-      mesh->change_tagTorc<I32> (d, ncomps, name, class_ids);
+      //mesh->change_tagTorc<I32> (d, ncomps, name, class_ids);
+    }
 
-  //TODO: read class id info for rc tag to file
-  Read<I32> class_ids = {};
-  if (version > 9) {
-    std::string class_ids_string;
-    read(stream, class_ids_string, needs_swapping);
-    OMEGA_H_CHECK(class_ids_string == "n_geom_ents");
-    I32 n_class_ids;
-    read_value(stream, n_class_ids, needs_swapping);
-    if (n_class_ids > 0) {
-      read_array(stream, class_ids, is_compressed, needs_swapping);
+    //TODO: read class id info for rc tag to file
+    Read<I32> class_ids = {};
+    if (version > 9) {
+      std::string class_ids_string;
+      read(stream, class_ids_string, needs_swapping);
+      OMEGA_H_CHECK(class_ids_string == "n_geom_ents");
+      I32 n_class_ids;
+      read_value(stream, n_class_ids, needs_swapping);
+      if (n_class_ids > 0) {
+        read_array(stream, class_ids, is_compressed, needs_swapping);
+      }
     }
   }
 
