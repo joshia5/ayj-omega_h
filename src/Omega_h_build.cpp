@@ -1520,7 +1520,7 @@ void build_cubic_cavities_3d(Mesh* mesh, Mesh* curveVtk_mesh,
  * we know the Id of tets in a cav, iterate over them and count unique faces,
  * edges, verts doing this requires device to host data transfer
 */
-void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
+void build_given_tets(Mesh* mesh, Mesh *full_mesh) {
 
   //auto mesh = Mesh(comm->library());
   //mesh.set_comm(comm);
@@ -1551,17 +1551,22 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
   Write<Real> coords(numVtx*max_dim);
   auto full_coords = full_mesh->coords();
   auto full_rv2v = full_mesh->ask_down(3, 0).ab2b;
+  auto full_re2e = full_mesh->ask_down(3, 1).ab2b;
+  auto full_ev2v = full_mesh->get_adj(1, 0).ab2b;
+  auto full_rf2f = full_mesh->get_adj(3, 2).ab2b;
   auto full_classids_v = full_mesh->get_array<LO>(0, "class_id");
   auto full_classdim_v = full_mesh->get_array<I8>(0, "class_dim");
 
-  LO tet_id = 1;
-  for (LO v = 0; v < 4; ++v) {
-    LO const full_v = full_ev2v[tet_id*4 + v];
-    for (int j=0; j<max_dim; j++) {
-      coords[v*max_dim + j] = full_coords[full_v*max_dim + j];
+  fot (t=0; t<numRegions; ++t) {
+    LO tet_id = t;//TODO
+    for (LO v = 0; v < 4; ++v) {
+      LO const full_v = full_rv2v[tet_id*4 + v];
+      for (int j=0; j<max_dim; j++) {
+        coords[v*max_dim + j] = full_coords[full_v*max_dim + j];
+      }
+      class_ids_vtx[v] = full_classids_v[full_v];
+      class_dim_vtx[v] = full_classdim_v[full_v];
     }
-    class_ids_vtx[v] = full_classids_v[full_v];
-    class_dim_vtx[v] = full_classdim_v[full_v];
   }
   mesh->set_dim(max_dim);
   mesh->set_family(OMEGA_H_SIMPLEX);
@@ -1574,25 +1579,24 @@ void build_given_ents(Mesh* mesh, Mesh *full_mesh) {
   int edge_numPts = 0;
   //TODO HostWrite<Real> edgePt_coords(numEdges*max_dim);
 
-  while ((edge = (pEdge) EIter_next(edges))) {
-    edge_numPts = E_numPoints(edge);
-    if (edge_numPts > 0) {
-      assert(edge_numPts == 1);
-      pPoint point = E_point(edge, 0);
-      double p_coord[max_dim];
-      P_coord(point, p_coord);
-      for(int j=0; j<max_dim; j++) {
-        edgePt_coords[count_edge * max_dim + j] = p_coord[j];
-      }
-    }
+  //TODO create edge numberings so that we dont have to transfer full mesh to host
+  fot (t=0; t<numRegions; ++t) {
+    LO tet_id = t;//TODO
+    for (LO e = 0; e < 4; ++e) {
+      LO const full_e = full_re2e[tet_id*4 + e];
+      //edge_numPts = 2;
+      //for(int j=0; j<max_dim; j++) {
+        //edgePt_coords[count_edge * max_dim + j] = p_coord[j];
+      //}
 
-    count_edge += 1;
-    for(int j=0; j<2; ++j) {
-      vtx = E_vertex(edge,j);
-      edge_vertices[0].push_back(EN_id(vtx));
+      count_edge += 1;
+      for (int j=0; j<2; ++j) {
+        vtx = full_ev2v[full_e*2+j];
+        edge_vertices[count_edge*2+j] = vtx;
+      }
+      class_ids_edge[count_edge].push_back(classId(edge));
+      ent_class_dim[1].push_back(classType(edge));
     }
-    ent_class_ids[1].push_back(classId(edge));
-    ent_class_dim[1].push_back(classType(edge));
   }
 
   HostWrite<LO> host_e2v(numEdges*2);
