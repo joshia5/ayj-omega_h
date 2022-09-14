@@ -1520,12 +1520,11 @@ void build_cubic_cavities_3d(Mesh* mesh, Mesh* curveVtk_mesh,
  * we know the Id of tets in a cav, iterate over them and count unique faces,
  * edges, verts doing this requires device to host data transfer
 */
-void build_given_tets(Mesh* mesh, Mesh *full_mesh) {
+void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet, 
+    Read<I8> build_face, Read<I8> build_edge, Read<I8> build_vert) {
 
-  //auto mesh = Mesh(comm->library());
-  //mesh.set_comm(comm);
   //these 2 from outside
-  mesh.set_parting(OMEGA_H_ELEM_BASED);
+  mesh->set_parting(OMEGA_H_ELEM_BASED);
 
   Int max_dim=3;
   const int numVtx = 1*4;
@@ -1557,6 +1556,20 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh) {
   auto full_classids_v = full_mesh->get_array<LO>(0, "class_id");
   auto full_classdim_v = full_mesh->get_array<I8>(0, "class_dim");
 
+  // we know which tets need to be counted
+  // then count id of new verts, edges, faces, tets on the cpu
+  // convert those ids to gpu and then transfer the coods, class, and topo
+  // info on gpu
+  auto build_tet_h = HostRead<I8>(build_tet);
+  for (LO t = 0; t< build_tet.size(); ++t) {
+  }
+  for (LO f = 0; f< build_face.size(); ++f) {
+  }
+  for (LO e = 0; e< build_edge.size(); ++e) {
+  }
+  for (LO v = 0; v< build_vert.size(); ++v) {
+  }
+  /*
   fot (t=0; t<numRegions; ++t) {
     LO tet_id = t;//TODO
     for (LO v = 0; v < 4; ++v) {
@@ -1599,19 +1612,11 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh) {
     }
   }
 
-  HostWrite<LO> host_e2v(numEdges*2);
-  for (Int i = 0; i < numEdges; ++i) {
-    for (Int j = 0; j < 2; ++j) {
-      host_e2v[i*2 + j] =
-        edge_vertices[0][static_cast<std::size_t>(i*2 + j)];
-    }
-  }
-  auto ev2v = Read<LO>(host_e2v.write());
-  mesh->set_ents(1, Adj(ev2v));
+  mesh->set_ents(1, Adj(LOs(edge_vertices)));
   mesh->add_tag<ClassId>(1, "class_id", 1,
-      Read<ClassId>(host_class_ids_edge.write()));
+      Read<ClassId>(class_ids_edge));
   mesh->add_tag<I8>(1, "class_dim", 1,
-      Read<I8>(host_class_dim_edge.write()));
+      Read<I8>(class_dim_edge));
 
   HostWrite<Real> facePt_coords(numFaces*max_dim);
   int count_face = 0;
@@ -1728,6 +1733,7 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh) {
     //mesh->set_tag_for_ctrlPts(0, mesh->coords());
     //mesh->add_tag<Real>(2, "face_interpPts", max_dim, Reals(facePt_coords.write()));
   }
+  */
 
   return;
 }
