@@ -1533,6 +1533,13 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   auto full_classdim_v = full_mesh->get_array<I8>(0, "class_dim");
   auto full_classids_e = full_mesh->get_array<LO>(1, "class_id");
   auto full_classdim_e = full_mesh->get_array<I8>(1, "class_dim");
+  auto full_classids_f = full_mesh->get_array<LO>(2, "class_id");
+  auto full_classdim_f = full_mesh->get_array<I8>(2, "class_dim");
+  auto full_classids_r = full_mesh->get_array<LO>(3, "class_id");
+  auto full_classdim_r = full_mesh->get_array<I8>(3, "class_dim");
+  auto full_vtxCtrlPts = full_mesh->get_ctrlPts(0);
+  auto full_edgeCtrlPts = full_mesh->get_ctrlPts(EDGE);
+  auto full_faceCtrlPts = full_mesh->get_ctrlPts(FACE);
 
   // we know which tets need to be counted
   // then count id of new verts, edges, faces, tets on the cpu
@@ -1601,12 +1608,11 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   mesh->set_family(OMEGA_H_SIMPLEX);
   mesh->set_curved(1);
   mesh->set_max_order(3);
-  mesh->add_tags_for_ctrlPts();
   fprintf(stderr, "tri=%d, tet=%d\n", numFaces, numRegions);
 
-  Write<LO> rgn_vertices[4*numRegions];
-  Write<LO> face_vertices[3*numFaces];
-  Write<LO> edge_vertices[2*numEdges];
+  Write<LO> rgn_vertices(4*numRegions);
+  Write<LO> face_vertices(3*numFaces);
+  Write<LO> edge_vertices(2*numEdges);
   Write<LO> class_ids_vtx(numVtx);
   Write<I8> class_dim_vtx(numVtx);
   Write<LO> class_ids_edge(numEdges);
@@ -1618,37 +1624,44 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
 
   Write<Real> coords(numVtx*max_dim);
   Write<Real> vtxPt_coords(numVtx*max_dim);
-  auto full_vtxCtrlPts = mesh->get_ctrlPts(0);
   auto transfer_v = OMEGA_H_LAMBDA (LO const v) {
     LO const cav_v = full2cav_vert[v];
-    for (int j=0; j<max_dim; j++) {
-      coords[cav_v*max_dim + j] = full_coords[v*max_dim + j];
-      vtxPt_coords[cav_v*max_dim + j] = full_vtxCtrlPts[v*max_dim + j];
+    if (cav_v >= 0) {
+      printf("v=%d, cavv=%d, numV %d\n", v, cav_v, numVtx);
+      for (I8 j=0; j<max_dim; j++) {
+        coords[cav_v*max_dim + j] = full_coords[v*max_dim + j];
+        vtxPt_coords[cav_v*max_dim + j] = full_vtxCtrlPts[v*max_dim + j];
+      }
+      class_ids_vtx[cav_v] = full_classids_v[v];
+      class_dim_vtx[cav_v] = full_classdim_v[v];
     }
-    class_ids_vtx[cav_v] = full_classids_v[v];
-    class_dim_vtx[cav_v] = full_classdim_v[v];
   };
   parallel_for(full_mesh->nverts(), std::move(transfer_v));
   mesh->set_verts(numVtx);
   mesh->add_coords(Reals(coords));
   mesh->add_tag<ClassId>(0, "class_id", 1, Read<ClassId>(class_ids_vtx));
   mesh->add_tag<I8>(0, "class_dim", 1, Read<I8>(class_dim_vtx));
-  mesh->set_tag_for_ctrlPts(0, Reals(vtxPt_coords));
 
+  fprintf(stderr, "ok0\n");
   I8 edge_numPts = 2;
   Write<Real> edgePt_coords(numEdges*edge_numPts*max_dim);
-  auto full_edgeCtrlPts = mesh->get_ctrlPts(EDGE);
   auto transfer_e = OMEGA_H_LAMBDA (LO const e) {
     LO const cav_e = full2cav_edge[e];
-    for(int j=0; j<max_dim*edge_numPts; j++) {
-      edgePt_coords[cav_e*max_dim + j] = full_edgeCtrlPts[e*max_dim + j];
+    if (cav_e >= 0) {
+      for(I8 j=0; j<max_dim; ++j) {
+        edgePt_coords[cav_e*2*max_dim+j] = full_edgeCtrlPts[e*2*max_dim+j];
+        edgePt_coords[cav_e*2*max_dim+max_dim+j] = 
+          full_edgeCtrlPts[e*2*max_dim+max_dim+j];
+      }
+      for (I8 j=0; j<2; ++j) {
+        printf("j %d\n", j);
+        LO const vtx = full_ev2v[e*2+j];
+        LO const cav_v = full2cav_vert[vtx];
+        edge_vertices[cav_e*2+j] = cav_v;
+      }
+      class_ids_edge[cav_e] = full_classids_e[e];
+      class_dim_edge[cav_e] = full_classdim_e[e];
     }
-    for (int j=0; j<2; ++j) {
-      vtx = full_ev2v[e*2+j];
-      edge_vertices[cav_e*2+j] = vtx;
-    }
-    class_ids_edge[cav_e] = full_classids_e[e];
-    class_dim_edge[cav_e] = full_classdim_e[e];
   };
   parallel_for(full_mesh->nedges(), std::move(transfer_e));
   mesh->set_ents(1, Adj(LOs(edge_vertices)));
@@ -1656,27 +1669,32 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
       Read<ClassId>(class_ids_edge));
   mesh->add_tag<I8>(1, "class_dim", 1,
       Read<I8>(class_dim_edge));
-  mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords));
+  fprintf(stderr, "ok1\n");
 
-  HostWrite<Real> facePt_coords(numFaces*max_dim);
-  auto full_faceCtrlPts = mesh->get_ctrlPts(FACE);
+  Write<Real> facePt_coords(numFaces*max_dim);
   auto transfer_f = OMEGA_H_LAMBDA (LO const f) {
     LO const cav_f = full2cav_face[f];
-    for(int j=0; j<max_dim; j++) {
-      facePt_coords[cav_f*max_dim + j] = full_faceCtrlPts[f*max_dim + j];
+    if (cav_f >= 0) {
+      for(int j=0; j<max_dim; j++) {
+        facePt_coords[cav_f*max_dim + j] = full_faceCtrlPts[f*max_dim + j];
+      }
+      for (int j=0; j<3; ++j) {
+        LO const vtx = full_fv2v[f*3+j];
+        LO const cav_v = full2cav_vert[vtx];
+        face_vertices[cav_f*3+j] = cav_v;
+      }
+      class_ids_face[cav_f] = full_classids_f[f];
+      class_dim_face[cav_f] = full_classdim_f[f];
     }
-    for (int j=0; j<3; ++j) {
-      vtx = full_fv2v[f*3+j];
-      face_vertices[cav_f*3+j] = vtx;
-    }
-    class_ids_face[cav_f] = full_classids_f[f];
-    class_dim_face[cav_f] = full_classdim_f[f];
   };
   parallel_for(full_mesh->nfaces(), std::move(transfer_f));
+  fprintf(stderr, "ok2\n");
   Adj edge2vert;
   Adj vert2edge;
   edge2vert = mesh->get_adj(1, 0);
+  fprintf(stderr, "ok2.1\n");
   vert2edge = mesh->ask_up(0, 1);
+  fprintf(stderr, "ok2.2\n");
   auto tri2verts = Read<LO>(face_vertices);
   Adj down;
   {
@@ -1688,16 +1706,19 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
       Read<ClassId>(class_ids_face));
   mesh->add_tag<I8>(2, "class_dim", 1,
       Read<I8>(class_dim_face));
-  mesh->set_tag_for_ctrlPts(2, Reals(facePt_coords));
+  fprintf(stderr, "ok3\n");
 
   auto transfer_r = OMEGA_H_LAMBDA (LO const r) {
     LO const cav_r = full2cav_tet[r];
-    for (int j=0; j<4; ++j) {
-      vtx = full_rv2v[r*4+j];
-      rgn_vertices[cav_r*4+j] = vtx;
+    if (cav_r >= 0) {
+      for (int j=0; j<4; ++j) {
+        LO const vtx = full_rv2v[r*4+j];
+        LO const cav_v = full2cav_vert[vtx];
+        rgn_vertices[cav_r*4+j] = cav_v;
+      }
+      class_ids_rgn[cav_r] = full_classids_r[r];
+      class_dim_rgn[cav_r] = full_classdim_r[r];
     }
-    class_ids_rgn[cav_r] = full_classids_r[r];
-    class_dim_rgn[cav_r] = full_classdim_r[r];
   };
   parallel_for(full_mesh->nregions(), std::move(transfer_r));
 
@@ -1705,6 +1726,8 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   Adj vert2tri;
   tri2vert = mesh->ask_down(2, 0);
   vert2tri = mesh->ask_up(0, 2);
+  auto tet2verts = Read<LO>(rgn_vertices);
+  fprintf(stderr, "ok4\n");
   {
     down = reflect_down(tet2verts, tri2vert.ab2b, vert2tri,
 	OMEGA_H_SIMPLEX, 3, 2);
@@ -1715,11 +1738,16 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   mesh->add_tag<I8>(3, "class_dim", 1,
       Read<I8>(class_dim_rgn));
 
+  fprintf(stderr, "ok5\n");
   for (LO i = 0; i <= mesh->dim(); ++i) {
     if (!mesh->has_tag(i, "global")) {
       mesh->add_tag(i, "global", 1, Omega_h::GOs(mesh->nents(i), 0, 1));
     }
   }
+  mesh->add_tags_for_ctrlPts();
+  mesh->set_tag_for_ctrlPts(0, Reals(vtxPt_coords));
+  mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords));
+  mesh->set_tag_for_ctrlPts(2, Reals(facePt_coords));
 
   return;
 }
