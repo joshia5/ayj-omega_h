@@ -126,8 +126,7 @@ void check_validity_edges_from_complex_cav(Mesh *new_mesh) {
       LO const vert = new_rv2v[i*6+v];
       build_vert[vert] = is_invalid;
     }
-    if (is_invalid > 0) printf("tet %d invalid code %d\n", i, is_invalid);
-    }
+    if (is_invalid>0) printf("tet %d invalid code %d\n", i, is_invalid);
 
   };
   parallel_for(nnew_tet, std::move(check_tet));
