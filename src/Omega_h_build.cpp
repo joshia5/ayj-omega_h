@@ -1597,6 +1597,11 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
 
   mesh->set_parting(OMEGA_H_ELEM_BASED);
   Int max_dim=3;
+  mesh->set_dim(max_dim);
+  mesh->set_family(OMEGA_H_SIMPLEX);
+  mesh->set_curved(1);
+  mesh->set_max_order(3);
+  mesh->add_tags_for_ctrlPts();
   fprintf(stderr, "tri=%d, tet=%d\n", numFaces, numRegions);
 
   Write<LO> rgn_vertices[4*numRegions];
@@ -1624,8 +1629,6 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
     class_dim_vtx[cav_v] = full_classdim_v[v];
   };
   parallel_for(full_mesh->nverts(), std::move(transfer_v));
-  mesh->set_dim(max_dim);
-  mesh->set_family(OMEGA_H_SIMPLEX);
   mesh->set_verts(numVtx);
   mesh->add_coords(Reals(coords));
   mesh->add_tag<ClassId>(0, "class_id", 1, Read<ClassId>(class_ids_vtx));
@@ -1676,99 +1679,47 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   vert2edge = mesh->ask_up(0, 1);
   auto tri2verts = Read<LO>(face_vertices);
   Adj down;
-  down = reflect_down(tri2verts, edge2vert.ab2b, vert2edge,
-      OMEGA_H_SIMPLEX, 2, 1);
-  mesh->set_ents(2, down);
+  {
+    down = reflect_down(tri2verts, edge2vert.ab2b, vert2edge,
+	OMEGA_H_SIMPLEX, 2, 1);
+    mesh->set_ents(2, down);
+  }
   mesh->add_tag<ClassId>(2, "class_id", 1,
       Read<ClassId>(class_ids_face));
   mesh->add_tag<I8>(2, "class_dim", 1,
       Read<I8>(class_dim_face));
   mesh->set_tag_for_ctrlPts(2, Reals(facePt_coords));
 
-  /*
-  int count_face = 0;
-  while ((face = (pFace) FIter_next(faces))) {
-    pVertex tri_vertex;
-    pPList tri_vertices = F_vertices(face,1);
-    assert (PList_size(tri_vertices) == 3);
-    void *iter = 0;
-    while ((tri_vertex = (pVertex) PList_next(tri_vertices, &iter))) {
-      face_vertices[0].push_back(EN_id(tri_vertex));
+  auto transfer_r = OMEGA_H_LAMBDA (LO const r) {
+    LO const cav_r = full2cav_tet[r];
+    for (int j=0; j<4; ++j) {
+      vtx = full_rv2v[r*4+j];
+      rgn_vertices[cav_r*4+j] = vtx;
     }
-    PList_delete(tri_vertices);
-    face_class_ids[0].push_back(classId(face));
-    face_class_dim[0].push_back(classType(face));
-
-    // query face pt for cubic
-    double xyz[3];
-    double lpt[2];
-    lpt[0] = 1.0/3.0;
-    lpt[1] = 1.0/3.0;
-    EN_localToGlobal(face, lpt, xyz);
-    for(int j=0; j<max_dim; j++) {
-      facePt_coords[count_face * max_dim + j] = xyz[j];
-    }
-    count_face += 1;
-
-    ent_class_ids[2].push_back(classId(face));
-    ent_class_dim[2].push_back(classType(face));
-  }
-
-
-  std::vector<int> rgn_class_ids[4];
-  std::vector<int> rgn_class_dim[4];
-
-  while ((rgn = (pRegion) RIter_next(regions))) {
-    pPList verts = R_vertices(rgn,1);
-    assert (PList_size(verts) == 4);
-    void *iter = 0;
-    while ((vert = (pVertex) PList_next(verts, &iter))) {
-      rgn_vertices[0].push_back(EN_id(vert));
-    }
-    PList_delete(verts);
-    rgn_class_ids[0].push_back(classId(rgn));
-    rgn_class_dim[0].push_back(classType(rgn));
-
-    ent_class_ids[3].push_back(classId(rgn));
-    ent_class_dim[3].push_back(classType(rgn));
-  }
+    class_ids_rgn[cav_r] = full_classids_r[r];
+    class_dim_rgn[cav_r] = full_classdim_r[r];
+  };
+  parallel_for(full_mesh->nregions(), std::move(transfer_r));
 
   Adj tri2vert;
   Adj vert2tri;
   tri2vert = mesh->ask_down(2, 0);
   vert2tri = mesh->ask_up(0, 2);
-
-  HostWrite<LO> host_tet2verts(count_tet*4);
-  for (Int i = 0; i < count_tet; ++i) {
-    for (Int j = 0; j < 4; ++j) {
-      host_tet2verts[i*4 + j] =
-        rgn_vertices[0][static_cast<std::size_t>(i*4 + j)];
-    }
+  {
+    down = reflect_down(tet2verts, tri2vert.ab2b, vert2tri,
+	OMEGA_H_SIMPLEX, 3, 2);
+    mesh->set_ents(3, down);
   }
-  auto tet2verts = Read<LO>(host_tet2verts.write());
-  down = reflect_down(tet2verts, tri2vert.ab2b, vert2tri,
-      OMEGA_H_SIMPLEX, 3, 2);
-  mesh->set_ents(3, down);
   mesh->add_tag<ClassId>(3, "class_id", 1,
-      Read<ClassId>(host_class_ids_rgn.write()));
+      Read<ClassId>(class_ids_rgn));
   mesh->add_tag<I8>(3, "class_dim", 1,
-      Read<I8>(host_class_dim_rgn.write()));
+      Read<I8>(class_dim_rgn));
 
   for (LO i = 0; i <= mesh->dim(); ++i) {
     if (!mesh->has_tag(i, "global")) {
       mesh->add_tag(i, "global", 1, Omega_h::GOs(mesh->nents(i), 0, 1));
     }
   }
-  if (edge_numPts > 0) {
-    assert(edge_numPts == 1);
-    mesh->set_curved(1);
-    mesh->set_max_order(edge_numPts + 1);
-    mesh->add_tags_for_ctrlPts();
-    mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords.write()));
-    //mesh->set_tag_for_ctrlPts(0, mesh->coords());
-    //mesh->add_tag<Real>(2, "face_interpPts", max_dim, Reals(facePt_coords.write()));
-  }
-  */
 
   return;
 }
