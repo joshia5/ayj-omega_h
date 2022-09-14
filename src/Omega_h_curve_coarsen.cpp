@@ -92,39 +92,54 @@ void check_validity_edges_from_complex_cav(Mesh *new_mesh) {
   auto const new_e2er = new_e2r.a2ab;
   auto const new_er2r = new_e2r.ab2b;
   auto const nnew_edge = new_mesh->nedges();
-  //auto const nfaces = new_mesh->nfaces();
+  auto const nnew_face = new_mesh->nfaces();
+  auto const nnew_vert = new_mesh->nverts();
+  auto const nnew_tet = new_mesh->nregions();
 
   auto const vertCtrlPts = new_mesh->get_ctrlPts(0);
   auto const edgeCtrlPts = new_mesh->get_ctrlPts(1);
   auto const faceCtrlPts = new_mesh->get_ctrlPts(2);
 
-  Write<LO> invalid_edge(nnew_edge, -1);
-  auto const nnew_tet = new_mesh->nregions();
-  Write<LO> invalid_tet(nnew_tet, -1);
+  Write<I8> invalid_tet(nnew_tet, -1);
+  Write<I8> build_face(nnew_face, -1);
+  Write<I8> build_edge(nnew_edge, -1);
+  Write<I8> build_vert(nnew_vert, -1);
 
-  auto check_edge = OMEGA_H_LAMBDA(LO i) {
-    for (LO er = new_e2er[i]; er < new_e2er[i+1]; ++er) {
-      LO adj_tet = new_er2r[er];
-      LO is_invalid = -1;
-      Few<Real, 60> tet_pts = collect_tet_pts(3,adj_tet,new_ev2v,new_rv2v,vertCtrlPts
-          , edgeCtrlPts, faceCtrlPts, new_re2e, new_rf2f);
+  auto check_tet = OMEGA_H_LAMBDA(LO i) {
+    LO is_invalid = -1;
+    Few<Real, 60> tet_pts = collect_tet_pts(3,i,new_ev2v,new_rv2v,vertCtrlPts
+        , edgeCtrlPts, faceCtrlPts, new_re2e, new_rf2f);
 
-      Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
+    Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
+    is_invalid = checkMinJacDet_3d(nodes_det, 3, 1);
 
-      is_invalid = checkMinJacDet_3d(nodes_det, 3, 1);
-      invalid_tet[adj_tet] = is_invalid;
-      invalid_edge[i] = is_invalid;
-      if (is_invalid > 0) {
-        printf("edge %d, adj_tet %d invalid code %d\n", i, adj_tet, is_invalid);
-        if (is_invalid > 0) break;
-      }
+    invalid_tet[i] = is_invalid;
+    for (LO f=0; f<4; ++f) {
+      LO const face = new_rf2f[i*4+f];
+      build_face[face] = is_invalid;
     }
-  };
-  parallel_for(nnew_edge, std::move(check_edge));
+    for (LO e=0; e<6; ++e) {
+      LO const edge = new_re2e[i*6+e];
+      build_edge[edge] = is_invalid;
+    }
+    for (LO v=0; v<4; ++v) {
+      LO const vert = new_rv2v[i*6+v];
+      build_vert[vert] = is_invalid;
+    }
+    if (is_invalid > 0) printf("tet %d invalid code %d\n", i, is_invalid);
+    }
 
+  };
+  parallel_for(nnew_tet, std::move(check_tet));
+
+  //TODO call fn in a loop over invalid cavs
+  auto cav_mesh = Mesh(new_mesh->comm()->library());
+  cav_mesh.set_comm(new_mesh->comm());
+  build_given_tets(&cav_mesh, new_mesh, Read<I8>(invalid_tet),
+      Read<I8>(build_face),Read<I8>(build_edge),Read<I8>(build_vert));
 //build mesh object using above tets per edge
   /*
-  auto tet_invalid_h = HostRead<LO>(Read<LO>(invalid_tet));
+  auto tet_invalid_h = HostRead<LO>(Read<I8>(invalid_tet));
   auto new_rf2f_h = HostRead<LO>(new_rf2f);
   for (LO i = 0; i < nnew_tet; ++i) {
     LO const is_invalid = tet_invalid_h[i];
