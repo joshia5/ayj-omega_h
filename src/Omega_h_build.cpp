@@ -1523,14 +1523,73 @@ void build_cubic_cavities_3d(Mesh* mesh, Mesh* curveVtk_mesh,
 void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet, 
     Read<I8> build_face, Read<I8> build_edge, Read<I8> build_vert) {
 
-  //these 2 from outside
-  mesh->set_parting(OMEGA_H_ELEM_BASED);
+  auto full_coords = full_mesh->coords();
+  auto full_rv2v = full_mesh->ask_down(3, 0).ab2b;
+  auto full_re2e = full_mesh->ask_down(3, 1).ab2b;
+  auto full_ev2v = full_mesh->get_adj(1, 0).ab2b;
+  auto full_rf2f = full_mesh->get_adj(3, 2).ab2b;
+  auto full_classids_v = full_mesh->get_array<LO>(0, "class_id");
+  auto full_classdim_v = full_mesh->get_array<I8>(0, "class_dim");
 
+  // we know which tets need to be counted
+  // then count id of new verts, edges, faces, tets on the cpu
+  // convert those ids to gpu and then transfer the coods, class, and topo
+  // info on gpu
+  auto build_tet_h = HostRead<I8>(build_tet);
+  auto build_face_h = HostRead<I8>(build_face);
+  auto build_edge_h = HostRead<I8>(build_edge);
+  auto build_vert_h = HostRead<I8>(build_vert);
+  HostWrite<I8> full2cav_tet_h(full_mesh->nregions());
+  HostWrite<I8> full2cav_face_h(full_mesh->nfaces());
+  HostWrite<I8> full2cav_edge_h(full_mesh->nedges());
+  HostWrite<I8> full2cav_vert_h(full_mesh->nverts());
+  LO numRegions = 0;
+  for (LO t = 0; t< build_tet.size(); ++t) {
+    if (build_tet_h[t] > 0) {
+      printf("cav tet id %d fullid %d\n", numRegions, t);
+      full2cav_tet_h[t] = numRegions;
+      ++numRegions;
+    }
+    else {
+      full2cav_tet_h[t] = -1;
+    }
+  }
+  LO numFaces = 0;
+  for (LO f = 0; f< build_face.size(); ++f) {
+    if (build_face_h[f] > 0) {
+      printf("cav faceid %d fullid %d\n", numFaces, f);
+      full2cav_face_h[f] = numFaces;
+      ++numFaces;
+    }
+    else {
+      full2cav_face_h[f] = -1;
+    }
+  }
+  LO numEdges = 0;
+  for (LO e = 0; e< build_edge.size(); ++e) {
+    if (build_edge_h[e] > 0) {
+      printf("cav edgeid %d fullid %d\n", numEdges, e);
+      full2cav_edge_h[e] = numEdges;
+      ++numEdges;
+    }
+    else {
+      full2cav_edge_h[e] = -1;
+    }
+  }
+  LO numVtx = 0;
+  for (LO v = 0; v< build_vert.size(); ++v) {
+    if (build_vert_h[v] > 0) {
+      printf("cav vertid %d fullid %d\n", numVtx, v);
+      full2cav_vert_h[v] = numVtx;
+      ++numVtx;
+    }
+    else {
+      full2cav_vert_h[v] = -1;
+    }
+  }
+
+  mesh->set_parting(OMEGA_H_ELEM_BASED);
   Int max_dim=3;
-  const int numVtx = 1*4;
-  const int numEdges = 1*6;
-  const int numFaces = 1*4;
-  const int numRegions = 1*1;
   fprintf(stderr, "tet=%d\n", numFaces);
   fprintf(stderr, "tri=%d\n", numRegions);
 
@@ -1548,27 +1607,7 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   Write<I8> class_dim_rgn(numRegions);
   //std::vector<int> edge_points[1];
   Write<Real> coords(numVtx*max_dim);
-  auto full_coords = full_mesh->coords();
-  auto full_rv2v = full_mesh->ask_down(3, 0).ab2b;
-  auto full_re2e = full_mesh->ask_down(3, 1).ab2b;
-  auto full_ev2v = full_mesh->get_adj(1, 0).ab2b;
-  auto full_rf2f = full_mesh->get_adj(3, 2).ab2b;
-  auto full_classids_v = full_mesh->get_array<LO>(0, "class_id");
-  auto full_classdim_v = full_mesh->get_array<I8>(0, "class_dim");
 
-  // we know which tets need to be counted
-  // then count id of new verts, edges, faces, tets on the cpu
-  // convert those ids to gpu and then transfer the coods, class, and topo
-  // info on gpu
-  auto build_tet_h = HostRead<I8>(build_tet);
-  for (LO t = 0; t< build_tet.size(); ++t) {
-  }
-  for (LO f = 0; f< build_face.size(); ++f) {
-  }
-  for (LO e = 0; e< build_edge.size(); ++e) {
-  }
-  for (LO v = 0; v< build_vert.size(); ++v) {
-  }
   /*
   fot (t=0; t<numRegions; ++t) {
     LO tet_id = t;//TODO

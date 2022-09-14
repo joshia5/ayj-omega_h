@@ -114,19 +114,21 @@ void check_validity_edges_from_complex_cav(Mesh *new_mesh) {
     is_invalid = checkMinJacDet_3d(nodes_det, 3, 1);
 
     invalid_tet[i] = is_invalid;
-    for (LO f=0; f<4; ++f) {
-      LO const face = new_rf2f[i*4+f];
-      build_face[face] = is_invalid;
+    if (is_invalid>0) {
+      printf("tet %d invalid code %d\n", i, is_invalid);
+      for (LO f=0; f<4; ++f) {
+        LO const face = new_rf2f[i*4+f];
+        build_face[face] = is_invalid;
+      }
+      for (LO e=0; e<6; ++e) {
+        LO const edge = new_re2e[i*6+e];
+        build_edge[edge] = is_invalid;
+      }
+      for (LO v=0; v<4; ++v) {
+        LO const vert = new_rv2v[i*4+v];
+        build_vert[vert] = is_invalid;
+      }
     }
-    for (LO e=0; e<6; ++e) {
-      LO const edge = new_re2e[i*6+e];
-      build_edge[edge] = is_invalid;
-    }
-    for (LO v=0; v<4; ++v) {
-      LO const vert = new_rv2v[i*4+v];
-      build_vert[vert] = is_invalid;
-    }
-    if (is_invalid>0) printf("tet %d invalid code %d\n", i, is_invalid);
 
   };
   parallel_for(nnew_tet, std::move(check_tet));
