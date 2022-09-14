@@ -1530,6 +1530,8 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   auto full_rf2f = full_mesh->get_adj(3, 2).ab2b;
   auto full_classids_v = full_mesh->get_array<LO>(0, "class_id");
   auto full_classdim_v = full_mesh->get_array<I8>(0, "class_dim");
+  auto full_classids_e = full_mesh->get_array<LO>(1, "class_id");
+  auto full_classdim_e = full_mesh->get_array<I8>(1, "class_dim");
 
   // we know which tets need to be counted
   // then count id of new verts, edges, faces, tets on the cpu
@@ -1587,10 +1589,6 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
       full2cav_vert_h[v] = -1;
     }
   }
-  //++numRegions;
-  //++numFaces;
-  //++numEdges;
-  //++numVtx;
   auto full2cav_tet = full2cav_tet_h.write();
   auto full2cav_face = full2cav_face_h.write();
   auto full2cav_edge = full2cav_edge_h.write();
@@ -1598,12 +1596,11 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
 
   mesh->set_parting(OMEGA_H_ELEM_BASED);
   Int max_dim=3;
-  fprintf(stderr, "tri=%d\n", numFaces);
-  fprintf(stderr, "tet=%d\n", numRegions);
+  fprintf(stderr, "tri=%d, tet=%d\n", numFaces, numRegions);
 
-  Write<LO> rgn_vertices[4*numRegions];//TODO count unique
-  Write<LO> face_vertices[3*numFaces];//TODO count unique
-  Write<LO> edge_vertices[2*numEdges];//TODO count unique
+  Write<LO> rgn_vertices[4*numRegions];
+  Write<LO> face_vertices[3*numFaces];
+  Write<LO> edge_vertices[2*numEdges];
 
   Write<LO> class_ids_vtx(numVtx);
   Write<I8> class_dim_vtx(numVtx);
@@ -1616,14 +1613,15 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   //std::vector<int> edge_points[1];
   Write<Real> coords(numVtx*max_dim);
 
-  for (LO v=0; v<full_mesh->nverts(); ++v) {
+  auto transfer_v = OMEGA_H_LAMBDA (LO const v) {
     LO const cav_v = full2cav_vert[v];
     for (int j=0; j<max_dim; j++) {
       coords[cav_v*max_dim + j] = full_coords[v*max_dim + j];
     }
     class_ids_vtx[cav_v] = full_classids_v[v];
     class_dim_vtx[cav_v] = full_classdim_v[v];
-  }
+  };
+  parallel_for(full_mesh->nverts(), std::move(transfer_v));
   mesh->set_dim(max_dim);
   mesh->set_family(OMEGA_H_SIMPLEX);
   mesh->set_verts(numVtx);
@@ -1631,37 +1629,29 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   mesh->add_tag<ClassId>(0, "class_id", 1, Read<ClassId>(class_ids_vtx));
   mesh->add_tag<I8>(0, "class_dim", 1, Read<I8>(class_dim_vtx));
 
-  /*
-  int count_edge = 0;
-  int edge_numPts = 0;
-  //TODO HostWrite<Real> edgePt_coords(numEdges*max_dim);
-
-  //TODO create edge numberings so that we dont have to transfer full mesh to host
-  fot (t=0; t<numRegions; ++t) {
-    LO tet_id = t;//TODO
-    for (LO e = 0; e < 4; ++e) {
-      LO const full_e = full_re2e[tet_id*4 + e];
-      //edge_numPts = 2;
-      //for(int j=0; j<max_dim; j++) {
-        //edgePt_coords[count_edge * max_dim + j] = p_coord[j];
-      //}
-
-      count_edge += 1;
-      for (int j=0; j<2; ++j) {
-        vtx = full_ev2v[full_e*2+j];
-        edge_vertices[count_edge*2+j] = vtx;
-      }
-      class_ids_edge[count_edge].push_back(classId(edge));
-      ent_class_dim[1].push_back(classType(edge));
+  I8 edge_numPts = 2;
+  Write<Real> edgePt_coords(numEdges*edge_numPts*max_dim);
+  auto full_edgeCtrlPts = mesh->get_ctrlPts(EDGE);
+  auto transfer_e = OMEGA_H_LAMBDA (LO const e) {
+    LO const cav_e = full2cav_edge[e];
+    for(int j=0; j<max_dim*edge_numPts; j++) {
+      edgePt_coords[cav_e*max_dim + j] = full_edgeCtrlPts[e*max_dim + j];
     }
-  }
-
+    for (int j=0; j<2; ++j) {
+      vtx = full_ev2v[e*2+j];
+      edge_vertices[cav_e*2+j] = vtx;
+    }
+    class_ids_edge[cav_e] = full_classids_e[e];
+    class_dim_edge[cav_e] = full_classdim_e[e];
+  };
+  parallel_for(full_mesh->nedges(), std::move(transfer_e));
   mesh->set_ents(1, Adj(LOs(edge_vertices)));
   mesh->add_tag<ClassId>(1, "class_id", 1,
       Read<ClassId>(class_ids_edge));
   mesh->add_tag<I8>(1, "class_dim", 1,
       Read<I8>(class_dim_edge));
 
+  /*
   HostWrite<Real> facePt_coords(numFaces*max_dim);
   int count_face = 0;
   while ((face = (pFace) FIter_next(faces))) {
