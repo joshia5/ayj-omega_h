@@ -1601,7 +1601,6 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   Write<LO> rgn_vertices[4*numRegions];
   Write<LO> face_vertices[3*numFaces];
   Write<LO> edge_vertices[2*numEdges];
-
   Write<LO> class_ids_vtx(numVtx);
   Write<I8> class_dim_vtx(numVtx);
   Write<LO> class_ids_edge(numEdges);
@@ -1610,13 +1609,15 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   Write<I8> class_dim_face(numFaces);
   Write<LO> class_ids_rgn(numRegions);
   Write<I8> class_dim_rgn(numRegions);
-  //std::vector<int> edge_points[1];
-  Write<Real> coords(numVtx*max_dim);
 
+  Write<Real> coords(numVtx*max_dim);
+  Write<Real> vtxPt_coords(numVtx*max_dim);
+  auto full_vtxCtrlPts = mesh->get_ctrlPts(0);
   auto transfer_v = OMEGA_H_LAMBDA (LO const v) {
     LO const cav_v = full2cav_vert[v];
     for (int j=0; j<max_dim; j++) {
       coords[cav_v*max_dim + j] = full_coords[v*max_dim + j];
+      vtxPt_coords[cav_v*max_dim + j] = full_vtxCtrlPts[v*max_dim + j];
     }
     class_ids_vtx[cav_v] = full_classids_v[v];
     class_dim_vtx[cav_v] = full_classdim_v[v];
@@ -1628,6 +1629,7 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   mesh->add_coords(Reals(coords));
   mesh->add_tag<ClassId>(0, "class_id", 1, Read<ClassId>(class_ids_vtx));
   mesh->add_tag<I8>(0, "class_dim", 1, Read<I8>(class_dim_vtx));
+  mesh->set_tag_for_ctrlPts(0, Reals(vtxPt_coords));
 
   I8 edge_numPts = 2;
   Write<Real> edgePt_coords(numEdges*edge_numPts*max_dim);
@@ -1650,9 +1652,23 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
       Read<ClassId>(class_ids_edge));
   mesh->add_tag<I8>(1, "class_dim", 1,
       Read<I8>(class_dim_edge));
+  mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords));
 
-  /*
   HostWrite<Real> facePt_coords(numFaces*max_dim);
+  Adj edge2vert;
+  Adj vert2edge;
+  edge2vert = mesh->get_adj(1, 0);
+  vert2edge = mesh->ask_up(0, 1);
+  auto tri2verts = Read<LO>(host_tri2verts.write());
+  Adj down;
+  down = reflect_down(tri2verts, edge2vert.ab2b, vert2edge,
+      OMEGA_H_SIMPLEX, 2, 1);
+  mesh->set_ents(2, down);
+  mesh->add_tag<ClassId>(2, "class_id", 1,
+      Read<ClassId>(host_class_ids_face.write()));
+  mesh->add_tag<I8>(2, "class_dim", 1,
+      Read<I8>(host_class_dim_face.write()));
+  /*
   int count_face = 0;
   while ((face = (pFace) FIter_next(faces))) {
     pVertex tri_vertex;
@@ -1681,38 +1697,6 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
     ent_class_dim[2].push_back(classType(face));
   }
 
-  for (int i = 0; i < numFaces; ++i) {
-    host_class_ids_face[i] = ent_class_ids[2][static_cast<std::size_t>(i)];
-    host_class_dim_face[i] = ent_class_dim[2][static_cast<std::size_t>(i)];
-  }
-  HostWrite<LO> host_class_ids_tri(count_tri);
-  HostWrite<I8> host_class_dim_tri(count_tri);
-  for (int i = 0; i < count_tri; ++i) {
-    host_class_ids_tri[i] = face_class_ids[0][static_cast<std::size_t>(i)];
-    host_class_dim_tri[i] = face_class_dim[0][static_cast<std::size_t>(i)];
-  }
-
-  Adj edge2vert;
-  Adj vert2edge;
-  edge2vert = mesh->get_adj(1, 0);
-  vert2edge = mesh->ask_up(0, 1);
-
-  HostWrite<LO> host_tri2verts(count_tri*3);
-  for (Int i = 0; i < count_tri; ++i) {
-    for (Int j = 0; j < 3; ++j) {
-      host_tri2verts[i*3 + j] =
-        face_vertices[0][static_cast<std::size_t>(i*3 + j)];
-    }
-  }
-  auto tri2verts = Read<LO>(host_tri2verts.write());
-  Adj down;
-  down = reflect_down(tri2verts, edge2vert.ab2b, vert2edge,
-      OMEGA_H_SIMPLEX, 2, 1);
-  mesh->set_ents(2, down);
-  mesh->add_tag<ClassId>(2, "class_id", 1,
-      Read<ClassId>(host_class_ids_face.write()));
-  mesh->add_tag<I8>(2, "class_dim", 1,
-      Read<I8>(host_class_dim_face.write()));
 
   std::vector<int> rgn_class_ids[4];
   std::vector<int> rgn_class_dim[4];
