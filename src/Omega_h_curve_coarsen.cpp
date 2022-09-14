@@ -138,6 +138,9 @@ void check_validity_edges_from_complex_cav(Mesh *new_mesh) {
   cav_mesh.set_comm(new_mesh->comm());
   build_given_tets(&cav_mesh, new_mesh, Read<I8>(invalid_tet),
       Read<I8>(build_face),Read<I8>(build_edge),Read<I8>(build_vert));
+  vtk::FullWriter writer;
+  writer = vtk::FullWriter("./cav_mesh.vtk", &cav_mesh);
+  writer.write();
 //build mesh object using above tets per edge
   /*
   auto tet_invalid_h = HostRead<LO>(Read<I8>(invalid_tet));
