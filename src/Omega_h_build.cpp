@@ -1587,11 +1587,19 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
       full2cav_vert_h[v] = -1;
     }
   }
+  //++numRegions;
+  //++numFaces;
+  //++numEdges;
+  //++numVtx;
+  auto full2cav_tet = full2cav_tet_h.write();
+  auto full2cav_face = full2cav_face_h.write();
+  auto full2cav_edge = full2cav_edge_h.write();
+  auto full2cav_vert = full2cav_vert_h.write();
 
   mesh->set_parting(OMEGA_H_ELEM_BASED);
   Int max_dim=3;
-  fprintf(stderr, "tet=%d\n", numFaces);
-  fprintf(stderr, "tri=%d\n", numRegions);
+  fprintf(stderr, "tri=%d\n", numFaces);
+  fprintf(stderr, "tet=%d\n", numRegions);
 
   Write<LO> rgn_vertices[4*numRegions];//TODO count unique
   Write<LO> face_vertices[3*numFaces];//TODO count unique
@@ -1608,17 +1616,13 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   //std::vector<int> edge_points[1];
   Write<Real> coords(numVtx*max_dim);
 
-  /*
-  fot (t=0; t<numRegions; ++t) {
-    LO tet_id = t;//TODO
-    for (LO v = 0; v < 4; ++v) {
-      LO const full_v = full_rv2v[tet_id*4 + v];
-      for (int j=0; j<max_dim; j++) {
-        coords[v*max_dim + j] = full_coords[full_v*max_dim + j];
-      }
-      class_ids_vtx[v] = full_classids_v[full_v];
-      class_dim_vtx[v] = full_classdim_v[full_v];
+  for (LO v=0; v<full_mesh->nverts(); ++v) {
+    LO const cav_v = full2cav_vert[v];
+    for (int j=0; j<max_dim; j++) {
+      coords[cav_v*max_dim + j] = full_coords[v*max_dim + j];
     }
+    class_ids_vtx[cav_v] = full_classids_v[v];
+    class_dim_vtx[cav_v] = full_classdim_v[v];
   }
   mesh->set_dim(max_dim);
   mesh->set_family(OMEGA_H_SIMPLEX);
@@ -1627,6 +1631,7 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   mesh->add_tag<ClassId>(0, "class_id", 1, Read<ClassId>(class_ids_vtx));
   mesh->add_tag<I8>(0, "class_dim", 1, Read<I8>(class_dim_vtx));
 
+  /*
   int count_edge = 0;
   int edge_numPts = 0;
   //TODO HostWrite<Real> edgePt_coords(numEdges*max_dim);
