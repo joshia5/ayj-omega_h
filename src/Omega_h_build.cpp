@@ -1525,6 +1525,7 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
 
   auto full_coords = full_mesh->coords();
   auto full_rv2v = full_mesh->ask_down(3, 0).ab2b;
+  auto full_fv2v = full_mesh->ask_down(2, 0).ab2b;
   auto full_re2e = full_mesh->ask_down(3, 1).ab2b;
   auto full_ev2v = full_mesh->get_adj(1, 0).ab2b;
   auto full_rf2f = full_mesh->get_adj(3, 2).ab2b;
@@ -1655,19 +1656,35 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords));
 
   HostWrite<Real> facePt_coords(numFaces*max_dim);
+  auto full_faceCtrlPts = mesh->get_ctrlPts(FACE);
+  auto transfer_f = OMEGA_H_LAMBDA (LO const f) {
+    LO const cav_f = full2cav_face[f];
+    for(int j=0; j<max_dim; j++) {
+      facePt_coords[cav_f*max_dim + j] = full_faceCtrlPts[f*max_dim + j];
+    }
+    for (int j=0; j<3; ++j) {
+      vtx = full_fv2v[f*3+j];
+      face_vertices[cav_f*3+j] = vtx;
+    }
+    class_ids_face[cav_f] = full_classids_f[f];
+    class_dim_face[cav_f] = full_classdim_f[f];
+  };
+  parallel_for(full_mesh->nfaces(), std::move(transfer_f));
   Adj edge2vert;
   Adj vert2edge;
   edge2vert = mesh->get_adj(1, 0);
   vert2edge = mesh->ask_up(0, 1);
-  auto tri2verts = Read<LO>(host_tri2verts.write());
+  auto tri2verts = Read<LO>(face_vertices);
   Adj down;
   down = reflect_down(tri2verts, edge2vert.ab2b, vert2edge,
       OMEGA_H_SIMPLEX, 2, 1);
   mesh->set_ents(2, down);
   mesh->add_tag<ClassId>(2, "class_id", 1,
-      Read<ClassId>(host_class_ids_face.write()));
+      Read<ClassId>(class_ids_face));
   mesh->add_tag<I8>(2, "class_dim", 1,
-      Read<I8>(host_class_dim_face.write()));
+      Read<I8>(class_dim_face));
+  mesh->set_tag_for_ctrlPts(2, Reals(facePt_coords));
+
   /*
   int count_face = 0;
   while ((face = (pFace) FIter_next(faces))) {
