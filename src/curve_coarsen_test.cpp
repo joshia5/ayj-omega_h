@@ -315,16 +315,19 @@ void test_collapse_kova(Library *lib) {
  
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
-  build_cubic_wireframe_3d(&mesh, &wireframe_mesh, 20);
+  build_cubic_wireframe_3d(&mesh, &wireframe_mesh, 5);
   std::string vtuPath = "/lore/joshia5/Meshes/curved/Kova_wireframe.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
   auto curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
-  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh, 20);
+  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh, 5);
   vtuPath = "/lore/joshia5/Meshes/curved/Kova_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
 
   auto opts = AdaptOpts(&mesh);
+  opts.should_swap = false;
+  opts.should_refine = false;
+  opts.should_filter_invalids = false;
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
@@ -513,8 +516,8 @@ int main(int argc, char** argv) {
   //test_quadratic_tet_validity(&lib);
   //test_Kova_validity(&lib);
   //test_cubic_tet_validity(&lib);
-  //test_collapse_kova(&lib);
-  test_collapse_boxCircle(&lib);
+  test_collapse_kova(&lib);
+  //test_collapse_boxCircle(&lib);
   //test_collapse_cubicSlab(&lib);
   //test_antenna(&lib);
   //test_sphere(&lib);

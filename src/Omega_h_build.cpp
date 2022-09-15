@@ -1735,11 +1735,10 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   }
   mesh->add_tag<ClassId>(3, "class_id", 1,
       Read<ClassId>(class_ids_rgn));
-  mesh->add_tag<I8>(3, "class_dim", 1,
-      Read<I8>(class_dim_rgn));
+  mesh->add_tag<I8>(3, "class_dim", 1, Read<I8>(class_dim_rgn));
 
   fprintf(stderr, "ok5\n");
-  for (LO i = 0; i <= mesh->dim(); ++i) {
+  for (LO i=0; i<=mesh->dim(); ++i) {
     if (!mesh->has_tag(i, "global")) {
       mesh->add_tag(i, "global", 1, Omega_h::GOs(mesh->nents(i), 0, 1));
     }
