@@ -1,6 +1,7 @@
 #include "Omega_h_curve_coarsen.hpp"
 #include "Omega_h_build.hpp"
 #include "Omega_h_file.hpp"
+#include "Omega_h_atomics.hpp"
 
 #include "Omega_h_curve_validity_3d.hpp"
 
@@ -105,6 +106,7 @@ void check_validity_edges_from_complex_cav(Mesh *new_mesh) {
   Write<I8> build_edge(nnew_edge, -1);
   Write<I8> build_vert(nnew_vert, -1);
 
+  Write<LO> has_invalid(1, 0);
   auto check_tet = OMEGA_H_LAMBDA(LO i) {
     LO is_invalid = -1;
     Few<Real, 60> tet_pts = collect_tet_pts(3,i,new_ev2v,new_rv2v,vertCtrlPts
@@ -128,19 +130,23 @@ void check_validity_edges_from_complex_cav(Mesh *new_mesh) {
         LO const vert = new_rv2v[i*4+v];
         build_vert[vert] = is_invalid;
       }
+      atomic_increment(&has_invalid[0]);
     }
 
   };
   parallel_for(nnew_tet, std::move(check_tet));
 
   //TODO call fn in a loop over invalid cavs
-  auto cav_mesh = Mesh(new_mesh->comm()->library());
-  cav_mesh.set_comm(new_mesh->comm());
-  build_given_tets(&cav_mesh, new_mesh, Read<I8>(invalid_tet),
-      Read<I8>(build_face),Read<I8>(build_edge),Read<I8>(build_vert));
-  vtk::FullWriter writer;
-  writer = vtk::FullWriter("./cav_mesh.vtk", &cav_mesh);
-  writer.write();
+  auto has_invalid_h = HostRead<LO>(has_invalid);
+  if (has_invalid_h[0] > 0) {
+    auto cav_mesh = Mesh(new_mesh->comm()->library());
+    cav_mesh.set_comm(new_mesh->comm());
+    build_given_tets(&cav_mesh, new_mesh, Read<I8>(invalid_tet),
+        Read<I8>(build_face),Read<I8>(build_edge),Read<I8>(build_vert));
+    vtk::FullWriter writer;
+    writer = vtk::FullWriter("./cav_mesh.vtk", &cav_mesh);
+    writer.write();
+  }
 //build mesh object using above tets per edge
   /*
   auto tet_invalid_h = HostRead<LO>(Read<I8>(invalid_tet));
