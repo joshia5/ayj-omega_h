@@ -1522,6 +1522,7 @@ void build_cubic_cavities_3d(Mesh* mesh, Mesh* curveVtk_mesh,
 */
 void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet, 
     Read<I8> build_face, Read<I8> build_edge, Read<I8> build_vert) {
+  //TODO calculate classinfo correctly
 
   auto full_coords = full_mesh->coords();
   auto full_rv2v = full_mesh->ask_down(3, 0).ab2b;
@@ -1554,7 +1555,7 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   HostWrite<I8> full2cav_edge_h(full_mesh->nedges());
   HostWrite<I8> full2cav_vert_h(full_mesh->nverts());
   LO numRegions = 0;
-  for (LO t = 0; t< build_tet.size(); ++t) {
+  for (LO t=0; t<build_tet.size(); ++t) {
     if (build_tet_h[t] > 0) {
       printf("cav tet id %d fullid %d\n", numRegions, t);
       full2cav_tet_h[t] = numRegions;
@@ -1747,6 +1748,7 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   mesh->set_tag_for_ctrlPts(0, Reals(vtxPt_coords));
   mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords));
   mesh->set_tag_for_ctrlPts(2, Reals(facePt_coords));
+  fprintf(stderr, "ok6\n");
 
   return;
 }
