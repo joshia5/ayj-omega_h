@@ -320,16 +320,30 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
         //find lower vtx, here upper is v_onto and lower is other end of edge
         Vector<dim> c_lower;
         LO e_lower = -1;
+        LO e_upper = -1;
+        LO e_upper_from_v_onto = -1;
         //e_lower is lower half of collapsing edge i.e. edge connecting vkey
         //to vlower;
+        //e_upper is upper half of collapsing edge i.e. edge connecting vkey
+        //to vonto;
         for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
           LO const e = old_ve2e[ve];
           if ((v_lower == old_ev2v[e*2+0]) || 
               (v_lower == old_ev2v[e*2+1])) e_lower = e;
+          if ((v_onto == old_ev2v[e*2+0]) || 
+              (v_onto == old_ev2v[e*2+1])) e_upper = e;
+          if (v_onto == old_ev2v[e*2+0]) e_upper_from_v_onto = 1;
         }
         Vector<dim> t_e_lower;//tangent unit vec from either one end-vtx
+        Vector<dim> t_e_upper;//tangent unit vec from vonto
         for (LO d=0; d<dim; ++d) {
           t_e_lower[d] = tangents[e_lower*2*dim + d];
+          if (e_upper_from_v_onto > 0) {
+            t_e_upper[d] = tangents[e_upper*2*dim + d];
+          }
+          else {
+            t_e_upper[d] = tangents[e_upper*2*dim + dim + d];
+          }
         }
 
         //count upper edges
@@ -473,8 +487,12 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           LO const uppere0_v0 = old_ev2v[uppere0*2 + 0];
           LO const uppere0_v1 = old_ev2v[uppere0*2 + 1];
           LO uppere0_vlower = -1;
-          if (uppere0_v0 == v_onto) uppere0_vlower = uppere0_v1;
-          if (uppere0_v1 == v_onto) uppere0_vlower = uppere0_v0;
+          if (uppere0_v0 == v_onto) {
+            uppere0_vlower = uppere0_v1;
+          }
+          if (uppere0_v1 == v_onto) {
+            uppere0_vlower = uppere0_v0;
+          }
           Real uppere0_len = 0.0;
           for (LO d=0; d<dim; ++d) {
             uppere0_len += std::pow((old_coords[uppere0_v0*dim + d] -
@@ -499,7 +517,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                  (upper_tangents[2]*upper_tangents[dim + 0]);
           n[2] = (upper_tangents[0]*upper_tangents[dim + 1]) - 
                  (upper_tangents[1]*upper_tangents[dim + 0]);
-
+          Real length_n = 0.0;
+          for (LO d = 0; d < dim; ++d) length_n += n[d]*n[d]; 
+          for (LO d = 0; d < dim; ++d) n[d] = n[d]/std::sqrt(length_n);
           for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
             Real theta_c = (cand+1)*upper_theta/(nedge_shared_gface_i + 1);
             Vector<3> b;
@@ -512,7 +532,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
 
             auto A_inv = invert(A);
             auto X = A_inv*b;
-            if (std::abs(upper_theta - PI) < EPSILON) {
+            if (std::abs(upper_theta - PI) < 1e-6) {
               n[0] = (upper_tangents[1]*t_e_lower[2]) - 
                 (upper_tangents[2]*t_e_lower[1]);
               n[1] =-(upper_tangents[0]*t_e_lower[2]) +
@@ -523,9 +543,38 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               for (LO d=0;d<3;++d) len_n+= std::pow(n[d],2);
               for (LO d=0;d<3;++d) n[d] = n[d]/std::sqrt(len_n);//unit normal
 
+              /*
+              if ((isnan(n[0]) > 0) || (isnan(n[1]) > 0) || (isnan(n[2]) > 0)) {
+                printf("found isnan\n");
+                Vector<dim> ut_by90;
+                X[0] = upper_tangents[0]*cos(theta_c) +
+                       upper_tangents[2]*sin(theta_c);
+                X[1] = upper_tangents[1];
+                X[2] =-upper_tangents[0]*sin(theta_c) + 
+                       upper_tangents[2]*cos(theta_c);
+                n[0] = (upper_tangents[1]*t_e_upper[2]) - 
+                  (upper_tangents[2]*t_e_upper[1]);
+                n[1] =-(upper_tangents[0]*t_e_upper[2]) +
+                  (upper_tangents[2]*t_e_upper[0]);
+                n[2] = (upper_tangents[0]*t_e_upper[1]) - 
+                  (upper_tangents[1]*t_e_upper[0]);
+              }
+              */
+              if ((isnan(n[0]) > 0) || (isnan(n[1]) > 0) || (isnan(n[2]) > 0)) {
+                Omega_h_fail("normal calc. failed\n");
+              }
+              length_n = 0.0;
+              for (LO d = 0; d < dim; ++d) length_n += n[d]*n[d]; 
+              for (LO d = 0; d < dim; ++d) n[d] = n[d]/std::sqrt(length_n);
+              printf("#569 new edge %d n{%f,%f,%f}\n",new_edge,
+                  n[0],n[1],n[2]);
+              printf("ut0 {%f,%f,%f} ut1 {%f,%f,%f}\n",
+                  upper_tangents[0],upper_tangents[1],upper_tangents[2],upper_tangents[3],upper_tangents[4],upper_tangents[5]);
+
               //hand-calc +/- y axis as tang if A is ill-cond
-              if ((std::abs(n[0])<EPSILON) && ((std::abs(n[1])-1.0)<EPSILON)
-                  && (std::abs(n[2])<EPSILON)) {
+              if ((std::abs(n[0])<1e-6) && ((std::abs(n[1])-1.0)<1e-6)
+                  && (std::abs(n[2])<1e-6)) {
+                printf("y axis\n");
                 X[0] = upper_tangents[0]*cos(theta_c) +
                        upper_tangents[2]*sin(theta_c);
                 X[1] = upper_tangents[1];
@@ -556,8 +605,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               }
 
               //hand-calc +/- x axis as tang if A is ill-cond
-              if ((std::abs(n[1])<EPSILON) && ((std::abs(n[0])-1.0)<EPSILON)
-                  && (std::abs(n[2])<EPSILON)) {
+              if ((std::abs(n[1])<1e-6) && ((std::abs(n[0])-1.0)<1e-6)
+                  && (std::abs(n[2])<1e-6)) {
+                printf("x axis\n");
                 //made by straight edge with uppere0
                 X[0] = upper_tangents[0];
                 X[1] = upper_tangents[1]*cos(theta_c) -
@@ -589,8 +639,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               }
 
               //hand-calc +/- z axis as tang if A is ill-cond
-              if ((std::abs(n[0])<EPSILON) && ((std::abs(n[2])-1.0)<EPSILON)
-                  && (std::abs(n[1])<EPSILON)) {
+              if ((std::abs(n[0])<1e-6) && ((std::abs(n[2])-1.0)<1e-6)
+                  && (std::abs(n[1])<1e-6)) {
+                printf("z axis\n");
                 //made by straight edge with uppere0
                 X[0] = upper_tangents[0]*cos(theta_c) -
                        upper_tangents[1]*sin(theta_c);
@@ -621,6 +672,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                 }
               }
             }
+            printf("new edge %d tangent{%f,%f,%f} n{%f,%f,%f}\n",new_edge,
+                X[0],X[1],X[2], n[0],n[1],n[2]);
 
             length_t = 0.0;
             for (LO d=0; d<dim; ++d) {
@@ -829,7 +882,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
 
         for (LO d = 0; d < dim; ++d) length_t += t_lower[d]*t_lower[d]; 
 
-        if (std::abs(length_t - 0.0) < EPSILON) {
+        if (std::abs(length_t - 0.0) < 1e-6) {
           Real lower_theta = acos(
             lower_tangents[0]*lower_tangents[dim + 0] +
             lower_tangents[1]*lower_tangents[dim + 1] +
@@ -855,7 +908,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           auto A_inv = invert(A);
           auto X = A_inv*b;
           //hand-calc +/- x axis as tang if A is ill-cond
-          if (std::abs(lower_theta - PI) < EPSILON) {
+          if (std::abs(lower_theta - PI) < 1e-6) {
             n[0] = (lower_tangents[1]*t_e_lower[2]) - 
               (lower_tangents[2]*t_e_lower[1]);
             n[1] =-(lower_tangents[0]*t_e_lower[2]) +
@@ -867,8 +920,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             for (LO d=0;d<3;++d) n[d] = n[d]/std::sqrt(len_n);//unit normal
 
             //+x
-            if (((std::abs(n[0])-1.0)<EPSILON) && (std::abs(n[1])<EPSILON)
-                && (std::abs(n[2])<EPSILON)) {
+            if (((std::abs(n[0])-1.0)<1e-6) && (std::abs(n[1])<1e-6)
+                && (std::abs(n[2])<1e-6)) {
               X[0] = lower_tangents[0];
               X[1] = lower_tangents[1]*cos(theta_c) -
                      lower_tangents[2]*sin(theta_c);
@@ -899,8 +952,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             }
 
             //hand-calc +/- y axis as tang if A is ill-cond
-            if ((std::abs(n[0])<EPSILON) && ((std::abs(n[1])-1.0)<EPSILON)
-             && (std::abs(n[2])<EPSILON)) {
+            if ((std::abs(n[0])<1e-6) && ((std::abs(n[1])-1.0)<1e-6)
+             && (std::abs(n[2])<1e-6)) {
               X[0] = lower_tangents[0]*cos(theta_c) +
                      lower_tangents[2]*sin(theta_c);
               X[1] = lower_tangents[1];
@@ -931,8 +984,8 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             }
 
             //hand-calc +/- z axis as tang if A is ill-cond
-            if ((std::abs(n[0])<EPSILON) && ((std::abs(n[2])-1.0)<EPSILON)
-             && (std::abs(n[1])<EPSILON)) {
+            if ((std::abs(n[0])<1e-6) && ((std::abs(n[2])-1.0)<1e-6)
+             && (std::abs(n[1])<1e-6)) {
               X[0] = lower_tangents[0]*cos(theta_c) -
                      lower_tangents[1]*sin(theta_c);
               X[1] = lower_tangents[0]*sin(theta_c) +
@@ -1000,6 +1053,9 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_upper[d];
           }
         }
+        printf("new edge %d cpts {%f,%f,%f},{%f,%f,%f}\n",new_edge,
+            c_upper[0],c_upper[1],c_upper[2],c_lower[0],c_lower[1],c_lower[2]);
+        printf("vontoisfirst %d\n",v_onto_is_first);
       }
     }
   };
