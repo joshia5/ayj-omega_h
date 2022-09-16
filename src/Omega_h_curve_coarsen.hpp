@@ -500,7 +500,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           }
           uppere0_len = std::sqrt(uppere0_len);
           for (LO d=0; d<dim; ++d) {
-            uppere0_pt[d] = old_coords[v_onto*dim + d] + 
+            uppere0_pt[d] = old_coords[v_onto*dim + d] +
               (old_coords[uppere0_vlower*dim + d] - old_coords[v_onto*dim + d])/2.0;
           }
 
@@ -511,14 +511,14 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
               upper_tangents[2]*upper_tangents[dim + 2]);
           Vector<dim> n;
           //cross
-          n[0] = (upper_tangents[1]*upper_tangents[dim + 2]) - 
+          n[0] = (upper_tangents[1]*upper_tangents[dim + 2]) -
                  (upper_tangents[2]*upper_tangents[dim + 1]);
           n[1] =-(upper_tangents[0]*upper_tangents[dim + 2]) +
                  (upper_tangents[2]*upper_tangents[dim + 0]);
-          n[2] = (upper_tangents[0]*upper_tangents[dim + 1]) - 
+          n[2] = (upper_tangents[0]*upper_tangents[dim + 1]) -
                  (upper_tangents[1]*upper_tangents[dim + 0]);
           Real length_n = 0.0;
-          for (LO d = 0; d < dim; ++d) length_n += n[d]*n[d]; 
+          for (LO d = 0; d < dim; ++d) length_n += n[d]*n[d];
           for (LO d = 0; d < dim; ++d) n[d] = n[d]/std::sqrt(length_n);
           for (LO cand = 0; cand < nedge_shared_gface_i; ++cand) {
             Real theta_c = (cand+1)*upper_theta/(nedge_shared_gface_i + 1);
