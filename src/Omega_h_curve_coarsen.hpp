@@ -322,6 +322,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
         LO e_lower = -1;
         LO e_upper = -1;
         LO e_upper_from_v_onto = -1;
+        LO e_lower_from_v_lower= -1;
         //e_lower is lower half of collapsing edge i.e. edge connecting vkey
         //to vlower;
         //e_upper is upper half of collapsing edge i.e. edge connecting vkey
@@ -333,11 +334,17 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
           if ((v_onto == old_ev2v[e*2+0]) || 
               (v_onto == old_ev2v[e*2+1])) e_upper = e;
           if (v_onto == old_ev2v[e*2+0]) e_upper_from_v_onto = 1;
+          if (v_lower== old_ev2v[e*2+0]) e_lower_from_v_lower= 1;
         }
         Vector<dim> t_e_lower;//tangent unit vec from either one end-vtx
         Vector<dim> t_e_upper;//tangent unit vec from vonto
         for (LO d=0; d<dim; ++d) {
-          t_e_lower[d] = tangents[e_lower*2*dim + d];
+          if (e_lower_from_v_lower> 0) {
+            t_e_lower[d] = tangents[e_lower*2*dim + d];
+          }
+          else {
+            t_e_lower[d] = tangents[e_lower*2*dim + dim + d];
+          }
           if (e_upper_from_v_onto > 0) {
             t_e_upper[d] = tangents[e_upper*2*dim + d];
           }
@@ -582,17 +589,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
                 n[1] = 0.0000;
                 n[2] = -1.0000;
               }
-              /*
-              A = tensor_3(
-                n[0], n[1], n[2],
-                upper_tangents[0], upper_tangents[1], upper_tangents[2],
-                upper_tangents[dim+0], upper_tangents[dim+1], upper_tangents[dim+2]
-                );
-              X = A_inv*b;
-              //rotate uppere0_t by pi/2 then take cross
-              Vector<dim> ut_by90;
-              for (LO d=0; d<3; ++d) ut_by90[d] = upper_tangents[d];
-              */
               printf("#547 new edge %d n{%f,%f,%f}\n",new_edge,
                   n[0],n[1],n[2]);
               printf("ut0 {%f,%f,%f} ut1 {%f,%f,%f}\n",
@@ -943,7 +939,42 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             Real len_n =0.0;
             for (LO d=0;d<3;++d) len_n+= std::pow(n[d],2);
             for (LO d=0;d<3;++d) n[d] = n[d]/std::sqrt(len_n);//unit normal
-
+            if (n[0] > 0.99) {
+              printf("+x\n");
+              n[0] = 1.0000;
+              n[1] = 0.0000;
+              n[2] = 0.0000;
+            }
+            if (n[0] < -0.99) {
+              printf("-x\n");
+              n[0] = -1.0000;
+              n[1] = 0.0000;
+              n[2] = 0.0000;
+            }
+            if (n[1] > 0.99) {
+              printf("+y\n");
+              n[0] = 0.0000;
+              n[1] = 1.0000;
+              n[2] = 0.0000;
+            }
+            if (n[1] < -0.99) {
+              printf("-y\n");
+              n[0] = 0.0000;
+              n[1] = -1.0000;
+              n[2] = 0.0000;
+            }
+            if (n[2] > 0.99) {
+              printf("+z\n");
+              n[0] = 0.0000;
+              n[1] = 0.0000;
+              n[2] = 1.0000;
+            }
+            if (n[2] < -0.99) {
+              printf("-z\n");
+              n[0] = 0.0000;
+              n[1] = 0.0000;
+              n[2] = -1.0000;
+            }
             //+x
             if (((std::abs(n[0])-1.0)<1e-3) && (std::abs(n[1])<1e-3)
                 && (std::abs(n[2])<1e-3)) {
