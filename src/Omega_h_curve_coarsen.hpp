@@ -539,8 +539,6 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
             auto A_inv = invert(A);
             auto X = A_inv*b;
 
-              printf("#535 new edge %d n{%f,%f,%f}\n",new_edge,
-                  n[0],n[1],n[2]);
             if (std::abs(upper_theta - PI) < 1e-3) {
 
               n[0] = (upper_tangents[1]*t_e_upper[2]) - 

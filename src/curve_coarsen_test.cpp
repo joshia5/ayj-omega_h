@@ -384,10 +384,10 @@ void test_collapse_boxCircle(Library *lib) {
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(100)));
   fprintf(stderr, "initial mesh size %d\n", mesh.nregions());
-  I8 max_adapt_itr = 1;
+  I8 max_adapt_itr = 4;
   for (LO adapt_itr = 0; adapt_itr < max_adapt_itr; ++adapt_itr) {
     coarsen_by_size(&mesh, opts);
-    coarsen_slivers(&mesh, opts);
+    //coarsen_slivers(&mesh, opts);
   }
   mesh.ask_qualities();
   writer = vtk::FullWriter(
@@ -516,8 +516,8 @@ int main(int argc, char** argv) {
   //test_quadratic_tet_validity(&lib);
   //test_Kova_validity(&lib);
   //test_cubic_tet_validity(&lib);
-  test_collapse_kova(&lib);
-  //test_collapse_boxCircle(&lib);
+  //test_collapse_kova(&lib);
+  test_collapse_boxCircle(&lib);
   //test_collapse_cubicSlab(&lib);
   //test_antenna(&lib);
   //test_sphere(&lib);
