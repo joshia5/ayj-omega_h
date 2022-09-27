@@ -333,7 +333,7 @@ void test_collapse_kova(Library *lib) {
       VERT, "metric", Reals(mesh.nverts(),
         metric_eigenvalue_from_length(100)));
   fprintf(stderr, "start coarsening\n");
-  for (LO adapt_itr = 0; adapt_itr < 3; ++adapt_itr) {
+  for (LO adapt_itr = 0; adapt_itr < 1; ++adapt_itr) {
     fprintf(stderr, "itr %d\n", adapt_itr);
     coarsen_by_size(&mesh, opts);
   }
@@ -516,8 +516,8 @@ int main(int argc, char** argv) {
   //test_quadratic_tet_validity(&lib);
   //test_Kova_validity(&lib);
   //test_cubic_tet_validity(&lib);
-  //test_collapse_kova(&lib);
-  test_collapse_boxCircle(&lib);
+  test_collapse_kova(&lib);
+  //test_collapse_boxCircle(&lib);
   //test_collapse_cubicSlab(&lib);
   //test_antenna(&lib);
   //test_sphere(&lib);

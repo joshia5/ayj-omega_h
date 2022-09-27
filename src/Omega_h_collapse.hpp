@@ -32,6 +32,7 @@ Read<I8> check_collapse_class(Mesh* mesh, LOs cands2edges, Read<I8> cand_codes);
 Read<I8> check_collapse_exposure(
     Mesh* mesh, LOs cands2edges, Read<I8> cand_codes);
 
+void make_cavity_class(Mesh* mesh, LOs keys2verts);
 }  // end namespace Omega_h
 
 #endif
