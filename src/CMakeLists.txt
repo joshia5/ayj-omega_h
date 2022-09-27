@@ -26,6 +26,7 @@ set(Omega_h_SOURCES
   Omega_h_build_parser.cpp
   Omega_h_chartab.cpp
   Omega_h_check_collapse.cpp
+  Omega_h_cavity_class.cpp
   Omega_h_class.cpp
   Omega_h_cmdline.cpp
   Omega_h_coarsen.cpp
