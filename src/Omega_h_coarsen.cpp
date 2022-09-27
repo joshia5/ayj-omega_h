@@ -232,6 +232,11 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
   auto same_verts2new_verts = LOs();
   auto same_verts2old_verts = LOs();
   auto old_lows2new_lows = LOs();
+
+  //TEST:
+  make_cavity_class(mesh, &keys2verts);
+  //
+
   for (Int ent_dim = 0; ent_dim <= mesh->dim(); ++ent_dim) {
     auto keys2prods = LOs();
     auto prod_verts2verts = LOs();
