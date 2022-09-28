@@ -1521,8 +1521,9 @@ void build_cubic_cavities_3d(Mesh* mesh, Mesh* curveVtk_mesh,
  * edges, verts doing this requires device to host data transfer
 */
 void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet, 
-    Read<I8> build_face, Read<I8> build_edge, Read<I8> build_vert) {
-  //TODO calculate classinfo correctly
+    Read<I8> build_face, Read<I8> build_edge, Read<I8> build_vert,
+    LOs const keys2verts) {
+  //TODO calculate classinfo correctly using make_cavity_class
 
   auto full_coords = full_mesh->coords();
   auto full_rv2v = full_mesh->ask_down(3, 0).ab2b;
@@ -1531,13 +1532,12 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   auto full_ev2v = full_mesh->get_adj(1, 0).ab2b;
   auto full_rf2f = full_mesh->get_adj(3, 2).ab2b;
   auto full_classids_v = full_mesh->get_array<LO>(0, "class_id");
-  auto full_classdim_v = full_mesh->get_array<I8>(0, "class_dim");
+  auto full_classdim_v = full_mesh->get_array<I8>(0, "cav_classdim");
   auto full_classids_e = full_mesh->get_array<LO>(1, "class_id");
-  auto full_classdim_e = full_mesh->get_array<I8>(1, "class_dim");
+  auto full_classdim_e = full_mesh->get_array<I8>(1, "cav_classdim");
   auto full_classids_f = full_mesh->get_array<LO>(2, "class_id");
-  auto full_classdim_f = full_mesh->get_array<I8>(2, "class_dim");
+  auto full_classdim_f = full_mesh->get_array<I8>(2, "cav_classdim");
   auto full_classids_r = full_mesh->get_array<LO>(3, "class_id");
-  auto full_classdim_r = full_mesh->get_array<I8>(3, "class_dim");
   auto full_vtxCtrlPts = full_mesh->get_ctrlPts(0);
   auto full_edgeCtrlPts = full_mesh->get_ctrlPts(EDGE);
   auto full_faceCtrlPts = full_mesh->get_ctrlPts(FACE);
@@ -1554,6 +1554,9 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
   HostWrite<I8> full2cav_face_h(full_mesh->nfaces());
   HostWrite<I8> full2cav_edge_h(full_mesh->nedges());
   HostWrite<I8> full2cav_vert_h(full_mesh->nverts());
+
+  make_cavity_class(full_mesh, keys2verts);//calcs class dim for all cavs
+
   LO numRegions = 0;
   for (LO t=0; t<build_tet.size(); ++t) {
     if (build_tet_h[t] > 0) {
@@ -1718,7 +1721,7 @@ void build_given_tets(Mesh* mesh, Mesh *full_mesh, Read<I8> build_tet,
         rgn_vertices[cav_r*4+j] = cav_v;
       }
       class_ids_rgn[cav_r] = full_classids_r[r];
-      class_dim_rgn[cav_r] = full_classdim_r[r];
+      class_dim_rgn[cav_r] = 3;
     }
   };
   parallel_for(full_mesh->nregions(), std::move(transfer_r));
