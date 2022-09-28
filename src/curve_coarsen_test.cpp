@@ -296,7 +296,7 @@ void test_Kova_validity(Library *lib) {
 void test_collapse_kova(Library *lib) {
   auto comm = lib->world();
 
-  auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
+  auto mesh = binary::read("../omega_h/meshes/KovaGeomSim-quadratic_123tet.osh", comm);
   printf("initial ntets %d\n", mesh.nregions());
                             
   for (LO i = 0; i <= mesh.dim(); ++i) {
