@@ -14,6 +14,7 @@
 #include "Omega_h_owners.hpp"
 #include "Omega_h_simplify.hpp"
 #include "Omega_h_beziers.hpp"
+#include "Omega_h_collapse.hpp"
 
 #include <iostream>
 #include <fstream>

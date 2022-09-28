@@ -2,7 +2,6 @@
 #include "Omega_h_build.hpp"
 #include "Omega_h_file.hpp"
 #include "Omega_h_atomics.hpp"
-#include "Omega_h_collapse.hpp"
 
 #include "Omega_h_curve_validity_3d.hpp"
 
