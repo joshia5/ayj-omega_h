@@ -62,6 +62,11 @@ void make_cavity_class(Mesh* mesh, LOs const keys2verts) {
     }
   };
   parallel_for(nkeys, f, "make_cavity_class");
+  mesh->add_tag<I8>(0, "cav_classdim", 1, Read<I8>(cav_classdim_v));
+  mesh->add_tag<I8>(1, "cav_classdim", 1, Read<I8>(cav_classdim_e));
+  mesh->add_tag<I8>(2, "cav_classdim", 1, Read<I8>(cav_classdim_f));
+
+  return;
 }
 
 }  // end namespace Omega_h
