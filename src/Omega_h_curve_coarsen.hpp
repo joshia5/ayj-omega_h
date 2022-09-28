@@ -1457,7 +1457,8 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
 void check_validity_all_tet(Mesh *new_mesh);
 void correct_curved_edges(Mesh *new_mesh);
 void check_validity_new_curved_edges(Mesh *new_mesh);
-void check_validity_edges_from_complex_cav(Mesh *new_mesh);
+void check_validity_edges_from_complex_cav(Mesh *new_mesh, LOs const
+  keys2verts);
 
 #define OMEGA_H_INST(T)                                                       
 OMEGA_H_INST(I8)
