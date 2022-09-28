@@ -59,7 +59,8 @@ void build_cubic_cavities_3d(Mesh* mesh, Mesh* curveVtk_mesh,
 void build_quartic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
                             LO n_sample_pts = 10);
 void build_given_tets(Mesh* mesh, Mesh* full_mesh, Read<I8> build_tet,
-    Read<I8> build_face, Read<I8> build_edge, Read<I8> build_vert);
+    Read<I8> build_face, Read<I8> build_edge, Read<I8> build_vert,
+    LOs const keys2verts);
 
 }  // end namespace Omega_h
 
