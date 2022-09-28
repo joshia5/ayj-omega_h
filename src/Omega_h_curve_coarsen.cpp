@@ -2,6 +2,7 @@
 #include "Omega_h_build.hpp"
 #include "Omega_h_file.hpp"
 #include "Omega_h_atomics.hpp"
+#include "Omega_h_collapse.hpp"
 
 #include "Omega_h_curve_validity_3d.hpp"
 
@@ -82,7 +83,8 @@ void check_validity_all_tet(Mesh *new_mesh) {
   return;
 }
 
-void check_validity_edges_from_complex_cav(Mesh *new_mesh) {
+void check_validity_edges_from_complex_cav(Mesh *new_mesh, LOs const
+  keys2verts) { //marks ents to build and calls build fn
 //TODO add complex cav tag while creating new crv edge and check here
 
   auto const new_ev2v = new_mesh->ask_down(1, 0).ab2b;
@@ -132,7 +134,6 @@ void check_validity_edges_from_complex_cav(Mesh *new_mesh) {
       }
       atomic_increment(&has_invalid[0]);
     }
-
   };
   parallel_for(nnew_tet, std::move(check_tet));
 
@@ -142,32 +143,12 @@ void check_validity_edges_from_complex_cav(Mesh *new_mesh) {
     auto cav_mesh = Mesh(new_mesh->comm()->library());
     cav_mesh.set_comm(new_mesh->comm());
     build_given_tets(&cav_mesh, new_mesh, Read<I8>(invalid_tet),
-        Read<I8>(build_face),Read<I8>(build_edge),Read<I8>(build_vert));
+        Read<I8>(build_face),Read<I8>(build_edge),Read<I8>(build_vert),
+        keys2verts);
     vtk::FullWriter writer;
     writer = vtk::FullWriter("./cav_mesh.vtk", &cav_mesh);
     writer.write();
   }
-//build mesh object using above tets per edge
-  /*
-  auto tet_invalid_h = HostRead<LO>(Read<I8>(invalid_tet));
-  auto new_rf2f_h = HostRead<LO>(new_rf2f);
-  for (LO i = 0; i < nnew_tet; ++i) {
-    LO const is_invalid = tet_invalid_h[i];
-    if (is_invalid > 0) {
-      //printf("writing file for tet %d\n", i);
-
-      auto mesh_invalids = Mesh(new_mesh->comm()->library());
-      mesh_invalids.set_comm(new_mesh->comm());
-      build_cubic_cavities_3d(new_mesh, &mesh_invalids, 50);//curveVtk
-      std::string vtuPath = "./invalid_edge_";
-      vtuPath += std::to_string(i);
-      vtuPath += ".vtu";
-      vtk::write_simplex_connectivity(vtuPath.c_str(), &mesh_invalids, 2);
-
-    }
-  }
-  */
-
   return;
 }
 

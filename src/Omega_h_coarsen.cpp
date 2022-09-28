@@ -312,7 +312,7 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
             //validity of new curved ents
             printf("checking validity after coarsen\n");
             check_validity_all_tet(&new_mesh);
-            check_validity_edges_from_complex_cav(&new_mesh);
+            check_validity_edges_from_complex_cav(&new_mesh, keys2verts);
           }
         }
       }
