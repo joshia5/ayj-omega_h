@@ -10,9 +10,9 @@
 
 namespace Omega_h {
 
-OMEGA_H_DEVICE Few<Real, 44> void TetGaussLobatto(const int order = 4) {
+OMEGA_H_INLINE Few<Real, 44> TetGaussLobatto(const int order = 4) {
   OMEGA_H_CHECK(order == 4);
-  Few<Real, 11*4> ir //11 points, store x,y,z,weights
+  Few<Real, 11*4> ir; //11 points, store x,y,z,weights
 
   //AddTetPoints4(0, 1./14., 343./45000.);
   { 
@@ -47,4 +47,8 @@ OMEGA_H_DEVICE Few<Real, 44> void TetGaussLobatto(const int order = 4) {
   }
  
   return ir;
+}
+
 } //end namespace
+
+#endif

@@ -471,6 +471,8 @@ if(BUILD_TESTING)
 
   osh_add_exe(curve_coarsen_test)
   test_func(run_curve_coarsen_test 1 ./curve_coarsen_test)
+  osh_add_exe(optim_test)
+  test_func(run_optim_test 1 ./optim_test)
   osh_add_exe(curve_test)
   test_func(run_curve_test 1 ./curve_test)
   osh_add_exe(curve_test_parallel)
@@ -646,6 +648,7 @@ set(Omega_h_HEADERS
   Omega_h_int128.hpp
   Omega_h_int_iterator.hpp
   Omega_h_int_scan.hpp
+  Omega_h_irrule.hpp
   Omega_h_kokkos.hpp
   Omega_h_language.hpp
   Omega_h_library.hpp
