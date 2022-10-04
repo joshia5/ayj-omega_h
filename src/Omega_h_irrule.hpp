@@ -24,7 +24,7 @@ OMEGA_H_DEVICE void TetGaussLobatto(const int order = 4) {
   IntegrationRule *ir;
   // 11 points - degree 4 (negative weight)
   ir = new IntegrationRule(11);
-  Few<Real, 11*4> //11 points,x,y,z,weights
+  Few<Real, 11*4> ir //11 points, store x,y,z,weights
 
   void Set(const double x1, const double x2, const double x3, const double w)
    { x = x1; y = x2; z = x3; weight = w; }
@@ -52,6 +52,10 @@ OMEGA_H_DEVICE void TetGaussLobatto(const int order = 4) {
    { IntPoint(off).Set(0.25, 0.25, 0.25, weight); }
 
   ir->AddTetPoints4(0, 1./14., 343./45000.);
+  ir[0] = 1./14.;
+  ir[1] = 1./14.;
+  ir[2] = 1./14.;
+  ir[3] = 343./45000.;
   ir->AddTetMidPoint(4, -74./5625.);
   ir->AddTetPoints6(5, 0.10059642383320079500, 28./1125.);
  
