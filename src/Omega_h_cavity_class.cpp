@@ -44,7 +44,7 @@ void make_cavity_class(Mesh* mesh, LOs const keys2verts) {
           }
         }
         if (n_adj_cav_tets == 1) {
-          fprintf(stderr, "bdry face %d\n", down_face);
+          //fprintf(stderr, "bdry face %d\n", down_face);
           cav_classdim_f[down_face] = 2;
           // if adj tets in cavity = 1;
           // face is on bdry
