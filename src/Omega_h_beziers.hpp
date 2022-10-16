@@ -174,6 +174,7 @@ Real B21_quart(Real u, Real v);
 Real B12_quart(Real u, Real v);
 
 // Babushka chen points
+// edge points
 constexpr OMEGA_H_INLINE Real xi_1_quad() {
   return 0.5;
 }
@@ -224,9 +225,12 @@ constexpr OMEGA_H_INLINE Real xi_5_hex() {
   return 0.9194021;
 }
 
+// face points
+// order 3
 OMEGA_H_INLINE Vector<2> xi_11_cube() {
   return vector_2(1.0/3.0, 1.0/3.0);
 }
+// order 4
 OMEGA_H_INLINE Vector<2> xi_11_quart() {
   return vector_2(0.22088805, 0.22088805);
 }
@@ -236,6 +240,39 @@ OMEGA_H_INLINE Vector<2> xi_21_quart() {
 OMEGA_H_INLINE Vector<2> xi_12_quart() {
   return vector_2(0.22088805, 0.5582239);
 }
+// order 6
+OMEGA_H_INLINE Vector<2> xi_11_hex() {
+  return vector_2(0.10971385,0.10971385);
+}
+OMEGA_H_INLINE Vector<2> xi_21_hex() {
+  return vector_2(0.3157892,0.1256031);
+}
+OMEGA_H_INLINE Vector<2> xi_31_hex() {
+  return vector_2(0.5586077,0.1256031);
+}
+OMEGA_H_INLINE Vector<2> xi_41_hex() {
+  return vector_2(0.7805723,0.10971385);
+}
+OMEGA_H_INLINE Vector<2> xi_12_hex() {
+  return vector_2(0.1256031,0.3157892);
+}
+OMEGA_H_INLINE Vector<2> xi_22_hex() {
+  return vector_2(1./3.,1./3.);
+}
+OMEGA_H_INLINE Vector<2> xi_32_hex() {
+  return vector_2(0.5586077,0.3157892);
+}
+OMEGA_H_INLINE Vector<2> xi_13_hex() {
+  return vector_2(0.1256031,0.5586077);
+}
+OMEGA_H_INLINE Vector<2> xi_23_hex() {
+  return vector_2(0.3157892,0.5586077);
+}
+OMEGA_H_INLINE Vector<2> xi_14_hex() {
+  return vector_2(0.10971385,0.7805723);
+}
+
+// region points
 OMEGA_H_INLINE Vector<3> xi_111_quart() {
   return vector_3(1.0/4.0, 1.0/4.0, 1.0/4.0);
 }
