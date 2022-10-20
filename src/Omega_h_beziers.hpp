@@ -273,9 +273,11 @@ OMEGA_H_INLINE Vector<2> xi_14_hex() {
 }
 
 // region points
+// order 4
 OMEGA_H_INLINE Vector<3> xi_111_quart() {
-  return vector_3(1.0/4.0, 1.0/4.0, 1.0/4.0);
+  return vector_3(0.25,0.25,0.25);
 }
+// order 6
 
 /*
 //TODO limititations for generalized order : 1. these fns will need to be
