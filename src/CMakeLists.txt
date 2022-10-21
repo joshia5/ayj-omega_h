@@ -7,6 +7,7 @@ set(Omega_h_SOURCES
   Omega_h_beziers.cpp
   Omega_h_curve_validity.cpp
   Omega_h_curve_validity_3d.cpp
+  Omega_h_curve_quality_3d.cpp
   Omega_h_curve_refine_2d.cpp
   Omega_h_curve_refine_3d.cpp
   Omega_h_coarsen_invalidities.cpp
@@ -444,6 +445,8 @@ if(BUILD_TESTING)
 
   osh_add_exe(curve_coarsen_test)
   test_func(run_curve_coarsen_test 1 ./curve_coarsen_test)
+  osh_add_exe(curve_adapt_test)
+  test_func(run_curve_adapt_test 1 ./curve_adapt_test)
   osh_add_exe(optim_test)
   test_func(run_optim_test 1 ./optim_test)
   osh_add_exe(curve_test)
