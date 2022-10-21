@@ -128,6 +128,7 @@ OMEGA_H_INLINE LO checkMinJacDet_3d(Few<Real, 84> const& nodes, LO order,
 }
 
 LOs checkValidity_3d(Mesh *mesh, LOs new_tets);
+Reals calc_crvQuality_3d(Mesh *mesh);
 
 } //namespace
 
