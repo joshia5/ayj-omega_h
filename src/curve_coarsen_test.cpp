@@ -328,6 +328,7 @@ void test_collapse_kova(Library *lib) {
   opts.should_swap = false;
   opts.should_refine = false;
   opts.should_filter_invalids = false;
+  opts.verbosity = EXTRA_STATS;
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
@@ -339,7 +340,6 @@ void test_collapse_kova(Library *lib) {
   }
   //while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 50));
   fprintf(stderr, "finish coarsening\n");
-  mesh.ask_qualities();
   writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/kovaCoarsen_aft.vtk", &mesh);
   writer.write();
   fprintf(stderr, "finished kova case\n");

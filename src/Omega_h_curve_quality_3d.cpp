@@ -39,7 +39,8 @@ Reals calc_crvQuality_3d(Mesh *mesh) {
 
     auto const minJ = calcMinJacDet(nodes_det);
     auto const maxJ = calcMaxJacDet(nodes_det);
-    Q[n] = (minJ/maxJ)*qs[n];
+    Q[n] = std::pow((minJ/maxJ), 1./3.)*qs[n];
+    //printf("qs %f, minJ %f, maxJ %f, Q %f\n",qs[n], minJ, maxJ, Q[n]);
   };
   parallel_for(nnew_tets, std::move(calc_quality));
 

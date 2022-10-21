@@ -38,7 +38,6 @@ void test_adapt_inclusion(Library *lib) {
 
   auto opts = AdaptOpts(&mesh);
   opts.should_swap = false;
-  opts.should_refine = true;
   opts.should_filter_invalids = true;
   opts.verbosity = EXTRA_STATS;
   fprintf(stderr, "initial mesh size %d\n", mesh.nregions());
@@ -111,13 +110,13 @@ void test_cubic_tet_quality(Library *lib) {
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
   add_implied_metric_tag(&mesh);
   auto qual = HostRead<Real>(calc_crvQuality_3d(&mesh));
-  printf("quality %f\n", qual[0]);
+  printf("regular tet quality %f\n", qual[0]);
 }
 
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
-  //test_adapt_inclusion(&lib);
+  test_adapt_inclusion(&lib);
   test_cubic_tet_quality(&lib);
 
   return 0;
