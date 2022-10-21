@@ -55,10 +55,70 @@ void test_adapt_inclusion(Library *lib) {
   return;
 }
 
+void test_cubic_tet_quality(Library *lib) {
+  auto mesh = Mesh(lib);
+  auto comm = lib->world();
+  binary::read(
+      "/lore/joshia5/develop/mfem_omega/omega_h/meshes/Example_tet.osh",
+      lib->world(), &mesh);
+  mesh.set_curved(1);
+
+  mesh.set_max_order(3);
+  mesh.add_tags_for_ctrlPts();
+  auto edge_nCtrlPts = mesh.n_internal_ctrlPts(1);
+  auto coords = mesh.coords();
+  auto ev2v = mesh.ask_down(1, 0).ab2b;
+  auto fe2e = mesh.ask_down(2, 1).ab2b;
+  auto rv2v = mesh.ask_down(3, 0).ab2b;
+  auto re2e = mesh.ask_down(3, 1).ab2b;
+  auto rf2f = mesh.ask_down(3, 2).ab2b;
+
+  mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
+  mesh.set_tag_for_ctrlPts(1, Reals({
+                                     0.0, 1.0/3.0, 0.0,
+                                     0.0, 2.0/3.0, 0.0,
+
+                                     1.0/3.0, 0.0, 0.0,
+                                     2.0/3.0, 0.0, 0.0,
+
+                                     0.0, 0.0, 1.0/3.0,
+                                     0.0, 0.0, 2.0/3.0,
+
+                                     1.0/3.0, 2.0/3.0, 0.0,
+                                     2.0/3.0, 1.0/3.0, 0.0,
+
+                                     0.0, 1.0/3.0, 2.0/3.0,
+                                     0.0, 2.0/3.0, 1.0/3.0,
+
+                                     2.0/3.0, 0.0, 1.0/3.0,
+                                     1.0/3.0, 0.0, 2.0/3.0
+                                     }));
+  mesh.set_tag_for_ctrlPts(2, Reals({
+                                     1.0/3.0, 1.0/3.0, 0.0,
+                                     1.0/3.0, 0.0, 1.0/3.0,
+                                     1.0/3.0, 1.0/3.0, 1.0/3.0,
+                                     0.0, 1.0/3.0, 1.0/3.0
+                                     }));
+  auto wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_3d(&mesh, &wireframe_mesh);
+  std::string vtuPath = "/lore/joshia5/Meshes/curved/tet_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  auto curveVtk_mesh = Mesh(comm->library());
+  curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh);
+  vtuPath = "/lore/joshia5/Meshes/curved/tet_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
+  add_implied_metric_tag(&mesh);
+  auto qual = HostRead<Real>(calc_crvQuality_3d(&mesh));
+  printf("quality %f\n", qual[0]);
+}
+
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
-  test_adapt_inclusion(&lib);
+  //test_adapt_inclusion(&lib);
+  test_cubic_tet_quality(&lib);
 
   return 0;
 }
