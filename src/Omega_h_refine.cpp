@@ -13,6 +13,7 @@
 #include "Omega_h_transfer.hpp"
 #include "Omega_h_beziers.hpp"
 #include "Omega_h_curve_coarsen.hpp"
+#include "Omega_h_curve_validity_3d.hpp"
 
 #include "Omega_h_file.hpp"
 #include<Omega_h_build.hpp>
@@ -120,8 +121,12 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
   }
 
   if (mesh->is_curved() > 0) {
-    printf("checking validity after refine\n");
-    check_validity_all_tet(&new_mesh);
+    if(opts.check_crv_qual > 0) {
+      printf("checking validity after refine\n");
+      check_validity_all_tet(&new_mesh);
+      printf("calc quality after refine\n");
+      auto qual = calc_crvQuality_3d(&new_mesh);
+    }
   }
 
   *mesh = new_mesh;
