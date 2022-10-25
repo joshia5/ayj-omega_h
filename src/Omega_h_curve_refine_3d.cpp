@@ -435,7 +435,7 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
           new_vertCtrlPts, new_edgeCtrlPts, p11, new_fv2v);
         for (LO k = 0; k < 3; ++k) {
           face_ctrlPts[new_f0*n_face_pts*dim + k] = newface_c11[k];
-          //TODO mult pts per face
+          //TODO order > 3; (multiple pts. per face)
         }
 
       }
