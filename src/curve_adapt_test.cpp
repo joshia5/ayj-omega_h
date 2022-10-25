@@ -38,12 +38,16 @@ void test_adapt_inclusion(Library *lib) {
 
   auto opts = AdaptOpts(&mesh);
   opts.should_swap = false;
+  opts.should_coarsen = false;
+  opts.should_coarsen_slivers = false;
   opts.should_filter_invalids = true;
   opts.verbosity = EXTRA_STATS;
   fprintf(stderr, "initial mesh size %d\n", mesh.nregions());
-  I8 max_adapt_itr = 1;
+  I8 max_adapt_itr = 11;
   for (LO adapt_itr = 0; adapt_itr < max_adapt_itr; ++adapt_itr) {
-    adapt(&mesh, opts);
+    while (approach_metric(&mesh, opts)) {
+      adapt(&mesh, opts);
+    }
   }
   auto qual = calc_crvQuality_3d(&mesh);
   /*
