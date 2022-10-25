@@ -77,6 +77,7 @@ struct AdaptOpts {
   bool should_coarsen_slivers;
   bool should_prevent_coarsen_flip;
   I8 should_filter_invalids;
+  I8 check_crv_qual;
   TransferOpts xfer_opts;
 };
 
