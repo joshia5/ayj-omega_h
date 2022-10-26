@@ -91,7 +91,8 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
   *mesh = new_mesh;
 }
 
-static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts) {
+static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
+    I8 const should_modify_mesh) {
   auto comm = mesh->comm();
   auto edges_are_keys = mesh->get_array<I8>(EDGE, "key");
   auto keys2edges = collect_marked(edges_are_keys);
@@ -161,6 +162,16 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts) {
         }
       }
     }
+    if (ent_dim == REGION) {
+      if (should_modify_mesh < 0) {
+      }
+      else {
+        if (check_crv_qual > 0) {
+          printf("checking validity after refine\n");
+          check_validity_all_tet(&new_mesh);
+        }
+      }
+    }
 
     old_lows2new_lows = old_ents2new_ents;
   }
@@ -174,7 +185,9 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts) {
     }
   }
 
-  *mesh = new_mesh;
+  if (should_modify_mesh > 0) {
+    *mesh = new_mesh;
+  }
 }
 
 
@@ -188,7 +201,9 @@ static bool refine(Mesh* mesh, AdaptOpts const& opts) {
     refine_element_based(mesh, opts);
   }
   if (mesh->is_curved() > 0) {
-    refine_element_based_crv(mesh, opts);
+    if (min_crv_qual_allowed > 0.) {
+      refine_element_based_crv(mesh, opts);
+    }
   }
 
   return true;
