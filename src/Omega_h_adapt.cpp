@@ -93,6 +93,7 @@ AdaptOpts::AdaptOpts(Int dim) {
   should_prevent_coarsen_flip = false;
   should_filter_invalids = 1;
   check_crv_qual = 1;
+  min_crv_qual_allowed = 0.10;
 }
 
 static Reals get_fixable_qualities(Mesh* mesh, AdaptOpts const&) {

@@ -78,6 +78,7 @@ struct AdaptOpts {
   bool should_prevent_coarsen_flip;
   I8 should_filter_invalids;
   I8 check_crv_qual;
+  Real min_crv_qual_allowed;
   TransferOpts xfer_opts;
 };
 
