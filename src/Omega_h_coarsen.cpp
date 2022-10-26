@@ -200,7 +200,7 @@ static void coarsen_element_based2(Mesh* mesh, AdaptOpts const& opts) {
 }
 
 static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
-  LO const should_modify_mesh) {
+  I8 const should_modify_mesh) {
   auto comm = mesh->comm();
   auto verts_are_keys = mesh->get_array<I8>(VERT, "key");
   auto vert_quals = mesh->get_array<Real>(VERT, "collapse_quality");
@@ -234,7 +234,7 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
   auto old_lows2new_lows = LOs();
 
   //TEST:
-  make_cavity_class(mesh, keys2verts);
+  //make_cavity_class(mesh, keys2verts);
   //
 
   for (Int ent_dim = 0; ent_dim <= mesh->dim(); ++ent_dim) {
@@ -296,7 +296,7 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
             auto cands2edges = collect_marked(edges_are_cands);
             auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
             // this does not require ghosting as 
-            // ghosting called later for ind. set selection
+            // ghosting called later in upper level coarsen for ind. set selection
             auto cand_edge_invalidities = coarsen_invalidities_new_mesh
               (mesh, cands2edges, cand_edge_codes, &new_mesh, 
                old_verts2new_verts, verts_are_keys, keys2verts_onto,
@@ -310,9 +310,12 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
           }
           else {
             //validity of new curved ents
-            printf("checking validity after coarsen\n");
-            check_validity_all_tet(&new_mesh);
-            check_validity_edges_from_complex_cav(&new_mesh, keys2verts);
+            if (check_crv_qual > 0) {
+              printf("checking validity after coarsen\n");
+              check_validity_all_tet(&new_mesh);
+              check_validity_edges_from_complex_cav(&new_mesh, keys2verts);
+              auto qual = calc_crvQuality_3d(&new_mesh);
+            }
           }
         }
       }
