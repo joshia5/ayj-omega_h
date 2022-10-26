@@ -86,6 +86,51 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
         ent_dim, keys2prods, prods2new_ents, same_ents2old_ents,
         same_ents2new_ents);
 
+    old_lows2new_lows = old_ents2new_ents;
+  }
+  *mesh = new_mesh;
+}
+
+static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts) {
+  auto comm = mesh->comm();
+  auto edges_are_keys = mesh->get_array<I8>(EDGE, "key");
+  auto keys2edges = collect_marked(edges_are_keys);
+  auto nkeys = keys2edges.size();
+  auto ntotal_keys = comm->allreduce(GO(nkeys), OMEGA_H_SUM);
+  if (opts.verbosity >= EACH_REBUILD && comm->rank() == 0) {
+    std::cout << "refining " << ntotal_keys << " edges\n";
+  }
+  auto new_mesh = mesh->copy_meta();
+  auto keys2midverts = LOs();
+  auto old_verts2new_verts = LOs();
+  auto old_lows2new_lows = LOs();
+
+  auto keys2old_faces = LOs();
+
+  for (Int ent_dim = 0; ent_dim <= mesh->dim(); ++ent_dim) {
+    auto keys2prods = LOs();
+    auto prod_verts2verts = LOs();
+    if (ent_dim == VERT) {
+      keys2prods = LOs(nkeys + 1, 0, 1);
+    } else {
+      refine_products(mesh, ent_dim, keys2edges, keys2midverts,
+          old_verts2new_verts, keys2prods, prod_verts2verts);
+    }
+    auto prods2new_ents = LOs();
+    auto same_ents2old_ents = LOs();
+    auto same_ents2new_ents = LOs();
+    auto old_ents2new_ents = LOs();
+    modify_ents_adapt(mesh, &new_mesh, ent_dim, EDGE, keys2edges, keys2prods,
+        prod_verts2verts, old_lows2new_lows, &prods2new_ents,
+        &same_ents2old_ents, &same_ents2new_ents, &old_ents2new_ents);
+    if (ent_dim == VERT) {
+      keys2midverts = prods2new_ents;
+      old_verts2new_verts = old_ents2new_ents;
+    }
+    transfer_refine(mesh, opts.xfer_opts, &new_mesh, keys2edges, keys2midverts,
+        ent_dim, keys2prods, prods2new_ents, same_ents2old_ents,
+        same_ents2new_ents);
+
     if (ent_dim == EDGE) {
       if (mesh->is_curved() > 0) {
         if (mesh->dim() == 2) {
@@ -121,7 +166,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
   }
 
   if (mesh->is_curved() > 0) {
-    if(opts.check_crv_qual > 0) {
+    if (opts.check_crv_qual > 0) {
       printf("checking validity after refine\n");
       check_validity_all_tet(&new_mesh);
       printf("calc quality after refine\n");
@@ -131,6 +176,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
 
   *mesh = new_mesh;
 }
+
 
 static bool refine(Mesh* mesh, AdaptOpts const& opts) {
 
@@ -144,7 +190,12 @@ static bool refine(Mesh* mesh, AdaptOpts const& opts) {
   mesh->set_parting(OMEGA_H_ELEM_BASED);
   mesh->change_all_rcFieldsToMesh();
 
-  refine_element_based(mesh, opts);
+  if (mesh->is_curved() < 0) { // linear mesh
+    refine_element_based(mesh, opts);
+  }
+  if (mesh->is_curved() > 0) {
+    refine_element_based_crv(mesh, opts);
+  }
 
   return true;
 }
