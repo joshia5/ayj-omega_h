@@ -164,6 +164,24 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
     }
     if (ent_dim == REGION) {
       if (should_modify_mesh < 0) {
+        /* from coarsen
+            auto edge_cand_codes = get_edge_codes(mesh);
+            auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
+            auto cands2edges = collect_marked(edges_are_cands);
+            auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
+            // this does not require ghosting as 
+            // ghosting called later for ind. set selection
+            auto cand_edge_invalidities = coarsen_invalidities_new_mesh
+              (mesh, cands2edges, cand_edge_codes, &new_mesh, 
+               old_verts2new_verts, verts_are_keys, keys2verts_onto,
+               prods2new_ents);
+            cand_edge_codes = filter_coarsen_invalids(
+                cand_edge_codes, cand_edge_invalidities, -1);
+            filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
+            if (mesh->is_curved() > 0) {
+              put_edge_codes(mesh, cands2edges, cand_edge_codes);
+            }
+            */
       }
       else {
         if (check_crv_qual > 0) {
