@@ -15,6 +15,7 @@
 #include "Omega_h_build.hpp"
 #include "Omega_h_curve_coarsen.hpp"
 #include "Omega_h_coarsen_invalidities.hpp"
+#include <Omega_h_curve_validity_3d.hpp>
 
 namespace Omega_h {
 
@@ -310,11 +311,11 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
           }
           else {
             //validity of new curved ents
-            if (check_crv_qual > 0) {
+            if (opts.check_crv_qual > 0) {
               printf("checking validity after coarsen\n");
               check_validity_all_tet(&new_mesh);
               check_validity_edges_from_complex_cav(&new_mesh, keys2verts);
-              auto qual = calc_crvQuality_3d(&new_mesh);
+              auto quals = calc_crvQuality_3d(&new_mesh);
             }
           }
         }
