@@ -38,14 +38,15 @@ void test_adapt_inclusion(Library *lib) {
 
   auto opts = AdaptOpts(&mesh);
   opts.should_swap = false;
-  opts.should_coarsen = false;
-  opts.should_coarsen_slivers = false;
+  opts.should_coarsen = true;
+  opts.should_coarsen_slivers = true;
   opts.should_filter_invalids = true;
+  opts.check_crv_qual = false;
   opts.verbosity = EXTRA_STATS;
   fprintf(stderr, "initial mesh size %d\n", mesh.nregions());
-  I8 max_adapt_itr = 11;
+  I8 max_adapt_itr = 1;
   for (LO adapt_itr = 0; adapt_itr < max_adapt_itr; ++adapt_itr) {
-    while (approach_metric(&mesh, opts)) {
+    while (approach_metric(&mesh, opts) && mesh.nelems() < 4000) {
       adapt(&mesh, opts);
     }
   }
@@ -55,6 +56,16 @@ void test_adapt_inclusion(Library *lib) {
       "../omega_h/meshes/boxCircle_aft.vtk", &mesh);
   writer.write();
   */
+  auto wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_3d(&mesh, &wireframe_mesh);
+  std::string vtuPath = "../omega_h/meshes/box_circleCut_ref5k_wire.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  auto curveVtk_mesh = Mesh(comm->library());
+  curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh);
+  vtuPath = "../omega_h/meshes/box_circleCut_ref5k_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
   return;
 }
 
@@ -121,7 +132,7 @@ int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
   test_adapt_inclusion(&lib);
-  test_cubic_tet_quality(&lib);
+  //test_cubic_tet_quality(&lib);
 
   return 0;
 }

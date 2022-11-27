@@ -165,7 +165,6 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
     if (ent_dim == REGION) {
       if (should_modify_mesh < 0) {
         /* from coarsen
-            */
             auto edge_cand_codes = get_edge_codes(mesh);
             auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
             auto cands2edges = collect_marked(edges_are_cands);
@@ -182,11 +181,13 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
             if (mesh->is_curved() > 0) {
               put_edge_codes(mesh, cands2edges, cand_edge_codes);
             }
+            */
       }
       else {
-        if (check_crv_qual > 0) {
+        if (opts.check_crv_qual > 0) {
           printf("checking validity after refine\n");
           check_validity_all_tet(&new_mesh);
+          auto quals = calc_crvQuality_3d(&new_mesh);
         }
       }
     }
@@ -194,6 +195,7 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
     old_lows2new_lows = old_ents2new_ents;
   }
 
+  /*
   if (mesh->is_curved() > 0) {
     if (opts.check_crv_qual > 0) {
       printf("checking validity after refine\n");
@@ -202,6 +204,7 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
       auto qual = calc_crvQuality_3d(&new_mesh);
     }
   }
+  */
 
   if (should_modify_mesh > 0) {
     *mesh = new_mesh;
@@ -225,8 +228,8 @@ static bool refine(Mesh* mesh, AdaptOpts const& opts) {
     refine_element_based(mesh, opts);
   }
   if (mesh->is_curved() > 0) {
-    if (min_crv_qual_allowed > 0.) {
-      refine_element_based_crv(mesh, opts, -1);
+    if (opts.min_crv_qual_allowed > 0.) {
+      refine_element_based_crv(mesh, opts, 1);
     }
   }
 
