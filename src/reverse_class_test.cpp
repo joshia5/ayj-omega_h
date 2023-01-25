@@ -121,11 +121,11 @@ int main(int argc, char** argv) {
   if (argc != 3) {
     Omega_h_fail("a.out <2d_in_mesh> <3d_in_mesh>\n");
   }
+/*
   char const* path_2d = nullptr;
   char const* path_3d = nullptr;
   path_2d = argv[1];
   path_3d = argv[2];
-/*
   test_2d(&lib, path_2d);
   test_3d(&lib, path_3d);
 
