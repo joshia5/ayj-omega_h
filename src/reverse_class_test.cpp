@@ -96,6 +96,24 @@ void test_3d(Library *lib, const std::string &mesh_file) {
   return;
 }
 
+void test_rf(Library *lib) {
+
+  auto mesh = Mesh(lib);
+  binary::read(
+      "/lore/joshia5/Meshes/RF/assemble/v9_2rgn_7smallFeat_0p35mil_p2.osh",
+      lib->world(), &mesh);
+  auto fluxsurf_2_rc = mesh.ask_revClass(2, LOs({100}));
+  LO nfaces_rc = fluxsurf_2_rc.ab2b.size();
+  printf("num. mesh faces %d\n", nfaces_rc);
+  vtk::FullWriter writer;
+  writer = vtk::FullWriter(
+      "/lore/joshia5/Meshes/RF/assemble/v9_2rgn_7smallFeat_0p35mil_p2.vtk"
+      , &mesh);
+  writer.write();
+
+  return;
+}
+
 int main(int argc, char** argv) {
 
   auto lib = Library (&argc, &argv);
@@ -107,7 +125,7 @@ int main(int argc, char** argv) {
   char const* path_3d = nullptr;
   path_2d = argv[1];
   path_3d = argv[2];
-
+/*
   test_2d(&lib, path_2d);
   test_3d(&lib, path_3d);
 
@@ -119,5 +137,8 @@ int main(int argc, char** argv) {
   auto face_rc = mesh.ask_revClass(2);
   Now t1 = now();
   printf("ok2 reg %d face %d time %f\n", mesh.nents(3), mesh.nfaces(), t1-t0);
+*/
+  test_rf(&lib);
+
   return 0;
 }
