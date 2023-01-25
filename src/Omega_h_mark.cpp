@@ -18,6 +18,20 @@ Read<I8> mark_exposed_sides(Mesh* mesh) {
   return exposed;
 }
 
+Read<I8> mark_rc_sides(Mesh* mesh) {
+  auto dim = mesh->dim();
+  auto ns = mesh->nents(dim-1);
+  auto s_class_dim = mesh->get_array<I8>(dim-1, "class_dim");
+  Write<I8> exposed(ns);
+  auto f = OMEGA_H_LAMBDA(LO s) {
+    if (s_class_dim[s] == (dim-1)) {
+      exposed[s] = 1;
+    }
+  };
+  parallel_for(ns, f, "mark_rc_side");
+  return exposed;
+}
+
 Read<I8> mark_down(Graph l2h, Read<I8> high_marked) {
   auto l2lh = l2h.a2ab;
   auto lh2h = l2h.ab2b;
