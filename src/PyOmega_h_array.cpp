@@ -16,10 +16,10 @@ static void pybind11_array_type(py::module& module,
   py::class_<Read<Scalar>>(module, read_name.c_str())
       .def(py::init<Write<Scalar>>())
       .def("size", &Read<Scalar>::size);
-  py::class_<Wrapper, Read<Scalar>>(module, py_wrapper.c_str())
-      .def(py::init<Write<Scalar>>())
-      .def(py::init<LO, Scalar, std::string const&>(), py::arg("size"),
-          py::arg("value"), py::arg("name") = "");
+  //py::class_<Wrapper, Read<Scalar>>(module, py_wrapper.c_str())
+    //  .def(py::init<Write<Scalar>>())
+      //.def(py::init<LO, Scalar, std::string const&>(), py::arg("size"),
+        //  py::arg("value"), py::arg("name") = "");
   py::class_<HostRead<Scalar>>(
       module, hostread_name.c_str(), py::buffer_protocol())
       .def(py::init<Read<Scalar>>())
