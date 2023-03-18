@@ -41,11 +41,11 @@ Reals calc_crvQuality_3d(Mesh *mesh) {
     auto const maxJ = calcMaxJacDet(nodes_det);
     if (minJ > 0.) {
       Q[n] = std::pow(std::pow((minJ/maxJ), 1./3.)*qs[n], 1.0);
-      if (Q[n] < 0.1) printf("low quality %f for element %d\n", Q[n], n);
+      if (Q[n] < 0.01) printf("low quality %f for element %d\n", Q[n], n);
     }
     else {
       Q[n] = 0.;
-      printf("tet %d qs %f, minJ %f, maxJ %f, Q %f\n",n,qs[n], minJ, maxJ, Q[n]);
+      //printf("tet %d qs %f, minJ %f, maxJ %f, Q %f\n",n,qs[n], minJ, maxJ, Q[n]);
     }
   };
   parallel_for(nnew_tets, std::move(calc_quality));
