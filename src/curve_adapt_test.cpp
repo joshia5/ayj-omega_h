@@ -69,6 +69,137 @@ void test_adapt_inclusion(Library *lib) {
   return;
 }
 
+void test_adapt_rf(Library *lib) {
+  auto comm = lib->world();
+
+  auto mesh = binary::read(
+      "/lore/joshia5/Meshes/RF/assemble/v10_2rgn_11smallFeat_709k_p2.osh", comm);
+
+  auto implied_metrics = get_implied_metrics(&mesh);
+  LO const dim = 3;
+  mesh.add_tag(VERT, "metric", symm_ncomps(dim), implied_metrics);
+  mesh.add_tag<Real>(VERT, "target_metric", symm_ncomps(dim));
+  
+  auto target_metrics_w = Write<Real>
+    (mesh.nverts() * symm_ncomps(dim));
+
+  auto hd_hc = Write<Real>(mesh.nverts());
+  Reals const coords = mesh.coords();
+  auto ev2v = mesh.get_adj(1,0).ab2b;
+  auto length_edg_w = Write<Real> (mesh.nedges());
+  auto f1 = OMEGA_H_LAMBDA(LO e) {
+    auto v0 = ev2v[e*2 + 0];
+    auto v1 = ev2v[e*2 + 1];
+    auto p0 = get_vector<dim>(coords, v0);
+    auto p1 = get_vector<dim>(coords, v1);
+    Real dist = 0.0;
+    for (Int i = 0; i < dim; ++i) {
+      dist += (p1[i] - p0[i])*(p1[i] - p0[i]);
+    }
+    dist = std::pow(dist, 0.5);
+    length_edg_w[e] = dist;
+  };
+  parallel_for(mesh.nedges(), f1);
+  mesh.add_tag(EDGE, "length_parent", 1, Reals(length_edg_w));
+  ProjectFieldtoVertex (&mesh, "length_parent", 1);
+  auto length_c = mesh.get_array<Real> (0, "length_parent");
+
+  auto v_class_id = mesh.get_array<LO> (0, "class_id");
+
+  auto f = OMEGA_H_LAMBDA(LO v) {
+    auto h = Vector<dim>();
+    for (Int i = 0; i < dim; ++i) {
+      if (v_class_id[v] == 5691) {//52842,52847
+        printf("vtx %d on outer flux surf\n", v);
+        h[i] = 0.5*length_c[v];
+      }
+      else {
+        h[i] = length_c[v];
+      }
+      //h[i] = std::pow((error_des2/vtxError), 0.5)*length_c[v];
+      //if ((v_class_id[v] == 190) ||  (v_class_id[v] == 186)) {
+        //h[i] = length_c[v];
+      //}
+      hd_hc[v] = h[i]/length_c[v];
+    }
+    auto m = diagonal(metric_eigenvalues_from_lengths(h));
+    set_symm(target_metrics_w, v, m);
+  };
+  parallel_for(mesh.nverts(), f);
+  mesh.set_tag(VERT, "target_metric", Reals(target_metrics_w));
+  mesh.add_tag(VERT, "hd_hc", 1, Reals(hd_hc));
+
+/**//*set_target_metric<dim>(mesh, scale, pOmesh, error_des2);*/
+
+  //mesh.set_parting(OMEGA_H_ELEM_BASED);
+  //mesh.ask_lengths();
+  //mesh.ask_qualities();
+  //vtk::FullWriter writer;
+
+  //printf("write mesh with size field\n");
+  //binary::write("/lore/joshia5/Meshes/curved/inclusion_3p_sizes.osh", mesh);
+
+  mesh.add_tag(0, "bezier_pts", 3, coords);
+  calc_quad_ctrlPts_from_interpPts(&mesh);
+  elevate_curve_order_2to3(&mesh);
+  for (LO i = 0; i <= mesh.dim(); ++i) {
+    if (!mesh.has_tag(i, "global")) {
+      mesh.add_tag(i, "global", 1, Omega_h::GOs(mesh.nents(i), 0, 1));
+    }
+  }
+
+  vtk::FullWriter writer;
+
+  /*
+  auto wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_3d(&mesh, &wireframe_mesh);
+  std::string vtuPath = "../omega_h/meshes/box_circleCut_4k_wire.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  auto curveVtk_mesh = Mesh(comm->library());
+  curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh);
+  vtuPath = "../omega_h/meshes/box_circleCut_4k_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
+  */
+
+  auto opts = AdaptOpts(&mesh);
+  opts.should_swap = false;
+  opts.should_coarsen = false;
+  opts.should_coarsen_slivers = false;
+  opts.should_filter_invalids = true;
+  opts.check_crv_qual = false;
+  opts.verbosity = EXTRA_STATS;
+  opts.min_quality_allowed = 0.01;
+  opts.max_length_allowed = 8.0;
+  fprintf(stderr, "initial mesh size %d\n", mesh.nregions());
+  I8 max_adapt_itr = 1;
+  for (LO adapt_itr = 0; adapt_itr < max_adapt_itr; ++adapt_itr) {
+    while (approach_metric(&mesh, opts)) {
+    //while (approach_metric(&mesh, opts) && mesh.nelems() < 400000) {
+      //approach_metric(&mesh, opts);
+      adapt(&mesh, opts);
+    }
+  }
+  //auto qual = calc_crvQuality_3d(&mesh);
+  //writer = vtk::FullWriter(
+    //  "../omega_h/meshes/boxCircle_aft.vtk", &mesh);
+  //writer.write();
+  
+  auto wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_3d(&mesh, &wireframe_mesh,3);
+  std::string vtuPath = "/lore/joshia5/Meshes/RF/708k_ref_wire.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  auto curveVtk_mesh = Mesh(comm->library());
+  curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh,3);
+  vtuPath = "/lore/joshia5/Meshes/RF/708k_ref_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
+  return;
+ 
+}
+
 void test_cubic_tet_quality(Library *lib) {
   auto mesh = Mesh(lib);
   auto comm = lib->world();
@@ -131,7 +262,8 @@ void test_cubic_tet_quality(Library *lib) {
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
-  test_adapt_inclusion(&lib);
+  //test_adapt_inclusion(&lib);
+  test_adapt_rf(&lib);
   //test_cubic_tet_quality(&lib);
 
   return 0;
