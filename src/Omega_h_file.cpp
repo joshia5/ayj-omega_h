@@ -330,6 +330,7 @@ static void read_tag(std::istream& stream, Mesh* mesh, Int d,
     if (n_class_ids > 0) {
       read_array(stream, class_ids, is_compressed, needs_swapping);
     }
+  }
 
   if (type == OMEGA_H_I8) {
     Read<I8> array;
@@ -345,7 +346,8 @@ static void read_tag(std::istream& stream, Mesh* mesh, Int d,
 
     size_t found = name.find("_rc");
     if (found != std::string::npos) {
-      mesh->change_tagTorc<I8> (d, ncomps, name, class_ids);
+      //TODO temp. fix, update with latest fix
+      //mesh->change_tagTorc<I8> (d, ncomps, name, class_ids);
     }
 
   } else if (type == OMEGA_H_I32) {
@@ -355,7 +357,8 @@ static void read_tag(std::istream& stream, Mesh* mesh, Int d,
 
     size_t found = name.find("_rc");
     if (found != std::string::npos) {
-      mesh->change_tagTorc<I32> (d, ncomps, name, class_ids);
+      //TODO temp. fix, update with latest fix
+      //mesh->change_tagTorc<I32> (d, ncomps, name, class_ids);
     }
   }
 
