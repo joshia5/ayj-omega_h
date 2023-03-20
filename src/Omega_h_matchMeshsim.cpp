@@ -6,7 +6,6 @@
 #include "Omega_h_vector.hpp"
 #include "Omega_h_array_ops.hpp"
 
-#include "Omega_h_simConfig.h"
 #include "MeshSim.h"
 #include "SimModel.h"
 #include "SimUtil.h"
