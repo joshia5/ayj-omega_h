@@ -399,8 +399,6 @@ class Mesh {
   LO nents_owned(Int ent_dim);
   std::string string(int verbose = 0);
 
-  Adj derive_revClass(Int edim);
-
  public:
   ClassSets class_sets;
   [[nodiscard]] const TagVector& get_rc_tags(Int dim) const {
