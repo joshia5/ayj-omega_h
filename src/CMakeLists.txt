@@ -215,13 +215,10 @@ endif()
 
 if (Omega_h_USE_CUDA AND NOT Omega_h_USE_Kokkos)
   set_source_files_properties(${Omega_h_SOURCES} PROPERTIES LANGUAGE CUDA)
+endif()
 
 if(Omega_h_USE_DOLFIN)
   set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_dolfin.cpp)
-endif()
-
-if (Omega_h_USE_CUDA)
-  set_source_files_properties(${Omega_h_SOURCES} PROPERTIES LANGUAGE CUDA)
 endif()
 
 add_library(omega_h ${Omega_h_SOURCES})
@@ -292,7 +289,6 @@ bob_export_target(omega_h)
 function(osh_add_exe EXE_NAME)
   if (Omega_h_USE_CUDA AND NOT Omega_h_USE_Kokkos)
     set_source_files_properties(${EXE_NAME}.cpp PROPERTIES LANGUAGE CUDA)
-
   endif()
   add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
   set_property(TARGET ${EXE_NAME} PROPERTY CXX_STANDARD "14")
