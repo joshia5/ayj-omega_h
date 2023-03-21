@@ -360,21 +360,31 @@ static void read_tag(std::istream& stream, Mesh* mesh, Int d,
       //TODO temp. fix, update with latest fix
       //mesh->change_tagTorc<I32> (d, ncomps, name, class_ids);
     }
+  } else if (type == OMEGA_H_I64) {
+    Read<I64> array;
+    read_array(stream, array, is_compressed, needs_swapping);
+    mesh->add_tag(d, name, ncomps, array, true);
+
+    size_t found = name.find("_rc");
+    if (found != std::string::npos) {
+      //mesh->change_tagTorc<I64> (d, ncomps, name, class_ids);
+    }
+
+  } else if (type == OMEGA_H_F64) {
+    Read<Real> array;
+    read_array(stream, array, is_compressed, needs_swapping);
+    mesh->add_tag(d, name, ncomps, array, true);
+
+    size_t found = name.find("_rc");
+    if (found != std::string::npos) {
+      //mesh->change_tagTorc<Real> (d, ncomps, name, class_ids);
+    }
+
+  } else {
+    Omega_h_fail("unexpected tag type in binary read\n");
   }
 
-  auto f = [&](auto t) {
-    using T = decltype(t);
-    Read<T> array;
-    read_array(stream, array, is_compressed, needs_swapping);
-    if(is_rc_tag(name)) {
-      mesh->set_rc_from_mesh_array(d,ncomps,class_ids,name,array);
-    }
-    else {
-      mesh->add_tag(d, name, ncomps, array, true);
-    }
-  };
-  apply_to_omega_h_types(static_cast<Omega_h_Type>(type), std::move(f));
-}
+  }
 
 static void write_sets(std::ostream& stream, Mesh* mesh, bool needs_swapping) {
   auto n = I32(mesh->class_sets.size());
