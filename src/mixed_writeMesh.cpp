@@ -1,10 +1,10 @@
 #include "MeshSim.h"
 #include "SimDiscrete.h"
 #include "SimMessages.h"
-#include "SimError.h"
-#include "SimErrorCodes.h"
-#include "SimMeshingErrorCodes.h"
-#include "SimDiscreteErrorCodes.h"
+//#include "SimError.h"
+//#include "SimErrorCodes.h"
+//#include "SimMeshingErrorCodes.h"
+//#include "SimDiscreteErrorCodes.h"
 #include <iostream>
 using namespace std;
 
@@ -102,12 +102,14 @@ void hex_gen(CommPtr comm, std::string const mesh_dir) {
     std::string model_path = mesh_dir + "/Example_hex.smd";
     finalize_write(numVerts, coords, numElems, elementType, elementData,
                    vReturn, eReturn, mesh_path.c_str(), model_path.c_str());
-  } catch (pSimError err) {
+  }/* 
+  catch (pSimError err) {
     cerr<<"SimModSuite error caught:"<<endl;
     cerr<<"  Error code: "<<SimError_code(err)<<endl;
     cerr<<"  Error string: "<<SimError_toString(err)<<endl;
     SimError_delete(err);
-  } catch (...) {
+  } */
+  catch (...) {
     cerr<<"Unhandled exception caught"<<endl;
   }
 }
@@ -132,12 +134,14 @@ void wedge_gen(CommPtr comm, std::string const mesh_dir) {
     std::string model_path = mesh_dir + "/Example_wedge.smd";
     finalize_write(numVerts, coords, numElems, elementType, elementData,
                    vReturn, eReturn, mesh_path.c_str(), model_path.c_str());
-  } catch (pSimError err) {
+  }/* 
+  catch (pSimError err) {
     cerr<<"SimModSuite error caught:"<<endl;
     cerr<<"  Error code: "<<SimError_code(err)<<endl;
     cerr<<"  Error string: "<<SimError_toString(err)<<endl;
     SimError_delete(err);
-  } catch (...) {
+  } */
+  catch (...) {
     cerr<<"Unhandled exception caught"<<endl;
   }
 }
@@ -162,12 +166,15 @@ void pyramid_gen(CommPtr comm, std::string const mesh_dir) {
     std::string model_path = mesh_dir + "/Example_pym.smd";
     finalize_write(numVerts, coords, numElems, elementType, elementData,
                    vReturn, eReturn, mesh_path.c_str(), model_path.c_str());
-  } catch (pSimError err) {
+  }
+ /* 
+  catch (pSimError err) {
     cerr<<"SimModSuite error caught:"<<endl;
     cerr<<"  Error code: "<<SimError_code(err)<<endl;
     cerr<<"  Error string: "<<SimError_toString(err)<<endl;
     SimError_delete(err);
-  } catch (...) {
+  }*/
+  catch (...) {
     cerr<<"Unhandled exception caught"<<endl;
   }
 }
@@ -193,12 +200,14 @@ void tetOnWedge_gen(CommPtr comm, std::string const mesh_dir) {
     std::string model_path = mesh_dir + "/Example_tet_wedge.smd";
     finalize_write(numVerts, coords, numElems, elementType, elementData,
                    vReturn, eReturn, mesh_path.c_str(), model_path.c_str());
-  } catch (pSimError err) {
+  }/* 
+  catch (pSimError err) {
     cerr<<"SimModSuite error caught:"<<endl;
     cerr<<"  Error code: "<<SimError_code(err)<<endl;
     cerr<<"  Error string: "<<SimError_toString(err)<<endl;
     SimError_delete(err);
-  } catch (...) {
+  }*/ 
+  catch (...) {
     cerr<<"Unhandled exception caught"<<endl;
   }
 }
@@ -227,12 +236,14 @@ void pymOnHex_gen(CommPtr comm, std::string const mesh_dir) {
     std::string model_path = mesh_dir + "/Example_pym_hex.smd";
     finalize_write(numVerts, coords, numElems, elementType, elementData,
                    vReturn, eReturn, mesh_path.c_str(), model_path.c_str());
-  } catch (pSimError err) {
+  } /*
+    catch (pSimError err) {
     cerr<<"SimModSuite error caught:"<<endl;
     cerr<<"  Error code: "<<SimError_code(err)<<endl;
     cerr<<"  Error string: "<<SimError_toString(err)<<endl;
     SimError_delete(err);
-  } catch (...) {
+  } */
+  catch (...) {
     cerr<<"Unhandled exception caught"<<endl;
   }
 }
@@ -264,12 +275,14 @@ void allType_gen(CommPtr comm, std::string const mesh_dir) {
     std::string model_path = mesh_dir + "/Example_allType.smd";
     finalize_write(numVerts, coords, numElems, elementType, elementData,
                    vReturn, eReturn, mesh_path.c_str(), model_path.c_str());
-  } catch (pSimError err) {
+  }/* 
+  catch (pSimError err) {
     cerr<<"SimModSuite error caught:"<<endl;
     cerr<<"  Error code: "<<SimError_code(err)<<endl;
     cerr<<"  Error string: "<<SimError_toString(err)<<endl;
     SimError_delete(err);
-  } catch (...) {
+  }*/ 
+  catch (...) {
     cerr<<"Unhandled exception caught"<<endl;
   }
 }
@@ -291,12 +304,14 @@ void tri_gen(CommPtr comm, std::string const mesh_dir) {
     std::string model_path = mesh_dir + "/Example_tri.smd";
     finalize_write(numVerts, coords, numElems, elementType, elementData,
                    vReturn, eReturn, mesh_path.c_str(), model_path.c_str());
-  } catch (pSimError err) {
+  } /*
+    catch (pSimError err) {
     cerr<<"SimModSuite error caught:"<<endl;
     cerr<<"  Error code: "<<SimError_code(err)<<endl;
     cerr<<"  Error string: "<<SimError_toString(err)<<endl;
     SimError_delete(err);
-  } catch (...) {
+  }*/ 
+  catch (...) {
     cerr<<"Unhandled exception caught"<<endl;
   }
 }
@@ -319,12 +334,14 @@ void twotri_square_gen(CommPtr comm, std::string const mesh_dir) {
     std::string model_path = mesh_dir + "/Example_2tri_square.smd";
     finalize_write(numVerts, coords, numElems, elementType, elementData,
                    vReturn, eReturn, mesh_path.c_str(), model_path.c_str());
-  } catch (pSimError err) {
+  } /*
+    catch (pSimError err) {
     cerr<<"SimModSuite error caught:"<<endl;
     cerr<<"  Error code: "<<SimError_code(err)<<endl;
     cerr<<"  Error string: "<<SimError_toString(err)<<endl;
     SimError_delete(err);
-  } catch (...) {
+  }*/ 
+  catch (...) {
     cerr<<"Unhandled exception caught"<<endl;
   }
 }
@@ -347,12 +364,13 @@ void tet_gen(CommPtr comm, std::string const mesh_dir) {
     std::string model_path = mesh_dir + "/Example_tet.smd";
     finalize_write(numVerts, coords, numElems, elementType, elementData,
                    vReturn, eReturn, mesh_path.c_str(), model_path.c_str());
-  } catch (pSimError err) {
+  }/*
+  catch (pSimError err) {
     cerr<<"SimModSuite error caught:"<<endl;
     cerr<<"  Error code: "<<SimError_code(err)<<endl;
     cerr<<"  Error string: "<<SimError_toString(err)<<endl;
     SimError_delete(err);
-  } catch (...) {
+  }*/ catch (...) {
     cerr<<"Unhandled exception caught"<<endl;
   }
 }
