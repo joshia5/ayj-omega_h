@@ -2,6 +2,7 @@
 #define OMEGA_H_DEFINES_HPP
 
 #include <Omega_h_macros.h>
+#include <Omega_h_fail.hpp>
 
 #include <cstdint>
 #include <type_traits>
@@ -83,7 +84,7 @@ typedef I64 GO;
 typedef double Real;
 
 template <typename F>
-auto apply_to_omega_h_types(Omega_h_Type type, const F&& f) {
+auto apply_to_omega_h_types(Omega_h_Type type, const F&& f) -> typename std::result_of<decltype(f)(I8)>::type {
   switch (type) {
     case OMEGA_H_I8: {
       return f(I8{});
@@ -102,9 +103,11 @@ auto apply_to_omega_h_types(Omega_h_Type type, const F&& f) {
       break;
     }
   }
+  //OMEGA_H_NORETURN(f(I32{}));
+  //return f(I32{});
   // if the lambda f returns something return a dummy type to
   // quash the compiler warning
-  using dummy_type = typename std::result_of_t<decltype(f)(I8)>;
+  using dummy_type = typename std::result_of<decltype(f)(I8)>::type;
   return static_cast<dummy_type>(nullptr);
 }
 
