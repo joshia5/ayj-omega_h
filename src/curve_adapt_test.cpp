@@ -109,7 +109,8 @@ void test_adapt_rf(Library *lib) {
   auto f = OMEGA_H_LAMBDA(LO v) {
     auto h = Vector<dim>();
     for (Int i = 0; i < dim; ++i) {
-      if (v_class_id[v] == 5691) {//52842,52847
+      if (((v_class_id[v] == 5691) || (v_class_id[v] == 52842)) &&//52847
+          ((coords[v*dim+1] > 0.5) && (coords[v*dim+2] > -0.2))) {
         printf("vtx %d on outer flux surf\n", v);
         h[i] = 0.5*length_c[v];
       }
@@ -186,6 +187,8 @@ void test_adapt_rf(Library *lib) {
     //  "../omega_h/meshes/boxCircle_aft.vtk", &mesh);
   //writer.write();
   
+  binary::write("/lore/joshia5/Meshes/RF/assemble/708k_ref1p5mil.osh",
+      &mesh);
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
   build_cubic_wireframe_3d(&mesh, &wireframe_mesh,3);
