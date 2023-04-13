@@ -267,6 +267,12 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
         ent_dim, prods2new_ents, same_ents2old_ents, same_ents2new_ents);
 
     if (mesh->is_curved() > 0) {
+      if (ent_dim == EDGE) {
+        new_mesh.set_curved(1);
+        new_mesh.set_max_order(3);
+        new_mesh.add_tag<I8>
+          (1, "n_bezier_pts", 1, Bytes(new_mesh.nents(1), 2, "numBezierPts"));
+      }
       if (mesh->dim() == 2) {
         if (ent_dim == EDGE) {
         coarsen_curved_verts_and_edges<2>(mesh, &new_mesh,

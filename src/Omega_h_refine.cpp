@@ -134,6 +134,10 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
 
     if (ent_dim == EDGE) {
       if (mesh->is_curved() > 0) {
+        new_mesh.set_curved(1);
+        new_mesh.set_max_order(3);
+        new_mesh.add_tag<I8>
+          (1, "n_bezier_pts", 1, Bytes(new_mesh.nents(1), 2, "numBezierPts"));
         if (mesh->dim() == 2) {
           keys2old_faces = create_curved_verts_and_edges_2d
           (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
