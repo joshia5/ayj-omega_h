@@ -465,7 +465,7 @@ Read<T> Mesh::get_array(Int ent_dim, std::string const& name) const {
 }
 
 template <typename T>
-Read<T> Mesh::get_array(Topo_type ent_type, std::string const& name) const {
+Read<T> Mesh::get_array_type(Topo_type ent_type, std::string const& name) const {
   return get_tag<T>(ent_type, name)->array();
 }
 
@@ -815,7 +815,7 @@ void Mesh::add_coords_mix(Reals array) {
   add_tag<Real>(Topo_type::vertex, "coordinates", dim(), array);
 }
 
-Reals Mesh::coords_mix() const { return get_array<Real>(Topo_type::vertex, "coordinates"); }
+Reals Mesh::coords_mix() const { return get_array_type<Real>(Topo_type::vertex, "coordinates"); }
 
 Read<GO> Mesh::globals(Int ent_dim) const {
   return get_array<GO>(ent_dim, "global");
@@ -1665,7 +1665,7 @@ __host__
   template Tag<T> const* Mesh::get_tag<T>(Topo_type ent_type, std::string const& name)    \
       const;                                                                   \
   template Read<T> Mesh::get_array<T>(Int dim, std::string const& name) const; \
-  template Read<T> Mesh::get_array<T>(Topo_type ent_type, std::string const& name) const; \
+  template Read<T> Mesh::get_array_type<T>(Topo_type ent_type, std::string const& name) const; \
   template void Mesh::add_tag<T>(                                              \
       Int dim, std::string const& name, Int ncomps);                           \
   template void Mesh::add_tag<T>(                                              \

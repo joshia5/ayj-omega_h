@@ -115,7 +115,7 @@ class Mesh {
   template <typename T>
   Tag<T> const* get_tag(Topo_type ent_type, std::string const& name) const;
   template <typename T>
-  Read<T> get_array(Topo_type ent_type, std::string const& name) const;
+  Read<T> get_array_type(Topo_type ent_type, std::string const& name) const;
   void remove_tag(Topo_type ent_type, std::string const& name);
   bool has_tag(Topo_type ent_type, std::string const& name) const;
   TagBase const* get_tag(Topo_type ent_type, Int i) const;
@@ -468,7 +468,7 @@ __host__
       Int dim, std::string const& name) const;                                 \
   extern template Read<T> Mesh::get_array<T>(Int dim, std::string const& name) \
       const;                                                                   \
-  extern template Read<T> Mesh::get_array<T>(                                  \
+  extern template Read<T> Mesh::get_array_type<T>(                                  \
       Topo_type ent_type, std::string const& name) const;                      \
   extern template void Mesh::add_tag<T>(                                       \
       Int dim, std::string const& name, Int ncomps);                           \
@@ -499,7 +499,7 @@ __host__
       Int ent_dim, Read<T> a_data, LOs a2e, T default_val, Int width);         \
   extern template Read<T> Mesh::reduce_array(                                  \
       Int ent_dim, Read<T> a, Int width, Omega_h_Op op);                       \
-  extern template Read<T> Mesh::get_array<T>(Topo_type ent_type, std::string const& name) \
+  extern template Read<T> Mesh::get_array_type<T>(Topo_type ent_type, std::string const& name) \
       const;                                                                   \
   extern template void Mesh::add_tag<T>(                                       \
       Topo_type ent_type, std::string const& name, Int ncomps);                           \
