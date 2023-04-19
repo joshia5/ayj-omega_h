@@ -101,7 +101,7 @@ class Mesh {
   Graph ask_dual();
 
   void set_ents(Topo_type high_type, Topo_type low_type, Adj h2l);
-  LO nents(Topo_type ent_type) const;
+  LO nents_type(Topo_type ent_type) const;
   Int ent_dim(Topo_type ent_type) const;
   template <typename T>
   void add_tag(Topo_type ent_type, std::string const& name, Int ncomps);

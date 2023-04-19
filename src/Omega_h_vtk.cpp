@@ -494,14 +494,14 @@ static void write_connectivity(
 static void write_connectivity(std::ostream& stream, Mesh* mesh, Int cell_dim,
     Topo_type max_type, bool compress) {
   if (cell_dim == 3) {
-    Read<I8> types_t(mesh->nents(Topo_type::tetrahedron),
+    Read<I8> types_t(mesh->nents_type(Topo_type::tetrahedron),
         vtk_type(int(Topo_type::tetrahedron)));
-    Read<I8> types_h(mesh->nents(Topo_type::hexahedron),
+    Read<I8> types_h(mesh->nents_type(Topo_type::hexahedron),
         vtk_type(int(Topo_type::hexahedron)));
     Read<I8> types_w(
-        mesh->nents(Topo_type::wedge), vtk_type(int(Topo_type::wedge)));
+        mesh->nents_type(Topo_type::wedge), vtk_type(int(Topo_type::wedge)));
     Read<I8> types_p(
-        mesh->nents(Topo_type::pyramid), vtk_type(int(Topo_type::pyramid)));
+        mesh->nents_type(Topo_type::pyramid), vtk_type(int(Topo_type::pyramid)));
     auto types = read(
         concat(read(concat(read(concat(types_t, types_h)), types_w)), types_p));
 
@@ -516,20 +516,20 @@ static void write_connectivity(std::ostream& stream, Mesh* mesh, Int cell_dim,
     auto deg_h = element_degree(Topo_type::hexahedron, Topo_type::vertex);
     auto deg_w = element_degree(Topo_type::wedge, Topo_type::vertex);
     auto deg_p = element_degree(Topo_type::pyramid, Topo_type::vertex);
-    LOs ends_t(mesh->nents(Topo_type::tetrahedron), deg_t, deg_t);
+    LOs ends_t(mesh->nents_type(Topo_type::tetrahedron), deg_t, deg_t);
     int lastVal = 0;
     if (ends_t.size()) {
       lastVal = ends_t.last();
     }
-    LOs ends_h(mesh->nents(Topo_type::hexahedron), lastVal + deg_h, deg_h);
+    LOs ends_h(mesh->nents_type(Topo_type::hexahedron), lastVal + deg_h, deg_h);
     if (ends_h.size()) {
       lastVal = ends_h.last();
     }
-    LOs ends_w(mesh->nents(Topo_type::wedge), lastVal + deg_w, deg_w);
+    LOs ends_w(mesh->nents_type(Topo_type::wedge), lastVal + deg_w, deg_w);
     if (ends_w.size()) {
       lastVal = ends_w.last();
     }
-    LOs ends_p(mesh->nents(Topo_type::pyramid), lastVal + deg_p, deg_p);
+    LOs ends_p(mesh->nents_type(Topo_type::pyramid), lastVal + deg_p, deg_p);
     auto ends = read(
         concat(read(concat(read(concat(ends_t, ends_h)), ends_w)), ends_p));
 
@@ -538,8 +538,8 @@ static void write_connectivity(std::ostream& stream, Mesh* mesh, Int cell_dim,
     write_array(stream, "offsets", 1, ends, compress);
   } else if (cell_dim == 2) {
     Read<I8> types_tr(
-        mesh->nents(Topo_type::triangle), vtk_type(int(Topo_type::triangle)));
-    Read<I8> types_q(mesh->nents(Topo_type::quadrilateral),
+        mesh->nents_type(Topo_type::triangle), vtk_type(int(Topo_type::triangle)));
+    Read<I8> types_q(mesh->nents_type(Topo_type::quadrilateral),
         vtk_type(int(Topo_type::quadrilateral)));
     auto types = read(concat(types_tr, types_q));
 
@@ -549,22 +549,22 @@ static void write_connectivity(std::ostream& stream, Mesh* mesh, Int cell_dim,
 
     auto deg_tr = element_degree(Topo_type::triangle, Topo_type::vertex);
     auto deg_q = element_degree(Topo_type::quadrilateral, Topo_type::vertex);
-    LOs ends_tr(mesh->nents(Topo_type::triangle), deg_tr, deg_tr);
+    LOs ends_tr(mesh->nents_type(Topo_type::triangle), deg_tr, deg_tr);
     int lastVal = 0;
     if (ends_tr.size()) {
       lastVal = ends_tr.last();
     }
-    LOs ends_q(mesh->nents(Topo_type::quadrilateral), lastVal + deg_q, deg_q);
+    LOs ends_q(mesh->nents_type(Topo_type::quadrilateral), lastVal + deg_q, deg_q);
     auto ends = read(concat(ends_tr, ends_q));
 
     write_array(stream, "types", 1, types, compress);
     write_array(stream, "connectivity", 1, ev2v, compress);
     write_array(stream, "offsets", 1, ends, compress);
   } else {
-    Read<I8> types(mesh->nents(max_type), vtk_type(int(max_type)));
+    Read<I8> types(mesh->nents_type(max_type), vtk_type(int(max_type)));
     LOs ev2v = mesh->ask_verts_of(max_type);
     auto deg = element_degree(max_type, Topo_type::vertex);
-    LOs ends(mesh->nents(max_type), deg, deg);
+    LOs ends(mesh->nents_type(max_type), deg, deg);
 
     write_array(stream, "types", 1, types, compress);
     write_array(stream, "connectivity", 1, ev2v, compress);

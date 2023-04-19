@@ -255,7 +255,7 @@ LO Mesh::nents(Int ent_dim) const {
   return nents_[ent_dim];
 }
 
-LO Mesh::nents(Topo_type ent_type) const {
+LO Mesh::nents_type(Topo_type ent_type) const {
   check_type2(ent_type);
   return nents_type_[int(ent_type)];
 }
@@ -270,32 +270,32 @@ LO Mesh::nedges() const { return nents(EDGE); }
 
 LO Mesh::nverts() const { return nents(VERT); }
 
-LO Mesh::npyrams() const { return nents(Topo_type::pyramid); }
+LO Mesh::npyrams() const { return nents_type(Topo_type::pyramid); }
 
-LO Mesh::nwedges() const { return nents(Topo_type::wedge); }
+LO Mesh::nwedges() const { return nents_type(Topo_type::wedge); }
 
-LO Mesh::nhexs() const { return nents(Topo_type::hexahedron); }
+LO Mesh::nhexs() const { return nents_type(Topo_type::hexahedron); }
 
-LO Mesh::ntets() const { return nents(Topo_type::tetrahedron); }
+LO Mesh::ntets() const { return nents_type(Topo_type::tetrahedron); }
 
-LO Mesh::nquads() const { return nents(Topo_type::quadrilateral); }
+LO Mesh::nquads() const { return nents_type(Topo_type::quadrilateral); }
 
-LO Mesh::ntris() const { return nents(Topo_type::triangle); }
+LO Mesh::ntris() const { return nents_type(Topo_type::triangle); }
 
-LO Mesh::nedges_mix() const { return nents(Topo_type::edge); }
+LO Mesh::nedges_mix() const { return nents_type(Topo_type::edge); }
 
-LO Mesh::nverts_mix() const { return nents(Topo_type::vertex); }
+LO Mesh::nverts_mix() const { return nents_type(Topo_type::vertex); }
 
 LO Mesh::nregions_mix() const {
-  return (nents(Topo_type::tetrahedron) +
-          nents(Topo_type::hexahedron) +
-          nents(Topo_type::wedge) +
-          nents(Topo_type::pyramid));
+  return (nents_type(Topo_type::tetrahedron) +
+          nents_type(Topo_type::hexahedron) +
+          nents_type(Topo_type::wedge) +
+          nents_type(Topo_type::pyramid));
 }
 
 LO Mesh::nfaces_mix() const {
-  return (nents(Topo_type::triangle) +
-          nents(Topo_type::quadrilateral));
+  return (nents_type(Topo_type::triangle) +
+          nents_type(Topo_type::quadrilateral));
 }
 
 GO Mesh::nglobal_ents(Int ent_dim) {
@@ -685,15 +685,15 @@ void Mesh::add_adj(Topo_type from_type, Topo_type to_type, Adj adj) {
       OMEGA_H_CHECK(adj.codes.exists());
     }
     OMEGA_H_CHECK(                                            
-        adj.ab2b.size() == nents(from_type) * element_degree(from_type, to_type));
+        adj.ab2b.size() == nents_type(from_type) * element_degree(from_type, to_type));
   } else {
     if (from < to) {
       OMEGA_H_CHECK(adj.a2ab.exists());                        
       OMEGA_H_CHECK(adj.codes.exists());
       OMEGA_H_CHECK(
-          adj.ab2b.size() == nents(to_type) * element_degree(to_type, from_type)); 
+          adj.ab2b.size() == nents_type(to_type) * element_degree(to_type, from_type)); 
     }
-    OMEGA_H_CHECK(adj.a2ab.size() == nents(from_type) + 1);         
+    OMEGA_H_CHECK(adj.a2ab.size() == nents_type(from_type) + 1);         
   }
   adjs_type_[from][to] = std::make_shared<Adj>(adj);
 }
@@ -747,7 +747,7 @@ Adj Mesh::derive_adj(Topo_type from_type, Topo_type to_type) {
   if (from < to) {
     Adj down = ask_adj(to_type, from_type);
     Int nlows_per_high = element_degree(to_type, from_type);
-    LO nlows = nents(from_type);
+    LO nlows = nents_type(from_type);
     Adj up = invert_adj(down, nlows_per_high, nlows, to_type, from_type);
     return up;
   }
