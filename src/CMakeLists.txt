@@ -730,6 +730,18 @@ if (Omega_h_USE_pybind11)
   pybind11_add_module(PyOmega_h
       ${PYBIND11_SOURCES})
   target_link_libraries(PyOmega_h PUBLIC omega_h)
+
+  if (Omega_h_USE_CUDA AND NOT Omega_h_USE_Kokkos)
+    set_source_files_properties(${PYBIND11_SOURCES} PROPERTIES LANGUAGE CUDA)
+    set_property(TARGET PyOmega_h PROPERTY CXX_STANDARD "14")
+    set_property(TARGET PyOmega_h PROPERTY CXX_STANDARD_REQUIRED ON)
+    set_property(TARGET PyOmega_h PROPERTY CXX_EXTENSIONS OFF)
+    set_property(TARGET PyOmega_h PROPERTY CUDA_ARCHITECTURES ${Omega_h_CUDA_ARCH})
+
+    #set_property(TARGET omega_h PROPERTY INTERFACE_COMPILE_OPTIONS "")
+    #set_property(TARGET PyOmega_h PROPERTY INTERFACE_COMPILE_OPTIONS "")
+  endif()
+
   if (PYTHON_VERSION_MAJOR EQUAL 3)
     set(PyOmega_h_DEST "lib/python3/dist-packages")
   else()
