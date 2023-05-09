@@ -16,7 +16,12 @@ void pybind11_adapt(py::module& module) {
       module, "AdaptOpts", "Options controlling adaptation behavior")
       .def(py::init<Mesh*>())
       .def_readwrite("verbosity", &AdaptOpts::verbosity)
-      .def_readwrite("min_quality_allowed", &AdaptOpts::min_quality_allowed);
+      .def_readwrite("min_quality_allowed", &AdaptOpts::min_quality_allowed)
+      .def_readwrite("should_swap", &AdaptOpts::should_swap)
+      .def_readwrite("should_coarsen", &AdaptOpts::should_coarsen)
+      .def_readwrite("should_coarsen_slivers", &AdaptOpts::should_coarsen_slivers)
+      .def_readwrite("should_filter_invalids", &AdaptOpts::should_filter_invalids)
+      .def_readwrite("check_crv_qual", &AdaptOpts::check_crv_qual);
   py::class_<MetricSource>(
       module, "MetricSource", "Describes a single source metric field")
       .def(py::init<Omega_h_Source, Real, std::string const&, Omega_h_Isotropy,
