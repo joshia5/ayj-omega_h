@@ -651,6 +651,11 @@ Mesh read(filesystem::path const& path, CommPtr comm, bool strict) {
   return mesh;
 }
 
+Mesh read_s(std::string const& path, CommPtr comm, bool strict) {
+  auto mesh = binary::read(path, comm, strict);
+  return mesh;
+}
+
 #define OMEGA_H_INST(T)                                                        \
   template void swap_bytes(T&);                                                \
   template Read<T> swap_bytes(Read<T> array, bool is_little_endian);           \

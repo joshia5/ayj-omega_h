@@ -179,6 +179,7 @@ namespace binary {
 void write(filesystem::path const& path, Mesh* mesh);
 Mesh read(filesystem::path const& path, Library* lib, bool strict = false);
 Mesh read(filesystem::path const& path, CommPtr comm, bool strict = false);
+Mesh read_s(std::string const& path, CommPtr comm, bool strict = false);
 I32 read(filesystem::path const& path, CommPtr comm, Mesh* mesh,
     bool strict = false);
 I32 read_nparts(filesystem::path const& path, CommPtr comm);
