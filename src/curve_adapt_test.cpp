@@ -118,9 +118,9 @@ void test_adapt_rf(Library *lib) {
         h[i] = length_c[v];
       }
       //h[i] = std::pow((error_des2/vtxError), 0.5)*length_c[v];
-      //if ((v_class_id[v] == 190) ||  (v_class_id[v] == 186)) {
+      //if ((v_class_id[v] == 190) ||  (v_class_id[v] == 186)) 
         //h[i] = length_c[v];
-      //}
+      //
       hd_hc[v] = h[i]/length_c[v];
     }
     auto m = diagonal(metric_eigenvalues_from_lengths(h));
@@ -177,7 +177,7 @@ void test_adapt_rf(Library *lib) {
   I8 max_adapt_itr = 1;
   for (LO adapt_itr = 0; adapt_itr < max_adapt_itr; ++adapt_itr) {
     while (approach_metric(&mesh, opts)) {
-    //while (approach_metric(&mesh, opts) && mesh.nelems() < 400000) {
+    //while (approach_metric(&mesh, opts) && mesh.nelems() < 400000) 
       //approach_metric(&mesh, opts);
       adapt(&mesh, opts);
     }
