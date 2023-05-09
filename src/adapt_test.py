@@ -48,7 +48,8 @@ while(i < maxiter):
     #metric_input.should_limit_lengths = True
     #metric_input.max_length = 0.1
     #metric_input.should_limit_gradation = True
-    print("ok26\n")
+    print("mesh nents v e f r\n", mesh_osh.nents(0),mesh_osh.nents(1),
+        mesh_osh.nents(2), mesh_osh.nents(3))
     #omega_h.add_implied_metric_tag(mesh_osh)
     print("ok27\n")
     #omega_h.generate_target_metric_tag(mesh_osh, metric_input) 
@@ -67,7 +68,7 @@ while(i < maxiter):
 
     # Adapt mesh
     while(omega_h.approach_metric(mesh_osh, opts) and
-      mesh_osh.nelems() < 1000):
+      mesh_osh.nents(3) < 1000):
         omega_h.adapt(mesh_osh, opts)
 
     omega_h.vtk_write_parallel('test_adapted_' + str(i), mesh_osh)
