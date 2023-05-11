@@ -41,7 +41,7 @@ struct TransferOpts {
   void validate(Mesh* mesh) const;
 };
 
-enum Verbosity { SILENT, EACH_ADAPT, EACH_REBUILD, EXTRA_STATS };
+enum Verbosity { SILENT, EACH_ADAPT, EACH_REBUILD, EXTRA_STATS , WRITE_FILE};
 
 #if defined (OMEGA_H_USE_EGADS) || defined(OMEGA_H_USE_EGADSLITE)
 struct Egads;

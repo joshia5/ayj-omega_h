@@ -334,7 +334,7 @@ static void coarsen_element_based2_crv(Mesh* mesh, AdaptOpts const& opts,
   if (should_modify_mesh > 0) {
     *mesh = new_mesh;
 
-    if (mesh->is_curved() > 0) {
+    if ((mesh->is_curved() > 0) && (opts.verbosity == WRITE_FILE)) {
       printf("writing current curved mesh\n");
 //      vtk::write_parallel("../omega_h/meshes/coarsen_itr.vtk",
   //        &new_mesh, mesh->dim());
