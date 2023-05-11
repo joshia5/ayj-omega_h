@@ -24,6 +24,8 @@ void pybind11_file(py::module& module) {
     //(filesystem::path const&, CommPtr, bool) = &binary::read;
   Mesh (*binary_read_file)
     (std::string const&, CommPtr, bool) = &binary::read_s;
+  void (*binary_write_file)
+    (std::string const&, Mesh*) = &binary::write_s;
   module.def("gmsh_read_file", gmsh_read_file, "Read a Gmsh file");
   module.def("gmsh_write_file", gmsh_write_file, "Write a Gmsh file");
   module.def("vtk_write_vtu", vtk_write_vtu, "Write a mesh as a .vtu file",
@@ -40,6 +42,8 @@ void pybind11_file(py::module& module) {
       py::arg("compress") = true);
   module.def("binary_read_file", binary_read_file, "Read a .osh file",
       py::arg("path"), py::arg("comm"), py::arg("strict") = false);
+  module.def("binary_write_file", binary_write_file, "Write a .osh file",
+      py::arg("path"), py::arg("mesh"));
   //module.def("path_c", path_c, "Byte to path", py::arg("source"));
   //module.def("path_s", path_s, "String to path", py::arg("source"));
 }

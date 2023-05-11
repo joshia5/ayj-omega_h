@@ -68,10 +68,11 @@ while(i < maxiter):
 
     # Adapt mesh
     while(omega_h.approach_metric(mesh_osh, opts) and
-      mesh_osh.nents(3) < 5000):
+      mesh_osh.nents(3) < 9000):
         omega_h.adapt(mesh_osh, opts)
 
-    omega_h.vtk_write_parallel('test_adapted_' + str(i), mesh_osh)
-    
+    #omega_h.vtk_write_parallel('test_adapted_' + str(i), mesh_osh)
+    omega_h.binary_write_file('test_adapted_' + str(i), mesh_osh)
+
     i+=1
 
