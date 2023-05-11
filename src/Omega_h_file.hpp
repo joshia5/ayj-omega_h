@@ -177,6 +177,7 @@ class FullWriter {
 namespace binary {
 
 void write(filesystem::path const& path, Mesh* mesh);
+void write_s(std::string const& path, Mesh* mesh);
 Mesh read(filesystem::path const& path, Library* lib, bool strict = false);
 Mesh read(filesystem::path const& path, CommPtr comm, bool strict = false);
 Mesh read_s(std::string const& path, CommPtr comm, bool strict = false);

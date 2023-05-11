@@ -598,6 +598,11 @@ void write(filesystem::path const& path, Mesh* mesh) {
   end_code();
 }
 
+void write_s(std::string const& path, Mesh* mesh) {
+  write(path, mesh);
+  return;
+}
+
 void read_in_comm(
     filesystem::path const& path, CommPtr comm, Mesh* mesh, I32 version) {
   ScopedTimer timer("binary::read_in_comm(path, comm, mesh, version)");
