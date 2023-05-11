@@ -11,6 +11,7 @@ void pybind11_adapt(py::module& module) {
       .value("EACH_ADAPT", EACH_ADAPT)
       .value("EACH_REBUILD", EACH_REBUILD)
       .value("EXTRA_STATS", EXTRA_STATS)
+      .value("WRITE_FILE", WRITE_FILE)
       .export_values();
   py::class_<AdaptOpts>(
       module, "AdaptOpts", "Options controlling adaptation behavior")

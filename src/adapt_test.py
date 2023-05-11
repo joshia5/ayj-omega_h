@@ -51,27 +51,25 @@ while(i < maxiter):
     print("mesh nents v e f r\n", mesh_osh.nents(0),mesh_osh.nents(1),
         mesh_osh.nents(2), mesh_osh.nents(3))
     #omega_h.add_implied_metric_tag(mesh_osh)
-    print("ok27\n")
     #omega_h.generate_target_metric_tag(mesh_osh, metric_input) 
-    print("ok28\n")
 
     opts = omega_h.AdaptOpts(mesh_osh)
     opts.should_swap = 0
-    opts.should_coarsen = 1
-    opts.should_coarsen_slivers = 1
+    opts.should_coarsen = 0
+    opts.should_coarsen_slivers = 0
     opts.should_filter_invalids = 1
     opts.check_crv_qual = 0
-    opts.verbosity = omega_h.EXTRA_STATS
+    opts.verbosity = omega_h.WRITE_FILE
     #mesh_osh.add_tag<omega_h.Real>(0, "metric", 1);
     #mesh_osh.set_tag(0, "metric", omega_h.Reals(mesh_osh.nverts(),
       #omega_h.metric_eigenvalue_from_length(100)));
 
     # Adapt mesh
     while(omega_h.approach_metric(mesh_osh, opts) and
-      mesh_osh.nents(3) < 9000):
+      mesh_osh.nents(3) < 20000):
         omega_h.adapt(mesh_osh, opts)
 
-    #omega_h.vtk_write_parallel('test_adapted_' + str(i), mesh_osh)
+    omega_h.vtk_write_parallel('vtk_test_adapted_' + str(i), mesh_osh)
     omega_h.binary_write_file('test_adapted_' + str(i), mesh_osh)
 
     i+=1
