@@ -21,13 +21,13 @@ void test_tags(Mesh* mesh) {
   auto num_wedge = mesh->nwedges();
   mesh->add_tag<LO>(Topo_type::wedge, "gravity", 1);
   mesh->set_tag<LO>(Topo_type::wedge, "gravity", LOs(num_wedge,10));
-  auto test_tag1 = mesh->get_array<LO>(Topo_type::wedge, "gravity");
+  auto test_tag1 = mesh->get_array_type<LO>(Topo_type::wedge, "gravity");
   OMEGA_H_CHECK(test_tag1 == LOs(num_wedge, 10));
   mesh->remove_tag(Topo_type::wedge, "gravity");
 
   auto num_pyram = mesh->npyrams();
   mesh->add_tag<Real>(Topo_type::pyramid, "density", 1, Reals(num_pyram, 0.0005));
-  auto test_tag2 = mesh->get_array<Real>(Topo_type::pyramid, "density");
+  auto test_tag2 = mesh->get_array_type<Real>(Topo_type::pyramid, "density");
   OMEGA_H_CHECK(test_tag2 == Reals(num_pyram, 0.0005));
   mesh->remove_tag(Topo_type::pyramid, "density");
 }
