@@ -163,6 +163,7 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
           create_curved_faces_3d(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
                                  keys2prods, keys2edges, keys2old_faces,
                                  old_verts2new_verts);
+          printf("166 finish crv face gen\n");
         }
       }
     }
@@ -197,6 +198,7 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
     }
 
     old_lows2new_lows = old_ents2new_ents;
+    printf("200 finish crv gen for dim %d\n", ent_dim);
   }
 
   /*
@@ -229,6 +231,7 @@ static bool refine(Mesh* mesh, AdaptOpts const& opts) {
     if (opts.min_crv_qual_allowed > 0.) {
       refine_element_based_crv(mesh, opts, 1);
     }
+    printf("out of crv ref oh_ref.cpp 232\n");
   }
 
   return true;

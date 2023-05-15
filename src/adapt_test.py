@@ -4,16 +4,16 @@ sys.path.append(
   "/lore/joshia5/develop/mfem_omega/build-omegah-python-rhel7/src")
 import PyOmega_h as omega_h
 
-import ctypes
-from ctypes import cdll, c_char_p
-libc = cdll.LoadLibrary("libc.so.6")
-puts = libc.puts
+#import ctypes
+#from ctypes import cdll, c_char_p
+#libc = cdll.LoadLibrary("libc.so.6")
+#puts = libc.puts
 #puts('abc')
-puts.argtypes = [c_char_p]
+#puts.argtypes = [c_char_p]
 #puts(b'abc')
-infile = "/lore/joshia5/Meshes/curved/inclusion_3p_sizes.osh"
-b_infile = infile.encode('utf-8')
-puts(b_infile)
+infile = "/lore/joshia5/Meshes/curved/inclusion_3p_sizes_2.osh"
+#b_infile = infile.encode('utf-8')
+#puts(b_infile)
 #puts(infile.encode())
 #path = omega_h.path_c(b_infile)
 
@@ -25,11 +25,11 @@ comm_osh = omega_h.world()
 #mesh_osh.set_parting(omega_h.GHOSTED, 0)
 #omega_h.add_implied_metric_tag(mesh_osh)
 #mesh_osh.set_parting(omega_h.ELEM_BASED, 0)
-binary_read_file = omega_h.binary_read_file
+#binary_read_file = omega_h.binary_read_file
 #mesh_osh = omega_h.new_empty_mesh()
 #binary_read_file.argtypes = [c_char_p, omega_h.Comm, bool]
 #mesh_osh = omega_h.gmsh_read_file(ctypes.c_char_p(b_infile), comm_osh);
-mesh_osh = binary_read_file(infile, comm_osh);
+mesh_osh = omega_h.binary_read_file(infile, comm_osh);
 #mesh_osh = binary_read_file(ctypes.c_char_p(b_infile), comm_osh);
 #mesh_osh = omega_h.binary_read_file(ctypes.c_char_p(b_infile), comm_osh);
 #mesh_osh = omega_h.binary_read_file(infile.encode()._cpp_object, comm_osh);
@@ -57,7 +57,7 @@ while(i < maxiter):
     opts.should_swap = 0
     opts.should_coarsen = 0
     opts.should_coarsen_slivers = 0
-    opts.should_filter_invalids = 1
+    opts.should_filter_invalids = 0
     opts.check_crv_qual = 0
     opts.verbosity = omega_h.WRITE_FILE
     #mesh_osh.add_tag<omega_h.Real>(0, "metric", 1);
@@ -66,11 +66,11 @@ while(i < maxiter):
 
     # Adapt mesh
     while(omega_h.approach_metric(mesh_osh, opts) and
-      mesh_osh.nents(3) < 20000):
+      mesh_osh.nents(3) < 10000):
         omega_h.adapt(mesh_osh, opts)
 
-    omega_h.vtk_write_parallel('vtk_test_adapted_' + str(i), mesh_osh)
-    omega_h.binary_write_file('test_adapted_' + str(i), mesh_osh)
+    #omega_h.vtk_write_parallel('vtk_test_adapted_' + str(i), mesh_osh)
+    #omega_h.binary_write_file('test_adapted_' + str(i), mesh_osh)
 
     i+=1
 

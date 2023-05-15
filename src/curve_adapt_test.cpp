@@ -13,7 +13,7 @@ void test_adapt_inclusion(Library *lib) {
   auto comm = lib->world();
 
   auto mesh = binary::read(
-      "/lore/joshia5/Meshes/curved/inclusion_3p_sizes.osh", comm);
+      "/lore/joshia5/Meshes/curved/inclusion_3p_sizes_2.osh", comm);
                             
   for (LO i = 0; i <= mesh.dim(); ++i) {
     if (!mesh.has_tag(i, "global")) {
@@ -21,6 +21,8 @@ void test_adapt_inclusion(Library *lib) {
     }
   }
 
+  //mesh.sync_tag(0, "metric");
+  //mesh.sync_tag(0, "target_metric");
   vtk::FullWriter writer;
 
   /*
@@ -38,15 +40,15 @@ void test_adapt_inclusion(Library *lib) {
 
   auto opts = AdaptOpts(&mesh);
   opts.should_swap = false;
-  opts.should_coarsen = true;
-  opts.should_coarsen_slivers = true;
-  opts.should_filter_invalids = true;
+  opts.should_coarsen = 0;
+  opts.should_coarsen_slivers = 0;
+  opts.should_filter_invalids = 0;
   opts.check_crv_qual = false;
   opts.verbosity = EXTRA_STATS;
   fprintf(stderr, "initial mesh size %d\n", mesh.nregions());
   I8 max_adapt_itr = 1;
   for (LO adapt_itr = 0; adapt_itr < max_adapt_itr; ++adapt_itr) {
-    while (approach_metric(&mesh, opts) && mesh.nelems() < 4000) {
+    while (approach_metric(&mesh, opts) && mesh.nelems() < 10000) {
       adapt(&mesh, opts);
     }
   }
@@ -55,7 +57,6 @@ void test_adapt_inclusion(Library *lib) {
   writer = vtk::FullWriter(
       "../omega_h/meshes/boxCircle_aft.vtk", &mesh);
   writer.write();
-  */
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
   build_cubic_wireframe_3d(&mesh, &wireframe_mesh);
@@ -66,6 +67,7 @@ void test_adapt_inclusion(Library *lib) {
   build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh);
   vtuPath = "../omega_h/meshes/box_circleCut_ref5k_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
+  */
   return;
 }
 
@@ -187,8 +189,11 @@ void test_adapt_rf(Library *lib) {
     //  "../omega_h/meshes/boxCircle_aft.vtk", &mesh);
   //writer.write();
   
+  printf("mesh size v e f r {%d,%d,%d,%d}\n", mesh.nverts(), mesh.nedges(),
+      mesh.nfaces(), mesh.nelems());
   binary::write("/lore/joshia5/Meshes/RF/assemble/625k_ref1p5mil.osh",
       &mesh);
+  /*
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
   build_cubic_wireframe_3d(&mesh, &wireframe_mesh,4);
@@ -199,8 +204,9 @@ void test_adapt_rf(Library *lib) {
   build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh,4);
   vtuPath = "/lore/joshia5/Meshes/RF/625k_ref_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
-  return;
- 
+  */
+
+  return; 
 }
 
 void test_cubic_tet_quality(Library *lib) {
@@ -266,8 +272,8 @@ int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
   test_adapt_inclusion(&lib);
-  test_cubic_tet_quality(&lib);
-  test_adapt_rf(&lib);
+  //test_cubic_tet_quality(&lib);
+  //test_adapt_rf(&lib);
 
   return 0;
 }
