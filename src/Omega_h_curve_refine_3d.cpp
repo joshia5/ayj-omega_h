@@ -366,21 +366,17 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   auto const new_edgeCtrlPts = new_mesh->get_ctrlPts(1);
   auto const new_vertCtrlPts = new_mesh->get_ctrlPts(0);
 
-  printf("curv. face gen. 369, nnewverts %d\n", nnew_verts);
   OMEGA_H_CHECK(nnew_verts == (new_vertCtrlPts.size()/dim));
-  printf("curv. face gen. 371, nnewverts %d, dim %d\n", nnew_verts, dim);
 
   Write<Real> face_ctrlPts(nnew_face*n_face_pts*dim);
   OMEGA_H_CHECK(order == 3);
 
   LO const nkeys = keys2edges.size();
-  printf("curv. face gen. 377, nnewverts %d, nkeys %d\n", nnew_verts, nkeys);
   LO max_degree_key2oldface = 0;
   if (nkeys > 0) {
     max_degree_key2oldface = keys2old_faces.size()/nkeys;
   }
 
-  printf("curv. face gen. 378, nnewverts %d\n", nnew_verts);
   auto keys2nold_faces_w = Write<LO>(nkeys, -1);
   auto count_nold_faces = OMEGA_H_LAMBDA (LO key) {
     for (LO i = 0; i < max_degree_key2oldface; ++i) {
@@ -390,7 +386,6 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
     }
   };
   parallel_for(nkeys, count_nold_faces);
-  printf("curv. face gen. 387, nnewverts %d\n", nnew_verts);
   auto keys2nold_faces = LOs(keys2nold_faces_w);
 
   auto create_crv_prod_faces = OMEGA_H_LAMBDA (LO key) {
@@ -526,7 +521,6 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   };
   parallel_for(nkeys, std::move(create_crv_prod_faces),
                "create_crv_prod_faces");
-  printf("curv. face gen. 523\n");
 
   auto create_crv_same_faces = OMEGA_H_LAMBDA (LO old_face) {
     if (old2new[old_face] != -1) {
@@ -539,7 +533,6 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
   };
   parallel_for(nold_face, std::move(create_crv_same_faces),
                "create_crv_same_faces");
-  printf("curv. face gen. 536\n");
 
   new_mesh->add_tag<Real>(2, "bezier_pts", n_face_pts*dim);
   new_mesh->set_tag_for_ctrlPts(2, Reals(face_ctrlPts));
