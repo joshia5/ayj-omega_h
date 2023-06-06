@@ -574,10 +574,9 @@ OMEGA_H_INLINE Int n_internal_ctrlPts(Int edim, Int max_order) {
 }
 
 inline Vector<3> rgn_parametricToParent_3dp2_h(
-    LO const order, LO const old_rgn, HostRead<LO> old_ev2v, HostRead<LO> old_rv2v,
+    LO const order, LO const old_rgn, HostRead<LO> old_rv2v,
     HostRead<Real> old_vertCtrlPts, HostRead<Real> old_edgeCtrlPts, 
-    Vector<3> nodePt, HostRead<LO> old_re2e, 
-    HostRead<LO> old_rf2f) {
+    Vector<3> nodePt, HostRead<LO> old_re2e) {
   LO const dim = 3;
   LO const n_edge_pts = n_internal_ctrlPts(EDGE, order);
   auto old_rgn_v0 = old_rv2v[old_rgn*4 + 0];
@@ -640,78 +639,6 @@ inline Vector<3> rgn_parametricToParent_3dp2_h(
       c011[j]*Bijk(order,0,1,1,nodePt[0],nodePt[1],nodePt[2]);
   }
   return p11;
-
-  /*
-  auto old_rgn_f0 = old_rf2f[old_rgn*4 + 0];
-  auto old_rgn_f1 = old_rf2f[old_rgn*4 + 1];
-  auto old_rgn_f2 = old_rf2f[old_rgn*4 + 2];
-  auto old_rgn_f3 = old_rf2f[old_rgn*4 + 3];
-  Vector<3> c110, c101, c111, c011;
-  for (LO d=0; d<3; ++d) {
-    c110[d] = old_faceCtrlPts[old_rgn_f0*dim + d];
-    c101[d] = old_faceCtrlPts[old_rgn_f1*dim + d];
-    c111[d] = old_faceCtrlPts[old_rgn_f2*dim + d];
-    c011[d] = old_faceCtrlPts[old_rgn_f3*dim + d];
-  }
-
-  LO e0_flip = -1;
-  LO e1_flip = -1;
-  LO e2_flip = -1;
-  LO e3_flip = -1;
-  LO e4_flip = -1;
-  LO e5_flip = -1;
-  {
-    auto e0v0 = old_ev2v[old_rgn_e0*2 + 0];
-    auto e0v1 = old_ev2v[old_rgn_e0*2 + 1];
-    e0_flip = edge_is_flip(e0v0, e0v1, old_rgn_v0, old_rgn_v1);
-    auto e1v0 = old_ev2v[old_rgn_e1*2 + 0];
-    auto e1v1 = old_ev2v[old_rgn_e1*2 + 1];
-    e1_flip = edge_is_flip(e1v0, e1v1, old_rgn_v1, old_rgn_v2);
-    auto e2v0 = old_ev2v[old_rgn_e2*2 + 0];
-    auto e2v1 = old_ev2v[old_rgn_e2*2 + 1];
-    e2_flip = edge_is_flip(e2v0, e2v1, old_rgn_v2, old_rgn_v0);
-    auto e3v0 = old_ev2v[old_rgn_e3*2 + 0];
-    auto e3v1 = old_ev2v[old_rgn_e3*2 + 1];
-    e3_flip = edge_is_flip(e3v0, e3v1, old_rgn_v0, old_rgn_v3);
-    auto e4v0 = old_ev2v[old_rgn_e4*2 + 0];
-    auto e4v1 = old_ev2v[old_rgn_e4*2 + 1];
-    e4_flip = edge_is_flip(e4v0, e4v1, old_rgn_v1, old_rgn_v3);
-    auto e5v0 = old_ev2v[old_rgn_e5*2 + 0];
-    auto e5v1 = old_ev2v[old_rgn_e5*2 + 1];
-    e5_flip = edge_is_flip(e5v0, e5v1, old_rgn_v2, old_rgn_v3);
-  }
-
-  if (e0_flip > 0) {
-    swap2(cx100, cx200);
-    swap2(cy100, cy200);
-    swap2(cz100, cz200);
-  }
-  if (e1_flip > 0) {
-    swap2(cx210, cx120);
-    swap2(cy210, cy120);
-    swap2(cz210, cz120);
-  }
-  if (e2_flip > 0) {
-    swap2(cx020, cx010);
-    swap2(cy020, cy010);
-    swap2(cz020, cz010);
-  }
-  if (e3_flip > 0) {
-    swap2(cx002, cx001);
-    swap2(cy002, cy001);
-    swap2(cz002, cz001);
-  }
-  if (e4_flip > 0) {
-    swap2(cx102, cx201);
-    swap2(cy102, cy201);
-    swap2(cz102, cz201);
-  }
-  if (e5_flip > 0) {
-    swap2(cx012, cx021);
-    swap2(cy012, cy021);
-    swap2(cz012, cz021);
-  }
-  */
 }
 
 inline Vector<3> rgn_parametricToParent_3d_h(
