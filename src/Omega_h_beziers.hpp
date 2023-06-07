@@ -401,6 +401,31 @@ void elevate_curve_order_5to6(Mesh* mesh);
 
 void calc_quad_ctrlPts_from_interpPts(Mesh *mesh);
 
+OMEGA_H_INLINE Few<Real,2> quadr_noKeyEdge_xi_values(
+    LO old_vert, LO v0, LO v1, LO v2, LO old_edge, LO e0, LO e1, LO e2) {
+
+  Few<Real, 2> xi1;
+  if (old_vert == v0) {
+    OMEGA_H_CHECK(old_edge == e1);
+    xi1[0] = 0.25;
+    xi1[1] = 0.25;
+  }
+  else if (old_vert == v1) {
+    OMEGA_H_CHECK(old_edge == e2);
+    xi1[0] = 0.5;
+    xi1[1] = 0.25;
+  }
+  else if (old_vert == v2) {
+    OMEGA_H_CHECK(old_edge == e0);
+    xi1[0] = 0.25;
+    xi1[1] = 0.5;
+  }
+  else {
+  }
+
+  return xi1;
+}
+
 OMEGA_H_INLINE Few<Real,4> cubic_noKeyEdge_xi_values(
     LO old_vert, LO v0, LO v1, LO v2, LO old_edge, LO e0, LO e1, LO e2) {
 
@@ -1182,6 +1207,61 @@ OMEGA_H_DEVICE Few<LO, 3> calc_edge_flips(LO const v0, LO const v1,
   return edge_flips;
 }
 
+OMEGA_H_DEVICE Vector<3> face_parametricToParent_3d_p2(
+    LO const order, LO const old_face, LOs old_fe2e,
+    Reals old_vertCtrlPts, Reals old_edgeCtrlPts,
+    Real nodePts_0, Real nodePts_1, LOs old_fv2v) {
+  LO const dim = 3;
+  LO const n_edge_pts = n_internal_ctrlPts(EDGE, order);
+  LO const v0_old_face = old_fv2v[old_face*3 + 0];
+  LO const v1_old_face = old_fv2v[old_face*3 + 1];
+  LO const v2_old_face = old_fv2v[old_face*3 + 2];
+  LO const old_face_e0 = old_fe2e[old_face*3 + 0];
+  LO const old_face_e1 = old_fe2e[old_face*3 + 1];
+  LO const old_face_e2 = old_fe2e[old_face*3 + 2];
+  LO v1 = v1_old_face;
+  LO v2 = v2_old_face;
+
+  Real cx00 = old_vertCtrlPts[v0_old_face*dim + 0];
+  Real cy00 = old_vertCtrlPts[v0_old_face*dim + 1];
+  Real cz00 = old_vertCtrlPts[v0_old_face*dim + 2];
+  Real cx20 = old_vertCtrlPts[v1*dim + 0];
+  Real cy20 = old_vertCtrlPts[v1*dim + 1];
+  Real cz20 = old_vertCtrlPts[v1*dim + 2];
+  Real cx02 = old_vertCtrlPts[v2*dim + 0];
+  Real cy02 = old_vertCtrlPts[v2*dim + 1];
+  Real cz02 = old_vertCtrlPts[v2*dim + 2];
+
+  auto pts_per_edge = n_edge_pts;
+  Real cx10 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + 0];
+  Real cy10 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + 1];
+  Real cz10 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + 2];
+  Real cx11 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 0];
+  Real cy11 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 1];
+  Real cz11 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 2];
+  Real cx01 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + 0];
+  Real cy01 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + 1];
+  Real cz01 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + 2];
+
+  auto c00 = vector_3(cx00, cy00, cz00);
+  auto c10 = vector_3(cx10, cy10, cz10);
+  auto c20 = vector_3(cx20, cy20, cz20);
+  auto c11 = vector_3(cx11, cy11, cz11);
+  auto c02 = vector_3(cx02, cy02, cz02);
+  auto c01 = vector_3(cx01, cy01, cz01);
+
+  Vector<3> p11_w;
+  for (LO k = 0; k < 3; ++k) {
+    p11_w[k] = c00[k]*Bij(order, 0, 0, nodePts_0, nodePts_1) +
+      c10[k]*Bij(order, 1, 0, nodePts_0, nodePts_1) +
+      c20[k]*Bij(order, 2, 0, nodePts_0, nodePts_1) +
+      c11[k]*Bij(order, 1, 1, nodePts_0, nodePts_1) +
+      c02[k]*Bij(order, 0, 2, nodePts_0, nodePts_1) +
+      c01[k]*Bij(order, 0, 1, nodePts_0, nodePts_1);
+  }
+  return p11_w;
+}
+
 OMEGA_H_DEVICE Vector<3> face_parametricToParent_3d(
     LO const order, LO const old_face, LOs old_ev2v, LOs old_fe2e,
     Reals old_vertCtrlPts, Reals old_edgeCtrlPts, Reals old_faceCtrlPts,
@@ -1677,6 +1757,11 @@ void create_curved_faces_2d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
                             LOs old_verts2new_verts);
 
 LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
+                                     LOs prods2new, LOs keys2prods,
+                                     LOs keys2midverts, LOs old_verts2new_verts,
+                                     LOs keys2edges);
+
+void create_curved_verts_and_edges_3d_p2(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,
                                      LOs keys2midverts, LOs old_verts2new_verts,
                                      LOs keys2edges);
