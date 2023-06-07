@@ -25,6 +25,266 @@ LO max_degree_key2oldents(LO const nold_edge, LOs old_key2keyent, LOs keys2edges
 }
 */
 
+void create_curved_verts_and_edges_3d_p2(Mesh *mesh, Mesh *new_mesh, LOs old2new,
+                                     LOs prods2new, LOs keys2prods,
+                                     LOs keys2midverts, LOs old_verts2new_verts,
+                                     LOs keys2edges) {
+  auto const order = mesh->get_max_order();
+  OMEGA_H_CHECK(order == 2);
+  OMEGA_H_TIME_FUNCTION;
+  auto const nold_edge = old2new.size();
+  auto const nold_verts = mesh->nverts();
+  OMEGA_H_CHECK(nold_verts == old_verts2new_verts.size());
+  auto const old_ev2v = mesh->get_adj(1, 0).ab2b;
+  auto const old_fe2e = mesh->get_adj(2, 1).ab2b;
+  auto const old_ef2f = mesh->ask_up(1, 2).ab2b;
+  auto const old_e2ef = mesh->ask_up(1, 2).a2ab;
+  auto const old_fv2v = mesh->ask_down(2, 0).ab2b;
+  auto const old_vertCtrlPts = mesh->get_ctrlPts(0);
+  auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
+  auto const dim = mesh->dim();
+  auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
+
+  auto const new_ev2v = new_mesh->get_adj(1, 0).ab2b;
+  auto const new_coords = new_mesh->coords();
+  auto const nnew_edge = new_mesh->nedges();
+  auto const nnew_verts = new_mesh->nverts();
+
+  Write<Real> edge_ctrlPts(nnew_edge*n_edge_pts*dim);
+  Write<Real> vert_ctrlPts(nnew_verts*1*dim);
+
+  auto new_verts2old_verts = invert_map_by_atomics(old_verts2new_verts,
+                                                   nnew_verts);
+
+  LO max_degree_key2oldface = -1;
+  {
+    auto keyedges_noldfaces_w = Write<LO>(nold_edge, -1);
+    auto count_oldfaces = OMEGA_H_LAMBDA (LO old_edge) {
+      if (old2new[old_edge] == -1) {
+        LO const num_adj_faces = old_e2ef[old_edge + 1] - old_e2ef[old_edge];
+        keyedges_noldfaces_w[old_edge] = num_adj_faces;
+      }
+    };
+    parallel_for(nold_edge, std::move(count_oldfaces));
+    max_degree_key2oldface = get_max(LOs(keyedges_noldfaces_w));
+  }
+
+  auto nkeys = keys2edges.size();
+  OMEGA_H_CHECK(order == 2);
+  auto keys2old_faces_w = Write<LO>(max_degree_key2oldface*nkeys, -1);
+
+  auto create_crv_prod_edges = OMEGA_H_LAMBDA (LO key) {
+    LO const old_edge = keys2edges[key];
+    LO const v0_old = old_ev2v[old_edge*2 + 0];
+    LO const v1_old = old_ev2v[old_edge*2 + 1];
+
+    LO const mid_vert = keys2midverts[key];
+    LO const start = keys2prods[key];
+    LO const end = keys2prods[key + 1] - 1;
+    LO const new_e0 = prods2new[start];
+    LO const new_e1 = prods2new[start+1];
+
+    LO const v1_new_e0 = new_ev2v[new_e0*2 + 1];
+    LO const v0_new_e1 = new_ev2v[new_e1*2 + 0];
+    OMEGA_H_CHECK((v1_new_e0 == mid_vert) && (v0_new_e1 == mid_vert));
+
+    //ctrl pts for e0
+    {
+      Real new_xi_start = 0.0;
+      Real const cx0 = old_vertCtrlPts[v0_old*dim + 0];
+      Real const cy0 = old_vertCtrlPts[v0_old*dim + 1];
+      Real const cz0 = old_vertCtrlPts[v0_old*dim + 2];
+      Real const cx1 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + 0];
+      Real const cy1 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + 1];
+      Real const cz1 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + 2];
+      Real const cx2 = old_vertCtrlPts[v1_old*dim + 0];
+      Real const cy2 = old_vertCtrlPts[v1_old*dim + 1];
+      Real const cz2 = old_vertCtrlPts[v1_old*dim + 2];
+
+      Real const new_xi_2 = new_xi_start + 0.5;
+      // interpolate new vert at 0.5 of old edge
+      Real const new_cx2 = cx0*Bi(order, 0, new_xi_2) + cx1*Bi(order, 1, new_xi_2) +
+        cx2*Bi(order, 2, new_xi_2);
+      Real const new_cy2 = cy0*Bi(order, 0, new_xi_2) + cy1*Bi(order, 1, new_xi_2) +
+        cy2*Bi(order, 2, new_xi_2);
+      Real const new_cz2 = cz0*Bi(order, 0, new_xi_2) + cz1*Bi(order, 1, new_xi_2) +
+        cz2*Bi(order, 2, new_xi_2);
+      vert_ctrlPts[mid_vert*1*dim + 0] = new_cx2;
+      vert_ctrlPts[mid_vert*1*dim + 1] = new_cy2;
+      vert_ctrlPts[mid_vert*1*dim + 2] = new_cz2;
+
+      //interpolate new edge pt using the new vert pt
+      Real const old_xi_1 = xi_1_quad();
+      Real const new_xi_1 = new_xi_start + old_xi_1/2.0;
+      Real const new_px1 = cx0*Bi(order, 0, new_xi_1) + cx1*Bi(order, 1, new_xi_1) +
+        cx2*Bi(order, 2, new_xi_1);
+      Real const new_py1 = cy0*Bi(order, 0, new_xi_1) + cy1*Bi(order, 1, new_xi_1) +
+        cy2*Bi(order, 2, new_xi_1);
+      Real const new_pz1 = cz0*Bi(order, 0, new_xi_1) + cz1*Bi(order, 1, new_xi_1) +
+        cz2*Bi(order, 2, new_xi_1);
+
+      //find ctrl pt from interp pt: is & should be at 0.5 for new edge;
+      Real const Cx = (new_px1 - cx0*Bi(order, 0, old_xi_1) - 
+                                 new_cx2*Bi(order, 2, old_xi_1))/
+                      Bi(order, 1, old_xi_1);
+      Real const Cy = (new_py1 - cy0*Bi(order, 0, old_xi_1) - 
+                                 new_cy2*Bi(order, 2, old_xi_1))/
+                      Bi(order, 1, old_xi_1);
+      Real const Cz = (new_pz1 - cz0*Bi(order, 0, old_xi_1) - 
+                                 new_cz2*Bi(order, 2, old_xi_1))/
+                      Bi(order, 1, old_xi_1);
+
+      edge_ctrlPts[new_e0*n_edge_pts*dim + 0] = Cx;
+      edge_ctrlPts[new_e0*n_edge_pts*dim + 1] = Cy;
+      edge_ctrlPts[new_e0*n_edge_pts*dim + 2] = Cz;
+    }
+
+    //ctrl pts for e1
+    {
+      Real new_xi_start = 0.5;
+      Real cx0 = old_vertCtrlPts[v0_old*dim + 0];
+      Real cy0 = old_vertCtrlPts[v0_old*dim + 1];
+      Real cz0 = old_vertCtrlPts[v0_old*dim + 2];
+      Real cx1 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + 0];
+      Real cy1 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + 1];
+      Real cz1 = old_edgeCtrlPts[old_edge*n_edge_pts*dim + 2];
+      Real cx2 = old_vertCtrlPts[v1_old*dim + 0];
+      Real cy2 = old_vertCtrlPts[v1_old*dim + 1];
+      Real cz2 = old_vertCtrlPts[v1_old*dim + 2];
+
+      Real old_xi_1 = xi_1_quad();
+      Real new_xi_1 = new_xi_start + old_xi_1/2.0;
+      Real const new_px1 = cx0*Bi(order, 0, new_xi_1) + cx1*Bi(order, 1, new_xi_1) +
+        cx2*Bi(order, 2, new_xi_1);
+      Real const new_py1 = cy0*Bi(order, 0, new_xi_1) + cy1*Bi(order, 1, new_xi_1) +
+        cy2*Bi(order, 2, new_xi_1);
+      Real const new_pz1 = cz0*Bi(order, 0, new_xi_1) + cz1*Bi(order, 1, new_xi_1) +
+        cz2*Bi(order, 2, new_xi_1);
+
+      Real const new_cx0 = vert_ctrlPts[mid_vert*1*dim + 0];
+      Real const new_cy0 = vert_ctrlPts[mid_vert*1*dim + 1];
+      Real const new_cz0 = vert_ctrlPts[mid_vert*1*dim + 2];
+      //find ctrl pt from interp pt: is & should be at 0.5 for new edge;
+      Real const Cx = (new_px1 - new_cx0*Bi(order, 0, old_xi_1) - 
+                                 cx2*Bi(order, 2, old_xi_1))/
+                      Bi(order, 1, old_xi_1);
+      Real const Cy = (new_py1 - new_cy0*Bi(order, 0, old_xi_1) - 
+                                 cy2*Bi(order, 2, old_xi_1))/
+                      Bi(order, 1, old_xi_1);
+      Real const Cz = (new_pz1 - new_cz0*Bi(order, 0, old_xi_1) - 
+                                 cz2*Bi(order, 2, old_xi_1))/
+                      Bi(order, 1, old_xi_1);
+
+      edge_ctrlPts[new_e0*n_edge_pts*dim + 0] = Cx;
+      edge_ctrlPts[new_e0*n_edge_pts*dim + 1] = Cy;
+      edge_ctrlPts[new_e0*n_edge_pts*dim + 2] = Cz;
+    }
+
+    //ctrl pts for edges on adjacent faces
+    for (LO i = 0; i <= (end-start - 2); ++i) {
+      LO const new_e2 = prods2new[start+2 + i];
+
+      LO const v0_new_e2 = new_ev2v[new_e2*2 + 0];
+      LO const v1_new_e2 = new_ev2v[new_e2*2 + 1];
+      OMEGA_H_CHECK(v1_new_e2 == mid_vert);
+
+      auto ab2b = new_verts2old_verts.ab2b;
+      auto a2ab = new_verts2old_verts.a2ab;
+      OMEGA_H_CHECK((a2ab[v0_new_e2+1] - a2ab[v0_new_e2]) == 1);
+      LO old_vert_noKey = ab2b[a2ab[v0_new_e2]];
+
+      LO old_face = -1;
+      for (LO index = old_e2ef[old_edge]; index < old_e2ef[old_edge + 1];
+          ++index) {
+        LO const adj_face = old_ef2f[index];
+        for (LO vert = 0; vert < 3; ++vert) {
+          LO const vert_old_face = old_fv2v[adj_face*3 + vert];
+          if (vert_old_face == old_vert_noKey) {
+            old_face = adj_face;
+            break;
+          }
+        }
+        if (old_face > 0) {
+          break;
+        }
+      }
+
+      keys2old_faces_w[max_degree_key2oldface*key + i] = old_face;
+      {
+        auto const v0_old_face = old_fv2v[old_face*3];
+        auto const v1 = old_fv2v[old_face*3 + 1];
+        auto const v2 = old_fv2v[old_face*3 + 2];
+        auto const old_face_e0 = old_fe2e[old_face*3 + 0];
+        auto const old_face_e1 = old_fe2e[old_face*3 + 1];
+        auto const old_face_e2 = old_fe2e[old_face*3 + 2];
+
+        auto nodePts = quadr_noKeyEdge_xi_values(old_vert_noKey, v0_old_face, v1, v2,
+            old_edge, old_face_e0, old_face_e1,
+            old_face_e2);
+        //get the interp point
+        auto p1 = face_parametricToParent_3d_p2(order, old_face, old_fe2e,
+            old_vertCtrlPts, old_edgeCtrlPts, nodePts[0], nodePts[1], old_fv2v);
+
+        //use these as interp pts to find ctrl pts for the new mesh edge
+        {
+          Real cx0 = old_vertCtrlPts[old_vert_noKey*dim + 0];
+          Real cy0 = old_vertCtrlPts[old_vert_noKey*dim + 1];
+          Real cz0 = old_vertCtrlPts[old_vert_noKey*dim + 2];
+
+          //find ctrl pt from interp pt: is & should be at 0.5 for new edge;
+          Real old_xi_1 = xi_1_quad();
+          Real const new_cx2 = vert_ctrlPts[mid_vert*1*dim + 0];
+          Real const new_cy2 = vert_ctrlPts[mid_vert*1*dim + 1];
+          Real const new_cz2 = vert_ctrlPts[mid_vert*1*dim + 2];
+          Real const Cx = (p1[0] - cx0*Bi(order, 0, old_xi_1) - 
+                                 new_cx2*Bi(order, 2, old_xi_1))/
+                          Bi(order, 1, old_xi_1);
+          Real const Cy = (p1[1] - cy0*Bi(order, 0, old_xi_1) - 
+                                 new_cy2*Bi(order, 2, old_xi_1))/
+                          Bi(order, 1, old_xi_1);
+          Real const Cz = (p1[2] - cz0*Bi(order, 0, old_xi_1) - 
+                                 new_cz2*Bi(order, 2, old_xi_1))/
+                          Bi(order, 1, old_xi_1);
+
+          edge_ctrlPts[new_e2*n_edge_pts*dim + 0] = Cx;
+          edge_ctrlPts[new_e2*n_edge_pts*dim + 1] = Cy;
+          edge_ctrlPts[new_e2*n_edge_pts*dim + 2] = Cz;
+        }
+      }
+    }
+  };
+  parallel_for(nkeys, std::move(create_crv_prod_edges));
+
+  auto create_crv_same_edges = OMEGA_H_LAMBDA (LO old_edge) {
+    if (old2new[old_edge] != -1) {
+      LO new_edge = old2new[old_edge];
+      for (I8 d = 0; d < dim; ++d) {
+        edge_ctrlPts[new_edge*n_edge_pts*dim + d] =
+          old_edgeCtrlPts[old_edge*n_edge_pts*dim + d];
+      }
+    }
+  };
+  parallel_for(nold_edge, std::move(create_crv_same_edges));
+
+  new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim);
+  new_mesh->add_tag<Real>(0, "bezier_pts", dim);
+  new_mesh->set_tag_for_ctrlPts(1, Reals(edge_ctrlPts));
+
+  //copy ctrl pts for same verts
+  auto copy_sameCtrlPts = OMEGA_H_LAMBDA(LO i) {
+    if (old_verts2new_verts[i] != -1) {
+      LO new_vert = old_verts2new_verts[i];
+      for (I8 d = 0; d < dim; ++d) {
+        vert_ctrlPts[new_vert*dim + d] = old_vertCtrlPts[i*dim + d];
+      }
+    }
+  };
+  parallel_for(nold_verts, std::move(copy_sameCtrlPts), "copy same vtx ctrlPts");
+  new_mesh->set_tag_for_ctrlPts(0, Reals(vert_ctrlPts));
+
+  return;
+}
+
 LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,
                                      LOs keys2midverts, LOs old_verts2new_verts,
