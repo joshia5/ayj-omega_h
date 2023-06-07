@@ -641,6 +641,74 @@ inline Vector<3> rgn_parametricToParent_3dp2_h(
   return p11;
 }
 
+inline Vector<3> rgn_parametricToParent_3dp2(
+    LO const order, LO const old_rgn, Read<LO> old_rv2v,
+    Read<Real> old_vertCtrlPts, Read<Real> old_edgeCtrlPts, 
+    Vector<3> nodePt, HostRead<LO> old_re2e) {
+  LO const dim = 3;
+  LO const n_edge_pts = n_internal_ctrlPts(EDGE, order);
+  auto old_rgn_v0 = old_rv2v[old_rgn*4 + 0];
+  auto old_rgn_v1 = old_rv2v[old_rgn*4 + 1];
+  auto old_rgn_v2 = old_rv2v[old_rgn*4 + 2];
+  auto old_rgn_v3 = old_rv2v[old_rgn*4 + 3];
+  Vector<3> c000, c200, c020, c002;
+  for (LO d=0; d<3; ++d) {
+    c000[d] = old_vertCtrlPts[old_rgn_v0*dim + d];
+    c200[d] = old_vertCtrlPts[old_rgn_v1*dim + d];
+    c020[d] = old_vertCtrlPts[old_rgn_v2*dim + d];
+    c002[d] = old_vertCtrlPts[old_rgn_v3*dim + d];
+  }
+
+  auto old_rgn_e0 = old_re2e[old_rgn*6 + 0];
+  auto old_rgn_e1 = old_re2e[old_rgn*6 + 1];
+  auto old_rgn_e2 = old_re2e[old_rgn*6 + 2];
+  auto old_rgn_e3 = old_re2e[old_rgn*6 + 3];
+  auto old_rgn_e4 = old_re2e[old_rgn*6 + 4];
+  auto old_rgn_e5 = old_re2e[old_rgn*6 + 5];
+
+  auto pts_per_edge = n_edge_pts;
+  Real cx100 = old_edgeCtrlPts[old_rgn_e0*pts_per_edge*dim + 0];
+  Real cy100 = old_edgeCtrlPts[old_rgn_e0*pts_per_edge*dim + 1];
+  Real cz100 = old_edgeCtrlPts[old_rgn_e0*pts_per_edge*dim + 2];
+  Real cx110 = old_edgeCtrlPts[old_rgn_e1*pts_per_edge*dim + 0];
+  Real cy110 = old_edgeCtrlPts[old_rgn_e1*pts_per_edge*dim + 1];
+  Real cz110 = old_edgeCtrlPts[old_rgn_e1*pts_per_edge*dim + 2];
+  Real cx010 = old_edgeCtrlPts[old_rgn_e2*pts_per_edge*dim + 0];
+  Real cy010 = old_edgeCtrlPts[old_rgn_e2*pts_per_edge*dim + 1];
+  Real cz010 = old_edgeCtrlPts[old_rgn_e2*pts_per_edge*dim + 2];
+  Real cx001 = old_edgeCtrlPts[old_rgn_e3*pts_per_edge*dim + 0];
+  Real cy001 = old_edgeCtrlPts[old_rgn_e3*pts_per_edge*dim + 1];
+  Real cz001 = old_edgeCtrlPts[old_rgn_e3*pts_per_edge*dim + 2];
+  Real cx101 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + 0];
+  Real cy101 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + 1];
+  Real cz101 = old_edgeCtrlPts[old_rgn_e4*pts_per_edge*dim + 2];
+  Real cx011 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + 0];
+  Real cy011 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + 1];
+  Real cz011 = old_edgeCtrlPts[old_rgn_e5*pts_per_edge*dim + 2];
+
+  auto c100 = vector_3(cx100, cy100, cz100);
+  auto c110 = vector_3(cx110, cy110, cz110);
+  auto c010 = vector_3(cx010, cy010, cz010);
+  auto c001 = vector_3(cx001, cy001, cz001);
+  auto c101 = vector_3(cx101, cy101, cz101);
+  auto c011 = vector_3(cx011, cy011, cz011);
+
+  Vector<3> p11;
+  for (LO j = 0; j < dim; ++j) {
+    p11[j] = c000[j]*Bijk(order,0,0,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c200[j]*Bijk(order,2,0,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c020[j]*Bijk(order,0,2,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c002[j]*Bijk(order,0,0,2,nodePt[0],nodePt[1],nodePt[2]) +
+      c100[j]*Bijk(order,1,0,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c110[j]*Bijk(order,1,1,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c010[j]*Bijk(order,0,1,0,nodePt[0],nodePt[1],nodePt[2]) +
+      c001[j]*Bijk(order,0,0,1,nodePt[0],nodePt[1],nodePt[2]) +
+      c101[j]*Bijk(order,1,0,1,nodePt[0],nodePt[1],nodePt[2]) +
+      c011[j]*Bijk(order,0,1,1,nodePt[0],nodePt[1],nodePt[2]);
+  }
+  return p11;
+}
+
 inline Vector<3> rgn_parametricToParent_3d_h(
     LO const order, LO const old_rgn, HostRead<LO> old_ev2v, HostRead<LO> old_rv2v,
     HostRead<Real> old_vertCtrlPts, HostRead<Real> old_edgeCtrlPts, 
