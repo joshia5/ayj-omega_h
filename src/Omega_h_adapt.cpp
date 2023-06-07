@@ -133,8 +133,13 @@ bool print_adapt_status(Mesh* mesh, AdaptOpts const& opts) {
 
 void print_adapt_histograms(Mesh* mesh, AdaptOpts const& opts) {
   auto quals = Reals();
-  if (mesh->is_curved() < 0) quals = mesh->ask_qualities();
-  if (mesh->is_curved() > 0) quals = calc_crvQuality_3d(mesh);
+  if (mesh->get_max_order() < 3) {
+    quals = mesh->ask_qualities();
+  }
+  else {
+    OMEGA_H_CHECK ((mesh->is_curved() > 0) && (mesh->get_max_order() == 3));
+    quals = calc_crvQuality_3d(mesh);
+  }
   auto qh = get_histogram(mesh, mesh->dim(), opts.nquality_histogram_bins, 0.0,
       1.0, quals);
   auto lh = get_histogram(mesh, EDGE, opts.nlength_histogram_bins,
