@@ -134,6 +134,7 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
 
     if (ent_dim == EDGE) {
       if (mesh->is_curved() > 0) {
+        printf("refining mesh of order %d\n", mesh->get_max_order());
         new_mesh.set_curved(1);
         new_mesh.set_max_order(mesh->get_max_order());
         new_mesh.add_tag<I8>
@@ -168,16 +169,18 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
     }
     if (ent_dim == FACE) {
       if (mesh->is_curved() > 0){
-        if (mesh->dim() == 2) {
-          create_curved_faces_2d(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
-                                 keys2prods, keys2edges, keys2old_faces,
-                                 old_verts2new_verts);
-        }
-        else {
-          OMEGA_H_CHECK (mesh->dim() == 3);
-          create_curved_faces_3d(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
-                                 keys2prods, keys2edges, keys2old_faces,
-                                 old_verts2new_verts);
+        if (mesh->get_max_order() == 3) {
+          if (mesh->dim() == 2) {
+            create_curved_faces_2d(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
+                keys2prods, keys2edges, keys2old_faces,
+                old_verts2new_verts);
+          }
+          else {
+            OMEGA_H_CHECK (mesh->dim() == 3);
+            create_curved_faces_3d(mesh, &new_mesh, old_ents2new_ents, prods2new_ents,
+                keys2prods, keys2edges, keys2old_faces,
+                old_verts2new_verts);
+          }
         }
       }
     }
@@ -229,7 +232,6 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
     *mesh = new_mesh;
   }
 }
-
 
 static bool refine(Mesh* mesh, AdaptOpts const& opts) {
 

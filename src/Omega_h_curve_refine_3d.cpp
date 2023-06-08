@@ -44,6 +44,7 @@ void create_curved_verts_and_edges_3d_p2(Mesh *mesh, Mesh *new_mesh, LOs old2new
   auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
   auto const dim = mesh->dim();
   auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
+  OMEGA_H_CHECK(n_edge_pts == 1);
 
   auto const new_ev2v = new_mesh->get_adj(1, 0).ab2b;
   auto const new_coords = new_mesh->coords();
@@ -175,9 +176,9 @@ void create_curved_verts_and_edges_3d_p2(Mesh *mesh, Mesh *new_mesh, LOs old2new
                                  cz2*Bi(order, 2, old_xi_1))/
                       Bi(order, 1, old_xi_1);
 
-      edge_ctrlPts[new_e0*n_edge_pts*dim + 0] = Cx;
-      edge_ctrlPts[new_e0*n_edge_pts*dim + 1] = Cy;
-      edge_ctrlPts[new_e0*n_edge_pts*dim + 2] = Cz;
+      edge_ctrlPts[new_e1*n_edge_pts*dim + 0] = Cx;
+      edge_ctrlPts[new_e1*n_edge_pts*dim + 1] = Cy;
+      edge_ctrlPts[new_e1*n_edge_pts*dim + 2] = Cz;
     }
 
     //ctrl pts for edges on adjacent faces
