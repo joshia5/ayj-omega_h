@@ -383,6 +383,7 @@ void build_quadratic_wireframe_3d(Mesh* mesh, Mesh* wireframe_mesh,
     vert_ctrlPts_h = HostRead<Real>(mesh->coords());
   }
   auto ev2v_h = HostRead<LO>(mesh->get_adj(1, 0).ab2b);
+  printf("max ctrl pts v %f e %f\n", get_max(vert_ctrlPts), get_max(mesh->get_ctrlPts(1)));
 
   Real xi_start = 0.0;
   Real xi_end = 1.0;
@@ -775,7 +776,8 @@ void build_quartic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
 void build_quadratic_curveVtk_3d(Mesh* mesh, Mesh* curveVtk_mesh,
                               LO n_sample_pts) {
   auto nface = mesh->nfaces();
-  auto coords_h = HostRead<Real>(mesh->coords());
+  //auto coords_h = HostRead<Real>(mesh->coords());
+  auto coords_h = HostRead<Real>(mesh->get_ctrlPts(0));
   auto ctrlPts_h = HostRead<Real>(mesh->get_ctrlPts(1));
   auto fv2v_h = HostRead<LO>(mesh->ask_down(2, 0).ab2b);
   auto fe2e_h = HostRead<LO>(mesh->get_adj(2, 1).ab2b);
