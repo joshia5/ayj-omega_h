@@ -233,7 +233,7 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
   }
 }
 
-static bool refine(Mesh* mesh, AdaptOpts const& opts) {
+bool refine(Mesh* mesh, AdaptOpts const& opts) {
 
   mesh->set_parting(OMEGA_H_GHOSTED);
   if (!refine_ghosted(mesh, opts)) return false;

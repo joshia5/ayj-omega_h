@@ -6,6 +6,7 @@
 namespace Omega_h {
 
 bool refine_by_size(Mesh* mesh, AdaptOpts const& opts);
+bool refine(Mesh* mesh, AdaptOpts const& opts);
 
 }  // end namespace Omega_h
 
