@@ -6,6 +6,7 @@
 #include <Omega_h_beziers.hpp>
 #include <Omega_h_for.hpp>
 #include <Omega_h_curve_validity_3d.hpp>
+#include <Omega_h_refine.hpp>
 
 using namespace Omega_h;
 
@@ -210,24 +211,27 @@ void test_adapt_rf(Library *lib) {
 }
 
 void uniref_p2_rf(Library *lib) {
+  // uniform refinement
   auto comm = lib->world();
 
   auto mesh = binary::read(
-      "/lore/joshia5/Meshes/RF/testBall.osh", comm);
-      //"/lore/joshia5/Meshes/RF/assemble/v10_2rgn_12smallFeat_110k_p2.osh", comm);
+      //"/lore/joshia5/Meshes/RF/testBall.osh", comm);
+      "/lore/joshia5/Meshes/RF/assemble/v10_2rgn_12smallFeat_110k_p2.osh", comm);
+  printf("mesh size v e f r {%d,%d,%d,%d}\n", mesh.nverts(), mesh.nedges(),
+      mesh.nfaces(), mesh.nelems());
   Reals const coords = mesh.coords();
   if (!mesh.has_tag(0, "bezier_pts")) {
     mesh.add_tag(0, "bezier_pts", 3, coords);
   }
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
-  build_quadratic_wireframe_3d(&mesh, &wireframe_mesh,20);
-  std::string vtuPath = "/lore/joshia5/Meshes/RF/testBall_wire.vtu";
+  build_quadratic_wireframe_3d(&mesh, &wireframe_mesh,3);
+  std::string vtuPath = "/lore/joshia5/Meshes/RF/110k_wire.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
   auto curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
-  build_quadratic_curveVtk_3d(&mesh, &curveVtk_mesh,20);
-  vtuPath = "/lore/joshia5/Meshes/RF/testBall_curveVtk.vtu";
+  build_quadratic_curveVtk_3d(&mesh, &curveVtk_mesh,3);
+  vtuPath = "/lore/joshia5/Meshes/RF/110k_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
 
   auto implied_metrics = get_implied_metrics(&mesh);
@@ -297,12 +301,19 @@ void uniref_p2_rf(Library *lib) {
   opts.min_quality_allowed = 0.01;
   opts.max_length_allowed = 6.0;
   fprintf(stderr, "initial mesh size %d\n", mesh.nregions());
+
+  auto edge_is_cand = Bytes(mesh.nents(1), 1, "edge_is_cand");
+  mesh.add_tag(EDGE, "candidate", 1, edge_is_cand);
+  while(refine(&mesh, opts));
+  printf("refining...\n");
+  /*
   I8 max_adapt_itr = 1;
   for (LO adapt_itr = 0; adapt_itr < max_adapt_itr; ++adapt_itr) {
     while (approach_metric(&mesh, opts)) {
       adapt(&mesh, opts);
     }
   }
+  */
   
   printf("mesh size v e f r {%d,%d,%d,%d}\n", mesh.nverts(), mesh.nedges(),
       mesh.nfaces(), mesh.nelems());
@@ -311,13 +322,13 @@ void uniref_p2_rf(Library *lib) {
   
   wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
-  build_quadratic_wireframe_3d(&mesh, &wireframe_mesh,4);
-  vtuPath = "/lore/joshia5/Meshes/RF/testBallref_wire.vtu";
+  build_quadratic_wireframe_3d(&mesh, &wireframe_mesh,3);
+  vtuPath = "/lore/joshia5/Meshes/RF/110kref_wire.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
   curveVtk_mesh = Mesh(comm->library());
   curveVtk_mesh.set_comm(comm);
-  build_quadratic_curveVtk_3d(&mesh, &curveVtk_mesh,4);
-  vtuPath = "/lore/joshia5/Meshes/RF/testBallref_curveVtk.vtu";
+  build_quadratic_curveVtk_3d(&mesh, &curveVtk_mesh,3);
+  vtuPath = "/lore/joshia5/Meshes/RF/110kref_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
 
   return; 
