@@ -1764,7 +1764,7 @@ LOs create_curved_verts_and_edges_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new,
 void create_curved_verts_and_edges_3d_p2(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,
                                      LOs keys2midverts, LOs old_verts2new_verts,
-                                     LOs keys2edges);
+                                     LOs keys2edges, bool transfer_cands, Read<I8> oldedge_is_cand);
 
 void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2new,
                             LOs keys2prods, LOs keys2edges, LOs keys2old_faces,

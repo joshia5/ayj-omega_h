@@ -65,6 +65,7 @@ struct AdaptOpts {
   bool should_smooth_snap;
   Real snap_smooth_tolerance;
   bool allow_snap_failure;
+  bool transfer_cands;
 #ifdef OMEGA_H_USE_EGADS
   Egads* egads_model;
 #endif

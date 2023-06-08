@@ -92,7 +92,7 @@ static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
 }
 
 static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
-    I8 const should_modify_mesh) {
+    I8 const should_modify_mesh, Read<I8> edges_are_cands) {
   auto comm = mesh->comm();
   auto edges_are_keys = mesh->get_array<I8>(EDGE, "key");
   auto keys2edges = collect_marked(edges_are_keys);
@@ -162,7 +162,8 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
             OMEGA_H_CHECK(mesh->dim() == 3);
             create_curved_verts_and_edges_3d_p2
               (mesh, &new_mesh, old_ents2new_ents, prods2new_ents, keys2prods,
-               keys2midverts, old_verts2new_verts, keys2edges);
+               keys2midverts, old_verts2new_verts, keys2edges,
+               opts.transfer_cands, edges_are_cands);
           }
         }
       }
@@ -235,6 +236,7 @@ static void refine_element_based_crv(Mesh* mesh, AdaptOpts const& opts,
 
 bool refine(Mesh* mesh, AdaptOpts const& opts) {
 
+  auto edges_are_cands = mesh->get_array<I8>(EDGE, "candidate");
   mesh->set_parting(OMEGA_H_GHOSTED);
   if (!refine_ghosted(mesh, opts)) return false;
   mesh->set_parting(OMEGA_H_ELEM_BASED);
@@ -244,7 +246,7 @@ bool refine(Mesh* mesh, AdaptOpts const& opts) {
   }
   if (mesh->is_curved() > 0) {
     if (opts.min_crv_qual_allowed > 0.) {
-      refine_element_based_crv(mesh, opts, 1);
+      refine_element_based_crv(mesh, opts, 1, edges_are_cands);
     }
   }
 

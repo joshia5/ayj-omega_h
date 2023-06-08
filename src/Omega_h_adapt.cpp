@@ -80,6 +80,7 @@ AdaptOpts::AdaptOpts(Int dim) {
   should_smooth_snap = true;
   snap_smooth_tolerance = 1e-2;
   allow_snap_failure = false;
+  transfer_cands = false;
 #ifdef OMEGA_H_USE_EGADS
   egads_model = nullptr;
 #endif

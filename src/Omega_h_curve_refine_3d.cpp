@@ -28,7 +28,7 @@ LO max_degree_key2oldents(LO const nold_edge, LOs old_key2keyent, LOs keys2edges
 void create_curved_verts_and_edges_3d_p2(Mesh *mesh, Mesh *new_mesh, LOs old2new,
                                      LOs prods2new, LOs keys2prods,
                                      LOs keys2midverts, LOs old_verts2new_verts,
-                                     LOs keys2edges) {
+                                     LOs keys2edges, bool transfer_cands, Read<I8> oldedge_is_cand) {
   auto const order = mesh->get_max_order();
   OMEGA_H_CHECK(order == 2);
   OMEGA_H_TIME_FUNCTION;
@@ -282,6 +282,21 @@ void create_curved_verts_and_edges_3d_p2(Mesh *mesh, Mesh *new_mesh, LOs old2new
   };
   parallel_for(nold_verts, std::move(copy_sameCtrlPts), "copy same vtx ctrlPts");
   new_mesh->set_tag_for_ctrlPts(0, Reals(vert_ctrlPts));
+
+  if (transfer_cands > 0) {
+    Write<I8> edge_is_cand(nnew_edge, 0, "edge_is_cand_w");
+
+    auto trsfer_cand = OMEGA_H_LAMBDA (LO old_edge) {
+      if (old2new[old_edge] != -1) {
+        LO new_edge = old2new[old_edge];
+        //edge_is_cand[new_edge] = 1;
+        edge_is_cand[new_edge] = oldedge_is_cand[old_edge];
+      }
+    };
+    parallel_for(nold_edge, std::move(trsfer_cand));
+
+    new_mesh->add_tag(EDGE, "candidate", 1, Read<I8>(edge_is_cand));
+  }
 
   return;
 }

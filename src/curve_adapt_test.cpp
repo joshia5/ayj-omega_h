@@ -300,10 +300,12 @@ void uniref_p2_rf(Library *lib) {
   opts.verbosity = EXTRA_STATS;
   opts.min_quality_allowed = 0.01;
   opts.max_length_allowed = 6.0;
+  opts.transfer_cands = true;
   fprintf(stderr, "initial mesh size %d\n", mesh.nregions());
 
   auto edge_is_cand = Bytes(mesh.nents(1), 1, "edge_is_cand");
   mesh.add_tag(EDGE, "candidate", 1, edge_is_cand);
+  //opts.xfer_opts.type_map["candidate"] = OMEGA_H_INHERIT;
   while(refine(&mesh, opts));
   printf("refining...\n");
   /*
@@ -317,8 +319,8 @@ void uniref_p2_rf(Library *lib) {
   
   printf("mesh size v e f r {%d,%d,%d,%d}\n", mesh.nverts(), mesh.nedges(),
       mesh.nfaces(), mesh.nelems());
-  //binary::write("/lore/joshia5/Meshes/RF/assemble/v10_2rgn_12smallFeat_110kUniref880k_p2.osh",
-    //  &mesh);
+  binary::write("/lore/joshia5/Meshes/RF/assemble/110kUniref877k_p2.osh",
+      &mesh);
   
   wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
