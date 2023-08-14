@@ -230,7 +230,7 @@ void Mesh::add_tag(Topo_type ent_type, std::string const& name, Int ncomps) {
   check_tag_name(name);
   OMEGA_H_CHECK(ncomps >= 0);
   OMEGA_H_CHECK(ncomps <= Int(INT8_MAX));
-  OMEGA_H_CHECK(tags_type_[int(ent_type)].size() < size_t(INT8_MAX));
+  OMEGA_H_CHECK(tags_type_[int(ent_type)].size() < size_t(INT32_MAX));
   TagPtr ptr(new Tag<T>(name, ncomps));
   tags_type_[int(ent_type)].push_back(std::move(ptr));
 }
@@ -245,7 +245,7 @@ void Mesh::add_tag(Int ent_dim, std::string const& name, Int ncomps,
     check_tag_name(name);
     OMEGA_H_CHECK(ncomps >= 0);
     OMEGA_H_CHECK(ncomps <= Int(INT8_MAX));
-    OMEGA_H_CHECK(tags_[ent_dim].size() < size_t(INT8_MAX));
+    OMEGA_H_CHECK(tags_[ent_dim].size() < size_t(INT32_MAX));
   }
   auto ptr = std::make_shared<Tag<T>>(name, ncomps);
   if (array.exists()) {
@@ -279,7 +279,7 @@ void Mesh::add_tag(Topo_type ent_type, std::string const& name, Int ncomps,
     check_tag_name(name);
     OMEGA_H_CHECK(ncomps >= 0);
     OMEGA_H_CHECK(ncomps <= Int(INT8_MAX));
-    OMEGA_H_CHECK(tags_type_[int(ent_type)].size() < size_t(INT8_MAX));
+    OMEGA_H_CHECK(tags_type_[int(ent_type)].size() < size_t(INT32_MAX));
     tags_type_[int(ent_type)].push_back(std::move(ptr));
   }
   OMEGA_H_CHECK(array.size() == nents_type_[int(ent_type)] * ncomps);
