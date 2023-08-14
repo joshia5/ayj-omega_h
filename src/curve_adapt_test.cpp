@@ -216,13 +216,19 @@ void uniref_p2_rf(Library *lib) {
 
   auto mesh = binary::read(
       //"/lore/joshia5/Meshes/RF/testBall.osh", comm);
-      "/lore/joshia5/Meshes/RF/assemble/v10_2rgn_12smallFeat_110k_p2.osh", comm);
+      "/lore/joshia5/Meshes/RF/assemble/v10_2rgn_12smallFeat_108k_p2.osh", comm);
+      //"/lore/joshia5/Meshes/RF/assemble/v10_2rgn_12smallFeat_129k_p2.osh", comm);
   printf("mesh size v e f r {%d,%d,%d,%d}\n", mesh.nverts(), mesh.nedges(),
       mesh.nfaces(), mesh.nelems());
   Reals const coords = mesh.coords();
   if (!mesh.has_tag(0, "bezier_pts")) {
     mesh.add_tag(0, "bezier_pts", 3, coords);
   }
+  LO const dim = 3;
+  auto implied_metrics = get_implied_metrics(&mesh);
+  mesh.add_tag(VERT, "metric", symm_ncomps(dim), implied_metrics);
+  mesh.add_tag<Real>(VERT, "target_metric", symm_ncomps(dim));
+  /*
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
   build_quadratic_wireframe_3d(&mesh, &wireframe_mesh,3);
@@ -233,11 +239,7 @@ void uniref_p2_rf(Library *lib) {
   build_quadratic_curveVtk_3d(&mesh, &curveVtk_mesh,3);
   vtuPath = "/lore/joshia5/Meshes/RF/110k_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
-
-  auto implied_metrics = get_implied_metrics(&mesh);
-  LO const dim = 3;
-  mesh.add_tag(VERT, "metric", symm_ncomps(dim), implied_metrics);
-  mesh.add_tag<Real>(VERT, "target_metric", symm_ncomps(dim));
+  */
   
   auto target_metrics_w = Write<Real>
     (mesh.nverts() * symm_ncomps(dim));
@@ -279,6 +281,8 @@ void uniref_p2_rf(Library *lib) {
   //mesh.ask_lengths();
   //mesh.ask_qualities();
   //vtk::FullWriter writer;
+  /*
+  */
 
   calc_quad_ctrlPts_from_interpPts(&mesh);
   for (LO i = 0; i <= mesh.dim(); ++i) {
@@ -287,9 +291,11 @@ void uniref_p2_rf(Library *lib) {
     }
   }
 
+  /*
   vtk::FullWriter writer;
   writer = vtk::FullWriter("test_uniref_110k.vtk", &mesh);
   writer.write();
+  */
 
   auto opts = AdaptOpts(&mesh);
   opts.should_swap = false;
@@ -298,7 +304,8 @@ void uniref_p2_rf(Library *lib) {
   opts.should_filter_invalids = true;
   opts.check_crv_qual = false;
   opts.verbosity = EXTRA_STATS;
-  opts.min_quality_allowed = 0.01;
+  opts.min_quality_allowed = 0.001;
+  opts.min_quality_desired = 0.001;
   opts.max_length_allowed = 6.0;
   opts.transfer_cands = true;
   fprintf(stderr, "initial mesh size %d\n", mesh.nregions());
@@ -319,9 +326,9 @@ void uniref_p2_rf(Library *lib) {
   
   printf("mesh size v e f r {%d,%d,%d,%d}\n", mesh.nverts(), mesh.nedges(),
       mesh.nfaces(), mesh.nelems());
-  binary::write("/lore/joshia5/Meshes/RF/assemble/110kUniref877k_p2.osh",
+  binary::write("/lore/joshia5/Meshes/RF/assemble/108kUniref862k_p2.osh",
       &mesh);
-  
+  /*
   wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
   build_quadratic_wireframe_3d(&mesh, &wireframe_mesh,3);
@@ -332,6 +339,7 @@ void uniref_p2_rf(Library *lib) {
   build_quadratic_curveVtk_3d(&mesh, &curveVtk_mesh,3);
   vtuPath = "/lore/joshia5/Meshes/RF/110kref_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
+  */
 
   return; 
 }
