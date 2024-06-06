@@ -73,4 +73,3 @@ while(i < maxiter):
     #omega_h.binary_write_file('test_adapted_' + str(i), mesh_osh)
 
     i+=1
-
