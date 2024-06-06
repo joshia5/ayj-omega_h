@@ -17,6 +17,56 @@
 
 using namespace Omega_h;
 
+template <Int dim>
+static void set_target_metric(Mesh* mesh) {
+  auto coords = mesh->coords();
+  auto target_metrics_w = Write<Real>(mesh->nverts() * symm_ncomps(dim));
+  auto f = OMEGA_H_LAMBDA(LO v) {
+    auto z = coords[v * dim + (dim - 1)];
+    auto h = Vector<dim>();
+    for (Int i = 0; i < dim - 1; ++i) h[i] = 0.1;
+    h[dim - 1] = 0.001 + 0.198 * std::abs(z - 0.5);
+    auto m = diagonal(metric_eigenvalues_from_lengths(h));
+    set_symm(target_metrics_w, v, m);
+  };
+  parallel_for(mesh->nverts(), f);
+  mesh->set_tag(VERT, "target_metric", Reals(target_metrics_w));
+}
+
+template <Int dim>
+void run_case(Mesh* mesh, char const* vtk_path) {
+  auto world = mesh->comm();
+  mesh->set_parting(OMEGA_H_GHOSTED);
+  auto implied_metrics = get_implied_metrics(mesh);
+  mesh->add_tag(VERT, "metric", symm_ncomps(dim), implied_metrics);
+  mesh->add_tag<Real>(VERT, "target_metric", symm_ncomps(dim));
+  set_target_metric<dim>(mesh);
+  mesh->set_parting(OMEGA_H_ELEM_BASED);
+  mesh->ask_lengths();
+  mesh->ask_qualities();
+  vtk::FullWriter writer;
+  if (vtk_path) {
+    writer = vtk::FullWriter(vtk_path, mesh);
+    writer.write();
+  }
+  auto opts = AdaptOpts(mesh);
+  opts.verbosity = EXTRA_STATS;
+  opts.length_histogram_max = 2.0;
+  opts.max_length_allowed = opts.max_length_desired * 2.0;
+  opts.should_smooth_snap = 0;
+  opts.should_coarsen = 0;
+  opts.should_swap = 0;
+  opts.should_coarsen_slivers = 0;
+  Now t0 = now();
+  while (approach_metric(mesh, opts)) {
+    adapt(mesh, opts);
+    if (mesh->has_tag(VERT, "target_metric")) set_target_metric<dim>(mesh);
+    if (vtk_path) writer.write();
+  }
+  Now t1 = now();
+  std::cout << "total time: " << (t1 - t0) << " seconds\n";
+}
+
 void test_sim_kova_quadratic(Library *lib) {
   auto comm = lib->world();
   auto mesh = binary::read("/users/joshia5/Meshes/curved/KovaGeomSim-quadratic_123tet.osh", comm);
@@ -30,6 +80,9 @@ void test_sim_kova_quadratic(Library *lib) {
       mesh.add_tag(i, "global", 1, Omega_h::GOs(mesh.nents(i), 0, 1));
     }
   }
+  if (mesh.dim() == 3) run_case<3>(&mesh, NULL);
+
+/*
   AdaptOpts opts(&mesh);
   auto nelems = mesh.nglobal_ents(mesh.dim());
   auto desired_group_nelems = 5000;
@@ -54,6 +107,8 @@ void test_sim_kova_quadratic(Library *lib) {
   Now t1 = now();
   std::cout << "total refine time: " << (t1 - t0) << " seconds\n";
   //vtk::write_parallel("/lore/joshia5/Meshes/curved/kova_refined.vtk", &mesh, 2);
+  */
+
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
   build_cubic_wireframe_3d(&mesh, &wireframe_mesh, 10);
