@@ -476,6 +476,8 @@ if(BUILD_TESTING)
   test_func(run_curve_test 1 ./curve_test)
   osh_add_exe(curve_test_parallel)
   test_func(run_curve_test_parallel 2 ./curve_test_parallel)
+  osh_add_exe(curve_kova_aniso)
+  test_func(run_curve_kova_aniso 1 ./curve_kova_aniso)
 
   osh_add_exe(2d_conserve_test)
   test_func(serial_2d_conserve 1 ./2d_conserve_test)
