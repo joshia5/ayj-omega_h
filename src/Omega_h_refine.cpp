@@ -46,6 +46,32 @@ static bool refine_ghosted(Mesh* mesh, AdaptOpts const& opts) {
   return true;
 }
 
+static bool refine_ghosted_crv(Mesh* mesh, AdaptOpts const& opts) {
+  auto comm = mesh->comm();
+  auto edges_are_cands = mesh->get_array<I8>(EDGE, "candidate");
+  mesh->remove_tag(EDGE, "candidate");
+  auto cands2edges = collect_marked(edges_are_cands);
+  auto cand_quals = refine_qualities(mesh, cands2edges);
+  auto cands_are_good = each_geq_to(cand_quals, INT64_MIN*1.);
+  if (get_max(comm, cands_are_good) != 1) return false;
+  auto nedges = mesh->nedges();
+  auto edges_are_initial =
+      map_onto(cands_are_good, cands2edges, nedges, I8(0), 1);
+  auto edge_quals = map_onto(cand_quals, cands2edges, nedges, 0.0, 1);
+  auto edges_are_keys = find_indset(mesh, EDGE, edge_quals, edges_are_initial);
+  mesh->add_tag(EDGE, "key", 1, edges_are_keys);
+  mesh->add_tag(EDGE, "rep_vertex2md_order", 1,
+      get_rep2md_order_adapt(mesh, EDGE, VERT, edges_are_keys));
+  auto keys2edges = collect_marked(edges_are_keys);
+  Graph edges2elems;
+  if (mesh->dim() == 1)
+    edges2elems = identity_graph(mesh->nedges());
+  else
+    edges2elems = mesh->ask_up(EDGE, mesh->dim());
+  set_owners_by_indset(mesh, EDGE, keys2edges, edges2elems);
+  return true;
+}
+
 static void refine_element_based(Mesh* mesh, AdaptOpts const& opts) {
   auto comm = mesh->comm();
   auto edges_are_keys = mesh->get_array<I8>(EDGE, "key");
@@ -238,13 +264,15 @@ bool refine(Mesh* mesh, AdaptOpts const& opts) {
 
   auto edges_are_cands = mesh->get_array<I8>(EDGE, "candidate");
   mesh->set_parting(OMEGA_H_GHOSTED);
-  if (!refine_ghosted(mesh, opts)) return false;
-  mesh->set_parting(OMEGA_H_ELEM_BASED);
 
   if (mesh->is_curved() < 0) { // linear mesh
+    if (!refine_ghosted(mesh, opts)) return false;
+    mesh->set_parting(OMEGA_H_ELEM_BASED);
     refine_element_based(mesh, opts);
   }
   if (mesh->is_curved() > 0) {
+    if (!refine_ghosted_crv(mesh, opts)) return false;
+    mesh->set_parting(OMEGA_H_ELEM_BASED);
     if (opts.min_crv_qual_allowed > 0.) {
       refine_element_based_crv(mesh, opts, 1, edges_are_cands);
     }
