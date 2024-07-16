@@ -1,11 +1,11 @@
 #include <Omega_h_build.hpp>
-#include <Omega_h_coarsen.hpp>
+#include <Omega_h_swap.hpp>
 #include <Omega_h_library.hpp>
-#include <Omega_h_metric.hpp>
+//#include <Omega_h_metric.hpp>
 #include <Omega_h_file.hpp>
 #include <Omega_h_beziers.hpp>
-#include <Omega_h_for.hpp>
-#include <Omega_h_curve_validity_3d.hpp>
+//#include <Omega_h_for.hpp>
+//#include <Omega_h_curve_validity_3d.hpp>
 
 using namespace Omega_h;
 
@@ -256,9 +256,8 @@ void test_swap_kova(Library *lib) {
   opts.verbosity = EXTRA_STATS;
   opts.min_quality_desired = 0.9;
   mesh.add_tag<Real>(VERT, "metric", 1);
-  mesh.set_tag(
-      VERT, "metric", Reals(mesh.nverts(),
-        metric_eigenvalue_from_length(1)));
+  mesh.set_tag(VERT, "metric", Reals(mesh.nverts(), 1));
+        //metric_eigenvalue_from_length(1)));
   fprintf(stderr, "start swapping\n");
   for (LO adapt_itr = 0; adapt_itr < 3; ++adapt_itr) {
     fprintf(stderr, "itr %d\n", adapt_itr);
