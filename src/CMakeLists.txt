@@ -468,6 +468,8 @@ if(BUILD_TESTING)
 
   osh_add_exe(curve_coarsen_test)
   test_func(run_curve_coarsen_test 1 ./curve_coarsen_test)
+  osh_add_exe(curve_swap_test)
+  test_func(run_curve_swap_test 1 ./curve_swap_test)
   osh_add_exe(curve_adapt_test)
   test_func(run_curve_adapt_test 1 ./curve_adapt_test)
   osh_add_exe(optim_test)
