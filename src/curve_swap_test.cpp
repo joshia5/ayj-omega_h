@@ -250,21 +250,22 @@ void test_swap_kova(Library *lib) {
 
   auto opts = AdaptOpts(&mesh);
   opts.should_coarsen = false;
+  opts.should_coarsen_slivers = false;
   opts.should_refine = false;
   opts.should_filter_invalids = false;
   opts.verbosity = EXTRA_STATS;
+  opts.min_quality_desired = 0.9;
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(
       VERT, "metric", Reals(mesh.nverts(),
-        metric_eigenvalue_from_length(100)));
-  fprintf(stderr, "start coarsening\n");
+        metric_eigenvalue_from_length(1)));
+  fprintf(stderr, "start swapping\n");
   for (LO adapt_itr = 0; adapt_itr < 3; ++adapt_itr) {
     fprintf(stderr, "itr %d\n", adapt_itr);
-    swap_by_size(&mesh, opts);???
+    swap_edges(&mesh, opts);
   }
-  //while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 50));
-  fprintf(stderr, "finish coarsening\n");
-  writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/kovaCoarsen_aft.vtk", &mesh);
+  fprintf(stderr, "finish swapping\n");
+  writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/kovaSwap_aft.vtk", &mesh);
   writer.write();
   fprintf(stderr, "finished kova case\n");
   
