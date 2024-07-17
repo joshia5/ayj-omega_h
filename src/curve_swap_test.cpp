@@ -254,7 +254,7 @@ void test_swap_kova(Library *lib) {
   opts.should_refine = false;
   opts.should_filter_invalids = false;
   opts.verbosity = EXTRA_STATS;
-  opts.min_quality_desired = 0.9;
+  opts.min_quality_desired = 0.99;
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(), 1));
         //metric_eigenvalue_from_length(1)));
@@ -267,7 +267,7 @@ void test_swap_kova(Library *lib) {
   writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/kovaSwap_aft.vtk", &mesh);
   writer.write();
   fprintf(stderr, "finished kova case\n");
-  
+
   return;
 }
 
