@@ -84,4 +84,12 @@ bool swap_edges_3d(Mesh* mesh, AdaptOpts const& opts) {
   return true;
 }
 
+bool swap_edges_3d_crv(Mesh* mesh, AdaptOpts const& opts) {
+  if (!swap_part1(mesh, opts)) return false;
+  if (!swap3d_ghosted(mesh, opts)) return false;
+  mesh->set_parting(OMEGA_H_ELEM_BASED, false);
+  swap3d_element_based(mesh, opts);
+  return true;
+}
+
 }  // end namespace Omega_h
