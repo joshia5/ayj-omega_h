@@ -70,6 +70,69 @@ static void swap3d_element_based(Mesh* mesh, AdaptOpts const& opts) {
     transfer_swap(mesh, opts.xfer_opts, &new_mesh, ent_dim, keys2edges,
         keys2prods[ent_dim], prods2new_ents, same_ents2old_ents,
         same_ents2new_ents);
+
+    if (mesh->is_curved() > 0) {
+      if (ent_dim == EDGE) {
+        new_mesh.set_curved(1);
+        new_mesh.set_max_order(3);
+        new_mesh.add_tag<I8>
+          (1, "n_bezier_pts", 1, Bytes(new_mesh.nents(1), 2, "numBezierPts"));
+      }
+      
+      if (mesh->dim() == 2) {
+        if (ent_dim == EDGE) {
+          swap_curved_verts_and_edges<2>(mesh, &new_mesh, old_ents2new_ents,
+              prods2new_ents, keys2prods[ent_dim]);
+        }
+        if (ent_dim == FACE) {
+          swap_curved_faces<2>(mesh, &new_mesh, old_ents2new_ents,
+              prods2new_ents);
+        }
+      }
+
+      if (mesh->dim() == 3) {
+        if (ent_dim == EDGE) {
+          swap_curved_verts_and_edges<3>(mesh, &new_mesh, old_ents2new_ents,
+              prods2new_ents, keys2prods[ent_dim]);
+        }
+        if (ent_dim == FACE) {
+          swap_curved_faces<2>(mesh, &new_mesh, old_ents2new_ents,
+              prods2new_ents);
+        }
+        if (ent_dim == REGION) {
+          if (should_modify_mesh < 0) {
+            /*
+            auto edge_cand_codes = get_edge_codes(mesh);
+            auto edges_are_cands = each_neq_to(edge_cand_codes, I8(DONT_COLLAPSE));
+            auto cands2edges = collect_marked(edges_are_cands);
+            auto cand_edge_codes = read(unmap(cands2edges, edge_cand_codes, 1));
+            // this does not require ghosting as 
+            // ghosting called later in upper level coarsen for ind. set selection
+            auto cand_edge_invalidities = coarsen_invalidities_new_mesh
+              (mesh, cands2edges, cand_edge_codes, &new_mesh, 
+               old_verts2new_verts, verts_are_keys, keys2verts_onto,
+               prods2new_ents);
+            cand_edge_codes = filter_coarsen_invalids(
+                cand_edge_codes, cand_edge_invalidities, -1);
+            filter_coarsen_candidates(&cands2edges, &cand_edge_codes);
+            if (mesh->is_curved() > 0) {
+              put_edge_codes(mesh, cands2edges, cand_edge_codes);
+            }
+            */
+          }
+          else {
+            //validity of new curved ents
+            if (opts.check_crv_qual > 0) {
+              printf("checking validity after swap\n");
+              check_validity_all_tet(&new_mesh);
+              auto quals = calc_crvQuality_3d(&new_mesh);
+            }
+          }
+        }
+      }
+
+    }
+
     old_lows2new_lows = old_ents2new_ents;
   }
 
