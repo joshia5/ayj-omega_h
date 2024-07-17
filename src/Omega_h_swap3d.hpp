@@ -6,6 +6,8 @@
 
 namespace Omega_h {
 
+bool swap_edges_3d_crv(Mesh* mesh, AdaptOpts const& opts);
+
 void swap3d_qualities(Mesh* mesh, AdaptOpts const& opts, LOs cands2edges,
     Reals* cand_quals, Read<I8>* cand_configs);
 
