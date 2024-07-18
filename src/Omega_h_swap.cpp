@@ -42,6 +42,16 @@ Read<I8> filter_swap_improve(Mesh* mesh, LOs cands2edges, Reals cand_quals) {
   return gt_each(cand_quals, cand_old_quals);
 }
 
+bool swap_edges_crv(Mesh* mesh, AdaptOpts const& opts) {
+  OMEGA_H_TIME_FUNCTION;
+  bool ret = false;
+  if (mesh->dim() == 3)
+    ret = swap_edges_3d_crv(mesh, opts);
+  else if (mesh->dim() == 2)
+    Omega_h_fail("not yet implemented for 2d\n");
+  return ret;
+}
+
 bool swap_edges(Mesh* mesh, AdaptOpts const& opts) {
   if (mesh->is_curved() > 0) return swap_edges_crv(mesh, opts);
   OMEGA_H_TIME_FUNCTION;
@@ -50,16 +60,6 @@ bool swap_edges(Mesh* mesh, AdaptOpts const& opts) {
     ret = swap_edges_3d(mesh, opts);
   else if (mesh->dim() == 2)
     ret = swap_edges_2d(mesh, opts);
-  return ret;
-}
-
-bool swap_edges_crv(Mesh* mesh, AdaptOpts const& opts) {
-  OMEGA_H_TIME_FUNCTION;
-  bool ret = false;
-  if (mesh->dim() == 3)
-    ret = swap_edges_3d_crv(mesh, opts);
-  else if (mesh->dim() == 2)
-    OMEGA_H_FAIL("not yet implemented for 2d\n");
   return ret;
 }
 
