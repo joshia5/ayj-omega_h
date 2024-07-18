@@ -72,11 +72,14 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   auto const old_fv2v = mesh->ask_down(2, 0).ab2b;
   auto const old_v2vf = mesh->ask_up(0,2).a2ab;
   auto const old_vf2f = mesh->ask_up(0,2).ab2b;
-  auto const nkeys = keys2verts.size();
+  auto const nkeys = keys2prods.size();
   if (!mesh->has_tag(0, "bezier_pts")) {
     mesh->add_tag<Real>(0, "bezier_pts", dim, mesh->coords());
   }
   auto const old_vertCtrlPts = mesh->get_ctrlPts(0);
+  new_mesh->add_tag<Real>(0, "bezier_pts", dim);
+  new_mesh->set_tag_for_ctrlPts(0, old_vertCtrlPts);
+
   auto const old_edgeCtrlPts = mesh->get_ctrlPts(1);
   auto const old_faceCtrlPts = mesh->get_ctrlPts(2);
   auto const old_coords = mesh->coords();
@@ -90,21 +93,6 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   Write<Real> edge_ctrlPts(nnew_edge*n_edge_pts*dim, INT8_MAX);
   Write<I8> edge_crv2bdry_dim(nnew_edge, -1);
   Write<I8> edge_dualCone(nnew_edge, -1);
-  Write<Real> vert_ctrlPts(nnew_verts*1*dim, INT8_MAX);
-
-  //copy ctrl pts for verts
-  auto copy_sameCtrlPts = OMEGA_H_LAMBDA(LO i) {
-    if (old_verts2new_verts[i] != -1) {
-      LO new_vert = old_verts2new_verts[i];
-      for (I8 d = 0; d < dim; ++d) {
-        vert_ctrlPts[new_vert*dim + d] = old_vertCtrlPts[i*dim + d];
-      }
-    }
-  };
-  parallel_for(nold_verts, std::move(copy_sameCtrlPts),
-      "copy same vtx ctrlPts");
-  new_mesh->add_tag<Real>(0, "bezier_pts", dim);
-  new_mesh->set_tag_for_ctrlPts(0, Reals(vert_ctrlPts));
 
   //copy ctrl pts for edges
   auto copy_sameedgePts = OMEGA_H_LAMBDA(LO i) {
@@ -134,6 +122,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   parallel_for(prods2new.size(), std::move(prod_edge_points),
       "prod_edge_points");
 
+  /*
   auto const newedge_gdim = new_mesh->get_array<I8>(1, "class_dim");
   auto const newedge_gid = new_mesh->get_array<LO>(1, "class_id");
   auto const oldvert_gdim = mesh->get_array<I8>(0, "class_dim");
@@ -151,7 +140,6 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   auto const old_v2e = mesh->ask_up(0, 1);
   auto const old_v2ve = old_v2e.a2ab;
   auto const old_ve2e = old_v2e.ab2b;
-  auto vert_ctrlPts_r = Reals(vert_ctrlPts);
 
   auto new_verts2same_verts = invert_map_by_atomics(same_verts2new_verts,
 						    nnew_verts);
@@ -252,9 +240,9 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
       LO const new_edge_v1 = new_ev2v[new_edge*2 + 1];
       LO const new_edge_v0_old = same_verts2old_verts[ab2b[a2ab[new_edge_v0]]];
       LO const new_edge_v1_old = same_verts2old_verts[ab2b[a2ab[new_edge_v1]]];
-      auto const c0 = get_vector<dim>(vert_ctrlPts_r, new_edge_v0);
+      auto const c0 = get_vector<dim>(old_vertCtrlPts, new_edge_v0);
       auto const c0_coord = get_vector<dim>(old_coords, new_edge_v0_old);
-      auto const c3 = get_vector<dim>(vert_ctrlPts_r, new_edge_v1);
+      auto const c3 = get_vector<dim>(old_vertCtrlPts, new_edge_v1);
       auto const c3_coord = get_vector<dim>(old_coords, new_edge_v1_old);
       auto new_length = 
         (c3_coord[0] - c0_coord[0])*(c3_coord[0] - c0_coord[0]) + 
@@ -1344,6 +1332,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
     };
     parallel_for(nkeys, std::move(curve_dualCone_cav), "curve_dualCone_cav");
   }
+  */
 
   new_mesh->add_tag<Real>(1, "bezier_pts", n_edge_pts*dim, Reals(edge_ctrlPts));
   new_mesh->add_tag<I8>(1, "edge_crv2bdry_dim", 1, Read<I8>(edge_crv2bdry_dim));
@@ -1353,7 +1342,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
 }
 
 template <Int dim>
-void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
+void swap_curved_faces(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
     const LOs prods2new) {
   auto const new_fv2v = new_mesh->ask_down(2, 0).ab2b;
   auto const new_fe2e = new_mesh->get_adj(2, 1).ab2b;
@@ -1398,6 +1387,7 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   //  then take first 9 values and mult them with all ctrl pts of face
   //  that gives the interp pt
   //  face interp to ctrl pt
+  /*
   if (dim == 3) {
     Vector<3> face_xi;
     face_xi[0] = 1.0/3.0;
@@ -1445,18 +1435,13 @@ void coarsen_curved_faces(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
     };
     parallel_for(nnew_edges, std::move(face_blends), "face_blends");
   }
+  */
 
   new_mesh->add_tag<Real>(2, "bezier_pts", dim);
   new_mesh->set_tag_for_ctrlPts(2, Reals(face_ctrlPts));
 
   return;
 }
-
-void check_validity_all_tet(Mesh *new_mesh);
-void correct_curved_edges(Mesh *new_mesh);
-void check_validity_new_curved_edges(Mesh *new_mesh);
-void check_validity_edges_from_complex_cav(Mesh *new_mesh, LOs const
-  keys2verts);
 
 #define OMEGA_H_INST(T)                                                       
 OMEGA_H_INST(I8)
