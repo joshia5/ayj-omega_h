@@ -609,6 +609,7 @@ set(Omega_h_HEADERS
   Omega_h_curve_validity_3d.hpp
   Omega_h_coarsen_invalidities.hpp
   Omega_h_curve_coarsen.hpp
+  Omega_h_curve_swap.hpp
   Omega_h_adapt.hpp
   Omega_h_adj.hpp
   Omega_h_affine.hpp
