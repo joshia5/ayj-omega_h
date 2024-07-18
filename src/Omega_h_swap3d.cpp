@@ -82,6 +82,7 @@ static void swap3d_element_based(Mesh* mesh, AdaptOpts const& opts) {
           (1, "n_bezier_pts", 1, Bytes(new_mesh.nents(1), 2, "numBezierPts"));
       }
       
+      /*
       if (mesh->dim() == 2) {
         if (ent_dim == EDGE) {
           swap_curved_verts_and_edges<2>(mesh, &new_mesh, old_ents2new_ents,
@@ -92,15 +93,18 @@ static void swap3d_element_based(Mesh* mesh, AdaptOpts const& opts) {
               prods2new_ents);
         }
       }
+      */
 
       if (mesh->dim() == 3) {
         if (ent_dim == EDGE) {
           swap_curved_verts_and_edges<3>(mesh, &new_mesh, old_ents2new_ents,
               prods2new_ents, keys2prods[ent_dim]);
+          fprintf(stderr, "curve edges after swap\n");
         }
         if (ent_dim == FACE) {
           swap_curved_faces<2>(mesh, &new_mesh, old_ents2new_ents,
               prods2new_ents);
+          fprintf(stderr, "curve faces after swap\n");
         }
         if (ent_dim == REGION) {
           I8 should_modify_mesh = -1;//TODO set this var properly, look at coarsen.cpp
