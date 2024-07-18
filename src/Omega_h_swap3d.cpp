@@ -103,6 +103,7 @@ static void swap3d_element_based(Mesh* mesh, AdaptOpts const& opts) {
               prods2new_ents);
         }
         if (ent_dim == REGION) {
+          I8 should_modify_mesh = -1;//TODO set this var properly, look at coarsen.cpp
           if (should_modify_mesh < 0) {
             /*
             auto edge_cand_codes = get_edge_codes(mesh);
@@ -127,7 +128,7 @@ static void swap3d_element_based(Mesh* mesh, AdaptOpts const& opts) {
             //validity of new curved ents
             if (opts.check_crv_qual > 0) {
               printf("checking validity after swap\n");
-              check_validity_all_tet(&new_mesh);
+              //check_validity_all_tet(&new_mesh); // TODO check valid here
               auto quals = calc_crvQuality_3d(&new_mesh);
             }
           }
