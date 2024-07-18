@@ -1387,7 +1387,6 @@ void swap_curved_faces(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   //  then take first 9 values and mult them with all ctrl pts of face
   //  that gives the interp pt
   //  face interp to ctrl pt
-  /*
   if (dim == 3) {
     Vector<3> face_xi;
     face_xi[0] = 1.0/3.0;
@@ -1418,7 +1417,8 @@ void swap_curved_faces(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
 
         }
       }
-      if (edge_crv2bdry_dim[e] == 2) {
+      if ((dim == 3) && (newedge_gdim[e] == 2)) {
+      //if (edge_crv2bdry_dim[e] == 2) 
         for (LO et = e2et[e]; et < e2et[e + 1]; ++et) {
           LO const tri = et2t[et];
           if ((newedge_gid[e] == newface_gid[tri]) && (newface_gdim[tri == 2])) {
@@ -1435,7 +1435,6 @@ void swap_curved_faces(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
     };
     parallel_for(nnew_edges, std::move(face_blends), "face_blends");
   }
-  */
 
   new_mesh->add_tag<Real>(2, "bezier_pts", dim);
   new_mesh->set_tag_for_ctrlPts(2, Reals(face_ctrlPts));
