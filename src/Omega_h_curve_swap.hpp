@@ -177,8 +177,9 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   }
   auto nedge_shared_gface = Read<LO>(nedge_shared_gface_w);
   auto cav_edge_len = Read<Real>(cav_edge_len_w);
+  */
 
-  // for every edge, calc and store 2 unit tangent vectors from either vertex
+  // for every old edge, calc and store 2 the unit tangent vectors from each vertex
   Write<Real> tangents(nold_edges*2*dim, 0.0);
   auto calc_tangents = OMEGA_H_LAMBDA (LO e) {
     LO const e_v0 = old_ev2v[e*2 + 0];
@@ -1068,8 +1069,8 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
             edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_upper[d];
           }
         }
-      }
-    }
+      } // dim=3 conditional
+    } // prods loop
   };
   parallel_for(nkeys, curve_bdry_edges);
 
@@ -1093,6 +1094,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   //printf("total nkeys %d, nkeys in interior %d nkeys with dual cone cavities %d, %d in interior\n", keys2prods.size()-1, 
     //  count_interior_cavities[0], count_dualCone_cavities[0], count_interior_dualCone_cavities[0]);
 
+  /*
   if (dim == 3) {
     auto v2t = mesh->ask_up(0, 3);
     auto v2vt = v2t.a2ab;
