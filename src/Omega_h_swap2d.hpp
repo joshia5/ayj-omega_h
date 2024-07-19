@@ -9,6 +9,8 @@ namespace Omega_h {
 
 class Mesh;
 
+bool swap_edges_2d_crv(Mesh* mesh, AdaptOpts const& opts);
+
 Reals swap2d_qualities(Mesh* mesh, AdaptOpts const& opts, LOs cands2edges);
 
 void swap2d_topology(Mesh* mesh, LOs keys2edges,

@@ -48,7 +48,7 @@ bool swap_edges_crv(Mesh* mesh, AdaptOpts const& opts) {
   if (mesh->dim() == 3)
     ret = swap_edges_3d_crv(mesh, opts);
   else if (mesh->dim() == 2)
-    Omega_h_fail("not yet implemented for 2d\n");
+    ret = swap_edges_2d_crv(mesh, opts);
   return ret;
 }
 
