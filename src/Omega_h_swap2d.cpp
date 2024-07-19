@@ -64,6 +64,26 @@ static void swap2d_element_based(Mesh* mesh, AdaptOpts const& opts) {
     transfer_swap(mesh, opts.xfer_opts, &new_mesh, ent_dim, keys2edges,
         keys2prods[ent_dim], prods2new_ents, same_ents2old_ents,
         same_ents2new_ents);
+
+    if (mesh->is_curved() > 0) {
+      if (ent_dim == EDGE) {
+        new_mesh.set_curved(1);
+        new_mesh.set_max_order(3);
+        new_mesh.add_tag<I8>
+          (1, "n_bezier_pts", 1, Bytes(new_mesh.nents(1), 2, "numBezierPts"));
+      }
+
+      if (ent_dim == EDGE) {
+        swap_curved_verts_and_edges<2>(mesh, &new_mesh, old_ents2new_ents,
+            prods2new_ents, keys2prods[ent_dim]);
+      }
+      if (ent_dim == FACE) {
+        swap_curved_faces<2>(mesh, &new_mesh, old_ents2new_ents,
+            prods2new_ents);
+      }
+
+    }
+
     old_lows2new_lows = old_ents2new_ents;
   }
 
@@ -71,6 +91,14 @@ static void swap2d_element_based(Mesh* mesh, AdaptOpts const& opts) {
 }
 
 bool swap_edges_2d(Mesh* mesh, AdaptOpts const& opts) {
+  if (!swap_part1(mesh, opts)) return false;
+  if (!swap2d_ghosted(mesh, opts)) return false;
+  mesh->set_parting(OMEGA_H_ELEM_BASED);
+  swap2d_element_based(mesh, opts);
+  return true;
+}
+
+bool swap_edges_2d_crv(Mesh* mesh, AdaptOpts const& opts) {
   if (!swap_part1(mesh, opts)) return false;
   if (!swap2d_ghosted(mesh, opts)) return false;
   mesh->set_parting(OMEGA_H_ELEM_BASED);
