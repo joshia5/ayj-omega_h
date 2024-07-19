@@ -122,7 +122,6 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   parallel_for(prods2new.size(), std::move(prod_edge_points),
       "prod_edge_points");
 
-  /*
   auto const newedge_gdim = new_mesh->get_array<I8>(1, "class_dim");
   auto const newedge_gid = new_mesh->get_array<LO>(1, "class_id");
   auto const oldvert_gdim = mesh->get_array<I8>(0, "class_dim");
@@ -141,13 +140,10 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   auto const old_v2ve = old_v2e.a2ab;
   auto const old_ve2e = old_v2e.ab2b;
 
-  auto new_verts2same_verts = invert_map_by_atomics(same_verts2new_verts,
-						    nnew_verts);
-  auto const a2ab = new_verts2same_verts.a2ab;
-  auto const ab2b = new_verts2same_verts.ab2b;
   Write<LO> nedge_shared_gface_w(nnew_edge, 0);
   Write<Real> cav_edge_len_w(nnew_edge, 0.0);
 
+  /*
   if (dim == 3) {
     auto calc_gface_prods = OMEGA_H_LAMBDA(LO i) {
       for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
