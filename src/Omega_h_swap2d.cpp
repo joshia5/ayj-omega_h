@@ -9,6 +9,11 @@
 #include "Omega_h_swap.hpp"
 #include "Omega_h_transfer.hpp"
 
+#include "Omega_h_curve_swap.hpp"
+//#include "Omega_h_coarsen_invalidities.hpp"
+#include "Omega_h_curve_validity_3d.hpp"
+
+
 namespace Omega_h {
 
 static bool swap2d_ghosted(Mesh* mesh, AdaptOpts const& opts) {

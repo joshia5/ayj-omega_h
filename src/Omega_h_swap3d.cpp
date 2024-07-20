@@ -8,6 +8,7 @@
 #include "Omega_h_modify.hpp"
 #include "Omega_h_swap.hpp"
 #include "Omega_h_transfer.hpp"
+
 #include "Omega_h_curve_swap.hpp"
 //#include "Omega_h_coarsen_invalidities.hpp"
 #include "Omega_h_curve_validity_3d.hpp"
