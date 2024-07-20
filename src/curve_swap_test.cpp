@@ -10,53 +10,6 @@
 using namespace Omega_h;
 
 /*
-void test_disc_collapse(Library *lib) {
-  auto comm = lib->world();
-
-  //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
-    //                    "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
-  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
-                            "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", comm);
-                            
-  calc_quad_ctrlPts_from_interpPts(&mesh);
-  elevate_curve_order_2to3(&mesh);
-  mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
-  auto wireframe_mesh = Mesh(lib);
-  wireframe_mesh.set_comm(comm);
-  build_cubic_wireframe_2d(&mesh, &wireframe_mesh, 4);
-  std::string vtuPath =
-    //"/users/joshia5/Meshes/curved/disc2_cubic_wireframe.vtu";
-    "/users/joshia5/Meshes/curved/disc100_cubic_wireframe.vtu";
-  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
-  auto cubic_curveVtk_mesh = Mesh(lib);
-  cubic_curveVtk_mesh.set_comm(comm);
-  build_cubic_curveVtk_2d(&mesh, &cubic_curveVtk_mesh, 4);
-  //vtuPath = "/users/joshia5/Meshes/curved/disc2_cubic_curveVtk.vtu";
-  vtuPath = "/users/joshia5/Meshes/curved/disc100_cubic_curveVtk.vtu";
-  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
-
-  auto coords = mesh.coords();
-  auto ev2v = mesh.get_adj(1, 0).ab2b;
-  auto fe2e = mesh.get_adj(2, 1).ab2b;
-  auto v_class_dim = mesh.get_array<I8>(0, "class_dim");
-  auto v_class_id = mesh.get_array<LO>(0, "class_id");
-  auto e_class_dim = mesh.get_array<I8>(1, "class_dim");
-  auto e_class_id = mesh.get_array<LO>(1, "class_id");
-  printf("coords %d, ev2v %d, fe2e %d\n", coords.size(), ev2v.size(), fe2e.size());
-  auto opts = AdaptOpts(&mesh);
-  mesh.add_tag<Real>(VERT, "metric", 1);
-  mesh.set_tag(
-      VERT, "metric", Reals(mesh.nverts(),
-        metric_eigenvalue_from_length(0.5)));
-  while ((coarsen_by_size(&mesh, opts)) && (mesh.nelems() > 10));
-  mesh.ask_qualities();
-  coords = mesh.coords();
-  ev2v = mesh.get_adj(1, 0).ab2b;
-  fe2e = mesh.get_adj(2, 1).ab2b;
-  return;
-}
-
-
 void test_collapse_boxCircle(Library *lib) {
   auto comm = lib->world();
 
@@ -271,16 +224,57 @@ void test_swap_kova(Library *lib) {
   return;
 }
 
+void test_disc_swap(Library *lib) {
+  auto comm = lib->world();
+
+  //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
+    //                    "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
+  auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
+                            "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", comm);
+ 
+  /*
+  calc_quad_ctrlPts_from_interpPts(&mesh);
+  elevate_curve_order_2to3(&mesh);
+  mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
+  auto wireframe_mesh = Mesh(lib);
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_2d(&mesh, &wireframe_mesh, 4);
+  std::string vtuPath =
+    //"/users/joshia5/Meshes/curved/disc2_cubic_wireframe.vtu";
+    "/users/joshia5/Meshes/curved/disc100_cubic_wireframe.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  auto cubic_curveVtk_mesh = Mesh(lib);
+  cubic_curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_2d(&mesh, &cubic_curveVtk_mesh, 4);
+  //vtuPath = "/users/joshia5/Meshes/curved/disc2_cubic_curveVtk.vtu";
+  vtuPath = "/users/joshia5/Meshes/curved/disc100_cubic_curveVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
+  */
+
+  auto opts = AdaptOpts(&mesh);
+  opts.should_coarsen = false;
+  opts.should_coarsen_slivers = false;
+  opts.should_refine = false;
+  opts.should_filter_invalids = false;
+  opts.verbosity = EXTRA_STATS;
+  opts.min_quality_desired = 0.99;
+  mesh.add_tag<Real>(VERT, "metric", 1);
+  mesh.set_tag(VERT, "metric", Reals(mesh.nverts(), 1));
+  for (LO adapt_itr = 0; adapt_itr < 3; ++adapt_itr) {
+    fprintf(stderr, "itr %d\n", adapt_itr);
+    swap_edges(&mesh, opts);
+  }
+  fprintf(stderr, "finish swapping\n");
+  //mesh.ask_qualities();
+
+  return;
+}
+
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
-  test_swap_kova(&lib);
-  //test_disc_collapse(&lib);
-  //test_disc_validity(&lib);
-  //test_collapse_boxCircle(&lib);
-  //test_collapse_cubicSlab(&lib);
-  //test_antenna(&lib);
-  //test_sphere(&lib);
-
+  //test_swap_kova(&lib); //3d
+  test_disc_swap(&lib); //2d
+  
   return 0;
 }
