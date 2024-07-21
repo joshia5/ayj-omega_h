@@ -211,7 +211,7 @@ void coarsen_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2ne
       length1 += tangents[e*2*dim + d] * tangents[e*2*dim + d];
       length2 += tangents[e*2*dim + dim + d] * tangents[e*2*dim + dim + d];
     }
-    for (LO d = 0; d < 3; ++d) {
+    for (LO d = 0; d < dim; ++d) {
       tangents[e*2*dim + d] = tangents[e*2*dim + d]/std::sqrt(length1);
       tangents[e*2*dim + dim + d] = tangents[e*2*dim + dim + d]/std::sqrt(length2);
     }
