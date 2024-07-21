@@ -44,6 +44,7 @@ Read<I8> filter_swap_improve(Mesh* mesh, LOs cands2edges, Reals cand_quals) {
 
 bool swap_edges_crv(Mesh* mesh, AdaptOpts const& opts) {
   OMEGA_H_TIME_FUNCTION;
+  fprintf(stderr,"in swap edges crv\n");
   bool ret = false;
   if (mesh->dim() == 3)
     ret = swap_edges_3d_crv(mesh, opts);

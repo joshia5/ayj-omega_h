@@ -73,6 +73,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   auto const old_v2vf = mesh->ask_up(0,2).a2ab;
   auto const old_vf2f = mesh->ask_up(0,2).ab2b;
   auto const nkeys = keys2prods.size();
+  fprintf(stderr, "nedges %d, nkeys %d\n", nold_edges, nkeys);
   if (!mesh->has_tag(0, "bezier_pts")) {
     mesh->add_tag<Real>(0, "bezier_pts", dim, mesh->coords());
   }
@@ -108,6 +109,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   };
   parallel_for(nold_edges, std::move(copy_sameedgePts),
       "copy_same_edgectrlPts");
+  fprintf(stderr, "copied same edges : line 112\n");
   auto prod_edge_points = OMEGA_H_LAMBDA(LO i) {
     LO e = prods2new[i];
     auto const v0 = new_ev2v[e*2 + 0];
@@ -180,6 +182,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   */
 
   // for every old edge, calc and store 2 the unit tangent vectors from each vertex
+  fprintf(stderr, "line 184\n");
   Write<Real> tangents(nold_edges*2*dim, 0.0);
   auto calc_tangents = OMEGA_H_LAMBDA (LO e) {
     LO const e_v0 = old_ev2v[e*2 + 0];
@@ -194,14 +197,17 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
       length1 += tangents[e*2*dim + d] * tangents[e*2*dim + d];
       length2 += tangents[e*2*dim + dim + d] * tangents[e*2*dim + dim + d];
     }
-    for (LO d = 0; d < 3; ++d) {
+    for (LO d = 0; d < dim; ++d) {
       tangents[e*2*dim + d] = tangents[e*2*dim + d]/std::sqrt(length1);
       tangents[e*2*dim + dim + d] = tangents[e*2*dim + dim + d]/std::sqrt(length2);
     }
   };
   parallel_for(nold_edges, std::move(calc_tangents));
+  fprintf(stderr, "line 206\n");
 
   Write<LO> count_bdry_cavities(1, 0);
+  /* commenting this out for now because we have interior cavities as
+   * Omega_h_swap.cpp line 22
   auto count_bdry_cavs = OMEGA_H_LAMBDA(LO i) {
     LO const v_key = keys2verts[i];
     LO const v_onto = keys2verts_onto[i];
@@ -219,8 +225,6 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
       atomic_increment(&count_bdry_cavities[0]);
   };
   parallel_for(nkeys, std::move(count_bdry_cavs));
-
-  Write<I8> edge_cands(nnew_edge, -1);
 
   auto curve_bdry_edges = OMEGA_H_LAMBDA(LO i) {
     LO const v_key = keys2verts[i];
@@ -1073,10 +1077,12 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
     } // prods loop
   };
   parallel_for(nkeys, curve_bdry_edges);
+  */
 
   Write<LO> count_dualCone_cavities(1, 0);
   Write<LO> count_interior_dualCone_cavities(1, 0);
   Write<LO> count_interior_cavities(1, 0);
+  /* commenting for now cause all cavities are interior
   auto count_dualCone_cav = OMEGA_H_LAMBDA(LO i) {
     LO const v_onto = keys2verts_onto[i];
     LO const v_key = keys2verts[i];
@@ -1091,6 +1097,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
     }
   };
   parallel_for(nkeys, std::move(count_dualCone_cav));
+  */
   //printf("total nkeys %d, nkeys in interior %d nkeys with dual cone cavities %d, %d in interior\n", keys2prods.size()-1, 
     //  count_interior_cavities[0], count_dualCone_cavities[0], count_interior_dualCone_cavities[0]);
 
@@ -1354,6 +1361,7 @@ void swap_curved_faces(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   auto const edgeCtrlPts = new_mesh->get_ctrlPts(1);
   Write<Real> face_ctrlPts(nnew_faces*1*dim, INT8_MAX);
 
+  fprintf(stderr, "nfaces %d\n", nold_faces);
   //copy ctrl pts for faces
   auto copy_samefacePts = OMEGA_H_LAMBDA(LO i) {
     if (old2new[i] != -1) {
