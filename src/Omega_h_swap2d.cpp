@@ -16,12 +16,36 @@
 
 namespace Omega_h {
 
+static bool swap2d_ghosted_crv(Mesh* mesh, AdaptOpts const& opts) {
+  auto comm = mesh->comm();
+  auto edges_are_cands = mesh->get_array<I8>(EDGE, "candidate");
+  mesh->remove_tag(EDGE, "candidate");
+  auto cands2edges = collect_marked(edges_are_cands);
+  auto cand_quals = swap2d_qualities(mesh, opts, cands2edges);
+  fprintf(stderr, "swap: atttempting to improve qual.\n");
+  auto keep_cands = Read<I8>(cand_quals.size(), 1); // TODO this is temp fix where im allowing all swaps to happen even if they dont improve qual
+  //auto keep_cands = filter_swap_improve(mesh, cands2edges, cand_quals);
+  filter_swap(keep_cands, &cands2edges, &cand_quals);
+  /* cavity quality checks */
+  if (comm->reduce_and(cands2edges.size() == 0)) return false;
+  edges_are_cands = mark_image(cands2edges, mesh->nedges());
+  auto edge_quals = map_onto(cand_quals, cands2edges, mesh->nedges(), -1.0, 1);
+  auto edges_are_keys = find_indset(mesh, EDGE, edge_quals, edges_are_cands);
+  Graph edges2cav_elems;
+  edges2cav_elems = mesh->ask_up(EDGE, mesh->dim());
+  mesh->add_tag(EDGE, "key", 1, edges_are_keys);
+  auto keys2edges = collect_marked(edges_are_keys);
+  set_owners_by_indset(mesh, EDGE, keys2edges, edges2cav_elems);
+  return true;
+}
+
 static bool swap2d_ghosted(Mesh* mesh, AdaptOpts const& opts) {
   auto comm = mesh->comm();
   auto edges_are_cands = mesh->get_array<I8>(EDGE, "candidate");
   mesh->remove_tag(EDGE, "candidate");
   auto cands2edges = collect_marked(edges_are_cands);
   auto cand_quals = swap2d_qualities(mesh, opts, cands2edges);
+  fprintf(stderr, "swap: atttempting to improve qual.\n");
   auto keep_cands = filter_swap_improve(mesh, cands2edges, cand_quals);
   filter_swap(keep_cands, &cands2edges, &cand_quals);
   /* cavity quality checks */
@@ -105,7 +129,7 @@ bool swap_edges_2d(Mesh* mesh, AdaptOpts const& opts) {
 
 bool swap_edges_2d_crv(Mesh* mesh, AdaptOpts const& opts) {
   if (!swap_part1(mesh, opts)) return false;
-  if (!swap2d_ghosted(mesh, opts)) return false;
+  if (!swap2d_ghosted_crv(mesh, opts)) return false;
   mesh->set_parting(OMEGA_H_ELEM_BASED);
   swap2d_element_based(mesh, opts);
   return true;
