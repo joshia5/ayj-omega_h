@@ -227,29 +227,24 @@ void test_swap_kova(Library *lib) {
 void test_disc_swap(Library *lib) {
   auto comm = lib->world();
 
-  //auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_2tri_order2.sms",
-    //                    "/users/joshia5/Models/curved/disk_semi_geomsim.smd", comm);
   auto mesh = meshsim::read("/users/joshia5/Meshes/curved/disk_semi_100_order2.sms",
                             "/users/joshia5/Models/curved/disk_semi_geomsim_100.smd", comm);
  
-  /*
   calc_quad_ctrlPts_from_interpPts(&mesh);
   elevate_curve_order_2to3(&mesh);
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
+
   auto wireframe_mesh = Mesh(lib);
   wireframe_mesh.set_comm(comm);
   build_cubic_wireframe_2d(&mesh, &wireframe_mesh, 4);
   std::string vtuPath =
-    //"/users/joshia5/Meshes/curved/disc2_cubic_wireframe.vtu";
-    "/users/joshia5/Meshes/curved/disc100_cubic_wireframe.vtu";
+    "/lore/joshia5/Meshes/curved/disc100_cubic_wireframe.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
   auto cubic_curveVtk_mesh = Mesh(lib);
   cubic_curveVtk_mesh.set_comm(comm);
   build_cubic_curveVtk_2d(&mesh, &cubic_curveVtk_mesh, 4);
-  //vtuPath = "/users/joshia5/Meshes/curved/disc2_cubic_curveVtk.vtu";
-  vtuPath = "/users/joshia5/Meshes/curved/disc100_cubic_curveVtk.vtu";
+  vtuPath = "/lore/joshia5/Meshes/curved/disc100_cubic_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
-  */
 
   auto opts = AdaptOpts(&mesh);
   opts.should_coarsen = false;
@@ -258,12 +253,27 @@ void test_disc_swap(Library *lib) {
   opts.should_filter_invalids = false;
   opts.verbosity = EXTRA_STATS;
   opts.min_quality_desired = 0.99;
+  opts.min_quality_allowed = 0.98;
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(), 1));
-  for (LO adapt_itr = 0; adapt_itr < 3; ++adapt_itr) {
+  for (LO adapt_itr = 0; adapt_itr < 1; ++adapt_itr) {
     fprintf(stderr, "itr %d\n", adapt_itr);
     swap_edges(&mesh, opts);
   }
+
+  wireframe_mesh = Mesh(lib);
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_2d(&mesh, &wireframe_mesh, 4);
+  vtuPath =
+    "/lore/joshia5/Meshes/curved/disc100-swap_wire.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  cubic_curveVtk_mesh = Mesh(lib);
+  cubic_curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_2d(&mesh, &cubic_curveVtk_mesh, 4);
+  vtuPath = "/lore/joshia5/Meshes/curved/disc100-swap.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
+
+
   fprintf(stderr, "finish swapping\n");
   //mesh.ask_qualities();
 
