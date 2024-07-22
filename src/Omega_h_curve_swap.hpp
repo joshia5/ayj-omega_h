@@ -72,7 +72,8 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   auto const old_fv2v = mesh->ask_down(2, 0).ab2b;
   auto const old_v2vf = mesh->ask_up(0,2).a2ab;
   auto const old_vf2f = mesh->ask_up(0,2).ab2b;
-  auto const nkeys = keys2prods.size();
+  auto const nkeys = keys2prods.size()-1; 
+  // keys2prods is the offset array from the CSR storing keys2new (prods2new is the values array)
   fprintf(stderr, "nedges %d, nkeys %d\n", nold_edges, nkeys);
   if (!mesh->has_tag(0, "bezier_pts")) {
     mesh->add_tag<Real>(0, "bezier_pts", dim, mesh->coords());
@@ -1080,30 +1081,267 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   */
 
   Write<LO> count_dualCone_cavities(1, 0);
-  Write<LO> count_interior_dualCone_cavities(1, 0);
-  Write<LO> count_interior_cavities(1, 0);
-  /* commenting for now cause all cavities are interior
+  //Write<LO> count_interior_dualCone_cavities(1, 0); // dont need
+  // all keys are in interior
+  Write<LO> count_interior_cavities(1, nkeys);
   auto count_dualCone_cav = OMEGA_H_LAMBDA(LO i) {
-    LO const v_onto = keys2verts_onto[i];
-    LO const v_key = keys2verts[i];
-    if ((oldvert_gdim[v_key] == dim) && (oldvert_gdim[v_onto] == dim)) {
+    /*
+    if () {
       atomic_increment(&count_interior_cavities[0]);
     }
+    */
     if ((keys2prods[i+1] - keys2prods[i]) == 1) {
       atomic_increment(&count_dualCone_cavities[0]);
-      if ((oldvert_gdim[v_key] == dim) && (oldvert_gdim[v_onto] == dim)) {
+      /*
+      if () {
         atomic_increment(&count_interior_dualCone_cavities[0]);
       }
+      */
     }
   };
   parallel_for(nkeys, std::move(count_dualCone_cav));
-  */
-  //printf("total nkeys %d, nkeys in interior %d nkeys with dual cone cavities %d, %d in interior\n", keys2prods.size()-1, 
-    //  count_interior_cavities[0], count_dualCone_cavities[0], count_interior_dualCone_cavities[0]);
+  printf("nkeys with dual cone cavities %d\n", count_dualCone_cavities[0]);
+
+  if (dim == 2) {
+    auto v2t = mesh->ask_up(0, dim);
+    // here 't' is for triangle 
+    LO const t2e_degree = element_degree(OMEGA_H_SIMPLEX, dim, 1); // 3 edges that bound a tri
+    auto v2vt = v2t.a2ab;
+    auto vt2t = v2t.ab2b;
+    auto v2e = mesh->ask_up(0, 1);
+    auto v2ve = v2e.a2ab;
+    auto ve2e = v2e.ab2b;
+    auto te2e = mesh->ask_down(dim, 1).ab2b;
+ 
+    auto curve_dualCone_cav = OMEGA_H_LAMBDA (LO i) {
+      LO const nprods = 1; //=keys2prods[i+1] - keys2prods[i];
+      for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
+        LO const new_edge = prods2new[prod];
+        //interior (always for 2d swap)
+        //if (checks interior swap) {
+          LO const new_edge_v0 = new_ev2v[new_edge*2 + 0];
+          LO const new_edge_v1 = new_ev2v[new_edge*2 + 1];
+          LO const new_edge_v0_old = new_edge_v0;
+          LO const new_edge_v1_old = new_edge_v1;
+          //LO const v_onto = new_edge_v0_old; // just assigning this for now
+          auto new_edge_v0_c = get_vector<dim>(new_coords, new_edge_v0);
+          auto new_edge_v1_c = get_vector<dim>(new_coords, new_edge_v1);
+          Real const new_length = std::sqrt(
+            std::pow((new_edge_v1_c[0] - new_edge_v0_c[0]), 2) + 
+            std::pow((new_edge_v1_c[1] - new_edge_v0_c[1]), 2) + 
+            std::pow((new_edge_v1_c[2] - new_edge_v0_c[2]), 2)); 
+
+          //find lower vtx & check first vertex is vlower or vupper
+          LO v_onto_is_first = -1;
+          LO v_lower = -1;
+          if (v_onto == new_edge_v0_old) {
+            v_onto_is_first = 1;
+            v_lower = new_edge_v1_old;
+          }
+          else {
+            OMEGA_H_CHECK (v_onto == new_edge_v1_old);
+            v_lower = new_edge_v0_old;
+          }
+          LO e_lower = -1;
+          //e_lower is lower half of collapsing edge i.e. edge connecting vkey
+          //to vlower;
+          for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
+            LO const e = old_ve2e[ve];
+            if ((v_lower == old_ev2v[e*2+0]) || 
+                (v_lower == old_ev2v[e*2+1])) e_lower = e;
+          }
+          Vector<dim> t_e_lower;//tangent unit vec from v_lower
+          if (v_lower == old_ev2v[e_lower*2+0]) {
+            for (LO d=0; d<dim; ++d) {
+              t_e_lower[d] = tangents[e_lower*2*dim + d];
+            }
+          }
+          else {
+            OMEGA_H_CHECK (v_lower == old_ev2v[e_lower*2+1]);
+            for (LO d=0; d<dim; ++d) {
+              t_e_lower[d] = tangents[e_lower*2*dim + dim + d];
+            }
+          }
+
+          Few<LO, 128> lower_edges; // 128 is considered max number of edges defining cones
+          Few<I8, 128> from_first_vtx_low;
+          LO count_lower_edge = 0;
+          for (LO vt = v2vt[v_key]; vt < v2vt[v_key + 1]; ++vt) {
+            //adj tets of vkey
+            LO adj_t = vt2t[vt];
+            for (LO te = 0; te < t2e_degree; ++te) {
+              LO adj_t_e = te2e[adj_t*t2e_degree + te];
+              //adj edges of tet
+              LO adj_t_e_v0 = old_ev2v[adj_t_e*2 + 0];
+              LO adj_t_e_v1 = old_ev2v[adj_t_e*2 + 1];
+              //adj verts of edge
+              if ((adj_t_e_v0 == v_lower) && (adj_t_e_v1 != v_key)) {
+                OMEGA_H_CHECK(count_lower_edge < 128);
+                LO is_duplicate = -1;
+                for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
+                  if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
+                }
+                if (is_duplicate == -1) {
+                  lower_edges[count_lower_edge] = adj_t_e;
+                  from_first_vtx_low[count_lower_edge] = 1;
+                  ++count_lower_edge;
+                }
+              }
+              if ((adj_t_e_v1 == v_lower) && (adj_t_e_v0 != v_key)) {
+                LO is_duplicate = -1;
+                for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
+                  if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
+                }
+                if (is_duplicate == -1) {
+                  lower_edges[count_lower_edge] = adj_t_e;
+                  from_first_vtx_low[count_lower_edge] = -1;
+                  ++count_lower_edge;
+                }
+              }
+            }
+          }
+
+          Few<Real, dim> t_avg_l;
+          for (LO d = 0; d < dim; ++d) t_avg_l[d] = 0.0; 
+          for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
+            if (from_first_vtx_low[lower_e] == 1) {
+              for (LO d = 0; d < dim; ++d) {
+                t_avg_l[d] += tangents[lower_edges[lower_e]*2*dim + d];
+              }
+            }
+            if (from_first_vtx_low[lower_e] == -1) {
+              for (LO d = 0; d < dim; ++d) {
+                t_avg_l[d] += tangents[lower_edges[lower_e]*2*dim + dim + d];
+              }
+            }
+          }
+          for (LO d = 0; d < dim; ++d) t_avg_l[d]=t_avg_l[d]/count_lower_edge;
+          Real length_t_l = 0.0;
+          for (LO d = 0; d < dim; ++d) length_t_l += t_avg_l[d]*t_avg_l[d]; 
+          for (LO d = 0; d < dim; ++d) 
+            t_avg_l[d] = t_avg_l[d]/std::sqrt(length_t_l);
+          Vector<dim> c_lower;
+          for (LO d = 0; d < dim; ++d) {
+            c_lower[d] = old_coords[v_lower*dim + d] + 
+              t_avg_l[d]*new_length/3.0;
+          }
+
+          // only using this makes very curved and skinny tets so
+          // average t_avg_l and t_e_lower
+          if (nprods > 1) { // wont need this for 2d
+            for (LO d = 0; d < dim; ++d) t_avg_l[d] = (t_avg_l[d]+t_e_lower[d])*0.5;
+            length_t_l = 0.0;
+            for (LO d = 0; d < dim; ++d) length_t_l += t_avg_l[d]*t_avg_l[d]; 
+            for (LO d = 0; d < dim; ++d)
+              t_avg_l[d] = t_avg_l[d]/std::sqrt(length_t_l);
+
+            for (LO d = 0; d < dim; ++d) {
+              //c_lower[d] = (old_coords[v_lower*dim+d] + old_coords[v_key*dim+d])*0.5;
+              c_lower[d] = old_coords[v_lower*dim + d] + 
+              //t_avg_l[d]*new_length/3.0;
+              (old_coords[v_onto*dim + d] - old_coords[v_lower*dim + d])/3.0;
+            }
+          }
+
+          Vector<dim> c_upper;
+          //init c_upper for inner edges as mid pt of clower and vonto making
+          //that 2/3 of the bezier curve straight sided
+          for (LO d = 0; d < dim; ++d) {
+            //c_upper[d] = (old_coords[v_onto*dim+d] + old_coords[v_key*dim+d])*0.5;
+            c_upper[d] = old_coords[v_onto*dim + d] +
+              //(c_lower[d] - old_coords[v_onto*dim + d])*0.5;
+              (old_coords[v_lower*dim + d] - old_coords[v_onto*dim + d])/3.0;
+          }
+
+          //###dual cone
+          if (nprods == 1) {
+            edge_dualCone[new_edge] = 1;
+            //count upper edges
+            Few<LO, 128> upper_edges;
+            Few<LO, 128> vtx_ring;
+            Few<I8, 128> from_first_vtx;
+            LO count_upper_edge = 0;
+            for (LO vt = v2vt[v_key]; vt < v2vt[v_key + 1]; ++vt) {
+              //adj tris of vkey
+              LO adj_t = vt2t[vt];
+              for (LO te = 0; te < t2e_degree; ++te) {
+                LO adj_t_e = te2e[adj_t*t2e_degree + te];
+                //adj edges of tri
+                LO adj_t_e_v0 = old_ev2v[adj_t_e*2 + 0];
+                LO adj_t_e_v1 = old_ev2v[adj_t_e*2 + 1];
+                //adj verts of edge
+                if ((adj_t_e_v0 == v_onto) && (adj_t_e_v1 != v_key)) {
+                  OMEGA_H_CHECK(count_upper_edge < 128);
+                  LO is_duplicate = -1;
+                  for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+                    if (adj_t_e == upper_edges[upper_e]) is_duplicate = 1;
+                  }
+                  if (is_duplicate == -1) {
+                    upper_edges[count_upper_edge] = adj_t_e;
+                    from_first_vtx[count_upper_edge] = 1;
+                    vtx_ring[count_upper_edge] = adj_t_e_v1;
+                    ++count_upper_edge;
+                  }
+                }
+                if ((adj_t_e_v1 == v_onto) && (adj_t_e_v0 != v_key)) {
+                  LO is_duplicate = -1;
+                  for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+                    if (adj_t_e == upper_edges[upper_e]) is_duplicate = 1;
+                  }
+                  if (is_duplicate == -1) {
+                    upper_edges[count_upper_edge] = adj_t_e;
+                    from_first_vtx[count_upper_edge] = -1;
+                    vtx_ring[count_upper_edge] = adj_t_e_v0;
+                    ++count_upper_edge;
+                  }
+                }
+              }
+            }
+
+            Few<Real, dim> t_avg;
+            for (LO d = 0; d < dim; ++d) t_avg[d] = 0.0; 
+            for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
+              if (from_first_vtx[upper_e] == 1) {
+                for (LO d = 0; d < dim; ++d) {
+                  t_avg[d] += tangents[upper_edges[upper_e]*2*dim + d];
+                }
+              }
+              if (from_first_vtx[upper_e] == -1) {
+                for (LO d = 0; d < dim; ++d) {
+                  t_avg[d] += tangents[upper_edges[upper_e]*2*dim + dim + d];
+                }
+              }
+            }
+            for (LO d = 0; d < dim; ++d) t_avg[d] = t_avg[d]/count_upper_edge;
+            Real length_t = 0.0;
+            for (LO d = 0; d < dim; ++d) length_t += t_avg[d]*t_avg[d]; 
+            for (LO d = 0; d < dim; ++d) t_avg[d] = t_avg[d]/std::sqrt(length_t);
+
+            for (LO d = 0; d < dim; ++d) {
+              c_upper[d] = old_coords[v_onto*dim + d] + t_avg[d]*new_length/3.0;
+            }
+          }
+          for (LO d = 0; d < dim; ++d) {
+            if (v_onto_is_first == 1) {
+              edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_upper[d];
+              edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_lower[d];
+            }
+            else {
+              OMEGA_H_CHECK (v_onto_is_first == -1);
+              edge_ctrlPts[new_edge*n_edge_pts*dim + d] = c_lower[d];
+              edge_ctrlPts[new_edge*n_edge_pts*dim + dim + d] = c_upper[d];
+            }
+          }
+        //}//interior if
+      }
+    };
+    parallel_for(nkeys, std::move(curve_dualCone_cav), "curve_dualCone_cav");
+  }
 
   /*
   if (dim == 3) {
     auto v2t = mesh->ask_up(0, 3);
+    // here 't' is for tetrahedron 
     auto v2vt = v2t.a2ab;
     auto vt2t = v2t.ab2b;
     auto v2e = mesh->ask_up(0, 1);
