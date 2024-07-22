@@ -1117,6 +1117,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
     auto ve2e = v2e.ab2b;
     auto te2e = mesh->ask_down(dim, 1).ab2b;
  
+    fprintf(stderr, "ok 1120\n");
     auto curve_dualCone_cav = OMEGA_H_LAMBDA (LO i) {
       LO const nprods = 1; //=keys2prods[i+1] - keys2prods[i];
       LO const e_key = keys2edges[i];
@@ -1131,10 +1132,17 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
           LO const v_onto = new_edge_v0_old; // just pick one and assign this for now
           auto new_edge_v0_c = get_vector<dim>(new_coords, new_edge_v0);
           auto new_edge_v1_c = get_vector<dim>(new_coords, new_edge_v1);
+          /* this is for 3d
           Real const new_length = std::sqrt(
             std::pow((new_edge_v1_c[0] - new_edge_v0_c[0]), 2) + 
             std::pow((new_edge_v1_c[1] - new_edge_v0_c[1]), 2) + 
-            std::pow((new_edge_v1_c[2] - new_edge_v0_c[2]), 2)); 
+            std::pow((new_edge_v1_c[2] - new_edge_v0_c[2]), 2));          
+          */
+          Real new_length = 0.;
+          for (LO d = 0; d < dim; ++d) {
+            new_length += std::pow((new_edge_v1_c[d] - new_edge_v0_c[d]), 2);
+          } 
+          new_length = std::sqrt(new_length);
 
           //find lower vtx & check first vertex is vlower or vupper
           LO v_onto_is_first = -1;
@@ -1170,6 +1178,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
           }
           */
 
+          fprintf(stderr, "ok 1173\n");
           Few<LO, 128> lower_edges; // 128 is considered max number of edges defining cones
           Few<I8, 128> from_first_vtx_low;
           LO count_lower_edge = 0;
@@ -1209,6 +1218,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
               }
             }
           }
+          fprintf(stderr, "ok 1213\n");
 
           Few<Real, dim> t_avg_l;
           for (LO d = 0; d < dim; ++d) t_avg_l[d] = 0.0; 
@@ -1264,6 +1274,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
               (old_coords[v_lower*dim + d] - old_coords[v_onto*dim + d])/3.0;
           }
 
+          fprintf(stderr, "ok 1268\n");
           //###dual cone
           if (nprods == 1) {
             edge_dualCone[new_edge] = 1;
