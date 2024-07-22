@@ -104,7 +104,7 @@ static void swap2d_element_based(Mesh* mesh, AdaptOpts const& opts) {
 
       if (ent_dim == EDGE) {
         swap_curved_verts_and_edges<2>(mesh, &new_mesh, old_ents2new_ents,
-            prods2new_ents, keys2prods[ent_dim]);
+            prods2new_ents, keys2prods[ent_dim], keys2edges);
       }
       if (ent_dim == FACE) {
         swap_curved_faces<2>(mesh, &new_mesh, old_ents2new_ents,

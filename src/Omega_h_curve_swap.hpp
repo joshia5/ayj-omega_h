@@ -62,7 +62,7 @@ static Few<Real, 10> const BlendedTriangleGetValues(
 
 template <Int dim>
 void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
-    const LOs prods2new, const LOs keys2prods) {
+    const LOs prods2new, const LOs keys2prods, const LOs keys2edges) {
   auto const nold_verts = mesh->nverts();
   auto const nold_edges = mesh->nedges();
   auto const old_ev2v = mesh->get_adj(1, 0).ab2b;
@@ -73,6 +73,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   auto const old_v2vf = mesh->ask_up(0,2).a2ab;
   auto const old_vf2f = mesh->ask_up(0,2).ab2b;
   auto const nkeys = keys2prods.size()-1; 
+  OMEGA_H_CHECK(nkeys == keys2edges.size());
   // keys2prods is the offset array from the CSR storing keys2new (prods2new is the values array)
   fprintf(stderr, "nedges %d, nkeys %d\n", nold_edges, nkeys);
   if (!mesh->has_tag(0, "bezier_pts")) {
