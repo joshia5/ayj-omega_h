@@ -263,13 +263,13 @@ void test_disc_swap(Library *lib) {
 
   wireframe_mesh = Mesh(lib);
   wireframe_mesh.set_comm(comm);
-  build_cubic_wireframe_2d(&mesh, &wireframe_mesh, 4);
+  build_cubic_wireframe_2d(&mesh, &wireframe_mesh, 10);
   vtuPath =
     "/lore/joshia5/Meshes/curved/disc100-swap_wire.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
   cubic_curveVtk_mesh = Mesh(lib);
   cubic_curveVtk_mesh.set_comm(comm);
-  build_cubic_curveVtk_2d(&mesh, &cubic_curveVtk_mesh, 4);
+  build_cubic_curveVtk_2d(&mesh, &cubic_curveVtk_mesh, 10);
   vtuPath = "/lore/joshia5/Meshes/curved/disc100-swap.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
 
