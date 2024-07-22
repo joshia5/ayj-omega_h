@@ -44,3 +44,4 @@ meshes/plate_6elem_bField.osh/
 meshes/wedge_matchZ_12elem_sync_2.osh/
 meshes/wedge_matchZ_6elem.sms
 meshes/wedge_matchZ_6elem_sync_2.osh/
+*.swp
