@@ -1105,10 +1105,13 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
 
   if (dim == 2) {
     auto v2t = mesh->ask_up(0, dim);
+    auto e2t = mesh->ask_up(1, dim);
     // here 't' is for triangle 
     LO const t2e_degree = element_degree(OMEGA_H_SIMPLEX, dim, 1); // 3 edges that bound a tri
     auto v2vt = v2t.a2ab;
     auto vt2t = v2t.ab2b;
+    auto e2et = e2t.a2ab;
+    auto et2t = e2t.ab2b;
     auto v2e = mesh->ask_up(0, 1);
     auto v2ve = v2e.a2ab;
     auto ve2e = v2e.ab2b;
@@ -1116,6 +1119,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
  
     auto curve_dualCone_cav = OMEGA_H_LAMBDA (LO i) {
       LO const nprods = 1; //=keys2prods[i+1] - keys2prods[i];
+      LO const e_key = keys2edges[i];
       for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
         LO const new_edge = prods2new[prod];
         //interior (always for 2d swap)
@@ -1124,7 +1128,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
           LO const new_edge_v1 = new_ev2v[new_edge*2 + 1];
           LO const new_edge_v0_old = new_edge_v0;
           LO const new_edge_v1_old = new_edge_v1;
-          LO const v_onto = new_edge_v0_old; // just assigning this for now
+          LO const v_onto = new_edge_v0_old; // just pick one and assign this for now
           auto new_edge_v0_c = get_vector<dim>(new_coords, new_edge_v0);
           auto new_edge_v1_c = get_vector<dim>(new_coords, new_edge_v1);
           Real const new_length = std::sqrt(
@@ -1146,6 +1150,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
           LO e_lower = -1;
           //e_lower is lower half of collapsing edge i.e. edge connecting vkey
           //to vlower;
+          /* not needing for 2d so commenting out
           for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
             LO const e = old_ve2e[ve];
             if ((v_lower == old_ev2v[e*2+0]) || 
@@ -1163,20 +1168,23 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
               t_e_lower[d] = tangents[e_lower*2*dim + dim + d];
             }
           }
+          */
 
           Few<LO, 128> lower_edges; // 128 is considered max number of edges defining cones
           Few<I8, 128> from_first_vtx_low;
           LO count_lower_edge = 0;
-          for (LO vt = v2vt[v_key]; vt < v2vt[v_key + 1]; ++vt) {
-            //adj tets of vkey
-            LO adj_t = vt2t[vt];
+          for (LO et = e2et[e_key]; et < e2et[e_key + 1]; ++et) {
+            //adj tris of ekey
+            LO adj_t = et2t[et];
             for (LO te = 0; te < t2e_degree; ++te) {
               LO adj_t_e = te2e[adj_t*t2e_degree + te];
-              //adj edges of tet
+              //adj edges of tri
+
               LO adj_t_e_v0 = old_ev2v[adj_t_e*2 + 0];
               LO adj_t_e_v1 = old_ev2v[adj_t_e*2 + 1];
               //adj verts of edge
-              if ((adj_t_e_v0 == v_lower) && (adj_t_e_v1 != v_key)) {
+
+              if ((adj_t_e_v0 == v_lower) && (adj_t_e != e_key)) {
                 OMEGA_H_CHECK(count_lower_edge < 128);
                 LO is_duplicate = -1;
                 for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
@@ -1188,7 +1196,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
                   ++count_lower_edge;
                 }
               }
-              if ((adj_t_e_v1 == v_lower) && (adj_t_e_v0 != v_key)) {
+              if ((adj_t_e_v1 == v_lower) && (adj_t_e != e_key)) {
                 LO is_duplicate = -1;
                 for (LO lower_e = 0; lower_e < count_lower_edge; ++lower_e) {
                   if (adj_t_e == lower_edges[lower_e]) is_duplicate = 1;
@@ -1229,6 +1237,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
 
           // only using this makes very curved and skinny tets so
           // average t_avg_l and t_e_lower
+          /*
           if (nprods > 1) { // wont need this for 2d
             for (LO d = 0; d < dim; ++d) t_avg_l[d] = (t_avg_l[d]+t_e_lower[d])*0.5;
             length_t_l = 0.0;
@@ -1243,6 +1252,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
               (old_coords[v_onto*dim + d] - old_coords[v_lower*dim + d])/3.0;
             }
           }
+          */
 
           Vector<dim> c_upper;
           //init c_upper for inner edges as mid pt of clower and vonto making
@@ -1262,16 +1272,18 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
             Few<LO, 128> vtx_ring;
             Few<I8, 128> from_first_vtx;
             LO count_upper_edge = 0;
-            for (LO vt = v2vt[v_key]; vt < v2vt[v_key + 1]; ++vt) {
-              //adj tris of vkey
-              LO adj_t = vt2t[vt];
+            for (LO et = e2et[e_key]; et < e2et[e_key + 1]; ++et) {
+              //adj tris of ekey
+              LO adj_t = et2t[et];
               for (LO te = 0; te < t2e_degree; ++te) {
                 LO adj_t_e = te2e[adj_t*t2e_degree + te];
                 //adj edges of tri
+
                 LO adj_t_e_v0 = old_ev2v[adj_t_e*2 + 0];
                 LO adj_t_e_v1 = old_ev2v[adj_t_e*2 + 1];
                 //adj verts of edge
-                if ((adj_t_e_v0 == v_onto) && (adj_t_e_v1 != v_key)) {
+
+                if ((adj_t_e_v0 == v_onto) && (adj_t_e != e_key)) {
                   OMEGA_H_CHECK(count_upper_edge < 128);
                   LO is_duplicate = -1;
                   for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
@@ -1284,7 +1296,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
                     ++count_upper_edge;
                   }
                 }
-                if ((adj_t_e_v1 == v_onto) && (adj_t_e_v0 != v_key)) {
+                if ((adj_t_e_v1 == v_onto) && (adj_t_e != e_key)) {
                   LO is_duplicate = -1;
                   for (LO upper_e = 0; upper_e < count_upper_edge; ++upper_e) {
                     if (adj_t_e == upper_edges[upper_e]) is_duplicate = 1;
