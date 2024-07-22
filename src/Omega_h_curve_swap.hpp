@@ -1123,7 +1123,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
           LO const new_edge_v1 = new_ev2v[new_edge*2 + 1];
           LO const new_edge_v0_old = new_edge_v0;
           LO const new_edge_v1_old = new_edge_v1;
-          //LO const v_onto = new_edge_v0_old; // just assigning this for now
+          LO const v_onto = new_edge_v0_old; // just assigning this for now
           auto new_edge_v0_c = get_vector<dim>(new_coords, new_edge_v0);
           auto new_edge_v1_c = get_vector<dim>(new_coords, new_edge_v1);
           Real const new_length = std::sqrt(
