@@ -85,7 +85,7 @@ static void swap3d_element_based(Mesh* mesh, AdaptOpts const& opts) {
       
       if (ent_dim == EDGE) {
         swap_curved_verts_and_edges<3>(mesh, &new_mesh, old_ents2new_ents,
-            prods2new_ents, keys2prods[ent_dim]);
+            prods2new_ents, keys2prods[ent_dim], keys2edges);
         fprintf(stderr, "curve edges after swap\n");
       }
       if (ent_dim == FACE) {
