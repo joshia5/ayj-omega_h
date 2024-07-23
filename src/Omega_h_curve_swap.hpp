@@ -451,7 +451,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
     };
     parallel_for(nkeys, std::move(curve_dualCone_cav), "curve_dualCone_cav");
   }
-  
+ 
   if (dim == 3) {
     auto v2t = mesh->ask_up(0, dim);
     auto e2t = mesh->ask_up(1, dim);
@@ -468,8 +468,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
  
     //fprintf(stderr, "ok 1120\n");
     auto curve_dualCone_cav = OMEGA_H_LAMBDA (LO i) {
-      LO const nprods = 1; //=keys2prods[i+1] - keys2prods[i];
-      OMEGA_H_CHECK(nprods == (keys2prods[i+1] - keys2prods[i]));
+      LO const nprods = keys2prods[i+1] - keys2prods[i]; // can be >1
       LO const e_key = keys2edges[i];
       for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
         LO const new_edge = prods2new[prod];
