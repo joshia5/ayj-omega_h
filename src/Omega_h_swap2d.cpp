@@ -13,7 +13,6 @@
 //#include "Omega_h_coarsen_invalidities.hpp"
 #include "Omega_h_curve_validity_3d.hpp"
 
-
 namespace Omega_h {
 
 static bool swap2d_ghosted_crv(Mesh* mesh, AdaptOpts const& opts) {
@@ -23,7 +22,7 @@ static bool swap2d_ghosted_crv(Mesh* mesh, AdaptOpts const& opts) {
   auto cands2edges = collect_marked(edges_are_cands);
   auto cand_quals = swap2d_qualities(mesh, opts, cands2edges);
   fprintf(stderr, "swap: atttempting to improve qual.\n");
-  auto keep_cands = Read<I8>(cand_quals.size(), 1); // TODO this is temp fix where im allowing all swaps to happen even if they dont improve qual
+  auto keep_cands = Read<I8>(cand_quals.size(), I8(1)); // TODO this is temp fix where im allowing all swaps to happen even if they dont improve qual
   //auto keep_cands = filter_swap_improve(mesh, cands2edges, cand_quals);
   filter_swap(keep_cands, &cands2edges, &cand_quals);
   /* cavity quality checks */
