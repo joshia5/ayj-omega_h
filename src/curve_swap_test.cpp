@@ -217,10 +217,17 @@ void test_swap_kova(Library *lib) {
     fprintf(stderr, "itr %d\n", adapt_itr);
     swap_edges(&mesh, opts);
   }
-  fprintf(stderr, "finish swapping\n");
-  writer = vtk::FullWriter("/lore/joshia5/Meshes/curved/kovaSwap_aft.vtk", &mesh);
-  writer.write();
-  fprintf(stderr, "finished kova case\n");
+  fprintf(stderr, "finish swapping kova\n");
+  wireframe_mesh = Mesh(comm->library());
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_3d(&mesh, &wireframe_mesh, 5);
+  vtuPath = "/lore/joshia5/Meshes/curved/Kova-swap_wire.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  curveVtk_mesh = Mesh(comm->library());
+  curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_3d(&mesh, &curveVtk_mesh, 5);
+  vtuPath = "/lore/joshia5/Meshes/curved/Kova-swap.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &curveVtk_mesh, 2);
 
   return;
 }
