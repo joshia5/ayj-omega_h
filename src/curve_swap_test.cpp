@@ -208,11 +208,12 @@ void test_swap_kova(Library *lib) {
   opts.should_filter_invalids = false;
   opts.verbosity = EXTRA_STATS;
   opts.min_quality_desired = 0.99;
+  opts.min_quality_allowed = 0.98;
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(), 1));
         //metric_eigenvalue_from_length(1)));
   fprintf(stderr, "start swapping\n");
-  for (LO adapt_itr = 0; adapt_itr < 3; ++adapt_itr) {
+  for (LO adapt_itr = 0; adapt_itr < 1; ++adapt_itr) {
     fprintf(stderr, "itr %d\n", adapt_itr);
     swap_edges(&mesh, opts);
   }
@@ -273,8 +274,7 @@ void test_disc_swap(Library *lib) {
   vtuPath = "/lore/joshia5/Meshes/curved/disc100-swap.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
 
-
-  fprintf(stderr, "finish swapping\n");
+  fprintf(stderr, "finish swapping disc-2d\n");
   //mesh.ask_qualities();
 
   return;
@@ -283,8 +283,8 @@ void test_disc_swap(Library *lib) {
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
-  //test_swap_kova(&lib); //3d
   test_disc_swap(&lib); //2d
+  test_swap_kova(&lib); //3d
   
   return 0;
 }
