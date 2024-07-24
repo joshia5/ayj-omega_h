@@ -5,7 +5,7 @@
 #include <Omega_h_file.hpp>
 #include <Omega_h_beziers.hpp>
 //#include <Omega_h_for.hpp>
-//#include <Omega_h_curve_validity_3d.hpp>
+#include <Omega_h_curve_coarsen.hpp>
 
 using namespace Omega_h;
 
@@ -218,6 +218,8 @@ void test_swap_kova(Library *lib) {
     swap_edges(&mesh, opts);
   }
   fprintf(stderr, "finish swapping kova\n");
+  check_validity_all_tet(&mesh);
+
   wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
   build_cubic_wireframe_3d(&mesh, &wireframe_mesh, 5);
