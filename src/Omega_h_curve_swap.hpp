@@ -209,7 +209,8 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
  
     //fprintf(stderr, "ok 1120\n");
     auto curve_dualCone_cav = OMEGA_H_LAMBDA (LO i) {
-      LO const nprods = 1; //=keys2prods[i+1] - keys2prods[i];
+      LO const nprods = keys2prods[i+1] - keys2prods[i];
+      OMEGA_H_CHECK(nprods == 1);
       LO const e_key = keys2edges[i];
       for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
         LO const new_edge = prods2new[prod];
@@ -222,12 +223,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
           LO const v_onto = new_edge_v0_old; // just pick one and assign this for now
           auto new_edge_v0_c = get_vector<dim>(new_coords, new_edge_v0);
           auto new_edge_v1_c = get_vector<dim>(new_coords, new_edge_v1);
-          /* this is for 3d
-          Real const new_length = std::sqrt(
-            std::pow((new_edge_v1_c[0] - new_edge_v0_c[0]), 2) + 
-            std::pow((new_edge_v1_c[1] - new_edge_v0_c[1]), 2) + 
-            std::pow((new_edge_v1_c[2] - new_edge_v0_c[2]), 2));          
-          */
+
           Real new_length = 0.;
           for (LO d = 0; d < dim; ++d) {
             new_length += std::pow((new_edge_v1_c[d] - new_edge_v0_c[d]), 2);
@@ -248,25 +244,8 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
           LO e_lower = -1;
           //e_lower is lower half of collapsing edge i.e. edge connecting vkey
           //to vlower;
-          /* not needing for 2d so commenting out
-          for (LO ve = old_v2ve[v_key]; ve < old_v2ve[v_key + 1]; ++ve) {
-            LO const e = old_ve2e[ve];
-            if ((v_lower == old_ev2v[e*2+0]) || 
-                (v_lower == old_ev2v[e*2+1])) e_lower = e;
-          }
-          Vector<dim> t_e_lower;//tangent unit vec from v_lower
-          if (v_lower == old_ev2v[e_lower*2+0]) {
-            for (LO d=0; d<dim; ++d) {
-              t_e_lower[d] = tangents[e_lower*2*dim + d];
-            }
-          }
-          else {
-            OMEGA_H_CHECK (v_lower == old_ev2v[e_lower*2+1]);
-            for (LO d=0; d<dim; ++d) {
-              t_e_lower[d] = tangents[e_lower*2*dim + dim + d];
-            }
-          }
-          */
+          /* not needing for 2d so commenting out routine to fine v_lower and
+           * t_e_lower */
 
           //fprintf(stderr, "ok 1173\n");
           Few<LO, 128> lower_edges; // 128 is considered max number of edges defining cones
@@ -337,22 +316,6 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
 
           // only using this makes very curved and skinny tets so
           // average t_avg_l and t_e_lower
-          /*
-          if (nprods > 1) { // wont need this for 2d
-            for (LO d = 0; d < dim; ++d) t_avg_l[d] = (t_avg_l[d]+t_e_lower[d])*0.5;
-            length_t_l = 0.0;
-            for (LO d = 0; d < dim; ++d) length_t_l += t_avg_l[d]*t_avg_l[d]; 
-            for (LO d = 0; d < dim; ++d)
-              t_avg_l[d] = t_avg_l[d]/std::sqrt(length_t_l);
-
-            for (LO d = 0; d < dim; ++d) {
-              //c_lower[d] = (old_coords[v_lower*dim+d] + old_coords[v_key*dim+d])*0.5;
-              c_lower[d] = old_coords[v_lower*dim + d] + 
-              //t_avg_l[d]*new_length/3.0;
-              (old_coords[v_onto*dim + d] - old_coords[v_lower*dim + d])/3.0;
-            }
-          }
-          */
 
           Vector<dim> c_upper;
           //init c_upper for inner edges as mid pt of clower and vonto making
@@ -472,7 +435,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
       LO const e_key = keys2edges[i];
       for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
         LO const new_edge = prods2new[prod];
-        //interior (always for 2d swap)
+        //interior (only allowing interior swaps right now)
         //if (checks interior swap) {
           LO const new_edge_v0 = new_ev2v[new_edge*2 + 0];
           LO const new_edge_v1 = new_ev2v[new_edge*2 + 1];
@@ -481,12 +444,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
           LO const v_onto = new_edge_v0_old; // just pick one and assign this for now
           auto new_edge_v0_c = get_vector<dim>(new_coords, new_edge_v0);
           auto new_edge_v1_c = get_vector<dim>(new_coords, new_edge_v1);
-          /* this is for 3d
-          Real const new_length = std::sqrt(
-            std::pow((new_edge_v1_c[0] - new_edge_v0_c[0]), 2) + 
-            std::pow((new_edge_v1_c[1] - new_edge_v0_c[1]), 2) + 
-            std::pow((new_edge_v1_c[2] - new_edge_v0_c[2]), 2));          
-          */
+          
           Real new_length = 0.;
           for (LO d = 0; d < dim; ++d) {
             new_length += std::pow((new_edge_v1_c[d] - new_edge_v0_c[d]), 2);
@@ -1898,9 +1856,10 @@ void swap_curved_faces(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
 
   auto face_centroids = OMEGA_H_LAMBDA(LO i) {
     LO const tri = prods2new[i];
-    LO const v0 = new_fv2v[tri*3 + 0];
-    LO const v1 = new_fv2v[tri*3 + 1];
-    LO const v2 = new_fv2v[tri*3 + 2];
+    LO const tri2v_degree = element_degree(OMEGA_H_SIMPLEX, FACE, 1);
+    LO const v0 = new_fv2v[tri*tri2v_degree + 0];
+    LO const v1 = new_fv2v[tri*tri2v_degree + 1];
+    LO const v2 = new_fv2v[tri*tri2v_degree + 2];
     for (LO j = 0; j < dim; ++j) {
       face_ctrlPts[tri*dim + j] = (new_coords[v0*dim + j] +
          new_coords[v1*dim + j] + new_coords[v2*dim + j])/3.0;
@@ -1964,8 +1923,8 @@ void swap_curved_faces(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
     parallel_for(nnew_edges, std::move(face_blends), "face_blends");
   }
 
-  new_mesh->add_tag<Real>(2, "bezier_pts", dim);
-  new_mesh->set_tag_for_ctrlPts(2, Reals(face_ctrlPts));
+  new_mesh->add_tag<Real>(FACE, "bezier_pts", dim);
+  new_mesh->set_tag_for_ctrlPts(FACE, Reals(face_ctrlPts));
 
   return;
 }
