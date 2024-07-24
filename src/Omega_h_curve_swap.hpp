@@ -671,11 +671,14 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   }
 
   /*
+   * commenting this out for now because we have interior cavities as
+   * per Omega_h_swap.cpp line 22
   Write<LO> count_bdry_cavities(1, 0);
   if (dim == 3) {
     auto calc_gface_prods = OMEGA_H_LAMBDA(LO i) {
       for (LO prod = keys2prods[i]; prod < keys2prods[i+1]; ++prod) {
         LO const new_edge = prods2new[prod];
+        // new edge on model face
         if (newedge_gdim[new_edge] == 2) {
           nedge_shared_gface_w[new_edge] += 1;
           for (LO prod2 = keys2prods[i]; prod2 < keys2prods[i+1]; ++prod2) {
@@ -705,10 +708,7 @@ void swap_curved_verts_and_edges(Mesh *mesh, Mesh *new_mesh, const LOs old2new,
   }
   auto nedge_shared_gface = Read<LO>(nedge_shared_gface_w);
   auto cav_edge_len = Read<Real>(cav_edge_len_w);
-  */
 
-  /* commenting this out for now because we have interior cavities as
-   * per Omega_h_swap.cpp line 22
   auto count_bdry_cavs = OMEGA_H_LAMBDA(LO i) {
     LO const v_key = keys2verts[i];
     LO const v_onto = keys2verts_onto[i];
