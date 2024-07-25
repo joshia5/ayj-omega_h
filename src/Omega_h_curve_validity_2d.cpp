@@ -7,7 +7,7 @@
 
 namespace Omega_h {
 
-LOs checkValidity(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
+LOs checkValidity_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
   auto fv2v = mesh->ask_down(2, 0).ab2b;
   auto fe2e = mesh->get_adj(2, 1).ab2b;
   auto ev2v = mesh->get_adj(1, 0).ab2b;

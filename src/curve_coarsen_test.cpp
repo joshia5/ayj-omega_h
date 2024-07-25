@@ -39,7 +39,7 @@ void test_tri_validity(Library *lib) {
   build_cubic_curveVtk_2d(&mesh, &cubic_curveVtk_mesh, 4);
   vtuPath = "/users/joshia5/Meshes/curved/1tri_cubic_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
-  auto valid_tris = checkValidity(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
+  auto valid_tris = checkValidity_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
   return;
 }
 
@@ -71,7 +71,7 @@ void test_disc_validity(Library *lib) {
   //vtuPath = "/users/joshia5/Meshes/curved/disc100_cubic_curveVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
 
-  auto valid_tris = checkValidity(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
+  auto valid_tris = checkValidity_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
   return;
 }
 
