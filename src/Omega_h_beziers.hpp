@@ -1772,6 +1772,8 @@ void create_curved_faces_3d(Mesh *mesh, Mesh *new_mesh, LOs old2new, LOs prods2n
 
 LOs checkValidity_2d(Mesh *new_mesh, LOs new_tris, Int const mesh_dim);
 
+Reals askQuality_2d(Mesh *new_mesh, LOs new_tris, Int const mesh_dim);
+
 OMEGA_H_INLINE LO computeTriNodeIndex (LO P, LO i, LO j) {
   LO k = P-i-j;
   if (i == P) return 0;
