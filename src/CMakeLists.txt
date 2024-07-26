@@ -5,7 +5,7 @@ set(Omega_h_SOURCES
   Omega_h_amr.cpp
   Omega_h_amr_topology.cpp
   Omega_h_beziers.cpp
-  Omega_h_curve_validity.cpp
+  Omega_h_curve_validity_2d.cpp
   Omega_h_curve_validity_3d.cpp
   Omega_h_curve_quality_3d.cpp
   Omega_h_curve_refine_2d.cpp
