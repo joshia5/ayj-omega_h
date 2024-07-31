@@ -1790,7 +1790,8 @@ OMEGA_H_INLINE LO getTriNodeIndex (LO P, LO i, LO j) {
 }
 
 template <Int mesh_dim>
-OMEGA_H_INLINE Real getTriPartialJacobianDet(Few<Real, 10*mesh_dim> nodes,
+OMEGA_H_INLINE Real getTriPartialJacobianDet(Few<Real, 200*mesh_dim> nodes,
+//OMEGA_H_INLINE Real getTriPartialJacobianDet(Few<Real, 10*mesh_dim> nodes,
   LO P, LO i1, LO j1, LO i2, LO j2) {
   LO p00 = getTriNodeIndex(P,i1+1,j1);
   LO p01 = getTriNodeIndex(P,i1,j1+1);
@@ -1803,7 +1804,8 @@ OMEGA_H_INLINE Real getTriPartialJacobianDet(Few<Real, 10*mesh_dim> nodes,
 }
 
 template <Int mesh_dim>
-OMEGA_H_INLINE Real Nijk(Few<Real, 10*mesh_dim> nodes, LO d, LO I, LO J) {
+OMEGA_H_INLINE Real Nijk(Few<Real, 200*mesh_dim> nodes, LO d, LO I, LO J) {
+//OMEGA_H_INLINE Real Nijk(Few<Real, 10*mesh_dim> nodes, LO d, LO I, LO J) {
   Real sum = 0.;
   LO CD = trinomial(2*(d-1), I, J);
   for (LO j1 = 0; j1 <= J; ++j1) {
@@ -1819,7 +1821,8 @@ OMEGA_H_INLINE Real Nijk(Few<Real, 10*mesh_dim> nodes, LO d, LO I, LO J) {
 
 template <Int n, Int mesh_dim>
 OMEGA_H_INLINE Few<Real, n> getTriJacDetNodes(
-    LO P, Few<Real, 10*mesh_dim> const& elemNodes) {
+    LO P, Few<Real, 200*mesh_dim> const& elemNodes) {
+    //LO P, Few<Real, 10*mesh_dim> const& elemNodes) {
   Few<Real, n> nodes;//n=15
   for (LO I = 0; I <= 2*(P-1); ++I) {
     for (LO J = 0; J <= 2*(P-1)-I; ++J) {

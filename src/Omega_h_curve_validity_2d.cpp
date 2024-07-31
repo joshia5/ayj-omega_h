@@ -1,5 +1,6 @@
 #include "Omega_h_mesh.hpp"
 #include "Omega_h_beziers.hpp"
+#include "Omega_h_element.hpp"
 #include "Omega_h_vector.hpp"
 #include "Omega_h_for.hpp"
 #include "Omega_h_few.hpp"
@@ -41,7 +42,9 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
   //LO const ntri_pts = 10;
 
   auto check_validity = OMEGA_H_LAMBDA (LO n) {
-    Few<Real, 20> tri_pts;//ntri_pts*dim=20
+    Few<Real, 400> tri_pts;//ntri_pts(=200 max)*dim(=2)=400
+    //Few<Real, 20> tri_pts;//ntri_pts*dim=20
+
     auto tri = new_tris[n];
 
     //query the tri's down verts's ctrl pts and store
@@ -202,7 +205,8 @@ Reals askQuality_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
   //LO const ntri_pts = 10;
 
   auto check_validity = OMEGA_H_LAMBDA (LO n) {
-    Few<Real, 20> tri_pts;//ntri_pts*dim=20
+    Few<Real, 400> tri_pts;//ntri_pts*dim=20
+    //Few<Real, 20> tri_pts;//ntri_pts*dim=20
     auto tri = new_tris[n];
 
     //query the tri's down verts's ctrl pts and store

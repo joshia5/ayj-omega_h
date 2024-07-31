@@ -324,6 +324,7 @@ void test_annulus_swap(Library *lib) {
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(), 1));
   auto valid_tris_bef = checkValidity_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
+  auto quals = askQuality_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
   for (LO adapt_itr = 0; adapt_itr < 1; ++adapt_itr) {
     fprintf(stderr, "itr %d\n", adapt_itr);
     swap_edges(&mesh, opts);
@@ -340,7 +341,7 @@ void test_annulus_swap(Library *lib) {
   build_cubic_curveVtk_2d(&mesh, &cubic_curveVtk_mesh, 4);
   vtuPath = "/lore/joshia5/Meshes/curved/annulus-8-swap.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
-  auto quals = askQuality_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
+  quals = askQuality_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
 
   fprintf(stderr, "finish swapping annulus-2d\n");
   vtk::FullWriter writer;

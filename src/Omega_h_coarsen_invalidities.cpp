@@ -205,7 +205,8 @@ LOs coarsen_invalidities_2d(
         for (LO ee = 0; ee < 3; ++ee) {
           //printf("newtri edge %d is %d\n", ee, newTri_edge[ee]);
         }
-        Few<Real, 10*2> tri_pts;//ntri_pts*dim=20
+        Few<Real, 200*2> tri_pts;//ntri_pts*dim=20
+        //Few<Real, 10*2> tri_pts;//ntri_pts*dim=20
         for (LO j = 0; j < 3; ++j) {
           auto p = get_vector<2>(vertCtrlPts, ccv2v[j]);
           for (LO k = 0; k < mesh_dim; ++k) {
