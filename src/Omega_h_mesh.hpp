@@ -244,6 +244,7 @@ class Mesh {
   inline I8 is_curved() const { return curved_; }
   inline Int get_max_order() const { return max_order_; }
   Int n_internal_ctrlPts(Int edim);
+  Int n_total_ctrlPts(Int edim);
   void add_tags_for_ctrlPts();
   void remove_tags_for_ctrlPts();
   void set_tag_for_ctrlPts(Int ent_dim, Reals ctrlPts);

@@ -598,6 +598,27 @@ OMEGA_H_INLINE Int n_internal_ctrlPts(Int edim, Int max_order) {
   return -1;
 }
 
+OMEGA_H_INLINE Int n_total_ctrlPts(Int edim, Int max_order) {
+  OMEGA_H_CHECK(max_order > 0);
+  OMEGA_H_CHECK(edim >= 0);
+  if (edim == 0) {
+    return 1;
+  }
+  else if (edim == 1) {
+    return max_order+1;
+  }
+  else if (edim == 2) {
+    return ((max_order+1)*(max_order+2))/2;
+  }
+  else if (edim == 3) {
+    return ((max_order+1)*(max_order+2)*(max_order+3))/6;
+  }
+  else {
+    return -1;
+  }
+  return -1;
+}
+
 inline Vector<3> rgn_parametricToParent_3dp2_h(
     LO const order, LO const old_rgn, HostRead<LO> old_rv2v,
     HostRead<Real> old_vertCtrlPts, HostRead<Real> old_edgeCtrlPts, 

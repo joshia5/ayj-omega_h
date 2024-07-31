@@ -98,6 +98,33 @@ void Mesh::change_max_order(Int max_order) {
   return;
 }
 
+Int Mesh::n_total_ctrlPts(Int edim) {
+  check_dim2(edim);
+  OMEGA_H_CHECK(is_curved() > 0);
+  auto max_order = get_max_order();
+  OMEGA_H_CHECK(max_order > 0);
+  OMEGA_H_CHECK(edim >= 0);
+
+  return 
+  if (edim == 0) {
+    return 1;
+  }
+  else if (edim == 1) {
+    return max_order+1;
+  }
+  else if (edim == 2) {
+    return ((max_order+1)*(max_order+2))/2;
+  }
+  else if (edim == 3) {
+    return ((max_order+1)*(max_order+2)*(max_order+3))/6;
+  }
+  else {
+    return -1;
+  }
+
+  return -1;
+}
+
 Int Mesh::n_internal_ctrlPts(Int edim) {
   check_dim2(edim);
   OMEGA_H_CHECK(is_curved() > 0);

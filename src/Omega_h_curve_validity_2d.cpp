@@ -130,7 +130,8 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
       is_invalid[n] = checkMinJacDet<15>(nodes_det, order);
     }
 
-    if (order == 4) {
+    if (order > 3) {
+      OMEGA_H_CHECK(order <= 10);
       for (LO j = 0; j < 3; ++j) {//3 edges per tri
         LO index = f2v_degree; // after storing 3 pts for vertices
         if (flip[j] == -1) {
@@ -174,7 +175,11 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
       }
 
       //TODO change to template for mesh_dim
-      auto nodes_det = getTriJacDetNodes<15, 2>(order, tri_pts);
+      I8 const detJ_order = 2*(order - 1);
+      I8 face_tot_pts = n_total_ctrlPts(FACE, detJ_order);
+      auto nodes_det = getTriJacDetNodes<face_tot_pts, mesh_dim>(order, tri_pts);
+      //auto nodes_det = getTriJacDetNodes<15, 2>(order, tri_pts);
+      //15 here is total pts of dim*(order-1) bezier polynomial
 
       is_invalid[n] = checkMinJacDet<15>(nodes_det, order);
     }
