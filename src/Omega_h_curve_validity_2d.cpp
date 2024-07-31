@@ -8,16 +8,16 @@
 
 namespace Omega_h {
 
-OMEGA_H_INLINE Real calcMinJacDet(Few<Real, 200> nodes) {
+OMEGA_H_INLINE Real calcMinJacDet(Few<Real, 200> nodes, const I8 n_nodes) {
   Real minJ = 1e10;
-  for (LO i = 0; i < nodes.size(); ++i)
+  for (LO i = 0; i < n_nodes; ++i)
     minJ = min2(minJ,nodes[i]);
   return minJ;
 }
 
-OMEGA_H_INLINE Real calcMaxJacDet(Few<Real, 200> nodes) {
+OMEGA_H_INLINE Real calcMaxJacDet(Few<Real, 200> nodes, const I8 n_nodes) {
   Real maxJ = -1e10;
-  for (LO i = 0; i < nodes.size(); ++i)
+  for (LO i = 0; i < n_nodes; ++i)
     maxJ = max2(maxJ,nodes[i]);
   return maxJ;
 }
@@ -33,9 +33,9 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
   auto const n_face_pts = mesh->n_internal_ctrlPts(FACE);
   auto order = mesh->get_max_order();
   LO const nnew_tris = new_tris.size();
-  auto const f2v_degree = element_degree(OMEGA_H_SIMPLEX, FACE, VERT); 
-  auto const f2e_degree = element_degree(OMEGA_H_SIMPLEX, FACE, EDGE); 
-  
+  auto const f2v_degree = element_degree(OMEGA_H_SIMPLEX, FACE, VERT);
+  auto const f2e_degree = element_degree(OMEGA_H_SIMPLEX, FACE, EDGE);
+ 
   auto Qs = mesh->ask_qualities();
 
   Write<LO> is_invalid(nnew_tris, -1);
@@ -179,14 +179,14 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
 
       //TODO change to template for mesh_dim
       I8 const detJ_order = 2*(order - 1);
-      I8 face_tot_pts = n_total_ctrlPts(FACE, detJ_order);
+      I8 n_nodes_J = n_total_ctrlPts(FACE, detJ_order);
       //auto nodes_det = getTriJacDetNodes<face_tot_pts, 2>(order, tri_pts);
       auto nodes_det = getTriJacDetNodes<200, 2>(order, tri_pts);
       //auto nodes_det = getTriJacDetNodes<28, 2>(order, tri_pts);
-      //15 here is total pts of dim*(order-1) bezier polynomial
+      //28 here is total pts of dim*(order-1) bezier polynomial p=4
 
-      auto const minJ = calcMinJacDet(nodes_det);
-    auto const maxJ = calcMaxJacDet(nodes_det);
+      auto const minJ = calcMinJacDet(nodes_det, n_nodes_J);
+    auto const maxJ = calcMaxJacDet(nodes_det, n_nodes_J);
     printf("tri %d minJ %f, maxJ %f\n",n,minJ, maxJ);
 
       is_invalid[n] = checkMinJacDet<200>(nodes_det, order);
