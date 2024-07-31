@@ -718,43 +718,77 @@ void build_quartic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
     auto v0 = ev2v_h[i*2];
     auto v1 = ev2v_h[i*2 + 1];
 
-    Real cx0 = coords_h[v0*dim + 0];
-    Real cy0 = coords_h[v0*dim + 1];
-    Real cz0 = coords_h[v0*dim + 2];
-    Real cx1 = ctrlPts_h[i*pts_per_edge*dim + 0];
-    Real cy1 = ctrlPts_h[i*pts_per_edge*dim + 1];
-    Real cz1 = ctrlPts_h[i*pts_per_edge*dim + 2];
-    Real cx2 = ctrlPts_h[i*pts_per_edge*dim + dim + 0];
-    Real cy2 = ctrlPts_h[i*pts_per_edge*dim + dim + 1];
-    Real cz2 = ctrlPts_h[i*pts_per_edge*dim + dim + 2];
-    Real cx3 = ctrlPts_h[i*pts_per_edge*dim + dim + dim + 0];
-    Real cy3 = ctrlPts_h[i*pts_per_edge*dim + dim + dim + 1];
-    Real cz3 = ctrlPts_h[i*pts_per_edge*dim + dim + dim + 2];
-    Real cx4 = coords_h[v1*dim + 0];
-    Real cy4 = coords_h[v1*dim + 1];
-    Real cz4 = coords_h[v1*dim + 2];
+    if (dim == 3) {
+      Real cx0 = coords_h[v0*dim + 0];
+      Real cy0 = coords_h[v0*dim + 1];
+      Real cz0 = coords_h[v0*dim + 2];
+      Real cx1 = ctrlPts_h[i*pts_per_edge*dim + 0];
+      Real cy1 = ctrlPts_h[i*pts_per_edge*dim + 1];
+      Real cz1 = ctrlPts_h[i*pts_per_edge*dim + 2];
+      Real cx2 = ctrlPts_h[i*pts_per_edge*dim + dim + 0];
+      Real cy2 = ctrlPts_h[i*pts_per_edge*dim + dim + 1];
+      Real cz2 = ctrlPts_h[i*pts_per_edge*dim + dim + 2];
+      Real cx3 = ctrlPts_h[i*pts_per_edge*dim + dim + dim + 0];
+      Real cy3 = ctrlPts_h[i*pts_per_edge*dim + dim + dim + 1];
+      Real cz3 = ctrlPts_h[i*pts_per_edge*dim + dim + dim + 2];
+      Real cx4 = coords_h[v1*dim + 0];
+      Real cy4 = coords_h[v1*dim + 1];
+      Real cz4 = coords_h[v1*dim + 2];
 
-    for (LO i = 0; i < u_h.size(); ++i) {
-      auto x_bezier = cx0*B0_quart(u_h[i]) + cx1*B1_quart(u_h[i]) +
-                      cx2*B2_quart(u_h[i]) + cx3*B3_quart(u_h[i]) +
-                      cx4*B4_quart(u_h[i]);
-      auto y_bezier = cy0*B0_quart(u_h[i]) + cy1*B1_quart(u_h[i]) +
-                      cy2*B2_quart(u_h[i]) + cy3*B3_quart(u_h[i]) +
-                      cy4*B4_quart(u_h[i]);
-      auto z_bezier = cz0*B0_quart(u_h[i]) + cz1*B1_quart(u_h[i]) +
-                      cz2*B2_quart(u_h[i]) + cz3*B3_quart(u_h[i]) +
-                      cz4*B4_quart(u_h[i]);
+      for (LO i = 0; i < u_h.size(); ++i) {
+        auto x_bezier = cx0*B0_quart(u_h[i]) + cx1*B1_quart(u_h[i]) +
+          cx2*B2_quart(u_h[i]) + cx3*B3_quart(u_h[i]) +
+          cx4*B4_quart(u_h[i]);
+        auto y_bezier = cy0*B0_quart(u_h[i]) + cy1*B1_quart(u_h[i]) +
+          cy2*B2_quart(u_h[i]) + cy3*B3_quart(u_h[i]) +
+          cy4*B4_quart(u_h[i]);
+        auto z_bezier = cz0*B0_quart(u_h[i]) + cz1*B1_quart(u_h[i]) +
+          cz2*B2_quart(u_h[i]) + cz3*B3_quart(u_h[i]) +
+          cz4*B4_quart(u_h[i]);
 
-      host_coords[count_wireframe_vtx*dim + 0] = x_bezier;
-      host_coords[count_wireframe_vtx*dim + 1] = y_bezier;
-      host_coords[count_wireframe_vtx*dim + 2] = z_bezier;
+        host_coords[count_wireframe_vtx*dim + 0] = x_bezier;
+        host_coords[count_wireframe_vtx*dim + 1] = y_bezier;
+        host_coords[count_wireframe_vtx*dim + 2] = z_bezier;
 
-      edge_vertices[0].push_back(count_wireframe_vtx);
-      if ((i > 0) && (i < (u_h.size() - 1))) {
         edge_vertices[0].push_back(count_wireframe_vtx);
-      }
+        if ((i > 0) && (i < (u_h.size() - 1))) {
+          edge_vertices[0].push_back(count_wireframe_vtx);
+        }
 
-      ++count_wireframe_vtx;
+        ++count_wireframe_vtx;
+      }
+    }
+    else {
+      OMEGA_H_CHECK (dim == 2);
+      Real cx0 = coords_h[v0*dim + 0];
+      Real cy0 = coords_h[v0*dim + 1];
+      Real cx1 = ctrlPts_h[i*pts_per_edge*dim + 0];
+      Real cy1 = ctrlPts_h[i*pts_per_edge*dim + 1];
+      Real cx2 = ctrlPts_h[i*pts_per_edge*dim + dim + 0];
+      Real cy2 = ctrlPts_h[i*pts_per_edge*dim + dim + 1];
+      Real cx3 = ctrlPts_h[i*pts_per_edge*dim + dim + dim + 0];
+      Real cy3 = ctrlPts_h[i*pts_per_edge*dim + dim + dim + 1];
+      Real cx4 = coords_h[v1*dim + 0];
+      Real cy4 = coords_h[v1*dim + 1];
+
+      for (LO i = 0; i < u_h.size(); ++i) {
+        auto x_bezier = cx0*B0_quart(u_h[i]) + cx1*B1_quart(u_h[i]) +
+          cx2*B2_quart(u_h[i]) + cx3*B3_quart(u_h[i]) +
+          cx4*B4_quart(u_h[i]);
+        auto y_bezier = cy0*B0_quart(u_h[i]) + cy1*B1_quart(u_h[i]) +
+          cy2*B2_quart(u_h[i]) + cy3*B3_quart(u_h[i]) +
+          cy4*B4_quart(u_h[i]);
+
+        host_coords[count_wireframe_vtx*dim + 0] = x_bezier;
+        host_coords[count_wireframe_vtx*dim + 1] = y_bezier;
+
+        edge_vertices[0].push_back(count_wireframe_vtx);
+        if ((i > 0) && (i < (u_h.size() - 1))) {
+          edge_vertices[0].push_back(count_wireframe_vtx);
+        }
+
+        ++count_wireframe_vtx;
+      }
     }
   }
 

@@ -362,7 +362,9 @@ void test_annulus_swap_p4(Library *lib) {
   elevate_curve_order_2to3(&mesh);
   elevate_curve_order_3to4(&mesh);
   fprintf(stderr, "elevated to order 4\n");
-  mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
+  if (!mesh.has_tag(0, "bezier_pts")) {
+    mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
+  }
 
   auto wireframe_mesh = Mesh(lib);
   wireframe_mesh.set_comm(comm);
@@ -370,6 +372,7 @@ void test_annulus_swap_p4(Library *lib) {
   std::string vtuPath =
     "/lore/joshia5/Meshes/curved/annulus-8p4_wire.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  fprintf(stderr, "generated order 4 wireframe\n");
   auto quartic_curveVtk_mesh = Mesh(lib);
   quartic_curveVtk_mesh.set_comm(comm);
   build_quartic_curveVtk(&mesh, &quartic_curveVtk_mesh, 10);
