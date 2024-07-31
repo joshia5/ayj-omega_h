@@ -28,10 +28,12 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
   auto vertCtrlPts = mesh->get_ctrlPts(0);
   auto edgeCtrlPts = mesh->get_ctrlPts(1);
   auto faceCtrlPts = mesh->get_ctrlPts(2);
-  auto const n_edge_pts = mesh->n_internal_ctrlPts(1);
+  auto const n_edge_pts = mesh->n_internal_ctrlPts(EDGE);
+  auto const n_face_pts = mesh->n_internal_ctrlPts(FACE);
   auto order = mesh->get_max_order();
-  OMEGA_H_CHECK(order == 3);
   LO const nnew_tris = new_tris.size();
+  auto const f2v_degree = element_degree(OMEGA_H_SIMPLEX, FACE, VERT); 
+  auto const f2e_degree = element_degree(OMEGA_H_SIMPLEX, FACE, EDGE); 
   
   auto Qs = mesh->ask_qualities();
 
@@ -90,39 +92,90 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
       flip[2] = 1;
     }
 
-    for (LO j = 0; j < 3; ++j) {
-      LO index = 3;
-      if (flip[j] == -1) {
-        for (I8 d = 0; d < mesh_dim; ++d) {
-          tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] =
-            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*mesh_dim + d];
-          tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
-            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*mesh_dim + mesh_dim + d];
+    if (order == 3) {
+      for (LO j = 0; j < 3; ++j) {
+        LO index = f2v_degree; // after storing 3 pts for vtx
+        if (flip[j] == -1) {
+          for (I8 d = 0; d < mesh_dim; ++d) {
+            tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] =
+              edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*mesh_dim + d];
+            tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
+              edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*mesh_dim + mesh_dim + d];
+          }
+        }
+        else {
+          //for flipped edges
+          OMEGA_H_CHECK (flip[j] == 1);
+          for (I8 d = 0; d < mesh_dim; ++d) {
+            tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] =
+              edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*mesh_dim + mesh_dim + d];
+            tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
+              edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*mesh_dim + d];
+          }
         }
       }
-      else {
-        //for flipped edges
-        OMEGA_H_CHECK (flip[j] == 1);
-        for (I8 d = 0; d < mesh_dim; ++d) {
-          tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + d] =
-            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*mesh_dim + mesh_dim + d];
-          tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim + mesh_dim + d] =
-            edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*mesh_dim + d];
+
+      //query the face's ctrl pt and store
+      for (I8 d = 0; d < mesh_dim; ++d) {
+        LO index = f2v_degree + f2e_degree*n_edge_pts; // after storing pts for edge
+        tri_pts[index*mesh_dim + d] = faceCtrlPts[tri*mesh_dim + d];
+      }
+
+      //TODO change to template for mesh_dim
+      auto nodes_det = getTriJacDetNodes<15, 2>(order, tri_pts);
+
+      is_invalid[n] = checkMinJacDet<15>(nodes_det, order);
+    }
+
+    if (order == 4) {
+      for (LO j = 0; j < 3; ++j) {//3 edges per tri
+        LO index = f2v_degree; // after storing 3 pts for vertices
+        if (flip[j] == -1) {
+          for (I8 edge_pt = 0; edge_pt < n_edge_pts; ++edge_pt) {
+            for (I8 d = 0; d < mesh_dim; ++d) {
+              tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim +
+                      edge_pt*mesh_dim + d] =
+              edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*mesh_dim +
+                          edge_pt*mesh_dim + d];
+            }
+          }
+        }
+        else {
+          //for flipped edges
+          OMEGA_H_CHECK (flip[j] == 1);
+          
+          for (I8 edge_pt = 0; edge_pt < n_edge_pts; ++edge_pt) {
+            for (I8 d = 0; d < mesh_dim; ++d) {
+              tri_pts[index*mesh_dim + j*n_edge_pts*mesh_dim +
+                edge_pt*mesh_dim + d] =
+                edgeCtrlPts[fe2e[tri*3 + j]*n_edge_pts*mesh_dim +
+                (n_edge_pts-1 - edge_pt)*mesh_dim + d];
+            }
+          }
         }
       }
+
+      //query the face's ctrl pt and store
+      for (I8 d = 0; d < mesh_dim; ++d) {
+        LO index = f2v_degree + f2e_degree*n_edge_pts; // after storing pts for edge
+
+        for (I8 face_pt = 0; face_pt < n_face_pts; ++face_pt) {
+          for (I8 d = 0; d < mesh_dim; ++d) {
+            tri_pts[index*mesh_dim + 
+                    face_pt*mesh_dim + d] =
+              faceCtrlPts[tri*n_face_pts*mesh_dim +
+                          face_pt*mesh_dim + d];
+          }
+        }
+
+      }
+
+      //TODO change to template for mesh_dim
+      auto nodes_det = getTriJacDetNodes<15, 2>(order, tri_pts);
+
+      is_invalid[n] = checkMinJacDet<15>(nodes_det, order);
     }
-
-    //query the face's ctrl pt and store
-    for (I8 d = 0; d < mesh_dim; ++d) {
-      LO index = 9;
-      tri_pts[index*mesh_dim + d] = faceCtrlPts[tri*mesh_dim + d];
-    }
-
-    //TODO change to template for mesh_dim
-    auto nodes_det = getTriJacDetNodes<15, 2>(order, tri_pts);
-
-    is_invalid[n] = checkMinJacDet<15>(nodes_det, order);//TODO to check if
-    //this can be called for tris
+ 
     //if (is_invalid[n] > 0) printf("invalid tri %d\n", tri);
 
   };
