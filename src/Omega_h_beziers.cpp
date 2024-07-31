@@ -445,7 +445,7 @@ void elevate_curve_order_3to4(Mesh* mesh) {
   parallel_for(nface, std::move(calc_face_pts));
   mesh->set_tag_for_ctrlPts(2, Reals(face_pts));
 
-  //TODO calc pts inside region
+  //TODO calc pts inside region for (dim==3) mesh
 
   return;
 }
