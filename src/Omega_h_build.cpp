@@ -700,7 +700,7 @@ void build_quartic_wireframe(Mesh* mesh, Mesh* wireframe_mesh,
   auto ev2v_h = HostRead<LO>(mesh->get_adj(1, 0).ab2b);
   auto pts_per_edge = mesh->n_internal_ctrlPts(1);
 
-  I8 dim = 3;
+  I8 const dim = mesh->dim();
   Real xi_start = 0.0;
   Real xi_end = 1.0;
   Real delta_xi = (xi_end - xi_start)/(n_sample_pts - 1);
@@ -1771,7 +1771,7 @@ void build_quartic_curveVtk(Mesh* mesh, Mesh* curveVtk_mesh,
   auto pts_per_edge = mesh->n_internal_ctrlPts(1);
   auto pts_per_face = mesh->n_internal_ctrlPts(2);
 
-  I8 dim = 3;
+  I8 const dim = mesh->dim();
   Real xi_start = 0.0;
   Real xi_end = 1.0;
   Real delta_xi = (xi_end - xi_start)/(n_sample_pts - 1);
