@@ -305,6 +305,7 @@ void elevate_curve_order_3to4(Mesh* mesh) {
   auto nface = mesh->nfaces();
   auto n_new_face_pts = mesh->n_internal_ctrlPts(2);
   Write<Real> face_pts(nface*n_new_face_pts*dim, 0.0);
+  fprintf(stderr, "elevated to quartic edges\n");
 
   auto calc_face_pts = OMEGA_H_LAMBDA (LO i) {
     auto e0 = fe2e[i*3];
@@ -343,65 +344,50 @@ void elevate_curve_order_3to4(Mesh* mesh) {
       OMEGA_H_CHECK((e2v0 == v2) && (e2v1 == v0));
     }
 
-    Real cx10 = old_edge_ctrl_pts[e0*pts_per_edge*dim + 0];
-    Real cy10 = old_edge_ctrl_pts[e0*pts_per_edge*dim + 1];
-    Real cz10 = old_edge_ctrl_pts[e0*pts_per_edge*dim + 2];
-    Real cx20 = old_edge_ctrl_pts[e0*pts_per_edge*dim + dim + 0];
-    Real cy20 = old_edge_ctrl_pts[e0*pts_per_edge*dim + dim + 1];
-    Real cz20 = old_edge_ctrl_pts[e0*pts_per_edge*dim + dim + 2];
-    if (e0_flip > 0) {
-      auto tempx = cx10;
-      auto tempy = cy10;
-      auto tempz = cz10;
-      cx10 = cx20;
-      cy10 = cy20;
-      cz10 = cz20;
-      cx20 = tempx;
-      cy20 = tempy;
-      cz20 = tempz;
-    }
-
-    Real cx21 = old_edge_ctrl_pts[e1*pts_per_edge*dim + 0];
-    Real cy21 = old_edge_ctrl_pts[e1*pts_per_edge*dim + 1];
-    Real cz21 = old_edge_ctrl_pts[e1*pts_per_edge*dim + 2];
-    Real cx12 = old_edge_ctrl_pts[e1*pts_per_edge*dim + dim + 0];
-    Real cy12 = old_edge_ctrl_pts[e1*pts_per_edge*dim + dim + 1];
-    Real cz12 = old_edge_ctrl_pts[e1*pts_per_edge*dim + dim + 2];
-    if (e1_flip > 0) {
-      auto tempx = cx21;
-      auto tempy = cy21;
-      auto tempz = cz21;
-      cx21 = cx12;
-      cy21 = cy12;
-      cz21 = cz12;
-      cx12 = tempx;
-      cy12 = tempy;
-      cz12 = tempz;
-    }
-
-    Real cx02 = old_edge_ctrl_pts[e2*pts_per_edge*dim + 0];
-    Real cy02 = old_edge_ctrl_pts[e2*pts_per_edge*dim + 1];
-    Real cz02 = old_edge_ctrl_pts[e2*pts_per_edge*dim + 2];
-    Real cx01 = old_edge_ctrl_pts[e2*pts_per_edge*dim + dim + 0];
-    Real cy01 = old_edge_ctrl_pts[e2*pts_per_edge*dim + dim + 1];
-    Real cz01 = old_edge_ctrl_pts[e2*pts_per_edge*dim + dim + 2];
-    if (e2_flip > 0) {
-      auto tempx = cx02;
-      auto tempy = cy02;
-      auto tempz = cz02;
-      cx02 = cx01;
-      cy02 = cy01;
-      cz02 = cz01;
-      cx01 = tempx;
-      cy01 = tempy;
-      cz01 = tempz;
-    }
-
-    auto oldc11 = vector_3(old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 0],
-                           old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 1],
-                           old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 2]);
-
     if (dim == 2) {
+
+      Real cx10 = old_edge_ctrl_pts[e0*pts_per_edge*dim + 0];
+      Real cy10 = old_edge_ctrl_pts[e0*pts_per_edge*dim + 1];
+      Real cx20 = old_edge_ctrl_pts[e0*pts_per_edge*dim + dim + 0];
+      Real cy20 = old_edge_ctrl_pts[e0*pts_per_edge*dim + dim + 1];
+      if (e0_flip > 0) {
+        auto tempx = cx10;
+        auto tempy = cy10;
+        cx10 = cx20;
+        cy10 = cy20;
+        cx20 = tempx;
+        cy20 = tempy;
+      }
+
+      Real cx21 = old_edge_ctrl_pts[e1*pts_per_edge*dim + 0];
+      Real cy21 = old_edge_ctrl_pts[e1*pts_per_edge*dim + 1];
+      Real cx12 = old_edge_ctrl_pts[e1*pts_per_edge*dim + dim + 0];
+      Real cy12 = old_edge_ctrl_pts[e1*pts_per_edge*dim + dim + 1];
+      if (e1_flip > 0) {
+        auto tempx = cx21;
+        auto tempy = cy21;
+        cx21 = cx12;
+        cy21 = cy12;
+        cx12 = tempx;
+        cy12 = tempy;
+      }
+
+      Real cx02 = old_edge_ctrl_pts[e2*pts_per_edge*dim + 0];
+      Real cy02 = old_edge_ctrl_pts[e2*pts_per_edge*dim + 1];
+      Real cx01 = old_edge_ctrl_pts[e2*pts_per_edge*dim + dim + 0];
+      Real cy01 = old_edge_ctrl_pts[e2*pts_per_edge*dim + dim + 1];
+      if (e2_flip > 0) {
+        auto tempx = cx02;
+        auto tempy = cy02;
+        cx02 = cx01;
+        cy02 = cy01;
+        cx01 = tempx;
+        cy01 = tempy;
+      }
+
+      auto oldc11 = vector_2(old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 0],
+          old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 1]);
+
       Vector<2> c11;
       Vector<2> c21;
       Vector<2> c12;
@@ -420,7 +406,65 @@ void elevate_curve_order_3to4(Mesh* mesh) {
       }
     }
     else {
-      OMEGA_H_CHECK (dim == 3); 
+      OMEGA_H_CHECK (dim == 3);
+
+      Real cx10 = old_edge_ctrl_pts[e0*pts_per_edge*dim + 0];
+      Real cy10 = old_edge_ctrl_pts[e0*pts_per_edge*dim + 1];
+      Real cz10 = old_edge_ctrl_pts[e0*pts_per_edge*dim + 2];
+      Real cx20 = old_edge_ctrl_pts[e0*pts_per_edge*dim + dim + 0];
+      Real cy20 = old_edge_ctrl_pts[e0*pts_per_edge*dim + dim + 1];
+      Real cz20 = old_edge_ctrl_pts[e0*pts_per_edge*dim + dim + 2];
+      if (e0_flip > 0) {
+        auto tempx = cx10;
+        auto tempy = cy10;
+        auto tempz = cz10;
+        cx10 = cx20;
+        cy10 = cy20;
+        cz10 = cz20;
+        cx20 = tempx;
+        cy20 = tempy;
+        cz20 = tempz;
+      }
+
+      Real cx21 = old_edge_ctrl_pts[e1*pts_per_edge*dim + 0];
+      Real cy21 = old_edge_ctrl_pts[e1*pts_per_edge*dim + 1];
+      Real cz21 = old_edge_ctrl_pts[e1*pts_per_edge*dim + 2];
+      Real cx12 = old_edge_ctrl_pts[e1*pts_per_edge*dim + dim + 0];
+      Real cy12 = old_edge_ctrl_pts[e1*pts_per_edge*dim + dim + 1];
+      Real cz12 = old_edge_ctrl_pts[e1*pts_per_edge*dim + dim + 2];
+      if (e1_flip > 0) {
+        auto tempx = cx21;
+        auto tempy = cy21;
+        auto tempz = cz21;
+        cx21 = cx12;
+        cy21 = cy12;
+        cz21 = cz12;
+        cx12 = tempx;
+        cy12 = tempy;
+        cz12 = tempz;
+      }
+
+      Real cx02 = old_edge_ctrl_pts[e2*pts_per_edge*dim + 0];
+      Real cy02 = old_edge_ctrl_pts[e2*pts_per_edge*dim + 1];
+      Real cz02 = old_edge_ctrl_pts[e2*pts_per_edge*dim + 2];
+      Real cx01 = old_edge_ctrl_pts[e2*pts_per_edge*dim + dim + 0];
+      Real cy01 = old_edge_ctrl_pts[e2*pts_per_edge*dim + dim + 1];
+      Real cz01 = old_edge_ctrl_pts[e2*pts_per_edge*dim + dim + 2];
+      if (e2_flip > 0) {
+        auto tempx = cx02;
+        auto tempy = cy02;
+        auto tempz = cz02;
+        cx02 = cx01;
+        cy02 = cy01;
+        cz02 = cz01;
+        cx01 = tempx;
+        cy01 = tempy;
+        cz01 = tempz;
+      }
+
+      auto oldc11 = vector_3(old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 0],
+          old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 1],
+          old_face_ctrlPts[i*old_face_n_ctrl_pts*dim + 2]);
       Vector<3> c11;
       Vector<3> c21;
       Vector<3> c12;
