@@ -105,7 +105,6 @@ Int Mesh::n_total_ctrlPts(Int edim) {
   OMEGA_H_CHECK(max_order > 0);
   OMEGA_H_CHECK(edim >= 0);
 
-  return 
   if (edim == 0) {
     return 1;
   }
