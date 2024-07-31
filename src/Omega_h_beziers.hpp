@@ -1844,7 +1844,7 @@ template <Int n, Int mesh_dim>
 OMEGA_H_INLINE Few<Real, n> getTriJacDetNodes(
     LO P, Few<Real, 200*mesh_dim> const& elemNodes) {
     //LO P, Few<Real, 10*mesh_dim> const& elemNodes) {
-  Few<Real, n> nodes;//n=15
+  Few<Real, n> nodes;//n
   for (LO I = 0; I <= 2*(P-1); ++I) {
     for (LO J = 0; J <= 2*(P-1)-I; ++J) {
         OMEGA_H_CHECK(getTriNodeIndex(2*(P-1),I,J) < nodes.size());

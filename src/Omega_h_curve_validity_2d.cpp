@@ -8,16 +8,16 @@
 
 namespace Omega_h {
 
-OMEGA_H_INLINE Real calcMinJacDet(Few<Real, 15> nodes) {
+OMEGA_H_INLINE Real calcMinJacDet(Few<Real, 200> nodes) {
   Real minJ = 1e10;
-  for (LO i = 0; i < 15; ++i)
+  for (LO i = 0; i < nodes.size(); ++i)
     minJ = min2(minJ,nodes[i]);
   return minJ;
 }
 
-OMEGA_H_INLINE Real calcMaxJacDet(Few<Real, 15> nodes) {
+OMEGA_H_INLINE Real calcMaxJacDet(Few<Real, 200> nodes) {
   Real maxJ = -1e10;
-  for (LO i = 0; i < 15; ++i)
+  for (LO i = 0; i < nodes.size(); ++i)
     maxJ = max2(maxJ,nodes[i]);
   return maxJ;
 }
@@ -95,6 +95,7 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
       flip[2] = 1;
     }
 
+    /*
     if (order == 3) {
       for (LO j = 0; j < 3; ++j) {
         LO index = f2v_degree; // after storing 3 pts for vtx
@@ -129,8 +130,10 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
 
       is_invalid[n] = checkMinJacDet<15>(nodes_det, order);
     }
+    */
 
-    if (order > 3) {
+    if (order >= 3) {
+    //if (order > 3) {
       OMEGA_H_CHECK(order <= 10);
       for (LO j = 0; j < 3; ++j) {//3 edges per tri
         LO index = f2v_degree; // after storing 3 pts for vertices
@@ -177,11 +180,16 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
       //TODO change to template for mesh_dim
       I8 const detJ_order = 2*(order - 1);
       I8 face_tot_pts = n_total_ctrlPts(FACE, detJ_order);
-      auto nodes_det = getTriJacDetNodes<face_tot_pts, mesh_dim>(order, tri_pts);
-      //auto nodes_det = getTriJacDetNodes<15, 2>(order, tri_pts);
+      //auto nodes_det = getTriJacDetNodes<face_tot_pts, 2>(order, tri_pts);
+      auto nodes_det = getTriJacDetNodes<200, 2>(order, tri_pts);
+      //auto nodes_det = getTriJacDetNodes<28, 2>(order, tri_pts);
       //15 here is total pts of dim*(order-1) bezier polynomial
 
-      is_invalid[n] = checkMinJacDet<15>(nodes_det, order);
+      auto const minJ = calcMinJacDet(nodes_det);
+    auto const maxJ = calcMaxJacDet(nodes_det);
+    printf("tri %d minJ %f, maxJ %f\n",n,minJ, maxJ);
+
+      is_invalid[n] = checkMinJacDet<200>(nodes_det, order);
     }
  
     //if (is_invalid[n] > 0) printf("invalid tri %d\n", tri);
@@ -293,6 +301,7 @@ Reals askQuality_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
     //TODO change to template for mesh_dim
     auto nodes_det = getTriJacDetNodes<15, 2>(order, tri_pts);
 
+    /*
     auto const minJ = calcMinJacDet(nodes_det);
     auto const maxJ = calcMaxJacDet(nodes_det);
     printf("tri %d qs %f, minJ %f, maxJ %f, Q %f\n",n,Qs[n], minJ, maxJ, Q[n]);
@@ -303,6 +312,7 @@ Reals askQuality_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
       Q[n] = 0.;
       //printf("tri %d qs %f, minJ %f, maxJ %f, Q %f\n",n,Qs[n], minJ, maxJ, Q[n]);
     }
+    */
 
   };
   parallel_for(nnew_tris, std::move(check_validity));
