@@ -370,14 +370,14 @@ void test_annulus_swap_p4(Library *lib) {
 
   auto wireframe_mesh = Mesh(lib);
   wireframe_mesh.set_comm(comm);
-  build_quartic_wireframe(&mesh, &wireframe_mesh, 10);
+  build_quartic_wireframe(&mesh, &wireframe_mesh, 5);
   std::string vtuPath =
     "/lore/joshia5/Meshes/curved/annulus-8p4_wire.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
   fprintf(stderr, "generated order 4 wireframe\n");
   auto quartic_curveVtk_mesh = Mesh(lib);
   quartic_curveVtk_mesh.set_comm(comm);
-  build_quartic_curveVtk(&mesh, &quartic_curveVtk_mesh, 10);
+  build_quartic_curveVtk(&mesh, &quartic_curveVtk_mesh, 5);
   vtuPath = "/lore/joshia5/Meshes/curved/annulusp4-8.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &quartic_curveVtk_mesh, 2);
 
@@ -421,6 +421,7 @@ void test_annulus_swap_p4(Library *lib) {
 
   return;
 }
+
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
