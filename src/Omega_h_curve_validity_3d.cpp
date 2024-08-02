@@ -25,7 +25,8 @@ LOs checkValidity_3d(Mesh *mesh, LOs new_tets) {
     
     Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
 
-    is_invalid[n] = checkMinJacDet_3d(nodes_det, order);
+    const I8 check_only_verts = 1;
+    is_invalid[n] = checkMinJacDet_3d(nodes_det, order, check_only_verts);
     if (is_invalid[n] > 0) printf("invalid tet %d\n", tet);
   };
   parallel_for(new_tets.size(), std::move(check_validity));
