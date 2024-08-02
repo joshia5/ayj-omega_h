@@ -537,6 +537,7 @@ void elevate_curve_order_4to5(Mesh* mesh) {
   Write<Real> face_pts(nface*n_new_face_pts*dim, 0.0);
   fprintf(stderr, "elevated to quintic edges\n");
 
+  /* TODO face pts for 3d
   auto calc_face_pts = OMEGA_H_LAMBDA (LO i) {
     auto e0 = fe2e[i*3];
     auto e1 = fe2e[i*3 + 1];
@@ -721,6 +722,7 @@ void elevate_curve_order_4to5(Mesh* mesh) {
   };
   parallel_for(nface, std::move(calc_face_pts));
   mesh->set_tag_for_ctrlPts(2, Reals(face_pts));
+  */
 
   //TODO calc pts inside region for (dim==3) mesh
 
