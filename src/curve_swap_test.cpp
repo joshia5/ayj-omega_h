@@ -27,7 +27,6 @@ void test_collapse_boxCircle(Library *lib) {
   elevate_curve_order_2to3(&mesh);
   mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
 
-
   auto wireframe_mesh = Mesh(comm->library());
   wireframe_mesh.set_comm(comm);
   build_cubic_wireframe_3d(&mesh, &wireframe_mesh);
@@ -493,10 +492,10 @@ void test_annulus_swap_p4(Library *lib) {
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
-  //test_annulus_swap(&lib); //2d
-  //test_annulus_swap_p4(&lib); //2d
+  test_annulus_swap(&lib); //2d
+  test_annulus_swap_p4(&lib); //2d
 
-  test_annulus3d_swap(&lib); //2d
+  //test_annulus3d_swap(&lib); //2d
 
   //test_disc_swap(&lib); //2d
   //test_swap_kova(&lib); //3d

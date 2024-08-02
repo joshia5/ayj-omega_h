@@ -5,14 +5,16 @@ namespace Omega_h {
 
 OMEGA_H_INLINE Real calcMinJacDet(Few<Real, 84> nodes) {
   Real minJ = 1e10;
-  for (LO i = 0; i < 84; ++i)
+  //for (LO i = 0; i < 84; ++i) // commenting to check only verts
+  for (LO i = 0; i < 4; ++i)
     minJ = min2(minJ,nodes[i]);
   return minJ;
 }
 
 OMEGA_H_INLINE Real calcMaxJacDet(Few<Real, 84> nodes) {
   Real maxJ = -1e10;
-  for (LO i = 0; i < 84; ++i)
+  //for (LO i = 0; i < 84; ++i) // commenting to check only verts
+  for (LO i = 0; i < 4; ++i)
     maxJ = max2(maxJ,nodes[i]);
   return maxJ;
 }

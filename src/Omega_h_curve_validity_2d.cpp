@@ -185,8 +185,9 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
       //auto nodes_det = getTriJacDetNodes<28, 2>(order, tri_pts);
       //28 here is total pts of dim*(order-1) bezier polynomial p=4
 
-      auto const minJ = calcMinJacDet(nodes_det, n_nodes_J);
-    auto const maxJ = calcMaxJacDet(nodes_det, n_nodes_J);
+      auto const minJ = calcMinJacDet(nodes_det, 3); // only verts
+      //auto const minJ = calcMinJacDet(nodes_det, n_nodes_J);
+      auto const maxJ = calcMaxJacDet(nodes_det, n_nodes_J);
     printf("tri %d minJ %f, maxJ %f\n",n,minJ, maxJ);
 
       is_invalid[n] = checkMinJacDet<200>(nodes_det, order);
@@ -299,12 +300,12 @@ Reals askQuality_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
     }
 
     //TODO change to template for mesh_dim
-    auto nodes_det = getTriJacDetNodes<15, 2>(order, tri_pts);
+    auto nodes_det = getTriJacDetNodes<200, 2>(order, tri_pts);
 
-    /*
-    auto const minJ = calcMinJacDet(nodes_det);
-    auto const maxJ = calcMaxJacDet(nodes_det);
+    auto const minJ = calcMinJacDet(nodes_det, 3);
+    auto const maxJ = calcMaxJacDet(nodes_det, 3);
     printf("tri %d qs %f, minJ %f, maxJ %f, Q %f\n",n,Qs[n], minJ, maxJ, Q[n]);
+    /*
     Q[n] = std::pow((minJ/maxJ), 1./2.)*Qs[n];
     printf("Q=%.10f\n",Q[n]);
     if (Q[n] < 0.001) printf("low quality %f for element %d\n", Q[n], n);
