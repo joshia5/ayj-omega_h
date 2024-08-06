@@ -497,7 +497,7 @@ int main(int argc, char** argv) {
 
   //test_annulus3d_swap(&lib); //2d
 
-  //test_disc_swap(&lib); //2d
+  test_disc_swap(&lib); //2d
   //test_swap_kova(&lib); //3d
   
   return 0;
