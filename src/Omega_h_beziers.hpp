@@ -1196,6 +1196,113 @@ OMEGA_H_DEVICE Vector<2> face_parametricToParent_2d(
   return p11_w;
 }
 
+inline Vector<2> face_parametricToParent_2d_h(
+    LO const order, LO const old_face, HostRead<LO> old_ev2v,
+    HostRead<LO> old_fe2e, HostRead<Real> old_vertCtrlPts, 
+    HostRead<Real> old_edgeCtrlPts, HostRead<Real> old_faceCtrlPts,
+    Real nodePts_0, Real nodePts_1, HostRead<LO> old_fv2v) {
+  LO const dim = 2;
+  LO const n_edge_pts = n_internal_ctrlPts(EDGE, order);
+  LO const v0_old_face = old_fv2v[old_face*3 + 0];
+  LO const v1_old_face = old_fv2v[old_face*3 + 1];
+  LO const v2_old_face = old_fv2v[old_face*3 + 2];
+  LO const old_face_e0 = old_fe2e[old_face*3 + 0];
+  LO const old_face_e1 = old_fe2e[old_face*3 + 1];
+  LO const old_face_e2 = old_fe2e[old_face*3 + 2];
+  I8 e0_flip = -1;
+  I8 e1_flip = -1;
+  I8 e2_flip = -1;
+  LO v1 = v1_old_face;
+  LO v2 = v2_old_face;
+  auto e0v0_old_face = old_ev2v[old_face_e0*2 + 0];
+  auto e0v1 = old_ev2v[old_face_e0*2 + 1];
+  auto e1v0_old_face = old_ev2v[old_face_e1*2 + 0];
+  auto e1v1 = old_ev2v[old_face_e1*2 + 1];
+  auto e2v0_old_face = old_ev2v[old_face_e2*2 + 0];
+  auto e2v1 = old_ev2v[old_face_e2*2 + 1];
+  if ((e0v0_old_face == v1) && (e0v1 == v0_old_face)) {
+    e0_flip = 1;
+  }
+  else {
+    OMEGA_H_CHECK((e0v0_old_face == v0_old_face) && (e0v1 == v1));
+  }
+  if ((e1v0_old_face == v2) && (e1v1 == v1)) {
+    e1_flip = 1;
+  }
+  else {
+    OMEGA_H_CHECK((e1v0_old_face == v1) && (e1v1 == v2));
+  }
+  if ((e2v0_old_face == v0_old_face) && (e2v1 == v2)) {
+    e2_flip = 1;
+  }
+  else {
+    OMEGA_H_CHECK((e2v0_old_face == v2) && (e2v1 == v0_old_face));
+  }
+
+  Real cx00 = old_vertCtrlPts[v0_old_face*dim + 0];
+  Real cy00 = old_vertCtrlPts[v0_old_face*dim + 1];
+  Real cx30 = old_vertCtrlPts[v1*dim + 0];
+  Real cy30 = old_vertCtrlPts[v1*dim + 1];
+  Real cx03 = old_vertCtrlPts[v2*dim + 0];
+  Real cy03 = old_vertCtrlPts[v2*dim + 1];
+
+  auto pts_per_edge = n_edge_pts;
+  Real cx10 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + 0];
+  Real cy10 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + 1];
+  Real cx20 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy20 = old_edgeCtrlPts[old_face_e0*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  if (e0_flip > 0) {
+    swap2(cx10, cx20);
+    swap2(cy10, cy20);
+  }
+
+  Real cx21 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 0];
+  Real cy21 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + 1];
+  Real cx12 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy12 = old_edgeCtrlPts[old_face_e1*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  if (e1_flip > 0) {
+    swap2(cx12, cx21);
+    swap2(cy12, cy21);
+  }
+
+  Real cx02 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + 0];
+  Real cy02 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + 1];
+  Real cx01 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 0];
+  Real cy01 = old_edgeCtrlPts[old_face_e2*pts_per_edge*dim + (pts_per_edge-1)*dim + 1];
+  if (e2_flip > 0) {
+    swap2(cx02, cx01);
+    swap2(cy02, cy01);
+  }
+
+  Real cx11 = old_faceCtrlPts[old_face*dim + 0];
+  Real cy11 = old_faceCtrlPts[old_face*dim + 1];
+  auto c00 = vector_2(cx00, cy00);
+  auto c10 = vector_2(cx10, cy10);
+  auto c20 = vector_2(cx20, cy20);
+  auto c30 = vector_2(cx30, cy30);
+  auto c21 = vector_2(cx21, cy21);
+  auto c12 = vector_2(cx12, cy12);
+  auto c03 = vector_2(cx03, cy03);
+  auto c02 = vector_2(cx02, cy02);
+  auto c01 = vector_2(cx01, cy01);
+  auto c11 = vector_2(cx11, cy11);
+
+  Vector<2> p11_w;
+  for (LO k = 0; k < dim; ++k) {
+    p11_w[k] = c00[k]*Bij(order, 0, 0, nodePts_0, nodePts_1) +
+      c10[k]*Bij(order, 1, 0, nodePts_0, nodePts_1) +
+      c20[k]*Bij(order, 2, 0, nodePts_0, nodePts_1) +
+      c30[k]*Bij(order, 3, 0, nodePts_0, nodePts_1) +
+      c21[k]*Bij(order, 2, 1, nodePts_0, nodePts_1) +
+      c12[k]*Bij(order, 1, 2, nodePts_0, nodePts_1) +
+      c03[k]*Bij(order, 0, 3, nodePts_0, nodePts_1) +
+      c02[k]*Bij(order, 0, 2, nodePts_0, nodePts_1) +
+      c01[k]*Bij(order, 0, 1, nodePts_0, nodePts_1) +
+      c11[k]*Bij(order, 1, 1, nodePts_0, nodePts_1);
+  }
+  return p11_w;
+}
+
 OMEGA_H_DEVICE Few<LO, 3> calc_edge_flips(LO const v0, LO const v1,
     LO const v2, LO const e0_v0, LO const e0_v1, LO const e1_v0, 
     LO const e1_v1, LO const e2_v0, LO const e2_v1) {
