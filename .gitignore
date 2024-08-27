@@ -16,6 +16,7 @@ compile_commands.json
 ./meshes/*.vtu
 meshes/*.vtk
 meshes/*.vtu
+meshes/d3d
 meshes/Example_pym.smd
 meshes/Example_pym.sms
 meshes/Example_pym_hex.smd
