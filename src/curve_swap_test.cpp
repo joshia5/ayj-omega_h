@@ -375,7 +375,7 @@ void test_annulus120_swap(Library *lib) {
   cubic_2tri.set_dim(dim);
   cubic_2tri.set_family(OMEGA_H_SIMPLEX);
   LO const numVtx=4;
-  LO const numEdge=4;
+  LO const numEdge=5;
   LO const numFace=2;
   cubic_2tri.set_verts(numVtx);
 
@@ -395,14 +395,33 @@ void test_annulus120_swap(Library *lib) {
                            Read<LO>(class_id_0.write()));
   cubic_2tri.add_tag<I8>(0, "class_dim", 1,
                       Read<I8>(class_dim_0.write()));
-    //cubic_2tri.set_ents(1, Adj(ev2v));
-  //cubic_2tri.set_down(2, 0, LOs(host_fv2v.write()));
+
+  HostWrite<LO> ev2v(numEdge*2);
+  ev2v = {0,1,  1,2,  2,3,  3,0, 1,3};
+  cubic_2tri.set_ents(1, Adj(Read<LO>(ev2v.write())));
+  HostWrite<LO> class_id_1(numEdge);
+  class_id_1 = {13,7,17,15,2};
+  HostWrite<I8> class_dim_1(numEdge);// all 0s
+  class_dim_1 = {1,1,1,1,2};
+  cubic_2tri.add_tag<ClassId>(1, "class_id", 1,
+                           Read<LO>(class_id_1.write()));
+  cubic_2tri.add_tag<I8>(1, "class_dim", 1,
+                      Read<I8>(class_dim_1.write()));
+  
+  HostWrite<LO> fv2v(numFace*3);
+  fv2v = {0,1,3,  2,3,1};
+  printf("ok1\n");
+  //cubic_2tri.set_down(2, 0, LOs(fv2v.write()));//cant set if using set_ents
+  Adj edge2vert = cubic_2tri.get_adj(1, 0);
+  printf("ok2\n");
+  Adj vert2edge = cubic_2tri.ask_up(0, 1);
+  printf("ok3\n");
+  Adj f2e = reflect_down(LOs(fv2v.write()), edge2vert.ab2b, vert2edge,
+      OMEGA_H_SIMPLEX, 2, 1);
+  printf("ok4\n");
+  cubic_2tri.set_ents(2, f2e);
+  printf("ok5\n");
   /*
-    down = reflect_down(tri2verts, edge2vert.ab2b, vert2edge,
-                        OMEGA_H_SIMPLEX, 2, 1);
-    edge2vert = mesh->get_adj(1, 0);
-    vert2edge = mesh->ask_up(0, 1);
-    mesh->set_ents(2, down);
     for (LO i = 0; i <= mesh->dim(); ++i) {
       if (!mesh->has_tag(i, "global")) {
         mesh->add_tag(i, "global", 1, Omega_h::GOs(mesh->nents(i), 0, 1));
