@@ -357,6 +357,122 @@ void test_annulus3d_swap(Library *lib) {
   return;
 }
 
+void test_annulus120_swap(Library *lib) {
+  auto comm = lib->world();
+
+  auto mesh = meshsim::read("/lore/joshia5/Meshes/curved/annulus-120d-4.sms",
+                            "/lore/joshia5/Models/curved/annulus-120cut.smd", comm);
+ 
+  calc_quad_ctrlPts_from_interpPts(&mesh);
+  elevate_curve_order_2to3(&mesh);
+  mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
+  printf("read %d elem mesh p3\n", mesh.nelems());
+  auto const dim = mesh.dim();
+
+  auto cubic_2tri = Mesh(lib);
+  cubic_2tri.set_comm(comm);
+  cubic_2tri.set_parting(OMEGA_H_ELEM_BASED);
+  cubic_2tri.set_dim(dim);
+  cubic_2tri.set_family(OMEGA_H_SIMPLEX);
+  LO const numVtx=4;
+  LO const numEdge=4;
+  LO const numFace=2;
+  cubic_2tri.set_verts(numVtx);
+
+  HostWrite<Real> host_coords(numVtx*dim);
+  host_coords = {
+    0,0.25,
+    0,0.5,
+    -0.433013,-0.25,
+    -0.216506,-0.125
+                };
+  HostWrite<LO> class_id_0(numVtx);
+  class_id_0 = {12,11,16,14};
+  HostWrite<I8> class_dim_0(numVtx);// all 0s
+  class_dim_0 = {0,0,0,0};
+  cubic_2tri.add_coords(Reals(host_coords.write()));
+  cubic_2tri.add_tag<ClassId>(0, "class_id", 1,
+                           Read<LO>(class_id_0.write()));
+  cubic_2tri.add_tag<I8>(0, "class_dim", 1,
+                      Read<I8>(class_dim_0.write()));
+    //cubic_2tri.set_ents(1, Adj(ev2v));
+  //cubic_2tri.set_down(2, 0, LOs(host_fv2v.write()));
+  /*
+    down = reflect_down(tri2verts, edge2vert.ab2b, vert2edge,
+                        OMEGA_H_SIMPLEX, 2, 1);
+    edge2vert = mesh->get_adj(1, 0);
+    vert2edge = mesh->ask_up(0, 1);
+    mesh->set_ents(2, down);
+    for (LO i = 0; i <= mesh->dim(); ++i) {
+      if (!mesh->has_tag(i, "global")) {
+        mesh->add_tag(i, "global", 1, Omega_h::GOs(mesh->nents(i), 0, 1));
+      }
+    }
+      mesh->set_curved(1);
+      mesh->set_max_order(3);
+      mesh->add_tags_for_ctrlPts();
+      mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords.write()));
+  mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
+    printf("reading curve mesh\n");
+    */
+
+  /*
+  auto wireframe_mesh = Mesh(lib);
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_2d(&mesh, &wireframe_mesh, 4);
+  std::string vtuPath =
+    "/lore/joshia5/Meshes/curved/annulus-8_wire.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  auto cubic_curveVtk_mesh = Mesh(lib);
+  cubic_curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_2d(&mesh, &cubic_curveVtk_mesh, 4);
+  vtuPath = "/lore/joshia5/Meshes/curved/annulus-8.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
+
+  auto opts = AdaptOpts(&mesh);
+  opts.should_coarsen = false;
+  opts.should_coarsen_slivers = false;
+  opts.should_refine = false;
+  opts.should_filter_invalids = false;
+  opts.verbosity = EXTRA_STATS;
+  opts.min_quality_desired = 0.99;
+  opts.min_quality_allowed = 0.98;
+  mesh.add_tag<Real>(VERT, "metric", 1);
+  mesh.set_tag(VERT, "metric", Reals(mesh.nverts(), 1));
+  auto valid_tris_bef = checkValidity_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
+  auto quals = askQuality_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
+  for (LO adapt_itr = 0; adapt_itr < 1; ++adapt_itr) {
+    fprintf(stderr, "itr %d\n", adapt_itr);
+    swap_edges(&mesh, opts);
+  }
+
+  wireframe_mesh = Mesh(lib);
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_2d(&mesh, &wireframe_mesh, 4);
+  vtuPath =
+    "/lore/joshia5/Meshes/curved/annulus-8-swap_wire.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  cubic_curveVtk_mesh = Mesh(lib);
+  cubic_curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_2d(&mesh, &cubic_curveVtk_mesh, 4);
+  vtuPath = "/lore/joshia5/Meshes/curved/annulus-8-swap.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
+  auto valid_tris_aft = checkValidity_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
+  //quals = askQuality_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
+
+  fprintf(stderr, "finish swapping annulus-2d\n");
+  vtk::FullWriter writer;
+  writer = vtk::FullWriter(
+      "/lore/joshia5/Meshes/curved/annulus-8-swap_full.vtk", &mesh);
+  writer.write();
+  binary::write("/lore/joshia5/Meshes/curved/annulus-8_swap.osh", &mesh);
+  //mesh.ask_qualities();
+  */
+
+  return;
+}
+
+
 
 void test_annulus_swap(Library *lib) {
   auto comm = lib->world();
@@ -416,6 +532,7 @@ void test_annulus_swap(Library *lib) {
   writer = vtk::FullWriter(
       "/lore/joshia5/Meshes/curved/annulus-8-swap_full.vtk", &mesh);
   writer.write();
+  binary::write("/lore/joshia5/Meshes/curved/annulus-8_swap.osh", &mesh);
   //mesh.ask_qualities();
 
   return;
@@ -492,12 +609,13 @@ void test_annulus_swap_p4(Library *lib) {
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
-  test_annulus_swap(&lib); //2d
-  test_annulus_swap_p4(&lib); //2d
+  test_annulus120_swap(&lib); //2d 120 degree cut
+  //test_annulus_swap(&lib); //2d
+  //test_annulus_swap_p4(&lib); //2d
 
   //test_annulus3d_swap(&lib); //2d
 
-  test_disc_swap(&lib); //2d
+  //test_disc_swap(&lib); //2d
   //test_swap_kova(&lib); //3d
   
   return 0;
