@@ -410,29 +410,33 @@ void test_annulus120_swap(Library *lib) {
   
   HostWrite<LO> fv2v(numFace*3);
   fv2v = {0,1,3,  2,3,1};
-  printf("ok1\n");
   //cubic_2tri.set_down(2, 0, LOs(fv2v.write()));//cant set if using set_ents
   Adj edge2vert = cubic_2tri.get_adj(1, 0);
-  printf("ok2\n");
   Adj vert2edge = cubic_2tri.ask_up(0, 1);
-  printf("ok3\n");
   Adj f2e = reflect_down(LOs(fv2v.write()), edge2vert.ab2b, vert2edge,
       OMEGA_H_SIMPLEX, 2, 1);
-  printf("ok4\n");
   cubic_2tri.set_ents(2, f2e);
   printf("ok5\n");
-  /*
-    for (LO i = 0; i <= mesh->dim(); ++i) {
-      if (!mesh->has_tag(i, "global")) {
-        mesh->add_tag(i, "global", 1, Omega_h::GOs(mesh->nents(i), 0, 1));
-      }
+  HostWrite<LO> class_id_2(numFace);
+  class_id_2 = {2,2};
+  HostWrite<I8> class_dim_2(numFace);// all 0s
+  class_dim_2 = {2,2};
+  cubic_2tri.add_tag<ClassId>(2, "class_id", 1,
+                           Read<LO>(class_id_2.write()));
+  cubic_2tri.add_tag<I8>(2, "class_dim", 1,
+                      Read<I8>(class_dim_2.write()));
+  for (LO i = 0; i <= cubic_2tri.dim(); ++i) {
+    if (!cubic_2tri.has_tag(i, "global")) {
+      cubic_2tri.add_tag(i, "global", 1, Omega_h::GOs(cubic_2tri.nents(i), 0, 1));
     }
-      mesh->set_curved(1);
-      mesh->set_max_order(3);
-      mesh->add_tags_for_ctrlPts();
+  }
+  cubic_2tri.set_curved(1);
+  cubic_2tri.set_max_order(3);
+  cubic_2tri.add_tags_for_ctrlPts();
+  cubic_2tri.add_tag<Real>(0, "bezier_pts", cubic_2tri.dim(), cubic_2tri.coords());
+  printf("making 2tri curve mesh\n");
+  /*
       mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords.write()));
-  mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
-    printf("reading curve mesh\n");
     */
 
   /*
