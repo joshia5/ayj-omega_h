@@ -16,6 +16,31 @@ OMEGA_H_INLINE Vector<3> curve_paramToParent_3d(
   return new_p;
 }
 
+OMEGA_H_INLINE Few<Real, 4> curve_interpToCtrl_pts_2d(
+    Int const order, Vector<2> c0, Vector<2> c3, Vector<2> p1, Vector<2> p2) {
+  Few<Real, 4> c1_c2;
+
+  Real const xi_1 = xi_1_cube();
+  Real const xi_2 = xi_2_cube();
+  auto fx = vector_2(p1[0], p2[0]);
+  auto fy = vector_2(p1[1], p2[1]);
+  auto M1_inv = matrix_2x2(Bi(order, 1, xi_1), Bi(order, 2, xi_1),
+                           Bi(order, 1, xi_2), Bi(order, 2, xi_2));
+  auto M2 = matrix_2x2(Bi(order, 0, xi_1), Bi(order, 3, xi_1),
+                       Bi(order, 0, xi_2), Bi(order, 3, xi_2));
+  auto M1 = invert(M1_inv);
+  auto cx = vector_2(c0[0], c3[0]);
+  auto cy = vector_2(c0[1], c3[1]);
+  auto Cx = M1*fx - M1*M2*cx;
+  auto Cy = M1*fy - M1*M2*cy;
+
+  c1_c2[0] = Cx[0];
+  c1_c2[1] = Cy[0];
+  c1_c2[2] = Cx[1];
+  c1_c2[3] = Cy[1];
+  return c1_c2;
+}
+
 OMEGA_H_INLINE Few<Real, 6> curve_interpToCtrl_pts_3d(
     Int const order, Vector<3> c0, Vector<3> c3, Vector<3> p1, Vector<3> p2) {
   Few<Real, 6> c1_c2;
