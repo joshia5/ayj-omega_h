@@ -463,6 +463,7 @@ void test_annulus120_swap(Library *lib) {
     c3[0] = host_coords[v1*dim + 0]; 
     c3[1] = host_coords[v1*dim + 1]; 
     if (i == 1) {
+      /*
       p1[0] = 0.5*std::cos(PI*130./180.);
       p1[1] = 0.5*std::sin(PI*130./180.);
       p2[0] = 0.5*std::cos(PI*170./180.);
@@ -473,14 +474,13 @@ void test_annulus120_swap(Library *lib) {
       edgePt_coords[i*dim*2 + 1] = c1_c2[1];
       edgePt_coords[i*dim*2 + dim + 0] = c1_c2[2];
       edgePt_coords[i*dim*2 + dim + 1] = c1_c2[3];
+      */
       
-      /*
       edgePt_coords[i*dim*2 + 0] = 0.5*std::cos(PI*130./180.);
       edgePt_coords[i*dim*2 + 1] = 0.5*std::sin(PI*130./180.);
       
       edgePt_coords[i*dim*2 + dim + 0] = 0.5*std::cos(PI*170./180.);
       edgePt_coords[i*dim*2 + dim + 1] = 0.5*std::sin(PI*170./180.);
-      */
     }
     if (i == 3) {
       edgePt_coords[i*dim*2 + 0] = 0.25*std::cos(PI*170./180.);
