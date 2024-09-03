@@ -456,6 +456,20 @@ void test_annulus120_swap(Library *lib) {
       edgePt_coords[i*dim*2 + dim + d] = host_coords[v0*dim + d] + 
         (host_coords[v1*dim + d] - host_coords[v0*dim + d])*2./3.;
     }
+    if (i == 1) {
+      edgePt_coords[i*dim*2 + 0] = 0.5*std::cos(PI*130./180.);
+      edgePt_coords[i*dim*2 + 1] = 0.5*std::sin(PI*130./180.);
+      
+      edgePt_coords[i*dim*2 + dim + 0] = 0.5*std::cos(PI*170./180.);
+      edgePt_coords[i*dim*2 + dim + 1] = 0.5*std::sin(PI*170./180.);
+    }
+    if (i == 3) {
+      edgePt_coords[i*dim*2 + 0] = 0.25*std::cos(PI*170./180.);
+      edgePt_coords[i*dim*2 + 1] = 0.25*std::sin(PI*170./180.);
+      
+      edgePt_coords[i*dim*2 + dim + 0] = 0.25*std::cos(PI*130./180.);
+      edgePt_coords[i*dim*2 + dim + 1] = 0.25*std::sin(PI*130./180.);
+    }
   }
   HostWrite<Real> facePt_coords(numFace*dim);
   for (LO i=0; i<numFace; ++i) {
@@ -472,13 +486,13 @@ void test_annulus120_swap(Library *lib) {
   
   auto wireframe_mesh = Mesh(lib);
   wireframe_mesh.set_comm(comm);
-  build_cubic_wireframe_2d(&cubic_2tri, &wireframe_mesh, 4);
+  build_cubic_wireframe_2d(&cubic_2tri, &wireframe_mesh, 9);
   std::string vtuPath =
     "/lore/joshia5/Meshes/curved/annulus-120_wire.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
   auto cubic_curveVtk_mesh = Mesh(lib);
   cubic_curveVtk_mesh.set_comm(comm);
-  build_cubic_curveVtk_2d(&cubic_2tri, &cubic_curveVtk_mesh, 4);
+  build_cubic_curveVtk_2d(&cubic_2tri, &cubic_curveVtk_mesh, 9);
   vtuPath = "/lore/joshia5/Meshes/curved/annulus-120_crvVtk.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
   /*
