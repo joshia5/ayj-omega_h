@@ -434,14 +434,20 @@ void test_annulus120_swap(Library *lib) {
   writer = vtk::FullWriter(
       "/lore/joshia5/Meshes/curved/annulus-120-2tri_full.vtk", &cubic_2tri);
   writer.write();
+  cubic_2tri.set_curved(1);
+  cubic_2tri.set_max_order(3);
+  cubic_2tri.add_tags_for_ctrlPts();
+  cubic_2tri.add_tag<Real>(0, "bezier_pts", cubic_2tri.dim(), cubic_2tri.coords());
+  printf("making 2tri curve mesh\n");
+
+  HostWrite<Real> edgePt_coords(numEdge*dim*2);
+  // init straight sided
+  for (LO i=0; i<numEdge; ++i) {
+  }
+  HostWrite<Real> facePt_coords(numFace*dim);
   /*
-     cubic_2tri.set_curved(1);
-     cubic_2tri.set_max_order(3);
-     cubic_2tri.add_tags_for_ctrlPts();
-     cubic_2tri.add_tag<Real>(0, "bezier_pts", cubic_2tri.dim(), cubic_2tri.coords());
-     printf("making 2tri curve mesh\n");
-     mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords.write()));
-     */
+  mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords.write()));
+  */
 
   /*
   auto wireframe_mesh = Mesh(lib);
