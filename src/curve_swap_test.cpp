@@ -443,10 +443,45 @@ void test_annulus120_swap(Library *lib) {
   HostWrite<Real> edgePt_coords(numEdge*dim*2);
   // init straight sided
   for (LO i=0; i<numEdge; ++i) {
+    LO const v0 = ev2v[i*2 + 0];
+    LO const v1 = ev2v[i*2 + 1];
+    Real len = 0.;
+    for (LO d=0; d<dim; ++d) {
+      len += std::pow((host_coords[v1*dim + d] - host_coords[v0*dim + d]),2);
+    }
+    len = std::pow(len, 0.5);
+    for (LO d=0; d<dim; ++d) {
+      edgePt_coords[i*dim*2 + d] = host_coords[v0*dim + d] + 
+        (host_coords[v1*dim + d] - host_coords[v0*dim + d])/3.;
+      edgePt_coords[i*dim*2 + dim + d] = host_coords[v0*dim + d] + 
+        (host_coords[v1*dim + d] - host_coords[v0*dim + d])*2./3.;
+    }
   }
   HostWrite<Real> facePt_coords(numFace*dim);
+  for (LO i=0; i<numFace; ++i) {
+    LO const v0 = fv2v[i*2 + 0];
+    LO const v1 = fv2v[i*2 + 1];
+    LO const v2 = fv2v[i*2 + 2];
+    for (LO d=0; d<dim; ++d) {
+      facePt_coords[i*dim + d] = (host_coords[v0*dim + d] + 
+        host_coords[v1*dim + d] + host_coords[v2*dim + d])/3.;
+    }
+  }
+  cubic_2tri.set_tag_for_ctrlPts(1, Reals(edgePt_coords.write()));
+  cubic_2tri.set_tag_for_ctrlPts(2, Reals(facePt_coords.write()));
+  
+  auto wireframe_mesh = Mesh(lib);
+  wireframe_mesh.set_comm(comm);
+  build_cubic_wireframe_2d(&cubic_2tri, &wireframe_mesh, 4);
+  std::string vtuPath =
+    "/lore/joshia5/Meshes/curved/annulus-120_wire.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
+  auto cubic_curveVtk_mesh = Mesh(lib);
+  cubic_curveVtk_mesh.set_comm(comm);
+  build_cubic_curveVtk_2d(&cubic_2tri, &cubic_curveVtk_mesh, 4);
+  vtuPath = "/lore/joshia5/Meshes/curved/annulus-120_crvVtk.vtu";
+  vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
   /*
-  mesh->set_tag_for_ctrlPts(1, Reals(edgePt_coords.write()));
   */
 
   /*
