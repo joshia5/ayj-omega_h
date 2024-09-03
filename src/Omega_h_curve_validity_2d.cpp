@@ -10,8 +10,10 @@ namespace Omega_h {
 
 OMEGA_H_INLINE Real calcMinJacDet(Few<Real, 200> nodes, const I8 n_nodes) {
   Real minJ = 1e10;
-  for (LO i = 0; i < n_nodes; ++i)
+  for (LO i = 0; i < n_nodes; ++i) {
+    printf("i %d detJ %f\n", i, nodes[i]);
     minJ = min2(minJ,nodes[i]);
+  }
   return minJ;
 }
 
@@ -187,7 +189,8 @@ LOs checkValidity_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
 
       auto const minJ = calcMinJacDet(nodes_det, 3); // only verts
       //auto const minJ = calcMinJacDet(nodes_det, n_nodes_J);
-      auto const maxJ = calcMaxJacDet(nodes_det, n_nodes_J);
+      auto const maxJ = calcMaxJacDet(nodes_det, 3);
+      //auto const maxJ = calcMaxJacDet(nodes_det, n_nodes_J);
     printf("tri %d minJ %f, maxJ %f\n",n,minJ, maxJ);
 
       is_invalid[n] = checkMinJacDet<200>(nodes_det, order);
