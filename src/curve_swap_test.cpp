@@ -4,6 +4,7 @@
 //#include <Omega_h_metric.hpp>
 #include <Omega_h_file.hpp>
 #include <Omega_h_beziers.hpp>
+#include <Omega_h_bezier_interp.hpp>
 //#include <Omega_h_for.hpp>
 #include <Omega_h_curve_coarsen.hpp>
 #include <Omega_h_curve_validity_3d.hpp>
@@ -456,12 +457,30 @@ void test_annulus120_swap(Library *lib) {
       edgePt_coords[i*dim*2 + dim + d] = host_coords[v0*dim + d] + 
         (host_coords[v1*dim + d] - host_coords[v0*dim + d])*2./3.;
     }
+    Vector<2> c0,c3,p1,p2;
+    c0[0] = host_coords[v0*dim + 0]; 
+    c0[1] = host_coords[v0*dim + 1]; 
+    c3[0] = host_coords[v1*dim + 0]; 
+    c3[1] = host_coords[v1*dim + 1]; 
     if (i == 1) {
+      p1[0] = 0.5*std::cos(PI*130./180.);
+      p1[1] = 0.5*std::sin(PI*130./180.);
+      p2[0] = 0.5*std::cos(PI*170./180.);
+      p2[1] = 0.5*std::sin(PI*170./180.);
+
+      auto const c1_c2 = curve_interpToCtrl_pts_2d(3, c0, c3, p1, p2);
+      edgePt_coords[i*dim*2 + 0] = c1_c2[0];
+      edgePt_coords[i*dim*2 + 1] = c1_c2[1];
+      edgePt_coords[i*dim*2 + dim + 0] = c1_c2[2];
+      edgePt_coords[i*dim*2 + dim + 1] = c1_c2[3];
+      
+      /*
       edgePt_coords[i*dim*2 + 0] = 0.5*std::cos(PI*130./180.);
       edgePt_coords[i*dim*2 + 1] = 0.5*std::sin(PI*130./180.);
       
       edgePt_coords[i*dim*2 + dim + 0] = 0.5*std::cos(PI*170./180.);
       edgePt_coords[i*dim*2 + dim + 1] = 0.5*std::sin(PI*170./180.);
+      */
     }
     if (i == 3) {
       edgePt_coords[i*dim*2 + 0] = 0.25*std::cos(PI*170./180.);
