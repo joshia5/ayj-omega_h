@@ -11,7 +11,7 @@ namespace Omega_h {
 OMEGA_H_INLINE Real calcMinJacDet(Few<Real, 200> nodes, const I8 n_nodes) {
   Real minJ = 1e10;
   for (LO i = 0; i < n_nodes; ++i) {
-    printf("i %d detJ %f\n", i, nodes[i]);
+    printf("i %d detJ %1.15f\n", i, nodes[i]);
     minJ = min2(minJ,nodes[i]);
   }
   return minJ;
