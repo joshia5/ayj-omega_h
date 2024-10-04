@@ -80,6 +80,7 @@ struct AdaptOpts {
   I8 should_filter_invalids;
   I8 check_crv_qual;
   Real min_crv_qual_allowed;
+  bool should_optimize;
   TransferOpts xfer_opts;
 };
 

@@ -95,6 +95,7 @@ AdaptOpts::AdaptOpts(Int dim) {
   should_filter_invalids = 1;
   check_crv_qual = 1;
   min_crv_qual_allowed = 0.10;
+  should_optimize = false;
 }
 
 static Reals get_fixable_qualities(Mesh* mesh, AdaptOpts const&) {
