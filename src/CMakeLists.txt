@@ -115,6 +115,7 @@ set(Omega_h_SOURCES
   Omega_h_xml.cpp
   Omega_h_xml_lite.cpp
   Omega_h_yaml.cpp
+  LBFGS.cpp
   )
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
@@ -675,6 +676,7 @@ set(Omega_h_HEADERS
   Omega_h_xml_lite.hpp
   Omega_h_xml.hpp
   r3d.hpp
+  LBFGS.hpp
   )
 
 if (NOT Omega_h_USE_CUDA)
