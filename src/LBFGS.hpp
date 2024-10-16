@@ -1,9 +1,11 @@
-ifndef LBFGS_H
+#ifndef LBFGS_H
 #define LBFGS_H
 
 #include <iostream>
-#include <pcu_util.h>
+//#include <pcu_util.h>
 #include <vector>
+
+namespace Omega_h {
 
 class ObjFunction;
 
@@ -37,5 +39,7 @@ class LBFGS {
   private:
     int r = 50;
 };
+
+}
 
 #endif
