@@ -1,3 +1,4 @@
+#include <cmath>
 #include "LBFGS.hpp"
 //#include "crvObjectiveFunctions.h"
 
@@ -34,9 +35,9 @@ double LBFGS::lineSearch(std::vector<double> &xold, std::vector<double> &g, std:
   double a, alam, alam2 = 0.0, alamin, b, disc, f2 = 0.0;
   double rhs1, rhs2, slope = 0.0, sum = 0.0, temp, test, tmplam;
   int n = xold.size();
-  
+
   std::vector<double> xnew(xold.size(), 0.0);
-  sum = sqrt(dotP(direction,direction));
+  sum = std::sqrt(dotP(direction,direction));
   if (sum > stpmax) {
     for (int i = 0; i < n; i++) {
       direction[i] = direction[i]*stpmax/sum;
@@ -111,7 +112,7 @@ bool LBFGS::run()
 
   xs[0] = x0;
   gs[0] = objFunc->getGrad(x0);
-  
+
   for (std::size_t i = 0; i < xs[0].size(); i++) p[i] = -gs[0][i];
 
   for (int k = 0; k < iter; k++) {
@@ -127,14 +128,14 @@ bool LBFGS::run()
       moveArrayToLeft(xs, r);
       moveArrayToLeft(gs, r);
     }
-    double stpmax = (std::max(sqrt(dotP(p,p)), double(objFunc->getSpaceDim())));
+    double stpmax = (std::max(std::sqrt(dotP(p,p)), double(objFunc->getSpaceDim())));
     double lambda = lineSearch(xs[J], gs[J], p, stpmax);
-    
+ 
     for (std::size_t j = 0; j < xs[I].size(); j++) 
       xs[I][j] = xs[J][j] + lambda * p[j];
 
     gs[I] = objFunc->getGrad(xs[I]);
-    
+
     if ( I > 0) {
       for (std::size_t jj = 0; jj < gs[I].size(); jj++)
       	gdiffs[I-1][jj] = gs[I][jj] - gs[I-1][jj];
@@ -146,7 +147,7 @@ bool LBFGS::run()
       //std::cout<<"number of LBFGS iterations: "<<k<<std::endl;
       return true;
     }
-    
+
     for (std::size_t j = 0; j < xs[I].size(); j++) p[j] = -gs[I][j];
 
     for (int i = I-1; i >= 0; --i) {
@@ -161,7 +162,7 @@ bool LBFGS::run()
       for(std::size_t j = 0; j < p.size(); j++)
         p[j] = p[j] - gammas[i]*y[j];      
     }
-    
+
     for (int i = 0; i <= I-1; i++) {
       std::vector<double> s(xs[I].size(), 0.0);
       std::vector<double> y(xs[I].size(), 0.0);
@@ -174,7 +175,7 @@ bool LBFGS::run()
       for(std::size_t j = 0; j < p.size(); j++)
         p[j] = p[j] + s[j]* (gammas[i] - phi);
     }
-    
+
     if (dotP(p, gs[I]) > 0)
       for (std::size_t j = 0; j < p.size(); j++) p[j] = -p[j];
 
