@@ -22,7 +22,7 @@ LOs checkValidity_3d(Mesh *mesh, LOs new_tets) {
 
     Few<Real, 60> tet_pts = collect_tet_pts(order, tet, ev2v, rv2v, vertCtrlPts
         , edgeCtrlPts, faceCtrlPts, re2e, rf2f);
-    
+
     Few<Real, 84> nodes_det = getTetJacDetNodes<84>(3, tet_pts);
 
     const I8 check_only_verts = 1;
