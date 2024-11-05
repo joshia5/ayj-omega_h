@@ -268,6 +268,7 @@ void test_disc_swap(Library *lib) {
   mesh.add_tag<Real>(VERT, "metric", 1);
   mesh.set_tag(VERT, "metric", Reals(mesh.nverts(), 1));
   auto valid_tris_bef = checkValidity_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
+  askWorstQuality_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
   for (LO adapt_itr = 0; adapt_itr < 1; ++adapt_itr) {
     fprintf(stderr, "itr %d\n", adapt_itr);
     swap_edges(&mesh, opts);
