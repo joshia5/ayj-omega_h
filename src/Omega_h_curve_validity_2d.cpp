@@ -443,6 +443,7 @@ const Real askWorstQuality_2d(Mesh *mesh, LOs new_tris, Int const mesh_dim) {
   };
   parallel_for(nnew_tris, std::move(check_worstQual));
 
+  printf("\nmin qual %f\n\n",get_min(Reals(Q)));
   return get_min(Reals(Q));
 }
 
