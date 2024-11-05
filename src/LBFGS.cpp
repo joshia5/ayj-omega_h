@@ -2,6 +2,8 @@
 #include "LBFGS.hpp"
 //#include "crvObjectiveFunctions.h"
 
+//#include "Omega_h_mesh.hpp"
+
 namespace Omega_h {
 
 //void LBFGS::setInitialValue(std::vector<double> x)
@@ -28,7 +30,7 @@ double LBFGS::getFvalueAfter()
   return fValAfter;
 }
 
-double LBFGS::lineSearch(std::vector<double> &xold, std::vector<double> &g, std::vector<double> &direction, double stpmax)
+double LBFGS::lineSearch(std::vector<double> &xold, std::vector<double> &g, std::vector<double> &direction, double stpmax, Mesh *mesh)
 {
   double alpha = 1.0e-4, tolOndeltaX = 1.0e-8;
   int itrs = 2000;
@@ -55,12 +57,12 @@ double LBFGS::lineSearch(std::vector<double> &xold, std::vector<double> &g, std:
   alamin = tolOndeltaX/test;
   alam = 1.0;
 
-  double fold = objFunc->getValue(xold);
+  double fold = objFunc->getValue(mesh, xold);
 
   for (int k = 0; k < itrs; k++) {
       for (int i =0; i < n; i++) xnew[i] = xold[i] + alam*direction[i];
 
-      double fnew = objFunc->getValue(xnew);
+      double fnew = objFunc->getValue(mesh, xnew);
       if (alam < alamin || fnew <= fold + alpha*alam*slope) {
         return alam;
       }
@@ -80,7 +82,7 @@ double LBFGS::lineSearch(std::vector<double> &xold, std::vector<double> &g, std:
             else tmplam = -slope/(b + sqrt(disc));
           }
         if (tmplam > 0.5*alam) tmplam = 0.5*alam;
-        }  
+        }
      }
      alam2 = alam;
      alam = std::max(tmplam, 0.1*alam);
@@ -94,7 +96,7 @@ void LBFGS::moveArrayToLeft(std::vector<double> a[], int r)
       a[i] = a[i+1];   
 }
 
-bool LBFGS::run()
+bool LBFGS::run(Mesh *mesh)
 {
   std::vector<double> p(x0.size(), 0.0);
   std::vector<double> xs[r];
@@ -111,7 +113,7 @@ bool LBFGS::run()
   }
 
   xs[0] = x0;
-  gs[0] = objFunc->getGrad(x0);
+  gs[0] = objFunc->getGrad(mesh, x0);
 
   for (std::size_t i = 0; i < xs[0].size(); i++) p[i] = -gs[0][i];
 
@@ -128,13 +130,14 @@ bool LBFGS::run()
       moveArrayToLeft(xs, r);
       moveArrayToLeft(gs, r);
     }
-    double stpmax = (std::max(std::sqrt(dotP(p,p)), double(objFunc->getSpaceDim())));
-    double lambda = lineSearch(xs[J], gs[J], p, stpmax);
+    double stpmax = (std::max(std::sqrt(dotP(p,p)), 2.));
+    //double stpmax = (std::max(std::sqrt(dotP(p,p)), double(objFunc->getSpaceDim())));
+    double lambda = lineSearch(xs[J], gs[J], p, stpmax, mesh);
  
     for (std::size_t j = 0; j < xs[I].size(); j++) 
       xs[I][j] = xs[J][j] + lambda * p[j];
 
-    gs[I] = objFunc->getGrad(xs[I]);
+    gs[I] = objFunc->getGrad(mesh, xs[I]);
 
     if ( I > 0) {
       for (std::size_t jj = 0; jj < gs[I].size(); jj++)
@@ -143,7 +146,7 @@ bool LBFGS::run()
 
     if ((dotP(gs[I],gs[I]) < tol) || (dotP(gdiffs[I-1], gdiffs[I-1]) < tol)) {
       currentX = xs[I];
-      fValAfter = objFunc->getValue(xs[I]);
+      fValAfter = objFunc->getValue(mesh, xs[I]);
       //std::cout<<"number of LBFGS iterations: "<<k<<std::endl;
       return true;
     }
