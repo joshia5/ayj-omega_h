@@ -41,6 +41,26 @@ class Rosenbrock
     }   
 };
 
+void test_rosenbrock() {
+
+  const int n = 10; 
+  LBFGSParam<float> param;
+  LBFGSSolver<float> solver(param);
+  Rosenbrock fun(n);
+
+  VectorXf x = VectorXf::Zero(n);
+  float fx; 
+  int niter = solver.minimize(fun, x, fx);
+
+  std::cout << niter << " iterations" << std::endl;
+  std::cout << "x = \n" << x.transpose() << std::endl;
+  std::cout << "f(x) = " << fx << std::endl;
+  std::cout << "grad = " << solver.final_grad().transpose() << std::endl;
+  std::cout << "||grad|| = " << solver.final_grad_norm() << std::endl;
+
+  return;
+}
+
 void test_annulus_optim(Library *lib) {
   auto comm = lib->world();
 
@@ -324,20 +344,6 @@ int main(int argc, char** argv) {
   //test_annulus3d_swap(&lib); //2d
   //
   
-  const int n = 10; 
-  LBFGSParam<float> param;
-  LBFGSSolver<float> solver(param);
-  Rosenbrock fun(n);
-
-  VectorXf x = VectorXf::Zero(n);
-  float fx; 
-  int niter = solver.minimize(fun, x, fx);
-
-  std::cout << niter << " iterations" << std::endl;
-  std::cout << "x = \n" << x.transpose() << std::endl;
-  std::cout << "f(x) = " << fx << std::endl;
-  std::cout << "grad = " << solver.final_grad().transpose() << std::endl;
-  std::cout << "||grad|| = " << solver.final_grad_norm() << std::endl;
-
+  test_rosenbrock();
   return 0;
 }
