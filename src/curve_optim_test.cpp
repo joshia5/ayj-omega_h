@@ -12,6 +12,35 @@
 
 using namespace Omega_h;
 
+#include <Eigen/Core>
+#include <iostream>
+#include <LBFGS.h>
+
+using Eigen::VectorXf;
+using Eigen::MatrixXf;
+using namespace LBFGSpp;
+
+class Rosenbrock
+{
+  private:
+    int n;
+  public:
+    Rosenbrock(int n_) : n(n_) {}
+    float operator()(const VectorXf& x, VectorXf& grad)
+    {   
+      float fx = 0.0;
+      for(int i = 0; i < n; i += 2)
+      {
+        float t1 = 1.0 - x[i];
+        float t2 = 10 * (x[i + 1] - x[i] * x[i]);
+        grad[i + 1] = 20 * t2; 
+        grad[i]     = -2.0 * (x[i] * grad[i + 1] + t1);
+        fx += t1 * t1 + t2 * t2; 
+      }
+      return fx; 
+    }   
+};
+
 void test_annulus_optim(Library *lib) {
   auto comm = lib->world();
 
@@ -290,9 +319,25 @@ void test_annulus3d_swap(Library *lib) {
 int main(int argc, char** argv) {
   auto lib = Library(&argc, &argv);
 
-  test_annulus_optim(&lib); //2d
+  //test_annulus_optim(&lib); //2d
 
   //test_annulus3d_swap(&lib); //2d
+  //
+  
+  const int n = 10; 
+  LBFGSParam<float> param;
+  LBFGSSolver<float> solver(param);
+  Rosenbrock fun(n);
+
+  VectorXf x = VectorXf::Zero(n);
+  float fx; 
+  int niter = solver.minimize(fun, x, fx);
+
+  std::cout << niter << " iterations" << std::endl;
+  std::cout << "x = \n" << x.transpose() << std::endl;
+  std::cout << "f(x) = " << fx << std::endl;
+  std::cout << "grad = " << solver.final_grad().transpose() << std::endl;
+  std::cout << "||grad|| = " << solver.final_grad_norm() << std::endl;
 
   return 0;
 }
