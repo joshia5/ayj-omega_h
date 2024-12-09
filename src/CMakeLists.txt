@@ -126,11 +126,6 @@ else()
 	)
 endif()
 
-if(Omega_h_USE_LBFGSpp)
-  target_include_directories(omega_h PUBLIC "${LBFGSpp_PREFIX}")
-  target_include_directories(omega_h PUBLIC "${EIGEN_PREFIX}")
-endif()
-
 if (Omega_h_USE_CUDA)
   if (NOT Omega_h_USE_Kokkos)
     set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_for.cpp)
@@ -261,6 +256,11 @@ endif()
 if(Omega_h_USE_SimModSuite)
   target_include_directories(omega_h PUBLIC "${SIMMODSUITE_INCLUDE_DIR}")
   target_link_libraries(omega_h PUBLIC "${SIMMODSUITE_LIBS}")
+endif()
+
+if(Omega_h_USE_LBFGSpp)
+  target_include_directories(omega_h PUBLIC "${LBFGSpp_PREFIX}")
+  target_include_directories(omega_h PUBLIC "${EIGEN_PREFIX}")
 endif()
 
 bob_link_dependency(omega_h PUBLIC SEACASExodus)
