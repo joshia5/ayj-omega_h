@@ -126,6 +126,11 @@ else()
 	)
 endif()
 
+if(Omega_h_USE_LBFGSpp)
+  target_include_directories(omega_h PUBLIC "${LBFGSpp_PREFIX}")
+  target_include_directories(omega_h PUBLIC "${EIGEN_PREFIX}")
+endif()
+
 if (Omega_h_USE_CUDA)
   if (NOT Omega_h_USE_Kokkos)
     set(Omega_h_SOURCES ${Omega_h_SOURCES} Omega_h_for.cpp)
