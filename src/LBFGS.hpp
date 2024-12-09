@@ -41,7 +41,7 @@ class LBFGS {
 
   private:
     int r = 50;
-};
+}; 
 
 class ObjFunction
 {
@@ -125,6 +125,39 @@ class ObjFunction
     }
     ~ObjFunction(){};
 };
+
+class Rosenbrock
+{
+  private:
+    int n;
+  public:
+    Rosenbrock(int n_) : n(n_) {}
+    float operator()(const VectorXf& x, VectorXf& grad)
+    {
+      float fx = 0.0;
+      for(int i = 0; i < n; i += 2)
+      {
+        float t1 = 1.0 - x[i];
+        float t2 = 10 * (x[i + 1] - x[i] * x[i]);
+        grad[i + 1] = 20 * t2;
+        grad[i]     = -2.0 * (x[i] * grad[i + 1] + t1);
+        fx += t1 * t1 + t2 * t2;
+      }
+      return fx;
+    }
+};
+
+double quadratic_test(const VectorXd& x, VectorXd& grad)
+{
+  const int n = x.size();
+  VectorXd d(n);
+  for(int i = 0; i < n; i++)
+    d[i] = i;
+
+  double f = (x - d).squaredNorm();
+  grad.noalias() = 2.0 * (x - d);
+  return f;
+}
 
 }
 

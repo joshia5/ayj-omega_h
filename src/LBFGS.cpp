@@ -104,6 +104,7 @@ bool LBFGS::run(Mesh *mesh)
   std::vector<double> gdiffs[r];
   double gammas[r];
 
+  printf("ok1\n");
   for(int i = 0; i < r; ++i)
   {
     xs[i] = std::vector<double>(x0.size(), 0.0);
@@ -111,13 +112,16 @@ bool LBFGS::run(Mesh *mesh)
     gdiffs[i] = std::vector<double>(x0.size(), 0.0);
     gammas[i] = 0.0;
   }
+  printf("ok2\n");
 
   xs[0] = x0;
-  gs[0] = objFunc->getGrad(mesh, x0);
+  gs[0] = objFunc->getGrad(mesh, x0); // note this needs to be redone
+  printf("ok3\n");
 
   for (std::size_t i = 0; i < xs[0].size(); i++) p[i] = -gs[0][i];
 
   for (int k = 0; k < iter; k++) {
+    printf("iter in bfgs %d\n", k);
     int I = 0;
     int J = 0;
     if (k+1 < r) {
@@ -130,7 +134,7 @@ bool LBFGS::run(Mesh *mesh)
       moveArrayToLeft(xs, r);
       moveArrayToLeft(gs, r);
     }
-    double stpmax = (std::max(std::sqrt(dotP(p,p)), 2.));
+    double stpmax = (std::max(std::sqrt(dotP(p,p)), 2.));//2d test for now
     //double stpmax = (std::max(std::sqrt(dotP(p,p)), double(objFunc->getSpaceDim())));
     double lambda = lineSearch(xs[J], gs[J], p, stpmax, mesh);
  
