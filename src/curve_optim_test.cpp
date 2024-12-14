@@ -18,7 +18,7 @@ using namespace Omega_h;
 
 using Eigen::VectorXf;
 using Eigen::MatrixXf;
-using namespace LBFGSpp;
+namespace lbfgs = LBFGSpp;
 
 class Rosenbrock
 {
@@ -27,29 +27,29 @@ class Rosenbrock
   public:
     Rosenbrock(int n_) : n(n_) {}
     float operator()(const VectorXf& x, VectorXf& grad)
-    {   
+    {
       float fx = 0.0;
       for(int i = 0; i < n; i += 2)
       {
         float t1 = 1.0 - x[i];
         float t2 = 10 * (x[i + 1] - x[i] * x[i]);
-        grad[i + 1] = 20 * t2; 
+        grad[i + 1] = 20 * t2;
         grad[i]     = -2.0 * (x[i] * grad[i + 1] + t1);
-        fx += t1 * t1 + t2 * t2; 
+        fx += t1 * t1 + t2 * t2;
       }
-      return fx; 
-    }   
+      return fx;
+    }
 };
 
 void test_rosenbrock() {
 
-  const int n = 10; 
-  LBFGSParam<float> param;
-  LBFGSSolver<float> solver(param);
+  const int n = 10;
+  lbfgs::LBFGSParam<float> param;
+  lbfgs::LBFGSSolver<float> solver(param);
   Rosenbrock fun(n);
 
   VectorXf x = VectorXf::Zero(n);
-  float fx; 
+  float fx;
   int niter = solver.minimize(fun, x, fx);
 
   std::cout << niter << " iterations" << std::endl;
@@ -61,6 +61,31 @@ void test_rosenbrock() {
   return;
 }
 
+/*
+void test_withEigenPP() { // foo
+
+  const int n = 8;//number of internal ctrl pts*dim // for 2d 2tri, 1edge case =8
+  lbfgs::LBFGSParam<float> param;
+  lbfgs::LBFGSSolver<float> solver(param);
+  //Rosenbrock fun(n);
+  //ObjFunction *objF;
+  //another class that has a constructor
+  //
+
+  VectorXf x = VectorXf::Zero(n);
+  float fx; 
+  int niter = solver.minimize(fun, x, fx);
+
+
+  std::cout << niter << " iterations" << std::endl;
+  std::cout << "x = \n" << x.transpose() << std::endl;
+  std::cout << "f(x) = " << fx << std::endl;
+  std::cout << "grad = " << solver.final_grad().transpose() << std::endl;
+  std::cout << "||grad|| = " << solver.final_grad_norm() << std::endl;
+
+  return;
+}
+*/
 void test_annulus_optim(Library *lib) {
   auto comm = lib->world();
 
@@ -113,7 +138,7 @@ void test_annulus_optim(Library *lib) {
                            Read<LO>(class_id_1.write()));
   cubic_2tri.add_tag<I8>(1, "class_dim", 1,
                       Read<I8>(class_dim_1.write()));
-  
+ 
   HostWrite<LO> fv2v(numFace*3);
   fv2v = {0,1,3,  2,3,1};
   //cubic_2tri.set_down(2, 0, LOs(fv2v.write()));//cant set if using set_ents
@@ -183,14 +208,14 @@ void test_annulus_optim(Library *lib) {
 
       edgePt_coords[i*dim*2 + 0] = 0.5*std::cos(PI*130./180.);
       edgePt_coords[i*dim*2 + 1] = 0.5*std::sin(PI*130./180.);
-      
+
       edgePt_coords[i*dim*2 + dim + 0] = 0.5*std::cos(PI*170./180.);
       edgePt_coords[i*dim*2 + dim + 1] = 0.5*std::sin(PI*170./180.);
     }
     if (i == 3) {
       edgePt_coords[i*dim*2 + 0] = 0.25*std::cos(PI*170./180.);
       edgePt_coords[i*dim*2 + 1] = 0.25*std::sin(PI*170./180.);
-      
+
       edgePt_coords[i*dim*2 + dim + 0] = 0.25*std::cos(PI*130./180.);
       edgePt_coords[i*dim*2 + dim + 1] = 0.25*std::sin(PI*130./180.);
     }
@@ -207,7 +232,7 @@ void test_annulus_optim(Library *lib) {
   }
   cubic_2tri.set_tag_for_ctrlPts(1, Reals(edgePt_coords.write()));
   cubic_2tri.set_tag_for_ctrlPts(2, Reals(facePt_coords.write()));
-  
+
   auto opts = AdaptOpts(&cubic_2tri);
   opts.should_coarsen = false;
   opts.should_coarsen_slivers = false;
