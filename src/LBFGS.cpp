@@ -1,8 +1,5 @@
 #include <cmath>
 #include "LBFGS.hpp"
-//#include "crvObjectiveFunctions.h"
-
-//#include "Omega_h_mesh.hpp"
 
 namespace Omega_h {
 
