@@ -62,7 +62,7 @@ void test_rosenbrock() {
 }
 
 /*
-void test_withEigen() { // foo
+void test_withEigen(Library *lib) { // foo
 
   const int n = 8;//number of internal ctrl pts*dim // for 2d 2tri, 1edge case =8
   lbfgs::LBFGSParam<float> param;
@@ -71,6 +71,23 @@ void test_withEigen() { // foo
   //ObjFunction *objF;
   //another class that has a constructor
   //
+
+  auto comm = lib->world();
+  auto mesh = meshsim::read("/lore/joshia5/Meshes/curved/annulus-8.sms",
+                            "/lore/joshia5/Models/curved/annulus-8.smd", comm);
+ 
+  calc_quad_ctrlPts_from_interpPts(&mesh);
+  elevate_curve_order_2to3(&mesh);
+  mesh.add_tag<Real>(0, "bezier_pts", mesh.dim(), mesh.coords());
+
+  const int n = 8;//number of internal ctrl pts*dim // for 2d 2tri, 1edge case =8
+  lbfgs::LBFGSParam<float> param;
+  lbfgs::LBFGSSolver<float> solver(param);
+  //Rosenbrock fun(n);
+  //ObjFunction *objF;
+  //another class that has a constructor
+  //
+
 
 ##############body  of ask worst qual
   auto fv2v = mesh->ask_down(2, 0).ab2b;
@@ -205,9 +222,6 @@ void test_annulus_optim(Library *lib) {
 
   auto mesh = meshsim::read("/lore/joshia5/Meshes/curved/annulus-120d-4.sms",
                             "/lore/joshia5/Models/curved/annulus-120cut.smd", comm);
- 
-  //auto mesh = meshsim::read("/lore/joshia5/Meshes/curved/annulus-8.sms",
-    //                        "/lore/joshia5/Models/curved/annulus-8.smd", comm);
  
   calc_quad_ctrlPts_from_interpPts(&mesh);
   elevate_curve_order_2to3(&mesh);
