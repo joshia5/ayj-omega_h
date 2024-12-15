@@ -13,7 +13,6 @@ class ObjectiveFunction
 {
   public:
     ObjectiveFunction(){};
-    //virtual double getTol() = 0;
     double getValue(Mesh *mesh, const std::vector<double> &x) {
       //forget about Mesh for now, just do it for a given set of input
       //doubles, look at the body of the askWorstQual and come in at the point
