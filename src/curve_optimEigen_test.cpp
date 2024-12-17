@@ -61,7 +61,7 @@ void test_rosenbrock() {
   return;
 }
 
-void test_annuluswithEigen(Library *lib) { 
+void test_annuluswithEigen(Library *lib) {
 
   auto comm = lib->world();
 
@@ -225,15 +225,15 @@ void test_annuluswithEigen(Library *lib) {
   }
   askWorstQuality_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
 
-/*
   const int n = 8;//number of internal ctrl pts*dim // for 2d 2tri, 1edge case =8
   lbfgs::LBFGSParam<float> param;
   lbfgs::LBFGSSolver<float> solver(param);
   //Rosenbrock fun(n);
-  //ObjFunction *objF;
-  //another class that has a constructor
+  //ObjectiveFunction foo(); //another class that has a constructor
+  //returns func value
   //
 
+/*
 
 ##############body  of ask worst qual
   auto fv2v = mesh->ask_down(2, 0).ab2b;
@@ -246,7 +246,7 @@ void test_annuluswithEigen(Library *lib) {
   auto order = mesh->get_max_order();
   OMEGA_H_CHECK(order == 3);
   LO const nnew_tris = new_tris.size();
-  
+ 
   auto Qs = mesh->ask_qualities();
 
   Write<Real> Q(nnew_tris, -1e-10);
