@@ -11,15 +11,21 @@
 
 class ObjectiveFunction
 {
+  private:
+    Mesh* mesh;
   public:
-    ObjectiveFunction(){};
-    double getValue(Mesh *mesh, const std::vector<double> &x) {
+    ObjectiveFunction(Mesh* mesh_) : mesh(mesh_) {}
+    double operator() (const vectorXf& x, VectorXf& grad)
+    {
       //forget about Mesh for now, just do it for a given set of input
       //doubles, look at the body of the askWorstQual and come in at the point
       //where an array or whatever containing coordinate locations of control
       //points is provided to the detJ calc function
 
-      return askWorstQuality_2d(mesh, LOs(2,0,1), 2); //2 tri annular mesh test
+      grad[i + 1] = 20 * t2;
+      grad[i]     = -2.0 * (x[i] * grad[i + 1] + t1);
+
+      return askWorstQuality_2d(mesh, LOs(mesh->nelems(),0,1), 2);
 
     }
 
