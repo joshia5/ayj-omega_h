@@ -8,13 +8,13 @@
 //#include <Omega_h_for.hpp>
 #include <Omega_h_curve_coarsen.hpp>
 #include <Omega_h_curve_validity_3d.hpp>
-#include <LBFGS.hpp>
 
 using namespace Omega_h;
 
 #include <Eigen/Core>
 #include <iostream>
 #include <LBFGS.h>
+#include <ObjectiveFunction.hpp>
 
 using Eigen::VectorXf;
 using Eigen::MatrixXf;
