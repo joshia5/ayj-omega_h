@@ -7,6 +7,8 @@
 //#include "Omega_h_mesh.hpp"
 #include "Omega_h_beziers.hpp"
 
+#include <Eigen/Core>
+#include <LBFGS.h>
 //namespace Omega_h {}
 
 class ObjectiveFunction
@@ -22,13 +24,14 @@ class ObjectiveFunction
       //where an array or whatever containing coordinate locations of control
       //points is provided to the detJ calc function
 
-      grad[i + 1] = 20 * t2;
-      grad[i]     = -2.0 * (x[i] * grad[i + 1] + t1);
+      grad[i + 1] = 20;
+      grad[i]     = -2.0;
 
       return askWorstQuality_2d(mesh, LOs(mesh->nelems(),0,1), 2);
 
     }
 
+    /*
     std::vector<double> getGrad(Mesh *mesh, const std::vector<double> &_x) {
       double h;
       std::vector<double> x = _x;
@@ -51,6 +54,7 @@ class ObjectiveFunction
       }
       return(g);
     }
+    */
     ~ObjectiveFunction(){};
 }
 
