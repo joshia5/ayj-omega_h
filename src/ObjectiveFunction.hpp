@@ -9,23 +9,25 @@
 
 #include <Eigen/Core>
 #include <LBFGS.h>
+#include <iostream>
 //namespace Omega_h {}
 
 class ObjectiveFunction
 {
   private:
     Mesh* mesh;
+    int n;
   public:
-    ObjectiveFunction(Mesh* mesh_) : mesh(mesh_) {}
-    double operator() (const vectorXf& x, VectorXf& grad)
+    ObjectiveFunction(int n_, Mesh* mesh_) : mesh(mesh_) {}
+    double operator() (const Eigen::VectorXd& x, Eigen::VectorXd& grad)
     {
       //forget about Mesh for now, just do it for a given set of input
       //doubles, look at the body of the askWorstQual and come in at the point
       //where an array or whatever containing coordinate locations of control
       //points is provided to the detJ calc function
 
-      grad[i + 1] = 20;
-      grad[i]     = -2.0;
+      grad[1] = 20;
+      grad[0]     = -2.0;
 
       return askWorstQuality_2d(mesh, LOs(mesh->nelems(),0,1), 2);
 
@@ -56,6 +58,6 @@ class ObjectiveFunction
     }
     */
     ~ObjectiveFunction(){};
-}
+};
 
 #endif
