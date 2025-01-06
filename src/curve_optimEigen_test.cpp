@@ -226,10 +226,12 @@ void test_annuluswithEigen(Library *lib) {
   askWorstQuality_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
 
   const int n = 8;//number of internal ctrl pts*dim // for 2d 2tri, 1edge case =8
-  lbfgs::LBFGSParam<float> param;
-  lbfgs::LBFGSSolver<float> solver(param);
-  //Rosenbrock fun(n);
-  //ObjectiveFunction foo(); //another class that has a constructor
+  lbfgs::LBFGSParam<double> param;
+  lbfgs::LBFGSSolver<double> solver(param);
+  ObjectiveFunction foo(n, &mesh); //another class that has a constructor
+  Eigen::VectorXd x = Eigen::VectorXd::Zero(n);
+  double fx;
+  solver.minimize(foo, x, fx);
   //returns func value
   //
 
