@@ -615,21 +615,21 @@ void test_annulus_swap(Library *lib) {
   auto valid_tris_bef = checkValidity_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
   askWorstQuality_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
   auto quals = askQuality_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
-  for (LO adapt_itr = 0; adapt_itr < 1; ++adapt_itr) {
+  for (LO adapt_itr = 0; adapt_itr < 2; ++adapt_itr) {
     fprintf(stderr, "itr %d\n", adapt_itr);
     swap_edges(&mesh, opts);
   }
 
   wireframe_mesh = Mesh(lib);
   wireframe_mesh.set_comm(comm);
-  build_cubic_wireframe_2d(&mesh, &wireframe_mesh, 4);
+  build_cubic_wireframe_2d(&mesh, &wireframe_mesh, 20);
   vtuPath =
-    "/lore/joshia5/Meshes/curved/annulus-8-swap_wire.vtu";
+    "/lore/joshia5/Meshes/curved/annulus-8-swap_2itr_wire.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &wireframe_mesh, 1);
   cubic_curveVtk_mesh = Mesh(lib);
   cubic_curveVtk_mesh.set_comm(comm);
-  build_cubic_curveVtk_2d(&mesh, &cubic_curveVtk_mesh, 4);
-  vtuPath = "/lore/joshia5/Meshes/curved/annulus-8-swap.vtu";
+  build_cubic_curveVtk_2d(&mesh, &cubic_curveVtk_mesh, 20);
+  vtuPath = "/lore/joshia5/Meshes/curved/annulus-8-swap_2itr.vtu";
   vtk::write_simplex_connectivity(vtuPath.c_str(), &cubic_curveVtk_mesh, 2);
   auto valid_tris_aft = checkValidity_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
   //quals = askQuality_2d(&mesh, LOs(mesh.nfaces(), 0, 1), 2);
@@ -637,9 +637,9 @@ void test_annulus_swap(Library *lib) {
   fprintf(stderr, "finish swapping annulus-2d\n");
   //vtk::FullWriter writer;
   writer = vtk::FullWriter(
-      "/lore/joshia5/Meshes/curved/annulus-8-swap_full.vtk", &mesh);
+      "/lore/joshia5/Meshes/curved/annulus-8-swap_2itr_full.vtk", &mesh);
   writer.write();
-  binary::write("/lore/joshia5/Meshes/curved/annulus-8_swap.osh", &mesh);
+  binary::write("/lore/joshia5/Meshes/curved/annulus-8_swap_2itr.osh", &mesh);
   //mesh.ask_qualities();
 
   return;
